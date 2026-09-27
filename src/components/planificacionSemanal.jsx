@@ -20,6 +20,7 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, Play, Repeat, CalendarDays } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, GhostBtn, PrimaryButton } from './ui';
 
@@ -48,7 +49,7 @@ export function WorkoutDayHeader({ dia, accent }) {
         <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
           {dia.nombreDia} {dia.numero}
           {dia.esHoy && (
-            <span className="ml-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: accent }}>Hoy</span>
+            <span className="ml-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: acentoLegible(accent) }}>Hoy</span>
           )}
         </p>
         <TrainingDayStatus dia={dia} accent={accent} />
@@ -110,7 +111,7 @@ function SesionesRealizadas({ dia, accent, onVerSesion, sinVer = false }) {
               onClick={() => onVerSesion(r.id)}
               aria-label={`Ver el entrenamiento: ${r.nombre}, ${dia.nombreDia.toLowerCase()} ${dia.numero}`}
               className="text-xs font-semibold px-2.5 py-1.5 rounded-lg toque-44 active:scale-95 shrink-0"
-              style={{ color: accent, background: hexToRgba(accent, 0.1) }}
+              style={{ color: acentoLegible(accent), background: hexToRgba(accent, 0.1) }}
             >
               Ver
             </button>
@@ -194,7 +195,7 @@ export function TrainingWeekDay({ dia, accent, seleccionado = false, onElegir = 
       <span className="block text-[11px] font-bold" style={{ textDecoration: dia.esHoy ? 'underline' : 'none' }}>
         {dia.corto} {dia.numero}
       </span>
-      <span className="block text-[12px] leading-none mt-1" aria-hidden="true">{dia.simbolo}</span>
+      <span className="block text-xs leading-none mt-1" aria-hidden="true">{dia.simbolo}</span>
       <span className="block text-[10px] truncate mt-1">{corto}</span>
     </button>
   );
@@ -243,7 +244,7 @@ export function WeekNavigation({ semana, accent, onAnterior = null, onSiguiente 
           onClick={onEstaSemana}
           aria-label="Volver a esta semana"
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 toque-44 active:scale-90"
-          style={{ background: hexToRgba(accent, 0.14), color: accent }}
+          style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
         >
           <CalendarDays size={16} />
         </button>

@@ -28,9 +28,13 @@ import { avisoDeFallo } from '../src/lib/persistenciaFitness.js';
 import { DEFAULT_FITNESS } from '../src/lib/fitness.js';
 import { crearRutina, anadirEjercicio, editarLinea } from '../src/lib/constructor.js';
 import { rangoEfectivoDeEjercicio } from '../src/lib/motorRangos.js';
+import { fuenteResuelta } from '../src/lib/acabadoFitness.js';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
-const leer = (p) => readFileSync(join(RAIZ, p), 'utf8');
+/* 🔓 FIT F42 — las clases de una hoja (`fondo-entra`, `hoja-movil`…) viven UNA
+   vez en `HOJA` (acabadoFitness.js): una pantalla se lee con ellas resueltas,
+   como las ve el navegador. Lo que se protege aquí no cambia. */
+const leer = (p) => { const t = readFileSync(join(RAIZ, p), 'utf8'); return p.endsWith('.jsx') ? fuenteResuelta(t) : t; };
 const CSS = leer('src/index.css');
 
 let fallos = 0;
@@ -255,8 +259,9 @@ ok(velosEn({ x: '<div className="fixed inset-0 z-50">' }).filter(([, c]) => !/fo
   '…y el barrido caza un velo sin entrada y no se confunde con un comentario');
 /* ⚠️ FIT F38 — su tope de altura pasó a `hoja-movil`; lo que se mira aquí es
    que sigan entrando. */
-ok(/space-y-4 hoja-entra hoja-movil/.test(leer('src/components/historialRango.jsx'))
-  && /space-y-4 hoja-entra hoja-movil/.test(leer('src/components/explicacionRango.jsx')),
+/* 🔓 FIT F42 — las clases salen de `HOJA`, y el orden cambió: se mira que estén. */
+ok(/hoja-entra hoja-movil/.test(leer('src/components/historialRango.jsx'))
+  && /hoja-entra hoja-movil/.test(leer('src/components/explicacionRango.jsx')),
   '🐛 …incluidas las dos hojas de Rangos que se habían quedado sin ella');
 const cla = leer('src/views/ClasificacionView.jsx');
 ok(/<Card className="fit-entra">/.test(cla) && /key=\{`\$\{actual\.id\}-\$\{pregunta \? pregunta\.id : ""\}`\}/.test(cla),

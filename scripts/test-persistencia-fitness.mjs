@@ -393,7 +393,7 @@ console.log('\n── 6 · Continuar, Finalizar y Descartar al volver (apartado 
   const r = anadirEjercicio(crearRutina({ nombre: 'Push' }), 'press-banca-barra');
   const enCurso = empezarSesion({ nombre: 'Push', lineas: r.lineas, hoy: HOY, ahora: AHORA - 40 * 60000 });
   const a = avisoDeRecuperacion(enCurso, { ahora: AHORA });
-  ok(a.continuar === 'Continuar entrenamiento' && a.finalizar === 'Finalizar' && a.descartar === 'Descartar sesión' && a.duracion === '40:00',
+  ok(a.continuar === 'Continuar entrenamiento' && a.finalizar === 'Finalizar' && a.descartar === 'Descartar entrenamiento' && a.duracion === '40:00',
     '🔓 La reciente, con su reloj y las TRES salidas del apartado 6 (C-43: la F39 le dejaba solo dos)');
   ok(/onFinalizar=\{onFinalizarSesion\}/.test(leer('src/views/FitnessView.jsx')),
     '…y Fitness cablea Finalizar: lleva al resumen de la F8, donde él decide');

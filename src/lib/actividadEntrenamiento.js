@@ -9,7 +9,7 @@ import { planActivoCompleto, posicionDelDia, planificadoEnFecha } from './tuPlan
 import { DIAS_SEMANA, diaDeFecha } from './horario';
 import { CATALOGO_PLANES, planesAnterioresDe } from './planes';
 import { celdasMes } from './calendario';
-import { MESES } from './finalizacion';
+import { MESES, diaYMes } from './fechasFitness';
 
 /* Entrega 4 · Fase 31/45 — «Consistencia y actividad de entrenamiento».
    ═══════════════════════════════════════════════════════════════════════════
@@ -106,12 +106,9 @@ function diasIncluidos(desde, hasta) {
   return Math.round((b - a) / 86400000) + 1;
 }
 
-/** *"12 de septiembre"* (apartado 37). */
-export function diaYMes(iso) {
-  if (!fechaValida(iso)) return '';
-  const [, m, d] = iso.split('-').map(Number);
-  return `${d} de ${MESES[m - 1]}`;
-}
+/** *"12 de septiembre"* (apartado 37). 🔓 FIT F42 — vive en `fechasFitness.js`,
+ *  que es la frase de fecha de todo Fitness; se reexporta para quien ya la importaba. */
+export { diaYMes };
 
 /* ═══════════════════════════════════════════════════════════════════════════
    3 · QUÉ SESIONES ENTRAN (apartados 2, 15, 23 y 24)
@@ -303,7 +300,7 @@ export function adherenciaDelPlan(contexto, { lunes, hoy, porFecha }) {
        por separado — nunca uno encima del otro como si fuera una nota. */
     texto: extra > 0
       ? `${contadorTexto(realizadas)} · ${planificadas} ${planificadas === 1 ? 'planificado' : 'planificados'}`
-      : `${realizadas} / ${planificadas} ${planificadas === 1 ? 'sesión planificada' : 'sesiones planificadas'}`,
+      : `${realizadas} / ${planificadas} ${planificadas === 1 ? 'entrenamiento planificado' : 'entrenamientos planificados'}`,
     /* Apartado 12 — L Push · X Pull · V Legs, la estructura real. */
     detalle: dias.map((d) => `${d.corto} ${d.nombre}`).join(' · '),
     desdeActivacion: desde !== lunes,

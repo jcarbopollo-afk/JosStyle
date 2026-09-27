@@ -1,4 +1,5 @@
 import { todayISO } from './helpers';
+import { MESES, fechaLarga } from './fechasFitness';
 import { VISIBILIDADES, ESTADOS_SESION } from './fitness';
 import { ejercicioPorId } from './ejercicios';
 import { nombreDeLinea } from './constructor';
@@ -77,8 +78,10 @@ const lista = (v) => (Array.isArray(v) ? v : []);
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-export const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
-  'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+/* 🔓 FIT F42 (apartado 59) — `MESES` y `fechaLarga` viven en `fechasFitness.js`,
+   con los otros dos papeles de una fecha. Se reexportan con `export { }` y no con
+   `export … from`, que no crea el nombre local que usa `nombrePorDefecto` (EH F17). */
+export { MESES, fechaLarga };
 
 /* ⚠️ En LOCAL, con `T00:00:00`: la trampa del UTC ya va por muchas, y aquí
    devolvería el día anterior en España. */
@@ -98,11 +101,6 @@ export function nombrePorDefecto(sesion) {
   return d ? `Entrenamiento del ${DIAS[d.getDay()]}` : 'Entrenamiento';
 }
 
-/** *"12 septiembre 2026"* (apartado 4). */
-export function fechaLarga(iso) {
-  const d = comoFecha(iso);
-  return d ? `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}` : '';
-}
 
 /** *"18:05"* a partir de una marca de tiempo. ⚠️ Del reloj del dispositivo, que
  *  es donde entrenó; `null` si no hay marca — nunca una hora inventada. */
@@ -327,7 +325,7 @@ export const AVISO_SIN_SERIES = {
    es lo registrado. */
 export const AVISO_DESCARTAR_FINAL = {
   titulo: '¿Descartar entrenamiento?',
-  texto: 'Se perderán los datos registrados en esta sesión.',
+  texto: 'Se perderán los datos registrados en este entrenamiento.',
   cancelar: 'Cancelar',
   descartar: 'Descartar',
 };
@@ -421,9 +419,9 @@ export function descartarEntrenamiento(sesion, { confirmado = false, ahora = Dat
    *"flojo"*, ni *"podrías más"*. Es `FRASES_RESUMEN` de la E3 F29. */
 export const MENSAJES_FINAL = [
   { desde: 0, texto: 'Queda registrado.' },
-  { desde: 1, texto: 'Sesión guardada.' },
+  { desde: 1, texto: 'Entrenamiento guardado.' },
   { desde: 10, texto: 'Buen trabajo.' },
-  { desde: 20, texto: 'Sesión larga. Bien hecho.' },
+  { desde: 20, texto: 'Entrenamiento largo. Bien hecho.' },
 ];
 
 export const mensajeFinal = (series) => [...MENSAJES_FINAL]

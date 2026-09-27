@@ -2,6 +2,18 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.124.0 — FIT F42/45: auditoría visual y acabado premium):**
+> 🏁 **Cierra el bloque de Acabado.** No se ha impuesto una estética nueva: se midió la escala que
+> Fitness ya usaba y se corrigió lo que se salía. 🐛 **El acento como texto no llegaba a 4,5:1 con la
+> mitad de los acentos** —el de serie incluido—: ahora es el mismo tono con el contraste justo
+> (`acentoLegible`). 🐛 **La pastilla de un filtro estaba escrita siete veces**, las hojas tenían
+> **cuatro velos** y **dos botones de cerrar**: ahora son `PastillaFiltro`, `OpcionSegmentada`,
+> `BotonCerrarHoja` y `HOJA`. Una fecha, un formato por papel (`fechasFitness.js`); «entrenamiento» y
+> «plantilla» en todo Fitness (C-44; «Cerrar la sesión» se leía como salir de la cuenta); la misma
+> cabecera en Rangos, Progreso y Entrenamiento; cifras que no bailan; y **ni un número de los motores
+> movido**. Lo siguiente es la **FIT F43** (auditoría funcional integral), la primera del bloque de
+> Cierre.
+
 > **📅 ACTUALIZACIÓN (v3.123.0 — FIT F41/45: persistencia, recuperación y resiliencia):**
 > 🐛 **Lo que la carga no entendía —una sesión sin id, dos copias distintas de la misma, un objetivo
 > sin ejercicio— se borraba de su cuenta en el siguiente guardado**: ahora se aparta en

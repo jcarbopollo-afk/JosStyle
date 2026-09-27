@@ -40,9 +40,13 @@ import { rangoDeEjercicio } from '../src/lib/rangos.js';
 import { colaDeClasificacion } from '../src/lib/colaClasificacion.js';
 import { cancelarObjetivo } from '../src/lib/objetivosProgreso.js';
 import { objetivoEnVivo } from '../src/lib/objetivosFitness.js';
+import { fuenteResuelta } from '../src/lib/acabadoFitness.js';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
-const leer = (p) => readFileSync(join(RAIZ, p), 'utf8');
+/* 🔓 FIT F42 — las clases de una hoja (`fondo-entra`, `hoja-movil`…) viven UNA
+   vez en `HOJA` (acabadoFitness.js): una pantalla se lee con ellas resueltas,
+   como las ve el navegador. Lo que se protege aquí no cambia. */
+const leer = (p) => { const t = readFileSync(join(RAIZ, p), 'utf8'); return p.endsWith('.jsx') ? fuenteResuelta(t) : t; };
 /* Lo que el código HACE, sin comentarios ni cadenas (la lección de siempre). */
 const soloCodigo = (src) => src
   .replace(/\/\*[\s\S]*?\*\//g, '')

@@ -20,8 +20,10 @@
 import React, { useMemo, useState } from 'react';
 import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
-import { ChevronRight, Search, SlidersHorizontal, X, Check, Repeat } from 'lucide-react';
+import { ChevronRight, Search, SlidersHorizontal, Check, Repeat } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { HOJA, acentoLegible } from '../lib/acabadoFitness';
+import { BotonCerrarHoja, PastillaFiltro as Pastilla } from './piezasFitness';
 import { hexToRgba } from '../lib/helpers';
 import { PrimaryButton, GhostBtn } from './ui';
 import { nombreCompleto, nombreSinCatalogo } from '../lib/ejercicios';
@@ -86,7 +88,7 @@ export function ReplacementCard({ item, accent, onElegir }) {
       className="hub-card w-full text-left rounded-2xl p-3.5 flex items-start gap-3 active:scale-[0.99] toque-44"
       style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
     >
-      <Repeat size={18} className="mt-0.5 shrink-0" style={{ color: accent }} aria-hidden="true" />
+      <Repeat size={18} className="mt-0.5 shrink-0" style={{ color: acentoLegible(accent) }} aria-hidden="true" />
       <span className="min-w-0 flex-1">
         <span className="text-sm font-bold block" style={{ color: COLORS.text }}>{nombre}</span>
         <span className="block mt-1"><ReplacementCompatibility nivel={item.compatibilityLevel} /></span>
@@ -97,25 +99,8 @@ export function ReplacementCard({ item, accent, onElegir }) {
   );
 }
 
-/* Una pastilla de filtro: estado con `aria-pressed`, no solo con color. */
-function Pastilla({ activa, accent, onClick, children, label }) {
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={activa}
-      aria-label={label}
-      className="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold toque-44 active:scale-95"
-      style={{
-        background: activa ? hexToRgba(accent, 0.16) : COLORS.surface2,
-        color: activa ? accent : COLORS.text,
-        border: `1px solid ${activa ? accent : COLORS.border}`,
-      }}
-    >
-      {activa && <Check size={12} className="inline mr-1" aria-hidden="true" />}
-      {children}
-    </button>
-  );
-}
+/* 🔓 FIT F42 (apartados 42 y 64) — aquí había una `Pastilla` propia, una de las
+   siete copias de la pastilla de un filtro: es `PastillaFiltro` (piezasFitness). */
 
 const FILAS_FILTRO = [
   { id: 'entorno', nombre: 'Dónde' },
@@ -296,7 +281,7 @@ export function ReplacementConfirm({
                 className="rounded-full px-3 py-1.5 text-xs font-semibold toque-44"
                 style={{
                   background: opcionObjetivo === o.id ? hexToRgba(accent, 0.16) : COLORS.surface2,
-                  color: opcionObjetivo === o.id ? accent : COLORS.text,
+                  color: opcionObjetivo === o.id ? acentoLegible(accent) : COLORS.text,
                   border: `1px solid ${opcionObjetivo === o.id ? accent : COLORS.border}`,
                 }}
               >
@@ -397,14 +382,7 @@ export function ExerciseReplacement({
           </p>
         </div>
         {onCancelar && (
-          <button
-            onClick={onCancelar}
-            aria-label="Cerrar la sustitución"
-            className="p-2 rounded-full shrink-0 toque-44"
-            style={{ background: COLORS.surface2 }}
-          >
-            <X size={16} style={{ color: COLORS.text }} />
-          </button>
+          <BotonCerrarHoja onClick={onCancelar} etiqueta="Cerrar la sustitución" />
         )}
       </div>
 
@@ -465,8 +443,8 @@ export function ExerciseReplacementModal({ abierto = true, onCerrar, ...props })
   if (!abierto || typeof document === 'undefined') return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center fondo-entra"
-      style={{ background: 'rgba(0,0,0,0.5)' }}
+      className={HOJA.velo}
+      style={{ background: HOJA.fondoVelo }}
       onClick={onCerrar}
       role="dialog"
       aria-modal="true"
@@ -475,8 +453,8 @@ export function ExerciseReplacementModal({ abierto = true, onCerrar, ...props })
       <div
         ref={caja}
         tabIndex={-1}
-        className="w-full max-w-md sm:max-w-2xl rounded-t-3xl sm:rounded-3xl p-5 hoja-entra hoja-movil dialogo-caja"
-        style={{ background: COLORS.bg, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
+        className={`${HOJA.caja} sm:max-w-2xl`}
+        style={{ background: COLORS.bg, paddingBottom: HOJA.abajo }}
         onClick={(ev) => ev.stopPropagation()}
       >
         <ExerciseReplacement {...props} onCancelar={onCerrar} />

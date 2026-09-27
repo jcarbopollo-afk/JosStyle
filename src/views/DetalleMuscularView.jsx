@@ -17,6 +17,7 @@
 import React, { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Minus, Circle } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, GhostBtn, EmptyHint } from '../components/ui';
 import { RankBadge, RankLabel } from '../components/rangos';
@@ -100,7 +101,7 @@ export function MuscleRankHeader({ detalle, accent, onVolver, volverA = 'Rangos'
                 <BotonHistorial onAbrir={onHistorial} etiqueta={`Historial de tu rango en ${d.nombre}`} />
               </div>
             </div>
-            <p className="text-2xl font-extrabold leading-tight" style={{ color: d.sinRango ? COLORS.text : accent, fontFamily: "'Manrope', sans-serif" }}>
+            <p className="text-2xl font-extrabold leading-tight" style={{ color: d.sinRango ? COLORS.text : acentoLegible(accent), fontFamily: "'Manrope', sans-serif" }}>
               {d.sinRango ? SIN_RANGO.nombre : d.rango.nombre}
             </p>
             <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
@@ -158,7 +159,7 @@ export function MuscleProgressSummary({ resumen, accent }) {
           const Icono = estadoDe(f.id).icono;
           return (
             <span key={f.id} className="flex items-center gap-1.5 text-xs" style={{ color: COLORS.text }}>
-              <Icono size={13} style={{ color: f.n > 0 ? accent : COLORS.textMuted }} aria-hidden="true" />
+              <Icono size={13} style={{ color: f.n > 0 ? acentoLegible(accent) : COLORS.textMuted }} aria-hidden="true" />
               {f.n} {f.texto}
             </span>
           );
@@ -222,7 +223,7 @@ export function MuscleSubgroupList({ subgrupos = [], accent, onAbrir }) {
    pone ahí, que es lo que de verdad pesa en el rango. */
 export function MuscleContribution({ texto: t }) {
   if (!t) return null;
-  return <span className="text-[10px] px-1.5 py-0.5 rounded-md" style={{ background: COLORS.surface2, color: COLORS.textMuted }}>{t}</span>;
+  return <span className="text-[10px] px-1.5 py-0.5 rounded-lg" style={{ background: COLORS.surface2, color: COLORS.textMuted }}>{t}</span>;
 }
 
 /* 🔓 **FIT F21 — `MuscleExerciseCard` y `MuscleExerciseList` se retiran.** La

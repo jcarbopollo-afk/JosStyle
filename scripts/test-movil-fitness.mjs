@@ -27,9 +27,13 @@ import {
 import { pasarAFinalizacion, guardarEntrenamiento } from '../src/lib/finalizacion.js';
 import { DEFAULT_FITNESS } from '../src/lib/fitness.js';
 import { crearRutina, anadirEjercicio, editarLinea } from '../src/lib/constructor.js';
+import { fuenteResuelta } from '../src/lib/acabadoFitness.js';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
-const leer = (p) => readFileSync(join(RAIZ, p), 'utf8');
+/* 🔓 FIT F42 — las clases de una hoja (`fondo-entra`, `hoja-movil`…) viven UNA
+   vez en `HOJA` (acabadoFitness.js): una pantalla se lee con ellas resueltas,
+   como las ve el navegador. Lo que se protege aquí no cambia. */
+const leer = (p) => { const t = readFileSync(join(RAIZ, p), 'utf8'); return p.endsWith('.jsx') ? fuenteResuelta(t) : t; };
 const CSS = leer('src/index.css');
 const archivos = Object.fromEntries(ARCHIVOS_FITNESS.filter((p) => existsSync(join(RAIZ, p))).map((p) => [p, leer(p)]));
 

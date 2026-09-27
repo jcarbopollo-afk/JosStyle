@@ -18,6 +18,8 @@ import {
   Search, SlidersHorizontal, X, Check, Heart, Plus, ChevronRight, ArrowDown, Dumbbell, Target,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { PastillaFiltro } from './piezasFitness';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, TextInput, GhostBtn, PrimaryButton } from './ui';
 import { iconoDeGrupo } from './iconosFitness';
@@ -50,24 +52,11 @@ export function ExerciseSearch({ valor = '', onCambiar }) {
 /* ── ExerciseFilterChip ────────────────────────────────────────────────────
    Estado con `aria-pressed`, y su recuento al lado: un filtro que deja la
    pantalla vacía sin avisar es peor que no tenerlo (F2, apartado 23). */
-export function ExerciseFilterChip({ activa = false, cuantos = null, accent, onClick, children }) {
-  const apagada = cuantos === 0 && !activa;
-  return (
-    <button
-      onClick={onClick}
-      disabled={apagada}
-      aria-pressed={activa}
-      className="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 toque-44 active:scale-[0.97] transition-colors"
-      style={{
-        background: activa ? accent : hexToRgba(COLORS.border, 0.5),
-        color: activa ? COLORS.textOnAccent : COLORS.textMuted,
-        opacity: apagada ? 0.4 : 1,
-      }}
-    >
-      {children}
-      {cuantos !== null && <span className="ml-1.5 opacity-70">{cuantos}</span>}
-    </button>
-  );
+/* 🔓 FIT F42 (apartados 42 y 64) — es la pastilla de todos los filtros de Fitness,
+   que vive en `piezasFitness.jsx`; conserva su nombre, que es el del apartado 31
+   de la F34. */
+export function ExerciseFilterChip(props) {
+  return <PastillaFiltro {...props} />;
 }
 
 /* ── ExerciseFilters (apartados 4-6) ───────────────────────────────────────
@@ -114,7 +103,7 @@ export function ExerciseVisual({ ejercicio, accent, grande = false }) {
   const icono = (
     <div
       className={`${lado} rounded-xl flex items-center justify-center shrink-0`}
-      style={{ background: hexToRgba(accent, 0.14), color: accent }}
+      style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
       aria-hidden="true"
     >
       <Icono size={grande ? 30 : 20} />
@@ -129,7 +118,7 @@ export function ExerciseVisual({ ejercicio, accent, grande = false }) {
   return (
     <div
       className={`${lado} rounded-xl flex items-center justify-center shrink-0`}
-      style={{ background: hexToRgba(accent, 0.14), color: accent }}
+      style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
       aria-hidden="true"
     >
       <Icono size={grande ? 30 : 20} />
@@ -159,7 +148,7 @@ export function ExerciseCard({ ejercicio, accent, onAbrir, accion = 'Ver', marca
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
           {ejercicio.nombre}
-          {favorito && <Heart size={12} className="inline ml-1.5 -mt-0.5" style={{ color: accent }} fill={accent} aria-label="En favoritos" />}
+          {favorito && <Heart size={12} className="inline ml-1.5 -mt-0.5" style={{ color: acentoLegible(accent) }} fill={acentoLegible(accent)} aria-label="En favoritos" />}
         </p>
         {ejercicio.variante && (
           <p className="text-[11px] truncate" style={{ color: COLORS.textMuted }}>{ejercicio.variante}</p>
@@ -172,7 +161,7 @@ export function ExerciseCard({ ejercicio, accent, onAbrir, accion = 'Ver', marca
       </div>
       {/* ⚠️ En modo selector se dice si ya está en el entrenamiento, pero NO se
           bloquea: duplicar un ejercicio es el apartado 17 de la FIT F3. */}
-      <span className="text-[10px] font-semibold shrink-0 text-right" style={{ color: marca ? accent : COLORS.textMuted }}>
+      <span className="text-[10px] font-semibold shrink-0 text-right" style={{ color: marca ? acentoLegible(accent) : COLORS.textMuted }}>
         {marca || entornos.join(' · ')}
       </span>
     </button>
@@ -230,12 +219,12 @@ export function ExerciseHeader({ ficha, accent }) {
           <p className="text-xl font-extrabold leading-tight" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
             {ficha.nombre}
           </p>
-          {ficha.variante && <p className="text-sm font-semibold" style={{ color: accent }}>{ficha.variante}</p>}
+          {ficha.variante && <p className="text-sm font-semibold" style={{ color: acentoLegible(accent) }}>{ficha.variante}</p>}
           {ficha.etiquetas.length > 0 && (
             <div className="flex gap-1.5 flex-wrap mt-1.5">
               {ficha.etiquetas.map((t) => (
                 <span key={t} className="text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5"
-                  style={{ background: hexToRgba(accent, 0.12), color: accent }}>
+                  style={{ background: hexToRgba(accent, 0.12), color: acentoLegible(accent) }}>
                   {t}
                 </span>
               ))}
@@ -300,7 +289,7 @@ export function ExerciseEquipment({ equipamiento = [], accent }) {
           {equipamiento.map((e) => (
             <span key={e} className="inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2.5 py-1"
               style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}>
-              <Dumbbell size={12} style={{ color: accent }} aria-hidden="true" />{e}
+              <Dumbbell size={12} style={{ color: acentoLegible(accent) }} aria-hidden="true" />{e}
             </span>
           ))}
         </div>
@@ -323,7 +312,7 @@ export function ExerciseTechnique({ tecnica, accent }) {
             {tecnica.pasos.map((p) => (
               <li key={p.numero} className="flex gap-2.5">
                 <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                  style={{ background: hexToRgba(accent, 0.14), color: accent }}>
+                  style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}>
                   {p.numero}
                 </span>
                 <span className="min-w-0">
@@ -357,7 +346,7 @@ export function ExerciseTechnique({ tecnica, accent }) {
             <ul>
               {tecnica.consejos.map((c) => (
                 <li key={c} className="text-sm flex gap-2" style={{ color: COLORS.textMuted }}>
-                  <span style={{ color: accent }} aria-hidden="true">·</span>{c}
+                  <span style={{ color: acentoLegible(accent) }} aria-hidden="true">·</span>{c}
                 </li>
               ))}
             </ul>
@@ -415,7 +404,7 @@ export function ExerciseProgressions({ progresion, accent, onAbrir }) {
                   className="w-full rounded-xl px-3 py-2 text-sm font-semibold text-center toque-44"
                   style={{
                     background: p.actual ? hexToRgba(accent, 0.16) : COLORS.surface2,
-                    color: p.actual ? accent : COLORS.text,
+                    color: p.actual ? acentoLegible(accent) : COLORS.text,
                     border: `1px solid ${p.actual ? accent : COLORS.border}`,
                   }}
                 >
@@ -432,7 +421,7 @@ export function ExerciseProgressions({ progresion, accent, onAbrir }) {
               <button key={p.id} onClick={() => onAbrir && onAbrir(p.id)} disabled={!onAbrir}
                 aria-label={`Ver la ficha de ${p.nombre}`}
                 className="w-full flex items-center gap-2 text-left py-2 toque-44">
-                <span className="text-sm font-semibold min-w-0 flex-1" style={{ color: onAbrir ? accent : COLORS.text }}>{p.nombre}</span>
+                <span className="text-sm font-semibold min-w-0 flex-1" style={{ color: onAbrir ? acentoLegible(accent) : COLORS.text }}>{p.nombre}</span>
                 <ChevronRight size={14} style={{ color: COLORS.textMuted }} aria-hidden="true" />
               </button>
             ))}
@@ -459,7 +448,7 @@ export function ExerciseVariantsList({ variantes = [], accent, onAbrir }) {
             aria-label={`Ver la ficha de ${v.nombre}`}
             className="w-full flex items-center gap-2 text-left py-2 toque-44">
             <span className="min-w-0 flex-1">
-              <span className="text-sm font-semibold block truncate" style={{ color: onAbrir ? accent : COLORS.text }}>{v.nombre}</span>
+              <span className="text-sm font-semibold block truncate" style={{ color: onAbrir ? acentoLegible(accent) : COLORS.text }}>{v.nombre}</span>
               {RELACION[v.relacion] && <span className="text-[11px] block" style={{ color: COLORS.textMuted }}>{RELACION[v.relacion]}</span>}
             </span>
             <ChevronRight size={14} style={{ color: COLORS.textMuted }} aria-hidden="true" />
@@ -486,7 +475,7 @@ export function ExerciseAlternatives({ alternativas, accent, onAbrir }) {
             aria-label={`Ver la ficha de ${nombreCompleto(x.exercise)}. ${x.reasons[0] || ''}`}
             className="w-full flex items-start gap-2 text-left py-2 toque-44">
             <span className="min-w-0 flex-1">
-              <span className="text-sm font-semibold block" style={{ color: onAbrir ? accent : COLORS.text }}>{nombreCompleto(x.exercise)}</span>
+              <span className="text-sm font-semibold block" style={{ color: onAbrir ? acentoLegible(accent) : COLORS.text }}>{nombreCompleto(x.exercise)}</span>
               <span className="block mt-0.5"><ReplacementCompatibility nivel={x.compatibilityLevel} /></span>
               {x.reasons[0] && <span className="text-[11px] block mt-0.5" style={{ color: COLORS.textMuted }}>{x.reasons[0]}</span>}
             </span>
@@ -494,7 +483,7 @@ export function ExerciseAlternatives({ alternativas, accent, onAbrir }) {
           </button>
         ))}
         {alternativas.total > alternativas.items.length && alternativas.todas && (
-          <button onClick={() => setTodas(!todas)} className="text-xs font-bold py-2 px-1 toque-44" style={{ color: accent }}>
+          <button onClick={() => setTodas(!todas)} className="text-xs font-bold py-2 px-1 toque-44" style={{ color: acentoLegible(accent) }}>
             {todas ? 'Ver menos' : `Ver las ${alternativas.total} alternativas`}
           </button>
         )}
@@ -518,7 +507,7 @@ export function ExerciseAddToWorkout({ entrenamientos = [], accent, onAnadir, on
         )}
       </div>
       {hecho ? (
-        <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: accent }}>
+        <p className="text-xs mt-2 flex items-center gap-1.5" style={{ color: acentoLegible(accent) }}>
           <Check size={14} aria-hidden="true" />Añadido a {hecho}
         </p>
       ) : (
@@ -528,10 +517,10 @@ export function ExerciseAddToWorkout({ entrenamientos = [], accent, onAnadir, on
           {sesion && onAnadirASesion && (
             <button
               onClick={() => { if (onAnadirASesion()) setHecho(`«${sesion.nombre}», en curso`); }}
-              aria-label={`Añadir a la sesión en curso: ${sesion.nombre}`}
+              aria-label={`Añadir al entrenamiento en curso: ${sesion.nombre}`}
               className="w-full flex items-center gap-2 text-left rounded-xl px-3 py-2 mt-2 toque-44"
               style={{ background: hexToRgba(accent, 0.12), border: `1px solid ${hexToRgba(accent, 0.4)}` }}>
-              <span className="text-sm font-semibold min-w-0 flex-1 truncate" style={{ color: COLORS.text }}>A la sesión en curso</span>
+              <span className="text-sm font-semibold min-w-0 flex-1 truncate" style={{ color: COLORS.text }}>Al entrenamiento en curso</span>
               <span className="text-[11px] shrink-0 truncate max-w-[45%]" style={{ color: COLORS.textMuted }}>{sesion.nombre}</span>
             </button>
           )}
@@ -595,7 +584,7 @@ export function ExercisePersonalProgress({
           <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Rango</p>
           <p className="text-sm font-semibold mt-0.5" style={{ color: COLORS.text }}>{personal.sinClasificacion}</p>
           {personal.puedeClasificar && onClasificar && (
-            <button onClick={onClasificar} className="mt-1 text-xs font-bold py-2 px-1 toque-44" style={{ color: accent }}>
+            <button onClick={onClasificar} className="mt-1 text-xs font-bold py-2 px-1 toque-44" style={{ color: acentoLegible(accent) }}>
               Clasificar
             </button>
           )}
@@ -644,11 +633,11 @@ export function ExerciseFavoriteButton({ favorito = false, accent, onAlternar })
       className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold toque-44 active:scale-95"
       style={{
         background: favorito ? hexToRgba(accent, 0.16) : COLORS.surface2,
-        color: favorito ? accent : COLORS.text,
+        color: favorito ? acentoLegible(accent) : COLORS.text,
         border: `1px solid ${favorito ? accent : COLORS.border}`,
       }}
     >
-      <Heart size={15} fill={favorito ? accent : 'none'} aria-hidden="true" />
+      <Heart size={15} fill={favorito ? acentoLegible(accent) : 'none'} aria-hidden="true" />
       {favorito ? 'En favoritos' : 'Añadir a favoritos'}
     </button>
   );

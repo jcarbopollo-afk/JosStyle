@@ -482,7 +482,7 @@ const AVISO = avisoDeRecuperacion(sesionActiva(F2), { ahora: min(12) });
 ok(AVISO.nombre === S0.nombre, '…con su nombre (apartado 30, literal)');
 ok(AVISO.duracion === '12:00', `…su duración (${AVISO.duracion})`);
 ok(!!AVISO.ejercicio, '…y el ejercicio en el que iba');
-ok(AVISO.continuar === 'Continuar entrenamiento' && AVISO.descartar === 'Descartar sesión',
+ok(AVISO.continuar === 'Continuar entrenamiento' && AVISO.descartar === 'Descartar entrenamiento',
   '…y las dos salidas que pide el apartado');
 ok(avisoDeRecuperacion(null) === null, '…y sin sesión no se inventa la tarjeta');
 

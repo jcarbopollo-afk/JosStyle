@@ -39,6 +39,7 @@ import { sesionesDelHistorial, fichaDeHistorial, detalleDeSesion } from '../src/
 import { listaDeObjetivos } from '../src/lib/objetivosProgreso.js';
 import { detalleDeObjetivo } from '../src/lib/objetivosFitness.js';
 import { textoRoto, textoVisible } from '../src/lib/robustezFitness.js';
+import { terminosQueChocan } from '../src/lib/acabadoFitness.js';
 
 const accent = ACCENTS[0].value;
 const noop = () => {};
@@ -197,6 +198,13 @@ for (const [nombre, C, props] of PASADAS) {
      días no «dura» 72 horas. */
   const reloj = textoVisible(salida).match(/\b\d{2,}:\d{2}:\d{2}\b|\b\d{2,} h \d+ min\b|\b\d{2,} h\b/);
   ok(!reloj, `${nombre}: ninguna duración imposible`, reloj ? reloj[0] : '');
+  /* 🔓 FIT F42 (apartado 57) — una palabra por concepto: «entrenamiento» y
+     «plantilla», nunca «sesión», «rutina» ni «workout» en lo que se lee. */
+  const choques = terminosQueChocan(textoVisible(salida));
+  ok(choques.length === 0, `${nombre}: una palabra por concepto (F42)`, choques.join(', '));
+  /* 🔓 FIT F42 (apartado 31) — ni un emoji haciendo de icono. */
+  const emoji = textoVisible(salida).match(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2B50}\u{2B55}]/u);
+  ok(!emoji, `${nombre}: ni un emoji haciendo de icono (F42)`, emoji ? emoji[0] : '');
 }
 
 /* 🚨 Y sin normalizar (apartado 51): algunas pantallas reciben un dato a

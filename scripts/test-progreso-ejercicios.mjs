@@ -120,7 +120,7 @@ ok(lineaDesdeHistorial === dm.historial[0].series.join(' | '),
 
 const g = dm.grafica;
 ok(g.mostrar === true && g.puntos.length === 4, `Con cuatro registros hay gráfica (${g.puntos.length} puntos)`);
-ok(g.etiqueta === 'Mejor peso por sesión' && g.unidad === 'kg', `🚨 …con su métrica dicha: «${g.etiqueta}» (apartado 22)`);
+ok(g.etiqueta === 'Mejor peso por entrenamiento' && g.unidad === 'kg', `🚨 …con su métrica dicha: «${g.etiqueta}» (apartado 22)`);
 ok(g.puntos.map((p) => p.valor).join() === '60,80,70,72.5', `…de la más antigua a la más reciente, sin redondear (${g.puntos.map((p) => p.valor).join(', ')})`);
 ok(g.puntos.every((p) => p.sesionId && p.fechaTexto && p.texto), '…y cada punto sabe su fecha, su resultado y su sesión (apartado 25)');
 const g30 = detalleDeProgreso(MUCHOS, 'press-banca-barra', { hoy: HOY, rango: '30d' }).grafica;
@@ -153,7 +153,7 @@ console.log('\n── 3. Tipos de ejercicio y variantes (apartados 18, 19, 20 y 
 const ISO = con(sesion('l-sit', [{ duracion: 10 }], '2026-09-01'), sesion('l-sit', [{ duracion: 12 }], '2026-09-05'), sesion('l-sit', [{ duracion: 15 }], '2026-09-12'));
 const di = detalleDeProgreso(ISO, 'l-sit', { hoy: HOY });
 ok(di.ultima.texto === '15 s' && di.comparacion.antes === '12 s' && di.comparacion.resultado === '+3 s', `🚨 Isométrico en SEGUNDOS: 12 s → 15 s, «${di.comparacion.resultado}» (apartado 18, su ejemplo)`);
-ok(di.grafica.etiqueta === 'Mejor tiempo por sesión' && di.grafica.unidad === 's', '…y la gráfica mide tiempo');
+ok(di.grafica.etiqueta === 'Mejor tiempo por entrenamiento' && di.grafica.unidad === 's', '…y la gráfica mide tiempo');
 
 const CORP = con(
   sesion('dominada-prona', [r(8)], '2026-09-01', { tipoCarga: 'corporal' }),
@@ -161,7 +161,7 @@ const CORP = con(
   sesion('dominada-prona', [r(10)], '2026-09-12', { tipoCarga: 'corporal' }),
 );
 const dc = detalleDeProgreso(CORP, 'dominada-prona', { hoy: HOY });
-ok(dc.grafica.etiqueta === 'Mejores repeticiones por sesión' && dc.grafica.unidad === 'reps', '🚨 Peso corporal: la gráfica cuenta repeticiones');
+ok(dc.grafica.etiqueta === 'Mejores repeticiones por entrenamiento' && dc.grafica.unidad === 'reps', '🚨 Peso corporal: la gráfica cuenta repeticiones');
 /* 🐛 **SIN LOS IDS**, que son `uid()` = `Math.random().toString(36)`: un id de
    ocho caracteres contiene «kg» el 0,5 % de las veces, y un detalle trae cuatro,
    así que **una de cada cincuenta pasadas salía roja con el código perfecto**.

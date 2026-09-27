@@ -15,8 +15,10 @@
 import React from 'react';
 import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
-import { X, ChevronRight, Info } from 'lucide-react';
+import { ChevronRight, Info } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { HOJA, acentoLegible } from '../lib/acabadoFitness';
+import { BotonCerrarHoja } from './piezasFitness';
 import { hexToRgba } from '../lib/helpers';
 import { PrimaryButton, GhostBtn } from './ui';
 import { RankBadge, RankLabel } from './rangos';
@@ -162,8 +164,8 @@ export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = nu
   const nivelSiguiente = e.siguiente && e.siguiente.siguiente ? e.siguiente : null;
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center fondo-entra"
-      style={{ background: 'rgba(0,0,0,0.55)' }}
+      className={HOJA.velo}
+      style={{ background: HOJA.fondoVelo }}
       onClick={onCerrar}
       role="dialog"
       aria-modal="true"
@@ -174,10 +176,10 @@ export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = nu
       <div
         ref={caja}
         tabIndex={-1}
-        className="w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 space-y-4 hoja-entra hoja-movil dialogo-caja"
+        className={`${HOJA.caja} space-y-4`}
         style={{
           background: COLORS.surface,
-          paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)',
+          paddingBottom: HOJA.abajo,
         }}
         onClick={(ev) => ev.stopPropagation()}
       >
@@ -192,7 +194,7 @@ export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = nu
           />
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>{e.titulo}</p>
-            <p className="text-xl font-extrabold leading-tight" style={{ color: e.sinRango ? COLORS.text : accent, fontFamily: "'Manrope', sans-serif" }}>
+            <p className="text-xl font-extrabold leading-tight" style={{ color: e.sinRango ? COLORS.text : acentoLegible(accent), fontFamily: "'Manrope', sans-serif" }}>
               {e.nombre}
             </p>
             <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{e.descripcion}</p>
@@ -207,9 +209,7 @@ export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = nu
               </div>
             )}
           </div>
-          <button onClick={onCerrar} className="p-2 rounded-full shrink-0 toque-44" style={{ background: COLORS.surface2 }} aria-label="Cerrar">
-            <X size={16} style={{ color: COLORS.text }} />
-          </button>
+          <BotonCerrarHoja onClick={onCerrar} etiqueta="Cerrar" />
         </div>
 
         {/* 11, 12 y 13 · De dónde sale */}

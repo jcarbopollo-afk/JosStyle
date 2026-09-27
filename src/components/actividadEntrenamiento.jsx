@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, History, CalendarDays } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { OpcionSegmentada } from './piezasFitness';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba, todayISO } from '../lib/helpers';
 import { Card, GhostBtn } from './ui';
 import {
@@ -34,15 +36,9 @@ export function TrainingPeriodSelector({ periodos = PERIODOS_ACTIVIDAD, valor, o
       {periodos.map((p) => {
         const activo = valor === p.id;
         return (
-          <button
-            key={p.id}
-            onClick={() => onCambiar(p.id)}
-            aria-pressed={activo}
-            className="h-9 px-3 rounded-xl text-xs font-semibold shrink-0 toque-44 active:scale-95"
-            style={{ background: activo ? accent : hexToRgba(COLORS.border, 0.45), color: activo ? COLORS.textOnAccent : COLORS.text }}
-          >
+          <OpcionSegmentada key={p.id} activa={activo} accent={accent} onClick={() => onCambiar(p.id)}>
             {p.nombre}
-          </button>
+          </OpcionSegmentada>
         );
       })}
     </div>
@@ -73,7 +69,7 @@ export function TrainingActivityDay({ dia, accent, arriba = 'letra', seleccionad
     <>
       <span
         className="block text-[11px] font-bold"
-        style={{ color: dia.esHoy ? accent : COLORS.textMuted, textDecoration: dia.esHoy ? 'underline' : 'none' }}
+        style={{ color: dia.esHoy ? acentoLegible(accent) : COLORS.textMuted, textDecoration: dia.esHoy ? 'underline' : 'none' }}
         aria-hidden="true"
       >
         {cabeza}
@@ -123,7 +119,7 @@ export function TrainingActivityCalendar({
             onClick={() => onVista(vista === 'mes' ? 'semana' : 'mes')}
             aria-label={vista === 'mes' ? 'Ver solo esta semana' : 'Ver el mes entero'}
             className="text-xs font-semibold inline-flex items-center gap-1 py-1.5 toque-44"
-            style={{ color: accent }}
+            style={{ color: acentoLegible(accent) }}
           >
             <CalendarDays size={14} aria-hidden="true" /> {vista === 'mes' ? 'Semana' : 'Mes'}
           </button>
@@ -198,7 +194,7 @@ export function TrainingFrequencyCard({ constancia, frecuencia, accent }) {
       {constancia && <p className="text-sm" style={{ color: COLORS.text }}>{constancia.frase}</p>}
       {frecuencia && (
         <>
-          <p className="text-sm font-bold mt-1 tabular-nums" style={{ color: accent }}>{frecuencia.texto}</p>
+          <p className="text-sm font-bold mt-1 tabular-nums" style={{ color: acentoLegible(accent) }}>{frecuencia.texto}</p>
           <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>{frecuencia.detalle}</p>
         </>
       )}
@@ -243,7 +239,7 @@ export function TrainingRecentSessionCard({ tarjeta, accent, onVer = null }) {
         <p className="text-[11px] truncate" style={{ color: COLORS.textMuted }}>
           {[t.etiquetaFecha, t.duracion].filter(Boolean).join(' · ')}
           {/* Apartado 15 — el indicador discreto, con su palabra. */}
-          {' · '}<span style={{ color: t.parcial ? accent : COLORS.textMuted }}>{t.estado}</span>
+          {' · '}<span style={{ color: t.parcial ? acentoLegible(accent) : COLORS.textMuted }}>{t.estado}</span>
         </p>
       </div>
       {onVer && (
@@ -251,7 +247,7 @@ export function TrainingRecentSessionCard({ tarjeta, accent, onVer = null }) {
           onClick={() => onVer(t.id)}
           aria-label={`Ver el entrenamiento: ${t.etiqueta}`}
           className="text-xs font-bold px-3 py-2 rounded-xl toque-44 active:scale-95 shrink-0"
-          style={{ color: accent, background: hexToRgba(accent, 0.1) }}
+          style={{ color: acentoLegible(accent), background: hexToRgba(accent, 0.1) }}
         >
           Ver
         </button>

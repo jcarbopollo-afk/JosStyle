@@ -34,6 +34,8 @@ import React, { useState, useMemo } from 'react';
 import { useScrollAlVolver } from '../components/scrollAlVolver';
 import { ArrowLeft, Search, Star, Check, Copy, SlidersHorizontal, X } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { PastillaFiltro as Pastilla } from '../components/piezasFitness';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import {
   Card, SectionTitle, TextInput, GhostBtn, PrimaryButton,
@@ -56,23 +58,8 @@ const FILTROS_DETALLE = [
   { campo: 'frecuencia', titulo: 'Días por semana' },
 ];
 
-function Pastilla({ activa, children, cuenta = null, accent, onClick, label }) {
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={activa}
-      aria-label={label}
-      className="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 toque-44 active:scale-[0.97]"
-      style={{
-        background: activa ? accent : hexToRgba(COLORS.border, 0.5),
-        color: activa ? COLORS.textOnAccent : COLORS.textMuted,
-      }}
-    >
-      {children}
-      {cuenta !== null && <span className="ml-1.5 opacity-70">{cuenta}</span>}
-    </button>
-  );
-}
+/* 🔓 FIT F42 (apartados 42 y 64) — aquí había una `Pastilla` propia, una de las
+   siete copias de la pastilla de un filtro: es `PastillaFiltro` (piezasFitness). */
 
 /* ── La tarjeta de un plan (apartado 4) ────────────────────────────────────
    *"PPL Estético · Gym · 5 días/semana ≈ 60 min · Intermedio"*. El enunciado
@@ -92,7 +79,7 @@ export function TarjetaPlan({ plan, accent, activo = false, favorito = false, on
             pesa en el propio plan, calculado de sus ejercicios. */}
         <div
           className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: hexToRgba(accent, 0.14), color: accent }}
+          style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
         >
           <Icono size={24} />
         </div>
@@ -106,7 +93,7 @@ export function TarjetaPlan({ plan, accent, activo = false, favorito = false, on
           </p>
           <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>{linea}</p>
           {ficha.objetivo && (
-            <p className="text-[11px] truncate mt-0.5" style={{ color: accent }}>{ficha.objetivo}</p>
+            <p className="text-[11px] truncate mt-0.5" style={{ color: acentoLegible(accent) }}>{ficha.objetivo}</p>
           )}
         </button>
         {onFavorito && (
@@ -127,7 +114,7 @@ export function TarjetaPlan({ plan, accent, activo = false, favorito = false, on
       {/* ⚠️ Solo se rotula el activo si lo es: una etiqueta «no activo» en los
           dieciséis restantes sería ruido. */}
       {activo && (
-        <p className="text-[11px] font-semibold mt-2" style={{ color: accent }}>Es tu plan actual</p>
+        <p className="text-[11px] font-semibold mt-2" style={{ color: acentoLegible(accent) }}>Es tu plan actual</p>
       )}
     </Card>
   );
@@ -207,7 +194,7 @@ export function DetallePlan({
         <div className="flex items-start gap-3">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-            style={{ background: hexToRgba(accent, 0.14), color: accent }}
+            style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
           >
             <Icono size={28} />
           </div>
@@ -218,7 +205,7 @@ export function DetallePlan({
             {ficha.subtitulo && (
               <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{ficha.subtitulo}</p>
             )}
-            <p className="text-xs mt-1" style={{ color: accent }}>
+            <p className="text-xs mt-1" style={{ color: acentoLegible(accent) }}>
               {[ficha.entorno, ficha.dificultad, ficha.textoFrecuencia].filter(Boolean).join(' · ')}
             </p>
           </div>
@@ -241,7 +228,7 @@ export function DetallePlan({
         {/* Información rápida (apartado 11). */}
         <div className="grid grid-cols-3 gap-2 mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           {[
-            { que: 'Por sesión', valor: ficha.duracion || '—' },
+            { que: 'Por entrenamiento', valor: ficha.duracion || '—' },
             { que: 'Días', valor: `${ficha.diasEntreno}` },
             { que: 'Ejercicios', valor: `${ficha.ejercicios}` },
           ].map((d) => (
@@ -255,7 +242,7 @@ export function DetallePlan({
         {/* Apartado 14: usar el plan. ⚠️ Y NADA de «Empezar entrenamiento». */}
         <div className="flex gap-2 flex-wrap mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           {activo ? (
-            <p className="text-xs font-semibold py-2" style={{ color: accent }}>Ya es tu plan actual</p>
+            <p className="text-xs font-semibold py-2" style={{ color: acentoLegible(accent) }}>Ya es tu plan actual</p>
           ) : (
             <PrimaryButton accent={accent} icon={Check} onClick={onUsar}>Usar este plan</PrimaryButton>
           )}
@@ -348,7 +335,7 @@ export function DetallePlan({
                     className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-bold"
                     style={{
                       background: hexToRgba(d.descanso ? COLORS.border : accent, d.descanso ? 0.5 : 0.14),
-                      color: d.descanso ? COLORS.textMuted : accent,
+                      color: d.descanso ? COLORS.textMuted : acentoLegible(accent),
                     }}
                   >
                     D{i + 1}
@@ -518,7 +505,7 @@ export default function BibliotecaPlanesView({
           <Pastilla
             key={p.id}
             activa={filtros.entorno === p.id}
-            cuenta={p.cuenta}
+            cuantos={p.cuenta}
             accent={accent}
             label={`Ver planes de ${p.nombre.toLowerCase()}`}
             onClick={() => setFiltros((f) => ({ ...f, entorno: p.id }))}
@@ -546,7 +533,7 @@ export default function BibliotecaPlanesView({
                     <Pastilla
                       key={p.id}
                       activa={String(filtros[campo]) === String(p.id)}
-                      cuenta={p.cuenta}
+                      cuantos={p.cuenta}
                       accent={accent}
                       label={`${titulo}: ${p.nombre.toLowerCase()}`}
                       onClick={() => setFiltros((f) => ({ ...f, [campo]: p.id }))}

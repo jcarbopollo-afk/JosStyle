@@ -22,6 +22,7 @@
 import React from 'react';
 import { ChevronRight, ClipboardList, Sparkles, RotateCcw } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, PrimaryButton, Esqueleto } from './ui';
 import { RankBadge, RankLabel } from './rangos';
@@ -49,7 +50,7 @@ export function RankMuscleHighlights({ destacados = [], accent, onMusculo = null
                       un rango es lo que el apartado 11 reserva para un grupo
                       que NO tiene datos, y éste sí los tiene. */}
                   {d.tendenciaNombre && (
-                    <span className="text-[10px] font-semibold" style={{ color: accent }}>
+                    <span className="text-[10px] font-semibold" style={{ color: acentoLegible(accent) }}>
                       {d.simbolo} {d.tendenciaNombre}
                     </span>
                   )}
@@ -92,11 +93,11 @@ export function RankRecentChange({ evolucion, accent }) {
   return (
     <Card className="aviso-entra" style={{ border: `1px solid ${hexToRgba(accent, 0.45)}` }}>
       <div className="flex items-center gap-3">
-        <Sparkles size={18} style={{ color: accent }} aria-hidden="true" />
+        <Sparkles size={18} style={{ color: acentoLegible(accent) }} aria-hidden="true" />
         <div className="min-w-0">
           <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{e.tarjeta.titulo}</p>
           <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
-            {e.tarjeta.desde} → <span className="font-semibold" style={{ color: accent }}>{e.tarjeta.hasta}</span>
+            {e.tarjeta.desde} → <span className="font-semibold" style={{ color: acentoLegible(accent) }}>{e.tarjeta.hasta}</span>
           </p>
           {/* Apartado 17 — la fecha REAL, la que devuelve el historial de la F22. */}
           <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>{e.tarjeta.fecha}</p>
@@ -116,7 +117,7 @@ export function RankEvolutionLine({ evolucion, accent, onHistorial = null }) {
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Evolución reciente</p>
         <p className="text-xs mt-0.5" style={{ color: COLORS.text }}>{texto}</p>
-        {e && e.dentro && <p className="text-[11px] mt-0.5 font-semibold" style={{ color: accent }}>{e.dentro}</p>}
+        {e && e.dentro && <p className="text-[11px] mt-0.5 font-semibold" style={{ color: acentoLegible(accent) }}>{e.dentro}</p>}
       </div>
       {onHistorial && <ChevronRight size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />}
     </>
@@ -155,7 +156,7 @@ export function RankClassificationPrompt({ clasificacion, accent, onClasificar =
   return (
     <Card>
       <div className="flex items-start gap-3">
-        <ClipboardList size={18} style={{ color: accent }} aria-hidden="true" />
+        <ClipboardList size={18} style={{ color: acentoLegible(accent) }} aria-hidden="true" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{c.titulo}</p>
           <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{c.texto}</p>

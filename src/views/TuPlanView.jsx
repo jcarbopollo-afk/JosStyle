@@ -37,6 +37,7 @@ import {
   ChevronRight, Dumbbell, Plus, Repeat, Calendar, X, Play,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, GhostBtn, PrimaryButton } from '../components/ui';
 import { iconoDeGrupo } from '../components/iconosFitness';
@@ -60,7 +61,7 @@ export function SinPlan({ accent, onExplorar, onCrear }) {
       <div className="py-6 text-center">
         <div
           className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-          style={{ background: hexToRgba(accent, 0.14), color: accent }}
+          style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
         >
           <Calendar size={26} />
         </div>
@@ -115,13 +116,13 @@ export function TarjetaProximo({ proximo, accent, onVer, onEmpezar = null }) {
       <div className="flex items-center gap-3">
         <div
           className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-          style={{ background: hexToRgba(accent, 0.16), color: accent }}
+          style={{ background: hexToRgba(accent, 0.16), color: acentoLegible(accent) }}
         >
           <Icono size={28} />
         </div>
         <div className="min-w-0 flex-1">
           {/* 🔓 FIT F32, apartado 10 — el día **y el estado**: «Hoy · Planificado». */}
-          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: accent }}>
+          <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: acentoLegible(accent) }}>
             {[proximo.cuando, proximo.estado].filter(Boolean).join(' · ')}
           </p>
           <p className="text-lg font-extrabold leading-tight truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
@@ -214,7 +215,7 @@ export function SesionDelDia({ sesion, accent, onCerrar = null, onEmpezar = null
         {onCerrar && (
           <button
             onClick={onCerrar}
-            aria-label="Cerrar la sesión"
+            aria-label="Cerrar el entrenamiento del día"
             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 toque-44 active:scale-90"
             style={{ background: hexToRgba(COLORS.border, 0.45), color: COLORS.textMuted }}
           >
@@ -322,7 +323,7 @@ export default function TuPlanView({
         <p className="text-lg font-extrabold leading-tight" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
           {v.cabecera.nombre}
         </p>
-        <p className="text-xs mt-0.5" style={{ color: accent }}>
+        <p className="text-xs mt-0.5" style={{ color: acentoLegible(accent) }}>
           {[v.cabecera.entorno, v.cabecera.textoFrecuencia, v.cabecera.dificultad]
             .filter(Boolean).join(' · ') || v.cabecera.subtitulo}
         </p>
@@ -517,7 +518,7 @@ export default function TuPlanView({
 function SeccionPlantillas({ datos, accent, onVerTodas, onCrear }) {
   return (
     <div>
-      <SectionTitle sub="Las rutinas que te has creado tú">Tus plantillas</SectionTitle>
+      <SectionTitle sub="Las plantillas que te has creado tú">Tus plantillas</SectionTitle>
       {datos.total === 0 ? (
         <Card>
           <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
@@ -545,7 +546,7 @@ function SeccionPlantillas({ datos, accent, onVerTodas, onCrear }) {
             >
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: hexToRgba(accent, 0.14), color: accent }}
+                style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
               >
                 <Dumbbell size={20} />
               </div>
@@ -558,7 +559,7 @@ function SeccionPlantillas({ datos, accent, onVerTodas, onCrear }) {
                     .filter(Boolean).join(' · ')}
                 </p>
                 {p.esActiva && (
-                  <p className="text-[11px] font-semibold mt-0.5" style={{ color: accent }}>Es tu plan actual</p>
+                  <p className="text-[11px] font-semibold mt-0.5" style={{ color: acentoLegible(accent) }}>Es tu plan actual</p>
                 )}
               </div>
               {onVerTodas && <ChevronRight size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />}

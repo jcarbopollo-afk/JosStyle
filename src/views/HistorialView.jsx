@@ -24,9 +24,11 @@ import React, { useState, useMemo } from 'react';
 import { useScrollAlVolver } from '../components/scrollAlVolver';
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search, SlidersHorizontal, X,
-  Clock, Calendar, Dumbbell, Layers, Weight, Check, Minus, Trash2, Play,
+  Clock, Calendar, Dumbbell, Layers, Weight, Check, Minus, Trash2, Play, StickyNote,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { PastillaFiltro } from '../components/piezasFitness';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba, todayISO } from '../lib/helpers';
 import { Card, GhostBtn, PrimaryButton, EmptyHint } from '../components/ui';
 import { DatoResumen } from './FinalizacionView';
@@ -47,19 +49,11 @@ function GrupoChips({ titulo, opciones, valor, onCambiar, accent }) {
         {opciones.map((o) => {
           const activo = valor === o.id;
           return (
-            <button
-              key={o.id}
-              onClick={() => onCambiar(o.id)}
-              aria-pressed={activo}
-              className="h-9 px-3 rounded-xl text-xs font-semibold toque-44 active:scale-95 inline-flex items-center gap-1"
-              style={{
-                background: activo ? accent : hexToRgba(COLORS.border, 0.45),
-                color: activo ? COLORS.textOnAccent : COLORS.text,
-              }}
-            >
-              {activo && <Check size={12} aria-hidden="true" />}
+            /* 🔓 FIT F42 (apartado 42) — la pastilla de todos los filtros de
+               Fitness, con su ✓ igual que aquí. */
+            <PastillaFiltro key={o.id} activa={activo} accent={accent} onClick={() => onCambiar(o.id)}>
               {o.nombre}
-            </button>
+            </PastillaFiltro>
           );
         })}
       </div>
@@ -93,7 +87,7 @@ export function FiltrosHistorial({ filtros, consulta, accent, abiertos, onAbrir,
           className="h-11 px-3 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 toque-44 active:scale-95 shrink-0"
           style={{
             background: abiertos || consulta.hayFiltros ? hexToRgba(accent, 0.16) : COLORS.surface2,
-            color: abiertos || consulta.hayFiltros ? accent : COLORS.text,
+            color: abiertos || consulta.hayFiltros ? acentoLegible(accent) : COLORS.text,
             border: `1px solid ${abiertos || consulta.hayFiltros ? accent : COLORS.border}`,
           }}
         >
@@ -145,7 +139,7 @@ export function FiltrosHistorial({ filtros, consulta, accent, abiertos, onAbrir,
           <button
             onClick={onLimpiar}
             className="text-xs font-bold inline-flex items-center gap-1 px-2 py-1.5 rounded-lg toque-44"
-            style={{ color: accent }}
+            style={{ color: acentoLegible(accent) }}
           >
             <X size={13} aria-hidden="true" /> Limpiar filtros
           </button>
@@ -170,7 +164,7 @@ export function TarjetaHistorial({ ficha, agrupado, accent, onAbrir }) {
     >
       <div
         className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: hexToRgba(accent, 0.14), color: accent }}
+        style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
       >
         <Dumbbell size={19} aria-hidden="true" />
       </div>
@@ -197,7 +191,7 @@ export function HistorialVacio({ accent, onEmpezar }) {
       <div className="py-4 text-center">
         <div
           className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center"
-          style={{ background: hexToRgba(accent, 0.14), color: accent }}
+          style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
         >
           <Dumbbell size={24} aria-hidden="true" />
         </div>
@@ -226,12 +220,12 @@ function FilaSerie({ fila, accent }) {
     >
       <span className="font-bold" style={{ color: COLORS.text }}>
         {fila.numero ?? '—'}
-        {fila.extra && <span className="block text-[9px] font-bold uppercase" style={{ color: COLORS.textMuted }}>Extra</span>}
+        {fila.extra && <span className="block text-[10px] font-bold uppercase" style={{ color: COLORS.textMuted }}>Extra</span>}
       </span>
       <span className="tabular-nums" style={{ color: COLORS.text }}>{omitida ? '—' : fila.peso}</span>
       <span className="tabular-nums" style={{ color: COLORS.text }}>{omitida ? '—' : fila.medida}</span>
       {/* El estado lleva palabra e icono, nunca solo color (apartado 42). */}
-      <span className="inline-flex items-center gap-1 font-semibold" style={{ color: hecha ? accent : COLORS.textMuted }}>
+      <span className="inline-flex items-center gap-1 font-semibold" style={{ color: hecha ? acentoLegible(accent) : COLORS.textMuted }}>
         {hecha ? <Check size={12} aria-hidden="true" /> : <Minus size={12} aria-hidden="true" />}
         {fila.estadoTexto}
       </span>
@@ -261,7 +255,7 @@ export function EjercicioHistorial({ ejercicio, accent, abierto = false, onAlter
           <p className="text-sm font-bold" style={{ color: nada ? COLORS.textMuted : COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
             {e.nombre}
           </p>
-          {e.variante && <p className="text-[11px]" style={{ color: accent }}>{e.variante}</p>}
+          {e.variante && <p className="text-[11px]" style={{ color: acentoLegible(accent) }}>{e.variante}</p>}
           <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
             {nada ? 'No realizado' : e.seriesTexto}
           </p>
@@ -290,13 +284,17 @@ export function EjercicioHistorial({ ejercicio, accent, abierto = false, onAlter
       {/* 🔓 FIT F11, apartado 34 — la comparación con la vez anterior, discreta y
           solo si la hay. La flecha acompaña a la palabra, no la sustituye. */}
       {e.comparacion && (
-        <p className="text-[11px] mt-1.5 font-semibold" style={{ color: e.comparacion.estado === 'mejora' ? accent : COLORS.textMuted }}>
+        <p className="text-[11px] mt-1.5 font-semibold" style={{ color: e.comparacion.estado === 'mejora' ? acentoLegible(accent) : COLORS.textMuted }}>
           {e.comparacion.estado === 'mejora' ? '↑ ' : e.comparacion.estado === 'descenso' ? '↓ ' : '= '}{e.comparacion.texto}
         </p>
       )}
       {/* Apartado 23 — la nota, y sin bloque vacío si no la hay. */}
       {e.notas && (
-        <p className="text-xs mt-2" style={{ color: COLORS.text }}>📝 {e.notas}</p>
+        <p className="text-xs mt-2 flex items-start gap-1.5" style={{ color: COLORS.text }}>
+              {/* FIT F42 (apartado 31) — era un 📝: los iconos de Fitness son de lucide, y es el de las notas. */}
+              <StickyNote size={12} className="shrink-0 mt-px" aria-hidden="true" />
+              <span className="min-w-0">{e.notas}</span>
+            </p>
       )}
       {/* 🔓 FIT F31, apartado 30 — al progreso del ejercicio, **si corresponde**:
           solo si existe en el catálogo y se hizo algo. Un ejercicio archivado
@@ -306,7 +304,7 @@ export function EjercicioHistorial({ ejercicio, accent, abierto = false, onAlter
           onClick={() => onVerProgreso(e.exerciseId)}
           aria-label={`Ver el progreso de ${e.nombre}`}
           className="text-xs font-bold mt-2 py-1.5 toque-44"
-          style={{ color: accent }}
+          style={{ color: acentoLegible(accent) }}
         >
           Ver su progreso
         </button>

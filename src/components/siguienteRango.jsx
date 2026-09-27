@@ -17,6 +17,7 @@
 
 import React from 'react';
 import { COLORS } from '../tokens';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { RankBadge } from './rangos';
 /* FIT F20 — la cobertura y la confianza ya tienen su forma de enseñarse. */
@@ -130,7 +131,7 @@ export function RankNextLevelCard({
           </p>
           <p
             className="text-xl font-extrabold leading-tight"
-            style={{ color: sinRango ? COLORS.text : accent, fontFamily: "'Manrope', sans-serif" }}
+            style={{ color: sinRango ? COLORS.text : acentoLegible(accent), fontFamily: "'Manrope', sans-serif" }}
           >
             {tarjeta.titulo}
           </p>
@@ -186,7 +187,7 @@ export function RankNextLevelCard({
           onClick={onPorQue}
           aria-label={`Por qué tu rango en ${tarjeta.destino.nombre}`}
           className="text-[11px] font-semibold px-3 py-2 rounded-full toque-44"
-          style={{ background: hexToRgba(accent, 0.18), color: accent }}
+          style={{ background: hexToRgba(accent, 0.18), color: acentoLegible(accent) }}
         >
           Ver por qué
         </button>

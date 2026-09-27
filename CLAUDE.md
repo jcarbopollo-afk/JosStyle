@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.123.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.124.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 41 primeras (v3.83.0 → v3.123.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 42 primeras (v3.83.0 → v3.124.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 4 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **las 3 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -350,7 +350,66 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 **FIT F30 (v3.112.0)**, la **FIT F31 (v3.113.0)**, la **FIT F32 (v3.114.0)**, la **FIT F33
 (v3.115.0)**, la **FIT F34 (v3.116.0)** y la **FIT F35 (v3.117.0)**, que 🏁 **CERRÓ EL BLOQUE DE
 INTELIGENCIA** —F29 a F35—, y la **FIT F36 (v3.118.0)**, con la que empieza el bloque de **Acabado**
-(F36–F42), la **FIT F37 (v3.119.0)**, la **FIT F38 (v3.120.0)**, la **FIT F39 (v3.121.0)**, la **FIT F40 (v3.122.0)** y la **FIT F41 (v3.123.0)**, hechas. Lo que dejaron, y que vale para las 4 que quedan:
+(F36–F42), la **FIT F37 (v3.119.0)**, la **FIT F38 (v3.120.0)**, la **FIT F39 (v3.121.0)**, la **FIT F40 (v3.122.0)**, la **FIT F41 (v3.123.0)** y la **FIT F42 (v3.124.0)**, que 🏁 **CERRÓ EL BLOQUE DE
+ACABADO** —F36 a F42—, hechas. Lo que dejaron, y que vale para las 3 que quedan:
+
+- 🚨 **UNA AUDITORÍA VISUAL MIDE LA ESCALA QUE YA HAY, NO IMPONE UNA NUEVA** (FIT F42,
+  `src/lib/acabadoFitness.js`). La escala de Fitness —ocho papeles de letra, cinco radios, cuatro
+  pesos, los pasos de 4 px, un solo `tracking-wider`, mayúsculas solo en letra pequeña— salió de
+  **medir sus 32 archivos**, y `auditarAcabado()` caza lo que se sale, **con la línea**. Cada una de
+  sus 18 reglas trae su ejemplo malo, y un comentario que menciona lo prohibido no lo incumple.
+  **Una pantalla nueva de Fitness que invente un tamaño, un radio o un color escrito a mano pone la
+  suite roja.**
+- 🚨 **EL ACENTO COMO TEXTO ES `acentoLegible(accent)`** (FIT F42, apartados 5, 55 y 56): como letra
+  pequeña no llegaba a 4,5:1 con seis de los doce acentos en oscuro —el de serie daba 4,27— y siete
+  en claro. Es el mismo tono con `ensureContrast` sobre `surface2`; si ya llegaba, el mismo color.
+  **Solo para texto, iconos y trazos**: un botón sigue con el acento (su texto es `textOnAccent`). La
+  regla `acento_como_texto_legible` caza un `color: accent` suelto, también en un ternario.
+- 🚨 **UNA PASTILLA DE FILTRO ES `PastillaFiltro`; UNA OPCIÓN DE PERIODO, `OpcionSegmentada`; EL CERRAR
+  DE UNA HOJA, `BotonCerrarHoja`** (FIT F42, `src/components/piezasFitness.jsx`). La pastilla estaba
+  escrita siete veces con tres radios y dos tamaños. ⚠️ **Y NO SON DE `ui.jsx`**: aquellas las usan
+  diez vistas de fuera de Fitness (GE F1). Los controles del comparador van en neutro **a propósito**
+  (la foto manda, F27), y está en `EXCEPCIONES_PASTILLA`.
+- 🚨 **UNA HOJA DE FITNESS SE DIBUJA CON `HOJA`** (`velo`, `caja`, `confirmacion`, `visor`, `abajo`,
+  `fondoVelo`): había cuatro velos distintos. **Sin asa**: ninguna se arrastra (regla 8). ⚠️ Las
+  auditorías de la F20, F33, F37, F38 y F39 buscaban las clases escritas en cada archivo, así que leen
+  la pantalla con **`fuenteResuelta(src)`**, que escribe `HOJA` en su sitio —y una hoja escrita a mano
+  sin sus clases sigue saliendo roja—.
+- 🚨 **LAS CAPAS QUE NO CAMBIAN CON EL TEMA SON `CAPAS`, EN `tokens.js`** (FIT F42): el velo, el
+  escenario negro de una foto y el blanco de encima. No son de `COLORS` —una foto se mira sobre negro
+  en los dos temas— y no se escriben a mano (regla 2).
+- 🚨 **UNA FECHA DE FITNESS SALE DE `fechasFitness.js`, UNA FUNCIÓN POR PAPEL** (FIT F42, apartado 59):
+  `fechaLarga` («12 septiembre 2026», la de la F8), `diaYMes` («12 de septiembre», en una frase) y
+  `fechaEtiqueta` («12 SEP», el rótulo). Había cuatro listas de meses. ⚠️ **Es una hoja del árbol de
+  imports**: la pueden importar `entrenamiento.js` y `finalizacion.js` sin ciclo, que es lo que obligó
+  a la F39 a escribir la suya. Una librería de Fitness con `toLocaleDateString('es…')` o una lista de
+  meses propia pone la suite roja.
+- 🚨 **EN FITNESS SE DICE «ENTRENAMIENTO» Y «PLANTILLA»** (FIT F42, apartado 57): nunca «sesión»,
+  «rutina» ni «workout» en lo que se lee —`terminosQueChocan()`, y el banco de renderizado lo busca en
+  las pantallas pintadas—. ⚠️ **Por dentro el dato sigue siendo `sesion`**: es la clave guardada desde
+  la F7, y un id no se renombra (FIT F1). Y «Cerrar la sesión» se leía como salir de la cuenta.
+- 🐛 **EL NOMBRE QUE ÉL LE PONE A UN ENTRENAMIENTO NO ES TEXTO DE LA APLICACIÓN** (FIT F42, y lo cazó el
+  recorrido): el escenario de la F40 llama a los suyos «Sesión 1», y la comprobación de términos salió
+  roja en Progreso y en el Historial. Se renombran al sembrarlos. **Un barrido de lo que se lee tiene
+  que separar lo que escribe la aplicación de lo que escribió él.**
+- 🚨 **LAS CIFRAS DE FITNESS SON TABULARES POR UNA REGLA, NO CLASE A CLASE** (FIT F42, apartados 8 y
+  44): `.fit-foco, .dialogo-caja` en `index.css`, y ⚠️ **los campos aparte**, porque no heredan
+  `font-variant`. El iPhone usa cifras proporcionales: el reloj bailaba donde no llevaba la clase.
+- 🚨 **LAS TRES ÁREAS ABREN CON `SectionTitle`** (FIT F42, apartado 50): «Tu rango», «Tu progreso» y
+  «Tu Plan», medido en Chromium (18 px, 700, Manrope, subtítulo de 14 px).
+- 🚨 **UNA COMPROBACIÓN DE CONTRASTE MIDE EL FONDO DE VERDAD, Y DEMUESTRA QUE SE PONDRÍA ROJA** (FIT
+  F42): compone cada antepasado con su transparencia —una fila teñida sobre una tarjeta sobre el
+  fondo— y calcula también el acento sin corregir sobre ese mismo fondo: 4,07 sin el arreglo, 4,60
+  con él.
+- ⚠️ **UN CAMBIO VISUAL NO MUEVE UN NÚMERO, Y SE COMPRUEBA** (FIT F42, el «IMPORTANTE»): el mismo
+  escenario por los motores con el código de antes y el de después —344 KB de salida— solo cambió
+  las etiquetas que se cambiaron a propósito. Y la suite comprueba que **ningún motor importa la capa
+  visual**.
+- ⚠️ **UNA REGLA POR CLASES TIENE QUE SABER QUE `px-3` NO ES `px-3.5`** (FIT F42): `\b` corta en el
+  punto, y el botón de favorito salía como pastilla. `px-3(?![.\d])`.
+- ⚠️ **UN RECUENTO VA DETRÁS DE UN ESPACIO DE VERDAD, NO SOLO DE UN MARGEN** (FIT F42): con un margen,
+  `innerText` —y VoiceOver— leen «Fotos3». Y **sin `inline-flex`** en un botón con texto: cada pieza
+  se leería en su propia línea.
 
 - 🚨 **LO QUE LA PUERTA DE CARGA NO ENTIENDE SE APARTA, NUNCA SE TIRA** (FIT F41, apartados 28, 32, 35
   y 36, `src/lib/persistenciaFitness.js`). Una sesión sin id, un objetivo sin ejercicio o dos copias
@@ -1788,30 +1847,26 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F42/45 — Auditoría visual y acabado premium de fitness**
-   (líneas 3 281–4 286 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **séptima y última**
-   del bloque de **Acabado** (F36–F42). Se construye de la F1 a la F45, en orden, encadenando sin
-   parar. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+1. 🏋️ **SEGUIR POR LA FIT F43/45 — Auditoría funcional integral de fitness**
+   (líneas 2 183–3 280 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **primera** del
+   bloque de **Cierre** (F43–F45). Se construye de la F1 a la F45, en orden, encadenando sin parar.
+   El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
    🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
    y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: su «IMPORTANTE» dice *"NO cambiar: lógica, datos, fórmulas,
-   RankEngine, ProgressEngine, GoalEngine, persistencia"*, y buena parte de lo que pide YA EXISTE.**
-   Los colores son `COLORS` (`tokens.js`, un singleton mutable: **nunca `const { x } = COLORS`**, nunca
-   un hex suelto, regla 2) y el modo oscuro lo resuelve `aplicarTema()`; los radios, sombras y botones
-   son los de `ui.jsx` (con su escalera de `active:scale`, EH F50); el hexágono es **`RankBadge`**
-   (F15) y ninguna pantalla dibuja el suyo; las animaciones viven en `index.css` y se declaran en
-   `ANIMACIONES_HC` (F37); la Safe Area son `--safe-top`/`--safe-bottom` (E3 F1); el foco es
-   `.fit-foco :focus-visible` (F39); las hojas llevan `hoja-movil` y `useDialogoAccesible` (F38 y
-   F39); los vacíos y errores, `EmptyHint`, `MissingImage`, `MissingData` y `AreaSegura` (F39, F36);
-   y los textos de fecha y número tienen ya sus funciones. **Una auditoría visual se hace midiendo**
-   (el recorrido en Chromium y el banco de renderizado), no cambiando el aspecto de toda la aplicación
-   por gusto: la C-32 (el tamaño de letra de los formularios) sigue siendo de Josué.
+   ⚠️ **Y lo segundo, en ESTA: su «IMPORTANTE» dice *"Esta fase no consiste en añadir
+   funcionalidades nuevas. El objetivo es comprobar que TODO lo construido hasta ahora funciona
+   conjuntamente"*** —su regla principal: *"NO asumir que porque una función funciona
+   individualmente también funciona después de interactuar con otras. Probar flujos completos"*—.
+   Es exactamente lo que hacen el recorrido de Chromium (casi 3 000 comprobaciones, con los flujos de
+   la F36, la F39 y la F41 de punta a punta) y el banco de renderizado con datos corruptos (F39): **se
+   parte de ahí**, se añaden los flujos que pida y no estén, y cada fallo se arregla donde nace.
    ⚠️ **Y lo que ya se aprendió en el Acabado:** una puerta entre pantallas se comprueba abriendo el
    archivo que la cablea (F36), un guardado que nadie lee puede mentir (F37 y F41), una hoja lleva
-   `hoja-movil` y `useDialogoAccesible` (F38 y F39), nada roto a la vista (`textoRoto`, F39), una
-   optimización se compara con el cálculo de antes (F40), **lo que la puerta de carga no entiende se
-   aparta en la cuarentena y no se pinta (F41)**, y **al crear un componente de Fitness, a
-   `ARCHIVOS_FITNESS`** o las auditorías no lo miran.
+   `HOJA` y `useDialogoAccesible` (F38, F39 y F42), nada roto a la vista (`textoRoto`, F39), una
+   optimización se compara con el cálculo de antes (F40), lo que la carga no entiende se aparta en la
+   cuarentena (F41), **la escala visual se audita con `auditarAcabado` y el acento como texto es
+   `acentoLegible` (F42)**, y **al crear un componente de Fitness, a `ARCHIVOS_FITNESS`** o las
+   auditorías no lo miran.
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único
@@ -1820,16 +1875,10 @@ había que adivinarlo.**
    sesiones es **`historial.js` (F10)**, que tampoco cuenta nada por su cuenta: lee
    `fitness.sesiones` con `estado === 'completada'` y saca duración, series y volumen de
    `resumenDeSesion` (F8) — si una fase cuenta series aparte, acabarán diciendo dos números.
-   🏁 **Y hay tres bloques CERRADOS de los que se lee, nunca se recalcula:** el sistema de rangos
-   entero (**F15–F25**) —motor, pantalla, cuestionario, detalle muscular, explicación, contribución,
-   historial, siguiente rango, cola y resumen—, el **progreso físico (F26–F28)** —las fotos son
-   `saludFotos`, la galería la F26, el comparador la F27 y el centro de seguimiento la **F28**
-   (`resumenProgreso.js` / `.jsx`), donde **cada bloque declara UNA fuente**— y el **detalle de un
-   ejercicio (F29)** (`detalleEjercicio.js` / `.jsx`), que no calcula nada: pide a la F11, la F12,
-   la F19, la F23, la F14 y la F8. Y los **objetivos son la F14 ampliada por la F30**
-   (`objetivosFitness.js` / `.jsx`): guardan **solo el objetivo** y **no predicen nada**. Y la
-   **actividad es la F31** (`actividadEntrenamiento.js` / `.jsx`): una lectura del historial, sin
-   porcentajes y sin inventar descansos.
+   🏁 **Y hay cuatro bloques CERRADOS de los que se lee, nunca se recalcula:** el sistema de rangos
+   entero (**F15–F25**), el **progreso físico (F26–F28)**, la **Inteligencia (F29–F35)** y el
+   **Acabado (F36–F42)**: integración, feedback, iPhone, accesibilidad, rendimiento, persistencia y
+   acabado visual.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día

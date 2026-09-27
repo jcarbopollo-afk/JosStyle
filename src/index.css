@@ -694,3 +694,21 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
 /* La caja de un diálogo recibe el foco al abrirse —para que el lector de
    pantalla lo lea desde arriba— pero no es un control: no lleva anillo. */
 .dialogo-caja:focus { outline: none; }
+
+/* FIT F42 (apartados 8 y 44) — las cifras de Fitness, TODAS con el mismo ancho.
+   El iPhone usa cifras proporcionales por defecto, así que un «1» es más
+   estrecho que un «8»: el reloj del entrenamiento bailaba en cada segundo si no
+   llevaba `tabular-nums`, y las columnas KG y REPES no cuadraban. Con una regla
+   aquí cada cifra que se añada lo hereda sola (una clase por cifra se olvida).
+   ⚠️ `.fit-foco` es `display: contents` y aun así se hereda: esa propiedad solo
+   quita la caja, no el nodo. Las hojas van por portal, fuera de `.fit-foco`, y
+   llevan `.dialogo-caja`. Y los campos NO heredan `font-variant` —el navegador
+   les pone su `font`—, así que llevan su propia línea. */
+.fit-foco,
+.dialogo-caja {
+  font-variant-numeric: tabular-nums;
+}
+.fit-foco input,
+.dialogo-caja input {
+  font-variant-numeric: tabular-nums;
+}

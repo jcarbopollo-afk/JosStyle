@@ -21,6 +21,7 @@ import { useDialogoAccesible } from '../components/dialogoAccesible';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, Check, X } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { HOJA, acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, GhostBtn, PrimaryButton, EmptyHint } from '../components/ui';
 import { RankBadge, RankLabel } from '../components/rangos';
@@ -99,7 +100,7 @@ export function ClassificationQuestion({ ejercicio, pregunta, elegida, accent, o
             que va el icono de su grupo, que es un recurso real. */}
         <div
           className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: hexToRgba(accent, 0.14), color: accent }}
+          style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
         >
           <Icono size={22} aria-hidden="true" />
         </div>
@@ -136,7 +137,7 @@ export function ClassificationResult({ clasificacion, musculos = [], accent, onC
       <div className="flex items-center gap-4 mt-3">
         <RankBadge rank={clasificacion?.rango ?? null} size="lg" state="actual" destacado accent={accent} />
         <div className="min-w-0">
-          <p className="text-xl font-extrabold" style={{ color: accent, fontFamily: "'Manrope', sans-serif" }}>
+          <p className="text-xl font-extrabold" style={{ color: acentoLegible(accent), fontFamily: "'Manrope', sans-serif" }}>
             {nivel ? nivel.nombre : '—'}
           </p>
           <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{AVISO_ESTIMACION}</p>
@@ -161,8 +162,8 @@ export function ClassificationExitDialog({ accent, onSeguir, onSalir }) {
   if (typeof document === 'undefined') return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0 fondo-entra"
-      style={{ background: 'rgba(0,0,0,0.6)' }}
+      className={HOJA.veloConfirmacion}
+      style={{ background: HOJA.fondoVelo }}
       onClick={onSeguir}
       role="dialog"
       aria-modal="true"
@@ -171,8 +172,8 @@ export function ClassificationExitDialog({ accent, onSeguir, onSalir }) {
       <div
         ref={caja}
         tabIndex={-1}
-        className="w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra hoja-movil dialogo-caja"
-        style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
+        className={HOJA.confirmacion}
+        style={{ background: COLORS.surface, paddingBottom: HOJA.abajo }}
         onClick={(ev) => ev.stopPropagation()}
       >
         <div>
@@ -201,8 +202,8 @@ export function AvisoReclasificar({ accent, onConfirmar, onCancelar, aviso = nul
   if (typeof document === 'undefined') return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0 fondo-entra"
-      style={{ background: 'rgba(0,0,0,0.6)' }}
+      className={HOJA.veloConfirmacion}
+      style={{ background: HOJA.fondoVelo }}
       onClick={onCancelar}
       role="dialog"
       aria-modal="true"
@@ -211,8 +212,8 @@ export function AvisoReclasificar({ accent, onConfirmar, onCancelar, aviso = nul
       <div
         ref={caja}
         tabIndex={-1}
-        className="w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra hoja-movil dialogo-caja"
-        style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
+        className={HOJA.confirmacion}
+        style={{ background: COLORS.surface, paddingBottom: HOJA.abajo }}
         onClick={(ev) => ev.stopPropagation()}
       >
         <p className="text-base font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Reclasificar</p>

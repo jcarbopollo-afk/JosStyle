@@ -23,9 +23,13 @@ import {
 import { pasarAFinalizacion, guardarEntrenamiento } from '../src/lib/finalizacion.js';
 import { crearRutina, anadirEjercicio, editarLinea } from '../src/lib/constructor.js';
 import { addDays } from '../src/lib/helpers.js';
+import { fuenteResuelta } from '../src/lib/acabadoFitness.js';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
-const leer = (p) => readFileSync(join(RAIZ, p), 'utf8');
+/* 🔓 FIT F42 — las clases de una hoja (`fondo-entra`, `hoja-movil`…) viven UNA
+   vez en `HOJA` (acabadoFitness.js): una pantalla se lee con ellas resueltas,
+   como las ve el navegador. Lo que se protege aquí no cambia. */
+const leer = (p) => { const t = readFileSync(join(RAIZ, p), 'utf8'); return p.endsWith('.jsx') ? fuenteResuelta(t) : t; };
 const sinComentarios = (src) => src.replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ').replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/.*$/gm, '$1 ');
 
 let fallos = 0;
@@ -67,7 +71,7 @@ ok(ex.titulo === 'Dominadas pronas' && !ex.sinRango,
 ok(ex.rango === rangoEfectivoDeEjercicio(entrenado, 'dominada-prona', {}).rango,
   '🚨 Y es el rango del motor: aquí no se recalcula nada (apartado 26)');
 const etiquetas = ex.evidencias.map((e) => e.etiqueta);
-ok(etiquetas.includes('Mejor resultado') && etiquetas.includes('Tendencia') && etiquetas.includes('Sesiones comparables'),
+ok(etiquetas.includes('Mejor resultado') && etiquetas.includes('Tendencia') && etiquetas.includes('Entrenamientos comparables'),
   'Con lo que lo sostiene: mejor resultado, tendencia y sesiones (apartado 6)');
 ok(/reps/.test(ex.evidencias.find((e) => e.etiqueta === 'Mejor resultado').valor),
   '🚨 …y la métrica es la del ejercicio: repeticiones, no kilos (apartado 7)');

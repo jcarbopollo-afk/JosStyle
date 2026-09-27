@@ -15,10 +15,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
 import {
-  X, Camera, ArrowLeftRight, Columns2, SlidersHorizontal,
+  Camera, ArrowLeftRight, Columns2, SlidersHorizontal,
   ZoomIn, ZoomOut, Maximize2, AlignVerticalJustifyStart, AlignVerticalJustifyCenter,
 } from 'lucide-react';
-import { COLORS } from '../tokens';
+import { COLORS, CAPAS } from '../tokens';
+import { HOJA } from '../lib/acabadoFitness';
+import { BotonCerrarHoja } from './piezasFitness';
 import { Card, PrimaryButton } from './ui';
 import { MissingImage } from './estadosFitness';
 import {
@@ -80,7 +82,7 @@ export function ProgressPhotoDateSelector({ opciones = [], elegida, urls = {}, e
                    el icono de imagen rota del navegador. */
                 ? <MissingImage src={urls[o.id]} alt="" loading="lazy" decoding="async" className="w-16 h-16 object-cover" />
                 : <div className="w-16 h-16 esqueleto" />}
-              <span className="block text-[9px] py-1" style={{ color: COLORS.textMuted }}>{o.etiqueta}</span>
+              <span className="block text-[10px] py-1" style={{ color: COLORS.textMuted }}>{o.etiqueta}</span>
             </button>
           );
         })}
@@ -124,8 +126,8 @@ export function ComparisonSelector({ pantalla, urls = {}, onElegir }) {
 /* ═══ Apartados 5 y 16 · La ficha de cada lado ═════════════════════════════ */
 export function ComparisonMeta({ meta, claro = false }) {
   if (!meta) return null;
-  const principal = claro ? '#fff' : COLORS.text;
-  const suave = claro ? 'rgba(255,255,255,0.68)' : COLORS.textMuted;
+  const principal = claro ? CAPAS.sobreFoto : COLORS.text;
+  const suave = claro ? CAPAS.textoSuaveSobreFoto : COLORS.textMuted;
   return (
     <div className="min-w-0">
       <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: suave }}>{meta.rotulo}</p>
@@ -346,20 +348,20 @@ export function ComparisonSlider({ pantalla, urls = {}, onSlider, onFallo = null
           className="absolute top-0 bottom-0 flex items-center justify-center toque-44"
           style={{ left: `${pantalla.slider}%`, width: 44, marginLeft: -22, cursor: 'ew-resize' }}
         >
-          <div style={{ width: 2, height: '100%', background: '#fff', opacity: 0.9 }} />
+          <div style={{ width: 2, height: '100%', background: CAPAS.sobreFoto, opacity: 0.9 }} />
           <div
             className="absolute rounded-full flex items-center justify-center"
-            style={{ width: 32, height: 32, background: '#fff' }}
+            style={{ width: 32, height: 32, background: CAPAS.sobreFoto }}
           >
-            <ArrowLeftRight size={15} style={{ color: '#111' }} aria-hidden="true" />
+            <ArrowLeftRight size={15} style={{ color: CAPAS.iconoSobreBlanco }} aria-hidden="true" />
           </div>
         </div>
 
         {/* Apartado 21 — cada lado se nombra, para no depender de la posición. */}
-        <span className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: 'rgba(0,0,0,0.55)', color: '#fff' }}>
+        <span className="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: CAPAS.etiquetaSobreFoto, color: CAPAS.sobreFoto }}>
           {izquierda.rotulo}
         </span>
-        <span className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: 'rgba(0,0,0,0.55)', color: '#fff' }}>
+        <span className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: CAPAS.etiquetaSobreFoto, color: CAPAS.sobreFoto }}>
           {derecha.rotulo}
         </span>
       </div>
@@ -495,7 +497,7 @@ export function ProgressComparison({
     <div
       ref={caja}
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex flex-col fondo-entra dialogo-caja"
+      className={HOJA.visor}
       style={{ background: COLORS.bg }}
       role="dialog"
       aria-modal="true"
@@ -506,14 +508,7 @@ export function ProgressComparison({
         style={{ paddingTop: 'calc(var(--safe-top) + 0.75rem)', borderBottom: `1px solid ${COLORS.border}` }}
       >
         <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Comparar</p>
-        <button
-          onClick={onCerrar}
-          aria-label={CERRAR_COMPARADOR}
-          className="rounded-full p-2 toque-44"
-          style={{ background: COLORS.surface2 }}
-        >
-          <X size={18} style={{ color: COLORS.text }} />
-        </button>
+        <BotonCerrarHoja onClick={onCerrar} etiqueta={CERRAR_COMPARADOR} />
       </div>
 
       <div

@@ -26,6 +26,8 @@ import {
   ArrowLeft, Plus, Check, ChevronUp, ChevronDown, Copy, Trash2, Pencil, X, Repeat,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { PastillaFiltro as Pastilla } from '../components/piezasFitness';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import {
   Card, SectionTitle, TextInput, Textarea, GhostBtn, PrimaryButton, Field, EmptyHint,
@@ -83,7 +85,7 @@ export function FilaEjercicio({
       <div className="flex items-center gap-3">
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: hexToRgba(accent, 0.14), color: accent }}
+          style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
         >
           <Icono size={20} />
         </div>
@@ -95,7 +97,7 @@ export function FilaEjercicio({
           <p className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
             {nombre}
           </p>
-          <p className="text-xs mt-0.5" style={{ color: accent }}>
+          <p className="text-xs mt-0.5" style={{ color: acentoLegible(accent) }}>
             {textoDeSeries(linea)}
             {carga ? ` · ${carga}` : ''}
             {linea.descanso ? ` · ${linea.descanso} s descanso` : ''}
@@ -166,22 +168,8 @@ function Contador({
   );
 }
 
-function Pastilla({ activa, children, accent, onClick, label }) {
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={activa}
-      aria-label={label}
-      className="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 toque-44 active:scale-[0.97]"
-      style={{
-        background: activa ? accent : hexToRgba(COLORS.border, 0.5),
-        color: activa ? COLORS.textOnAccent : COLORS.textMuted,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
+/* 🔓 FIT F42 (apartados 42 y 64) — aquí había una `Pastilla` propia, una de las
+   siete copias de la pastilla de un filtro: es `PastillaFiltro` (piezasFitness). */
 
 /* ── El editor de una línea (apartado 15) ──────────────────────────────────
    🚨 Cambia **esa línea de esa rutina**, nunca el ejercicio del catálogo. */
@@ -190,7 +178,7 @@ export function EditorLinea({
   /* 🔓 FIT F33, apartado 15 — abre la hoja de sustitución. */
   onReemplazar = null,
 }) {
-  if (!linea) return <EmptyHint text="Ese ejercicio ya no está en la rutina." />;
+  if (!linea) return <EmptyHint text="Ese ejercicio ya no está en la plantilla." />;
   const nombre = nombreDeLinea(linea, propios);
   const carga = TIPOS_CARGA.find((t) => t.id === linea.tipoCarga);
   const otrasVariantes = variantesDeLinea(linea, propios);
@@ -375,7 +363,7 @@ export function ResumenConstructor({ rutina, propios = [], accent }) {
         </p>
         {/* ⚠️ El «≈» viene del propio texto: es una estimación y tiene que
             parecerlo (apartado 20). */}
-        <p className="text-sm font-extrabold" style={{ color: accent }}>{res.duracion}</p>
+        <p className="text-sm font-extrabold" style={{ color: acentoLegible(accent) }}>{res.duracion}</p>
       </div>
       {res.distribucion.grupos.length > 0 && (
         <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
@@ -551,7 +539,7 @@ export default function ConstructorView({
       {guardado && (
         <Card style={{ border: `1px solid ${accent}` }}>
           <p className="text-sm font-bold" style={{ color: COLORS.text }}>
-            <Check size={14} className="inline mr-1.5" style={{ color: accent }} />
+            <Check size={14} className="inline mr-1.5" style={{ color: acentoLegible(accent) }} />
             Entrenamiento guardado
           </p>
         </Card>

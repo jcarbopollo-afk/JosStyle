@@ -481,7 +481,7 @@ export const AVISO_ELIMINAR_SESION = {
   titulo: '¿Eliminar este entrenamiento?',
   /* 🔓 FIT F37, apartado 30 — dice también lo que NO se borra: las fotos de
      ese día se quedan (lo comprobó la F36, apartado 37). */
-  texto: 'Esta acción eliminará la sesión del historial. Podrás recuperarla desde la Papelera. Las fotos de progreso de ese día no se borran.',
+  texto: 'Esta acción eliminará el entrenamiento del historial. Podrás recuperarlo desde la Papelera. Las fotos de progreso de ese día no se borran.',
   cancelar: 'Cancelar',
   eliminar: 'Eliminar',
 };

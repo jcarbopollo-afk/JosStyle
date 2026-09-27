@@ -1,4 +1,5 @@
-import { uid, todayISO } from './helpers';
+import { uid, todayISO, fechaLocalISO } from './helpers';
+import { diaYMes } from './fechasFitness';
 import { crearWorkoutSession, normalizarWorkoutSession, ESTADOS_SESION, sinDuplicadosPorId } from './fitness';
 import {
   ejercicioPorId, nombreCompleto, musculoPrincipal, musculosDe, nombreSinCatalogo,
@@ -351,9 +352,10 @@ export function duracionCreible(sesion, ahora = Date.now()) {
   return ms > MS_SESION_ANTIGUA ? null : ms;
 }
 
-/* «Empezado ayer», «Empezado el 23 sept»: cuándo se quedó abierta, en palabras.
-   ⚠️ Aquí y no en `historial.js`, que importa este archivo (sería un ciclo). */
-const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic'];
+/* «Empezado ayer», «Empezado el 23 de septiembre»: cuándo se quedó abierta, en
+   palabras. 🔓 FIT F42 (apartado 59) — tenía su propia lista de meses («23
+   sept», un cuarto formato); ahora es la frase de fecha de `fechasFitness.js`,
+   que es una hoja del árbol de imports y no crea el ciclo que la obligó. */
 export function desdeCuando(sesion, ahora = Date.now()) {
   const inicio = Number(sesion?.iniciadaEn);
   if (!Number.isFinite(inicio) || inicio <= 0) return '';
@@ -364,7 +366,7 @@ export function desdeCuando(sesion, ahora = Date.now()) {
   const dd = (n) => String(n).padStart(2, '0');
   if (dias <= 0) return `Empezado hoy a las ${dd(d.getHours())}:${dd(d.getMinutes())}`;
   if (dias === 1) return 'Empezado ayer';
-  return `Empezado el ${d.getDate()} ${MESES_CORTOS[d.getMonth()]}`;
+  return `Empezado el ${diaYMes(fechaLocalISO(d))}`;
 }
 
 /** Apartado 19 — una sesión en curso o en pausa que empezó hace más de
@@ -658,7 +660,7 @@ export const SONIDO_DESCANSO = {
 /* Apartado 31 — salir no termina. */
 export const AVISO_SALIR = {
   titulo: '¿Salir del entrenamiento?',
-  texto: 'Tu sesión está en curso. Si sales, la encontrarás aquí para seguirla.',
+  texto: 'Tu entrenamiento está en curso. Si sales, lo encontrarás aquí para seguirlo.',
   seguir: 'Seguir entrenando',
   salir: 'Salir',
 };
@@ -751,7 +753,7 @@ export function avisoDeRecuperacion(sesion, { ahora = Date.now(), propios = [] }
        volver a la aplicación la cabecera no está: está esta tarjeta. Finalizar
        lleva al resumen de la F8, que es donde él decide si se guarda. */
     finalizar: 'Finalizar',
-    descartar: 'Descartar sesión',
+    descartar: 'Descartar entrenamiento',
   };
 }
 

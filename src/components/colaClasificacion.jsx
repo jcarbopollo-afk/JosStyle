@@ -19,6 +19,7 @@
 import React from 'react';
 import { ChevronRight, Sparkles } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, EmptyHint } from './ui';
 import { iconoDeGrupo } from './iconosFitness';
@@ -35,7 +36,7 @@ export function ClassificationReason({ reason, accent }) {
   return (
     <span
       className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full"
-      style={{ background: hexToRgba(accent, 0.16), color: accent }}
+      style={{ background: hexToRgba(accent, 0.16), color: acentoLegible(accent) }}
     >
       {reason}
     </span>
@@ -73,7 +74,7 @@ export function ClassificationQueueCard({ item, accent, onClasificar }) {
         className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
         style={{ background: hexToRgba(accent, 0.14) }}
       >
-        {Icono ? <Icono size={18} style={{ color: accent }} aria-hidden="true" /> : null}
+        {Icono ? <Icono size={18} style={{ color: acentoLegible(accent) }} aria-hidden="true" /> : null}
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{item.nombre}</p>
@@ -120,7 +121,7 @@ export function ClassificationEmpty({ vacio, accent, onVolver = null }) {
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
           style={{ background: hexToRgba(accent, 0.14) }}
         >
-          <Sparkles size={16} style={{ color: accent }} aria-hidden="true" />
+          <Sparkles size={16} style={{ color: acentoLegible(accent) }} aria-hidden="true" />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{vacio.titulo}</p>
@@ -132,7 +133,7 @@ export function ClassificationEmpty({ vacio, accent, onVolver = null }) {
           onClick={onVolver}
           aria-label="Volver a Rangos"
           className="mt-3 text-[11px] font-semibold px-3 py-2 rounded-full toque-44"
-          style={{ background: hexToRgba(accent, 0.18), color: accent }}
+          style={{ background: hexToRgba(accent, 0.18), color: acentoLegible(accent) }}
         >
           Volver a Rangos
         </button>

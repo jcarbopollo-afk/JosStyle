@@ -41,6 +41,8 @@ import {
   StickyNote, Pause, Play, RotateCcw, Dumbbell, Undo2,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { OpcionSegmentada } from '../components/piezasFitness';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import {
   Card, GhostBtn, PrimaryButton, Textarea, EmptyHint, Switch,
@@ -209,7 +211,7 @@ export function CarruselEjercicios({ items, accent, onElegir }) {
                   {hecho ? <Check size={12} /> : i.numero}
                 </span>
                 {/* El color nunca va solo (EH F42): el estado lleva palabra. */}
-                <span className="text-[10px] font-bold uppercase tracking-wide truncate" style={{ color: esActual ? accent : COLORS.textMuted }}>
+                <span className="text-[10px] font-bold uppercase tracking-wider truncate" style={{ color: esActual ? acentoLegible(accent) : COLORS.textMuted }}>
                   {esActual ? 'Ahora' : hecho ? 'Hecho' : 'Pendiente'}
                 </span>
               </div>
@@ -241,7 +243,7 @@ export function HuecoAnatomico({ ficha, accent, compacto = false }) {
     >
       <div
         className={`${compacto ? 'w-11 h-11' : 'w-16 h-16'} rounded-2xl flex items-center justify-center shrink-0`}
-        style={{ background: hexToRgba(accent, 0.16), color: accent }}
+        style={{ background: hexToRgba(accent, 0.16), color: acentoLegible(accent) }}
       >
         <Icono size={compacto ? 22 : 32} />
       </div>
@@ -349,7 +351,7 @@ function Paso({ etiqueta, texto, accent, onMenos, onMas }) {
       onClick={onClick}
       aria-label={`${signo < 0 ? 'Restar' : 'Sumar'} ${etiqueta}`}
       className="w-11 h-11 rounded-xl flex items-center justify-center toque-44 active:scale-90"
-      style={{ background: hexToRgba(accent, 0.14), color: accent }}
+      style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
     >
       {signo < 0 ? <Minus size={18} /> : <Plus size={18} />}
     </button>
@@ -411,11 +413,11 @@ export function TablaSeries({
                   )}
                   {/* F9 apartado 7 — la activa se reconoce también por la palabra. */}
                   {activa && (
-                    <p className="text-[9px] font-bold uppercase leading-none mt-0.5" style={{ color: accent }}>Ahora</p>
+                    <p className="text-[10px] font-bold uppercase leading-none mt-0.5" style={{ color: acentoLegible(accent) }}>Ahora</p>
                   )}
                   {/* F9 apartado 28 — *"marcarse como añadida"*. */}
                   {f.origen === 'anadida' && !activa && (
-                    <p className="text-[9px] font-bold uppercase leading-none mt-0.5" style={{ color: COLORS.textMuted }}>Extra</p>
+                    <p className="text-[10px] font-bold uppercase leading-none mt-0.5" style={{ color: COLORS.textMuted }}>Extra</p>
                   )}
                 </div>
 
@@ -554,8 +556,8 @@ export function BarraDescanso({ descanso, ahora, accent, onPausar, onReanudar, o
       }}
     >
       <div className="flex items-center gap-2">
-        <Timer size={20} style={{ color: accent }} aria-hidden="true" />
-        <p className="text-[11px] font-extrabold uppercase tracking-widest" style={{ color: accent }}>
+        <Timer size={20} style={{ color: acentoLegible(accent) }} aria-hidden="true" />
+        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: acentoLegible(accent) }}>
           {fin ? 'Descanso terminado' : pausado ? 'Descanso en pausa' : 'Descanso'}
         </p>
       </div>
@@ -618,20 +620,17 @@ function PanelDescanso({ ejercicio, sesion, accent, onGuardar, onEmpezar, onCerr
         {DESCANSOS_RAPIDOS.map((s) => {
           const elegido = actual === s;
           return (
-            <button
+            /* 🔓 FIT F42 (apartado 42) — la opción de un selector, la misma de
+               los periodos de Progreso. */
+            <OpcionSegmentada
               key={s}
+              activa={elegido}
+              accent={accent}
+              label={`Descanso de ${s} segundos`}
               onClick={() => onGuardar(cambiarDescansoEjercicio(sesion, ejercicio.id, s))}
-              aria-pressed={elegido}
-              aria-label={`Descanso de ${s} segundos`}
-              className="h-10 px-3 rounded-xl text-xs font-bold toque-44 active:scale-95"
-              style={{
-                background: elegido ? accent : hexToRgba(COLORS.border, 0.45),
-                color: elegido ? COLORS.textOnAccent : COLORS.text,
-              }}
             >
-              {elegido && <Check size={12} className="inline mr-1" aria-hidden="true" />}
               {s} s
-            </button>
+            </OpcionSegmentada>
           );
         })}
       </div>
@@ -653,7 +652,7 @@ function PanelDescanso({ ejercicio, sesion, accent, onGuardar, onEmpezar, onCerr
           onClick={usarPropio}
           aria-label="Usar el descanso personalizado"
           className="h-11 px-3.5 rounded-xl text-xs font-bold shrink-0 toque-44 active:scale-95"
-          style={{ background: hexToRgba(accent, 0.16), color: accent }}
+          style={{ background: hexToRgba(accent, 0.16), color: acentoLegible(accent) }}
         >
           Usar
         </button>
@@ -771,7 +770,7 @@ export function SesionRecuperable({ sesion, accent, onContinuar, onDescartar, te
       <div className="flex items-center gap-3">
         <div
           className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-          style={{ background: hexToRgba(accent, 0.16), color: accent }}
+          style={{ background: hexToRgba(accent, 0.16), color: acentoLegible(accent) }}
         >
           <Dumbbell size={22} />
         </div>
@@ -788,7 +787,7 @@ export function SesionRecuperable({ sesion, accent, onContinuar, onDescartar, te
             <p className="text-xs" style={{ color: COLORS.textMuted }}>{datos.desde}</p>
           )}
           {datos.descanso && (
-            <p className="text-xs font-bold tabular-nums" style={{ color: accent }}>{datos.descanso}</p>
+            <p className="text-xs font-bold tabular-nums" style={{ color: acentoLegible(accent) }}>{datos.descanso}</p>
           )}
         </div>
       </div>
@@ -1131,7 +1130,7 @@ export default function EntrenamientoVivoView({
                   {cabecera.nombre}
                 </p>
                 {(cabecera.variante || cabecera.agarre) && (
-                  <p className="text-xs mt-0.5 font-semibold" style={{ color: accent }}>
+                  <p className="text-xs mt-0.5 font-semibold" style={{ color: acentoLegible(accent) }}>
                     {[cabecera.variante, cabecera.agarre].filter(Boolean).join(' · ')}
                   </p>
                 )}
@@ -1212,7 +1211,7 @@ export default function EntrenamientoVivoView({
                   className="rounded-xl py-2 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold toque-44 active:scale-95 disabled:opacity-50"
                   style={{
                     background: abierto ? hexToRgba(accent, 0.16) : COLORS.surface2,
-                    color: abierto ? accent : COLORS.text,
+                    color: abierto ? acentoLegible(accent) : COLORS.text,
                     border: `1px solid ${abierto ? accent : COLORS.border}`,
                   }}
                 >
@@ -1262,7 +1261,11 @@ export default function EntrenamientoVivoView({
           )}
 
           {ejercicio.notas && panel !== 'notas' && (
-            <p className="text-xs px-1" style={{ color: COLORS.textMuted }}>📝 {ejercicio.notas}</p>
+            <p className="text-xs px-1 flex items-start gap-1.5" style={{ color: COLORS.textMuted }}>
+              {/* FIT F42 (apartado 31) — era un 📝: los iconos de Fitness son de lucide, y es el de las notas. */}
+              <StickyNote size={12} className="shrink-0 mt-px" aria-hidden="true" />
+              <span className="min-w-0">{ejercicio.notas}</span>
+            </p>
           )}
 
           {/* F9 apartado 2 — la tabla, que es la protagonista. */}

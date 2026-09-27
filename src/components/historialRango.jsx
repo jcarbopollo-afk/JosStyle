@@ -21,9 +21,12 @@
 import React, { useMemo, useState } from 'react';
 import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
-import { X, History, ChevronRight } from 'lucide-react';
+import { History, ChevronRight } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { HOJA, acentoLegible } from '../lib/acabadoFitness';
+import { BotonCerrarHoja, OpcionSegmentada } from './piezasFitness';
 import { hexToRgba } from '../lib/helpers';
+import { fechaEtiqueta } from '../lib/fechasFitness';
 import { RankBadge, RankLabel } from './rangos';
 import {
   pantallaDeHistorial, detalleDeCambio, PERIODOS_HISTORIAL,
@@ -46,13 +49,10 @@ export function BotonHistorial({ onAbrir, etiqueta = 'Ver el historial de este r
   );
 }
 
-/* Una fecha en corto: «12 SEP», como el ejemplo del apartado 10. */
-const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
-export function fechaCorta(iso) {
-  if (typeof iso !== 'string' || iso.length < 10) return '';
-  const [, m, d] = iso.split('-');
-  return `${Number(d)} ${MESES[Number(m) - 1] || ''}`;
-}
+/* Una fecha en corto: «12 SEP», como el ejemplo del apartado 10. 🔓 FIT F42
+   (apartado 59) — es el rótulo de todo Fitness (`fechaEtiqueta`): su lista de
+   meses era una copia de la de la galería de fotos. */
+export const fechaCorta = (iso) => fechaEtiqueta(iso);
 
 /* ═══ 29 · `RankHistoryFilters` (apartado 23) ══════════════════════════════ */
 export function RankHistoryFilters({ periodo, periodos = PERIODOS_HISTORIAL, accent, onElegir }) {
@@ -61,18 +61,9 @@ export function RankHistoryFilters({ periodo, periodos = PERIODOS_HISTORIAL, acc
       {periodos.map((p) => {
         const puesto = p.id === periodo;
         return (
-          <button
-            key={p.id}
-            onClick={() => onElegir && onElegir(p.id)}
-            aria-pressed={puesto}
-            className="text-[11px] font-semibold px-3 py-1.5 rounded-full toque-44"
-            style={{
-              background: puesto ? hexToRgba(accent, 0.18) : COLORS.surface2,
-              color: puesto ? accent : COLORS.textMuted,
-            }}
-          >
+          <OpcionSegmentada key={p.id} activa={puesto} accent={accent} onClick={() => onElegir && onElegir(p.id)}>
             {p.nombre}
-          </button>
+          </OpcionSegmentada>
         );
       })}
     </div>
@@ -100,7 +91,7 @@ export function RankHistorySummary({ resumen, accent }) {
         {/* 🚨 Apartado 8 — progresar DENTRO del rango no es subir de rango, y
             por eso es otra frase y no la misma con un matiz. */}
         {resumen.textoDentro && (
-          <p className="text-[11px] font-semibold" style={{ color: accent }}>{resumen.textoDentro}</p>
+          <p className="text-[11px] font-semibold" style={{ color: acentoLegible(accent) }}>{resumen.textoDentro}</p>
         )}
         {resumen.actual.score !== null && resumen.dentro && resumen.dentro.siguienteNombre && (
           <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
@@ -136,13 +127,13 @@ export function RankTimelineItem({ linea, accent, onAbrir }) {
         <span className="w-px flex-1 mt-1" style={{ background: hexToRgba(COLORS.border, 0.6) }} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold tracking-wide" style={{ color: COLORS.textMuted }}>
+        <p className="text-[10px] font-bold tracking-wider" style={{ color: COLORS.textMuted }}>
           {fechaCorta(linea.fecha)}
         </p>
         <p className="text-sm font-bold" style={{ color: COLORS.text }}>{linea.nombre}</p>
         {/* 🚨 Apartado 31 — la flecha va con su PALABRA, nunca sola ni solo el
             color: «↑ desde Intermedio» se entiende sin distinguir tonos. */}
-        <p className="text-[11px]" style={{ color: hayCambio ? accent : COLORS.textMuted }}>
+        <p className="text-[11px]" style={{ color: hayCambio ? acentoLegible(accent) : COLORS.textMuted }}>
           {linea.detalle}
         </p>
         <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
@@ -188,9 +179,9 @@ export function RankScoreHistory({ grafica, accent }) {
         role="img"
         aria-label={`Evolución de la puntuación entre ${fechaCorta(grafica.desde)} y ${fechaCorta(grafica.hasta)}, ${grafica.puntos.length} registros`}
       >
-        <polyline points={linea} fill="none" stroke={accent} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        <polyline points={linea} fill="none" stroke={acentoLegible(accent)} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
         {grafica.puntos.map((p) => (
-          <circle key={p.fecha} cx={x(p)} cy={y(p)} r="3" fill={accent} />
+          <circle key={p.fecha} cx={x(p)} cy={y(p)} r="3" fill={acentoLegible(accent)} />
         ))}
       </svg>
       <div className="flex justify-between text-[10px]" style={{ color: COLORS.textMuted }}>
@@ -208,24 +199,17 @@ export function RankChangeCard({ detalle, accent, onCerrar }) {
     <div className="rounded-2xl p-4 space-y-3" style={{ background: COLORS.surface2 }}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold tracking-wide" style={{ color: COLORS.textMuted }}>
+          <p className="text-[10px] font-bold tracking-wider" style={{ color: COLORS.textMuted }}>
             {fechaCorta(detalle.fecha)}
           </p>
           <p className="text-sm font-bold" style={{ color: COLORS.text }}>{detalle.titulo}</p>
-          <p className="text-[11px]" style={{ color: accent }}>{detalle.marca.texto}</p>
+          <p className="text-[11px]" style={{ color: acentoLegible(accent) }}>{detalle.marca.texto}</p>
         </div>
         {/* ⚠️ `GhostBtn` NO reparte `aria-label` (FIT F4), así que un botón de
             solo icono hecho con él saldría sin nombre y el revisor de
             accesibilidad lo cazaría. Va como `<button>` crudo. */}
         {onCerrar && (
-          <button
-            onClick={onCerrar}
-            aria-label="Cerrar el detalle del cambio"
-            className="rounded-xl p-1.5 -m-1.5 toque-44"
-            style={{ color: COLORS.textMuted }}
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
+          <BotonCerrarHoja onClick={onCerrar} etiqueta="Cerrar el detalle del cambio" />
         )}
       </div>
 
@@ -256,7 +240,7 @@ export function RankChangeCard({ detalle, accent, onCerrar }) {
           <p className="text-[11px] font-semibold" style={{ color: COLORS.text }}>Principales cambios</p>
           {detalle.responsables.map((r) => (
             <p key={r.exerciseId} className="text-[11px]" style={{ color: COLORS.textMuted }}>
-              {r.nombre} <span style={{ color: accent }}>↑ {r.cambioDeRango ? r.nombreRango : 'Mejora'}</span>
+              {r.nombre} <span style={{ color: acentoLegible(accent) }}>↑ {r.cambioDeRango ? r.nombreRango : 'Mejora'}</span>
             </p>
           ))}
         </div>
@@ -282,7 +266,7 @@ export function RankHistoryEmpty({ vacio, accent, onProgreso = null }) {
         <button
           onClick={onProgreso}
           className="mt-3 text-[11px] font-semibold px-3 py-2 rounded-full toque-44"
-          style={{ background: hexToRgba(accent, 0.18), color: accent }}
+          style={{ background: hexToRgba(accent, 0.18), color: acentoLegible(accent) }}
         >
           {vacio.cta}
         </button>
@@ -310,7 +294,7 @@ export function RankHistory({ fitness, destino, propios = [], perfil = null, acc
      contenedor de `.module-enter` y aparece abajo del todo. */
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center fondo-entra"
+      className={HOJA.velo}
       /* ⚠️ El velo va como `rgba()` literal, igual que el de `RankExplanation`:
          un negro escrito en hexadecimal sería un color suelto fuera de
          `tokens.js` (regla 2) aunque solo sirva para oscurecer, y no es un
@@ -319,7 +303,7 @@ export function RankHistory({ fitness, destino, propios = [], perfil = null, acc
          regla 2 solo se salta las líneas que EMPIEZAN por `*` o `//`, así que
          un comentario que cite el literal la hace saltar con el código bien
          (NAV F3). */
-      style={{ background: 'rgba(0,0,0,0.6)' }}
+      style={{ background: HOJA.fondoVelo }}
       onClick={onCerrar}
       /* 🐛 FIT F39 (apartado 39) — era la única hoja de Fitness sin `role` ni
          nombre: un lector de pantalla no sabía que se había abierto nada. */
@@ -330,25 +314,18 @@ export function RankHistory({ fitness, destino, propios = [], perfil = null, acc
       <div
         ref={caja}
         tabIndex={-1}
-        className="w-full max-w-lg rounded-t-3xl p-5 space-y-4 hoja-entra hoja-movil dialogo-caja"
+        className={`${HOJA.caja} space-y-4`}
         /* 🐛 FIT F38 (apartado 47) — era la única hoja de Fitness sin sitio para
            la barra de inicio del iPhone: su última fila quedaba debajo. */
-        style={{ background: COLORS.surface, minHeight: 0, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
+        style={{ background: COLORS.surface, minHeight: 0, paddingBottom: HOJA.abajo }}
         onClick={(ev) => ev.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold tracking-wide" style={{ color: COLORS.textMuted }}>HISTORIAL</p>
+            <p className="text-[10px] font-bold tracking-wider" style={{ color: COLORS.textMuted }}>HISTORIAL</p>
             <h2 className="text-lg font-bold truncate" style={{ color: COLORS.text }}>{datos.destino.nombre}</h2>
           </div>
-          <button
-            onClick={onCerrar}
-            aria-label="Cerrar el historial"
-            className="rounded-xl p-1.5 -m-1.5 toque-44"
-            style={{ color: COLORS.textMuted }}
-          >
-            <X size={18} aria-hidden="true" />
-          </button>
+          <BotonCerrarHoja onClick={onCerrar} etiqueta="Cerrar el historial" />
         </div>
 
         {datos.vacio ? (

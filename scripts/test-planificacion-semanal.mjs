@@ -453,7 +453,7 @@ ok(act.semana.dias[3].etiqueta === '24 de septiembre — entrenamiento Core'
   'Las etiquetas de la F31 siguen siendo las suyas');
 ok(resumenDeActividad(F(), { hoy: '2026-09-27' }).semana.dias[3].etiqueta === '24 de septiembre — sin entrenamiento planificado',
   '🔓 …y el jueves pasado sin plan dice «sin entrenamiento planificado» (antes «descanso del plan»)');
-ok(act.plan && act.plan.texto === '2 / 5 sesiones planificadas',
+ok(act.plan && act.plan.texto === '2 / 5 entrenamientos planificados',
   `…y el seguimiento del plan de la F31 no cambia: «${act.plan && act.plan.texto}»`);
 
 /* ═════════════════════════════════════════════════════════════════════════ */
@@ -533,7 +533,9 @@ ok(!PORCENTAJE.test(LIB_SIN_AUDITORIA), '🚨 Ni un porcentaje de adherencia (ap
 ok(PORCENTAJE.test('texto: `${hechas}%`') && PORCENTAJE.test('82 % cumplido'), '…(y el barrido sí caza uno)');
 ok(DECISIONES_FIT32.length >= 6 && DECISIONES_FIT32.every((d) => d.que && d.porque), 'Cada decisión con su porqué');
 const COMP_SIN = sinComentarios(COMP);
-ok(!/from '\.\.\/lib\/(?!helpers)/.test(COMP_SIN) && !/semanaDelPlan|posicionDelDia|sesionesDeActividad|estadoDeCasilla/.test(COMP_SIN),
+/* 🔓 FIT F42 — y `acabadoFitness.js`, que no calcula: da el color legible del
+   acento (apartado 55). */
+ok(!/from '\.\.\/lib\/(?!helpers|acabadoFitness)/.test(COMP_SIN) && !/semanaDelPlan|posicionDelDia|sesionesDeActividad|estadoDeCasilla/.test(COMP_SIN),
   '🚨 Los componentes NO calculan: solo importan `hexToRgba` de la librería (apartado 30)');
 ok(/semanaDelPlan/.test('const s = semanaDelPlan(plan);'), '…(y la comprobación sí caza un cálculo)');
 /* La auditoría tiene que poder ponerse roja. */

@@ -1,6 +1,8 @@
 import React from 'react';
 import { History, Target, CheckCircle2, AlertTriangle, Repeat2 } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { OpcionSegmentada } from './piezasFitness';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, EmptyHint } from './ui';
 import { RankBadge } from './rangos';
@@ -114,7 +116,7 @@ export function ExercisePreviousResult({ comparacion, estado, avisoMedida, accen
         <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Cambio</p>
         <p
           className="text-base font-bold tabular-nums"
-          style={{ color: estado === 'mejora' ? accent : COLORS.text }}
+          style={{ color: estado === 'mejora' ? acentoLegible(accent) : COLORS.text }}
         >
           {comparacion.resultado}
         </p>
@@ -149,7 +151,7 @@ export function ExerciseBestResult({ mejor, soloUna, esElUltimo = false, accent 
             <span className="text-xs font-normal" style={{ color: COLORS.textMuted }}> · {mejor.fecha}</span>
           </p>
           {esElUltimo && (
-            <p className="text-[11px] font-semibold mt-1" style={{ color: accent }}>Mejor marca registrada</p>
+            <p className="text-[11px] font-semibold mt-1" style={{ color: acentoLegible(accent) }}>Mejor marca registrada</p>
           )}
         </>
       ) : null}
@@ -201,19 +203,10 @@ export function ExerciseMetricSelector({ metricas = [], valor, accent, onElegir 
       {metricas.map((m) => {
         const activa = m.id === valor;
         return (
-          <button
-            key={m.id}
-            onClick={() => onElegir && onElegir(m.id)}
-            aria-pressed={activa}
-            className="text-xs font-bold px-3 py-2 rounded-full toque-44"
-            style={{
-              background: activa ? hexToRgba(accent, 0.16) : hexToRgba(COLORS.border, 0.4),
-              color: activa ? accent : COLORS.textMuted,
-            }}
-          >
+          <OpcionSegmentada key={m.id} activa={activa} accent={accent} onClick={() => onElegir && onElegir(m.id)}>
             {m.nombre}
             <span className="font-normal tabular-nums"> · {m.registros}</span>
-          </button>
+          </OpcionSegmentada>
         );
       })}
     </div>
@@ -269,7 +262,7 @@ export function ExerciseHistory({ filas = [], veces, children }) {
   return (
     <Card>
       <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: COLORS.textMuted }}>
-        Historial · {veces} {veces === 1 ? 'sesión' : 'sesiones'}
+        Historial · {veces} {veces === 1 ? 'entrenamiento' : 'entrenamientos'}
       </p>
       {filas.length === 0
         ? <EmptyHint text="Todavía no has hecho este ejercicio." />
@@ -300,7 +293,7 @@ export function ExerciseGoalPreview({ objetivo, accent, onAbrir = null, onCrear 
         <button
           onClick={onCrear}
           className="mt-2 text-xs font-bold py-2 px-1 toque-44"
-          style={{ color: accent }}
+          style={{ color: acentoLegible(accent) }}
         >
           Crear objetivo
         </button>
@@ -312,11 +305,11 @@ export function ExerciseGoalPreview({ objetivo, accent, onAbrir = null, onCrear 
     <>
       <div className="flex items-center gap-2">
         {hecho
-          ? <CheckCircle2 size={16} style={{ color: accent }} aria-hidden="true" />
+          ? <CheckCircle2 size={16} style={{ color: acentoLegible(accent) }} aria-hidden="true" />
           : <Target size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />}
         <p
           className="text-[10px] font-bold uppercase tracking-wider"
-          style={{ color: hecho ? accent : COLORS.textMuted }}
+          style={{ color: hecho ? acentoLegible(accent) : COLORS.textMuted }}
         >
           {hecho ? OBJETIVO_CONSEGUIDO : 'Objetivo'}
         </p>
@@ -364,7 +357,7 @@ export function ExerciseRankPreview({ rango, accent, onHistorial = null, onPorQu
           <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Rango</p>
           <p
             className="text-xl font-extrabold leading-tight"
-            style={{ color: accent, fontFamily: "'Manrope', sans-serif" }}
+            style={{ color: acentoLegible(accent), fontFamily: "'Manrope', sans-serif" }}
           >
             {rango.nombre}
           </p>
@@ -388,7 +381,7 @@ export function ExerciseRankPreview({ rango, accent, onHistorial = null, onPorQu
         <button
           onClick={onHistorial}
           className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold py-2 px-1 toque-44"
-          style={{ color: accent }}
+          style={{ color: acentoLegible(accent) }}
         >
           <History size={14} aria-hidden="true" />
           {rango.ctaHistorial || VER_HISTORIAL_RANGO}
@@ -422,11 +415,11 @@ export function ExerciseVariants({ variantes, accent, onAbrir = null }) {
             className="w-full flex items-center gap-2 text-left py-2 toque-44"
             aria-label={`Ver el progreso de ${v.nombre}`}
           >
-            <span className="text-sm font-semibold min-w-0 flex-1" style={{ color: onAbrir ? accent : COLORS.text }}>
+            <span className="text-sm font-semibold min-w-0 flex-1" style={{ color: onAbrir ? acentoLegible(accent) : COLORS.text }}>
               {v.nombre}
             </span>
             <span className="text-[11px] tabular-nums" style={{ color: COLORS.textMuted }}>
-              {v.registros} {v.registros === 1 ? 'sesión' : 'sesiones'}
+              {v.registros} {v.registros === 1 ? 'entrenamiento' : 'entrenamientos'}
             </span>
           </button>
         ))}

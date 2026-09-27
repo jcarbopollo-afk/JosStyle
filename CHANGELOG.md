@@ -1,5 +1,88 @@
 # CHANGELOG.md
 
+## v3.124.0 — FIT F42/45: auditoría visual y acabado premium de fitness
+
+*"Fitness debe parecer diseñado como UN ÚNICO PRODUCTO y no como muchas pantallas desarrolladas
+independientemente."* Y el «IMPORTANTE» que manda sobre todo lo demás: **"NO cambiar: lógica,
+datos, fórmulas, RankEngine, ProgressEngine, GoalEngine, persistencia."** Así que no se ha impuesto
+una estética nueva —el apartado 62 lo prohíbe—: **se midió la escala que Fitness ya usaba** sobre sus
+32 archivos (tamaños de letra, pesos, radios, espaciado, mayúsculas) y **se corrigió lo que se
+salía**. El sistema visual ya existía: `COLORS` con su modo oscuro y su alto contraste, `ui.jsx`,
+`RankBadge`, las animaciones de la F37, la Safe Area y el foco de la F39 (`YA_EXISTIA_F42`). Lo que
+había eran **salidas de la escala y piezas escritas varias veces**, y cada una se arregló donde
+nacía. Séptima y última fase del bloque de **Acabado**, que queda 🏁 **cerrado** (F36–F42).
+
+### 🐛 El acento como texto no se leía bien con la mitad de los acentos
+
+Fitness usa el acento como color de TEXTO en más de un centenar de sitios —el nombre del rango,
+«Ahora», los totales—, y el acento es un color de marca, pensado para fondos. Como letra pequeña
+**no llegaba a 4,5:1** (el mínimo AA) con **seis de los doce acentos en oscuro** —el de serie, «Azul
+metálico», daba 4,27— y **siete en claro** («Dorado», 2,4). Ahora pasa por `acentoLegible`: **el mismo
+tono**, aclarado u oscurecido lo justo con `ensureContrast` —la red de seguridad que `aplicarTema` ya
+usaba para el texto— sobre la superficie con menos contraste. Si ya llegaba, **es el mismo color**. Y
+solo para texto, iconos y trazos: los botones siguen con el acento elegido. Medido en Chromium sobre
+el fondo de verdad (una fila teñida sobre una tarjeta): «Ahora» pasa de **4,07 a 4,60**.
+
+### Siete pastillas, dos botones de cerrar, cuatro velos
+
+- 🐛 **La pastilla de un filtro estaba escrita siete veces** —cuatro funciones `Pastilla` en el
+  constructor, las plantillas, los planes y la sustitución, más la de la biblioteca, la del historial
+  y la de la contribución a un músculo—, con tres radios, dos tamaños de letra y dos maneras de
+  marcar la elegida; **una ni siquiera tenía la zona de toque de 44 px**. Ahora es `PastillaFiltro`
+  (rellena con el acento **y con ✓**, con su recuento detrás de un espacio de verdad) y
+  `OpcionSegmentada` para los selectores de periodo y métrica, en `piezasFitness.jsx`.
+- 🐛 **Las hojas tenían cuatro velos distintos** (0,5, 0,55 y 0,6 de negro), dos anchos, una que en
+  una pantalla ancha se quedaba pegada abajo y **dos botones de cerrar**. Quedan tres familias —hoja,
+  confirmación y visor de fotos—, con sus clases en `HOJA` y un solo `BotonCerrarHoja`. **Sin asa**:
+  ninguna hoja se arrastra, y un asa promete ese gesto (regla 8).
+- Las capas que no cambian con el tema —el velo, el escenario negro de una foto, el blanco encima de
+  ella— estaban escritas a mano en cada componente. Ahora son `CAPAS`, en `tokens.js`.
+
+### Una fecha, un formato por papel
+
+Había **cuatro listas de meses escritas a mano** —dos copias idénticas de «ENE, FEB…» en la galería y
+en el historial de rangos—, un cuarto formato («Empezado el 14 sept») y un `toLocaleDateString` que
+no es igual en todos los Node. Ahora `fechasFitness.js` tiene tres papeles, una función cada uno:
+**«12 septiembre 2026»** (la de la F8), **«12 de septiembre»** dentro de una frase y **«12 SEP»** como
+rótulo pequeño, que es donde el apartado 58 deja usar mayúsculas.
+
+### Una palabra por concepto, y la misma cabecera en las tres áreas
+
+- En Fitness el entrenamiento se llama **entrenamiento** y lo que él se construye, **plantilla**. Había
+  «Descartar sesión», «Sesión guardada», «Mejor peso por sesión», «Las rutinas que te has creado tú»…
+  y un **«Cerrar la sesión» que se leía como salir de la cuenta** (ahora «Cerrar el entrenamiento del
+  día»). ⚠️ Por dentro el dato sigue llamándose `sesion`: es la clave guardada desde la F7, y un id no
+  se renombra (FIT F1). El banco de renderizado lo busca ahora en lo que se pinta.
+- **Rangos, Progreso y Entrenamiento abren con la misma cabecera** (apartado 50): Progreso tenía un
+  título propio más grande y Rangos empezaba sin título. Medido en Chromium: 18 px, 700, Manrope y
+  subtítulo de 14 px en las tres.
+- La gráfica de objetivos dibujaba los datos con el color del texto y la meta con el acento, **al
+  revés que las otras dos**. Ahora las tres: datos con el acento, referencia discontinua y neutra.
+
+### Lo demás
+
+- **Las cifras de Fitness, tabulares** (apartados 8 y 44): el iPhone usa cifras proporcionales, así
+  que el reloj del entrenamiento bailaba cada segundo donde no llevaba `tabular-nums`. Es una regla en
+  `index.css` para Fitness, sus hojas y **sus campos**, que no heredan `font-variant`.
+- 🐛 **Emojis haciendo de icono** (📝 en tres notas, 🔒 en la privacidad): ahora son los de lucide.
+- Texto de **9 px** en cinco sitios → 10 px; un `rounded-md`, dos espaciados de letra y dos
+  «extrabold» a 11 y 12 px, a su escala.
+- **Las miniaturas de foto, cuadradas en los tres sitios** (la de Progreso era la única en 3:4).
+- **Ni un número de los motores se ha movido**: se pasó el mismo escenario por los motores con el
+  código de antes y el de ahora —rango global, progreso, objetivos, resúmenes, historial del rango y
+  detalle de ejercicio, 344 KB de salida— y solo cambian las tres etiquetas «por entrenamiento».
+
+### Lo que no se hace
+
+Una imagen en cada plan (no existen, y inventarlas es la regla 8), las ilustraciones anatómicas (el
+catálogo no las tiene), estados `hover` (con Tailwind 3 se quedan pegados en el iPhone) y probar con
+brillo bajo, alto y modo noche, que es mirar la pantalla (R1). Los controles del comparador se
+quedan en neutro a propósito: la foto es la protagonista (`EXCEPCIONES_PASTILLA`).
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.123.0 — FIT F41/45: persistencia, recuperación y resiliencia de fitness
 
 *"Que el usuario pueda cerrar, recargar, volver a abrir o experimentar un fallo sin perder

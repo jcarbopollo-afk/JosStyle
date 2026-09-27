@@ -25,6 +25,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronLeft, Camera, Flame, Dumbbell, Pencil, X } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, GhostBtn, PrimaryButton, EmptyHint } from '../components/ui';
 import {
@@ -110,7 +111,7 @@ export function CabeceraFitness({ titulo, racha, accent, acciones = null }) {
           {titulo}
         </h2>
         {racha && (
-          <p className="text-xs font-semibold mt-0.5 flex items-center gap-1" style={{ color: accent }}>
+          <p className="text-xs font-semibold mt-0.5 flex items-center gap-1" style={{ color: acentoLegible(accent) }}>
             <Flame size={13} /> {racha.texto} seguidos
           </p>
         )}
@@ -584,7 +585,7 @@ export function AreaEntrenamiento({
             >
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: hexToRgba(accent, 0.14), color: accent }}
+                style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
               >
                 <Dumbbell size={20} />
               </div>
@@ -613,8 +614,8 @@ export function AreaEntrenamiento({
       <div>
         <SectionTitle
           sub={resumen.habilidadesActivas > 0
-            ? `${resumen.habilidadesActivas} en marcha · progresión, récords, sesiones y vídeos`
-            : 'Calistenia: progresión, récords, sesiones y vídeos'}
+            ? `${resumen.habilidadesActivas} en marcha · progresión, récords, entrenamientos y vídeos`
+            : 'Calistenia: progresión, récords, entrenamientos y vídeos'}
         >
           Habilidades
         </SectionTitle>

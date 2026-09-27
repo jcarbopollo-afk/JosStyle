@@ -33,9 +33,13 @@ import { progresoDeEjercicio } from '../src/lib/progresion.js';
 import { cabeceraDeEjercicio } from '../src/lib/detalleEjercicio.js';
 import { resumenNoche } from '../src/lib/sueno.js';
 import { validateExerciseCatalog } from '../src/lib/validacionCatalogo.js';
+import { fuenteResuelta } from '../src/lib/acabadoFitness.js';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
-const leer = (p) => readFileSync(join(RAIZ, p), 'utf8');
+/* 🔓 FIT F42 — las clases de una hoja (`fondo-entra`, `hoja-movil`…) viven UNA
+   vez en `HOJA` (acabadoFitness.js): una pantalla se lee con ellas resueltas,
+   como las ve el navegador. Lo que se protege aquí no cambia. */
+const leer = (p) => { const t = readFileSync(join(RAIZ, p), 'utf8'); return p.endsWith('.jsx') ? fuenteResuelta(t) : t; };
 const archivos = Object.fromEntries(ARCHIVOS_FITNESS.filter((p) => existsSync(join(RAIZ, p))).map((p) => [p, leer(p)]));
 const H = 3600000;
 const DIA = 24 * H;
@@ -119,7 +123,10 @@ ok(duracionCreible({ estado: 'en_curso', iniciadaEn: AHORA }, AHORA) === 0,
     'Apartado 19, literal: «Hay un entrenamiento sin terminar»');
   ok(a.continuar === 'Continuar' && a.finalizar === 'Finalizar' && a.descartar === 'Descartar',
     '…con Continuar, Finalizar y Descartar: no se decide nada por él');
-  ok(a.duracion === '' && a.desde === 'Empezado el 14 sept',
+  /* 🔓 FIT F42 (apartado 59) — «14 sept» era una cuarta forma de escribir una
+     fecha, con su propia lista de meses. Dentro de una frase, Fitness dice
+     «14 de septiembre» (`diaYMes`, `fechasFitness.js`). */
+  ok(a.duracion === '' && a.desde === 'Empezado el 14 de septiembre',
     '🐛 …y sin el reloj de «72:00:00»: dice cuándo empezó');
   const b = avisoDeRecuperacion(reciente, { ahora: AHORA });
   /* 🔓 FIT F41 (C-43) — esta comprobación se DA LA VUELTA, no se borra: el

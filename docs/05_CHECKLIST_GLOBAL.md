@@ -1005,7 +1005,13 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       espacio…» cuando es eso; 🐛 el borrador del constructor dice si no se ha podido guardar;
       Fitness en la exportación global (fotos solo sin PIN); y Continuar · Finalizar · Descartar al
       volver (C-43).
-- [ ] F42–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F42 — Auditoría visual y acabado premium de fitness** (v3.124.0): la escala de Fitness,
+      medida y auditada (`auditarAcabado`, 18 reglas); 🐛 el acento como texto por debajo de 4,5:1
+      con la mitad de los acentos → `acentoLegible`; 🐛 siete pastillas, cuatro velos y dos botones
+      de cerrar → `piezasFitness.jsx` y `HOJA`; `CAPAS` en `tokens.js`; una fecha por papel
+      (`fechasFitness.js`); «entrenamiento» y «plantilla» (C-44); la misma cabecera en las tres
+      áreas; cifras tabulares; miniaturas cuadradas. 🏁 **Cierra el bloque de Acabado.**
+- [ ] F43–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

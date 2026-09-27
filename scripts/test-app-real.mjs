@@ -6732,7 +6732,8 @@ const sesion_fit6 = await ver();
 ok(/× /.test(sesion_fit6),
   '🚨 FIT F6 — y sale su sesión con series y repeticiones, las de la F5 (apartado 9)');
 ok(/s descanso/i.test(sesion_fit6), '…con el descanso de cada ejercicio');
-ok(await pulsar('Cerrar la sesión'), 'se cierra la sesión');
+/* 🔓 FIT F42 (apartado 57) — «Cerrar la sesión» se leía como salir de la cuenta. */
+ok(await pulsar('Cerrar el entrenamiento del día'), 'se cierra la sesión');
 await page.waitForTimeout(400);
 
 /* 🚨 Apartado 18 — una plantilla suya puede ser el plan activo. Se comprueba
@@ -7004,7 +7005,7 @@ ok(await pulsar('Salir del entrenamiento'), 'se intenta salir (apartado 31)');
 await page.waitForTimeout(400);
 const avisoSalir_fit7 = await ver();
 ok(/¿Salir del entrenamiento\?/i.test(avisoSalir_fit7), '🚨 FIT F7 — y sale la protección del apartado 31');
-ok(/Tu sesión está en curso/i.test(avisoSalir_fit7), '…con sus palabras');
+ok(/Tu entrenamiento está en curso/i.test(avisoSalir_fit7), '…con sus palabras (FIT F42: «entrenamiento», apartado 57)');
 ok(await pulsar('Seguir entrenando'), '…y se puede seguir entrenando');
 await page.waitForTimeout(400);
 ok(/Terminar/i.test(await ver()), '…que devuelve al entrenamiento');
@@ -9437,8 +9438,8 @@ almacen.fitness = { ...almacen.fitness, planActivo: { planId: 'ppl-estetico', or
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'FIT F31 — se vuelve a Fitness con el PPL activo');
-const tuPlan_fit31 = await esperarTexto(/sesiones planificadas|planificados/i);
-const planTexto_fit31 = enSemana_fit31 > 5 ? `${cuenta_fit31(enSemana_fit31)} · 5 planificados` : `${enSemana_fit31} / 5 sesiones planificadas`;
+const tuPlan_fit31 = await esperarTexto(/entrenamientos? planificados?|planificados/i);
+const planTexto_fit31 = enSemana_fit31 > 5 ? `${cuenta_fit31(enSemana_fit31)} · 5 planificados` : `${enSemana_fit31} / 5 entrenamientos planificados`;
 ok(tuPlan_fit31.includes(planTexto_fit31),
   `🚨 FIT F31 — Tu Plan: «${planTexto_fit31}», sin nota ni porcentaje (apartados 11 y 31)`);
 ok(/L Push · M Pull · X Legs · V Upper · S Lower/.test(tuPlan_fit31),
@@ -10109,7 +10110,7 @@ ok(await pulsar('Ver Press de banca · Con barra'), '…su ficha');
 await esperarTexto(/Tu progreso/i);
 ok(await pulsar('Ver progreso'), '…«Ver progreso»');
 const progreso_fit34 = await esperarTexto(/Historial ·/i);
-ok(/Historial · 2 sesiones/i.test(progreso_fit34),
+ok(/Historial · 2 entrenamientos/i.test(progreso_fit34),
   '🚨 FIT F34 — y abre el detalle de progreso de la F29, con sus dos sesiones: no hay otra pantalla');
 
 almacen.fitness = fitnessDeAntes_fit34;
@@ -10199,7 +10200,7 @@ ok(await pulsarQueEmpiece_fit10('Ver el progreso de Curl viejo F35'),
 const det_fit35 = await esperarTexto(/Curl viejo F35/);
 ok(/Ejercicio archivado/i.test(det_fit35) && /ya no se propone/i.test(det_fit35),
   '…marcado «Ejercicio archivado», diciendo que ya no se propone y que lo suyo sigue aquí');
-ok(/Historial · 1 sesi[oó]n/i.test(det_fit35), '…con su sesión intacta');
+ok(/Historial · 1 entrenamiento\b/i.test(det_fit35), '…con su sesión intacta');
 
 page.off('console', oyente_fit35);
 almacen.fitness = fitnessDeAntes_fit35;
@@ -10315,7 +10316,7 @@ ok(await pulsar('Añadir a entrenamiento'), '…«Añadir a entrenamiento»');
 const opciones_fit36 = await esperarTexto(/A la sesi[oó]n en curso/i);
 ok(/A la sesi[oó]n en curso/i.test(opciones_fit36) && /Integración F36/.test(opciones_fit36),
   '🔓 FIT F36 — con una sesión en curso, se ofrece añadirlo A ELLA, la primera (apartado 17)');
-ok(await pulsar('Añadir a la sesión en curso: Integración F36'), '…se elige');
+ok(await pulsar('Añadir al entrenamiento en curso: Integración F36'), '…se elige');
 await esperarTexto(/Añadido a «Integración F36», en curso/);
 const ejs_fit36 = () => ((enCurso_fit36() || {}).origen || {}).ejercicios || [];
 ok(ejs_fit36().map((e) => e.exerciseId).join() === 'press-banca-barra,curl-barra',
@@ -10835,7 +10836,7 @@ ok(tras_fit39 === '12' && Number(guardada_fit39) === 12,
   `🔓 FIT F39 — girar a horizontal y volver no pierde nada: el campo dice ${tras_fit39} y la sesión guardada ${guardada_fit39} (apartado 47)`);
 ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), '…se sale');
 await esperarTexto(/Continuar entrenamiento/i);
-ok(await pulsar('Descartar sesión') && await pulsar('Descartar el entrenamiento en curso'), '…y se descarta para no dejarlo a medias');
+ok(await pulsar('Descartar entrenamiento') && await pulsar('Descartar el entrenamiento en curso'), '…y se descarta para no dejarlo a medias');
 
 almacen.fitness = fitnessDeAntes_fit39;
 almacen.salud = saludDeAntes_fit39;
@@ -10916,7 +10917,7 @@ ok(linea_fit40().notas === 'Agarre más ancho hoy',
   `🐛 FIT F40 — la nota NO se pierde al cerrar el panel enseguida (guardada: «${linea_fit40().notas || ''}»)`);
 ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), '…se sale');
 await esperarTexto(/Continuar entrenamiento/i);
-ok(await pulsar('Descartar sesión') && await pulsar('Descartar el entrenamiento en curso'), '…y se descarta');
+ok(await pulsar('Descartar entrenamiento') && await pulsar('Descartar el entrenamiento en curso'), '…y se descarta');
 
 /* 5 · EL ESCENARIO GRANDE (apartados 53 y 54): 400 sesiones —todas con press de
    banca, para que su gráfica tenga 400 registros—, 200 ejercicios propios, 100
@@ -11070,7 +11071,7 @@ ok(await aFitness_fit39(), 'FIT F41 · 7 — se recarga en mitad del entrenamien
 const tarjeta_fit41 = await esperarTexto(/Tienes un entrenamiento en curso/i);
 ok(/Tienes un entrenamiento en curso/i.test(tarjeta_fit41) && /Recupera F41/.test(tarjeta_fit41),
   '…y al volver lo ofrece, con su nombre');
-const salidas_fit41 = await page.evaluate(() => ['Continuar entrenamiento', 'Finalizar', 'Descartar sesión']
+const salidas_fit41 = await page.evaluate(() => ['Continuar entrenamiento', 'Finalizar', 'Descartar entrenamiento']
   .map((t) => [...document.querySelectorAll('button')].some((b) => b.innerText.trim() === t)));
 ok(salidas_fit41.every(Boolean),
   `🔓 FIT F41 — con las TRES salidas del apartado 6: Continuar entrenamiento · Finalizar · Descartar (C-43; ${JSON.stringify(salidas_fit41)})`);
@@ -11203,6 +11204,205 @@ LLENO_ESCRITURA.clear();
 almacen.fitness = fitnessDeAntes_fit41;
 almacen.saludFotos = fotosDeAntes_fit41;
 almacen.ajustes = ajustesDeAntes_fit41;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F42 — Auditoría visual y acabado (Entrega 4 · 42/45)
+   ══════════════════════════════════════════════════════════════════════════
+   Lo que el código no dice y el navegador sí: que las tres áreas abren con la
+   MISMA cabecera (apartado 50); que ninguna letra baja de 10 px (6 y 55); que
+   en lo que se lee no hay un emoji ni «sesión» (31 y 57); que el reloj y los
+   campos KG y REPES son tabulares (8 y 44); que el acento como TEXTO llega a
+   4,5:1 sobre su fondo de verdad, en oscuro y en claro, con el acento de
+   serie, que sin arreglar daba 4,27 (5, 55 y 56); que dos hojas distintas
+   tienen el mismo velo, el mismo radio y el mismo botón de cerrar (38 y 39); y
+   que las miniaturas de foto son cuadradas en los dos sitios (21). */
+console.log('\n── FIT F42 · Acabado visual ──');
+const fitnessDeAntes_fit42 = almacen.fitness;
+const fotosDeAntes_fit42 = almacen.saludFotos;
+const ajustesDeAntes_fit42 = almacen.ajustes;
+const erroresAntes_fit42 = errores.length;
+const ACENTO_DE_SERIE_fit42 = '#5C7E9A';
+const conTema_fit42 = (tema) => ({
+  ...(ajustesDeAntes_fit42 || {}),
+  accent: ACENTO_DE_SERIE_fit42,
+  apariencia: { ...((ajustesDeAntes_fit42 || {}).apariencia || {}), tema },
+  seguridad: {
+    ...((ajustesDeAntes_fit42 || {}).seguridad || {}),
+    protectedActions: [], protectedAreas: [], migradoAcciones: true, migradoAreas: true,
+  },
+});
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+/* El escenario lo construyen las librerías de verdad, pedidas a la página. */
+const escenario_fit42 = await page.evaluate(async () => {
+  const r = await import('/src/lib/rendimientoFitness.js');
+  const en = await import('/src/lib/entrenamiento.js');
+  const hoy = new Date().toLocaleDateString('sv-SE');
+  const e = r.escenarioGrande({ sesiones: 12, fotos: 0, hoy });
+  /* ⚠️ El escenario de la F40 llama a sus entrenamientos «Sesión 1»… Eso es un
+     NOMBRE que pone quien entrena, no texto de la aplicación: se cambia, para
+     que la comprobación de términos mida solo lo que escribe JosStyle. */
+  e.fitness.sesiones.forEach((x, i) => { x.nombre = `Pierna ${i + 1}`; });
+  const viva = en.empezarSesion({ nombre: 'Acabado F42', lineas: [{ exerciseId: 'press-banca-barra', series: 3, repeticiones: 8, peso: 40 }], hoy });
+  return { ...e.fitness, sesiones: [...e.fitness.sesiones, viva], plantillas: [], planActivo: null };
+});
+almacen.fitness = escenario_fit42;
+almacen.saludFotos = [
+  { id: 'f42-f1', path: 'usuario-prueba/f42-jun.jpg', fecha: '2026-06-10', nota: 'Antes F42' },
+  { id: 'f42-f2', path: 'usuario-prueba/f42-sept.jpg', fecha: '2026-09-10', nota: 'Después F42' },
+];
+almacen.ajustes = conTema_fit42('oscuro');
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+
+/* Lo que se mide, en la página. El contraste se calcula contra el fondo de
+   VERDAD: el color de cada antepasado compuesto de arriba abajo, con su
+   transparencia (una fila teñida de acento sobre una tarjeta sobre el fondo). */
+const leerTexto_fit42 = () => page.evaluate(() => document.body.innerText);
+const minimoDeLetra_fit42 = () => page.evaluate(() => {
+  const visibles = [...document.querySelectorAll('body *')].filter((el) => !el.closest('svg') && el.offsetParent !== null
+    && [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()));
+  let min = Infinity; let quien = '';
+  for (const el of visibles) { const t = parseFloat(getComputedStyle(el).fontSize); if (t < min) { min = t; quien = el.textContent.trim().slice(0, 30); } }
+  return { min, quien };
+});
+const contrasteDe_fit42 = (selector, texto) => page.evaluate(({ selector, texto }) => {
+  const rgba = (c) => { const m = (c || '').match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map((x) => parseFloat(x)); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
+  const lum = ({ r, g, b }) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+  const el = [...document.querySelectorAll(selector)].find((x) => x.textContent.trim() === texto && x.offsetParent !== null);
+  if (!el) return null;
+  const capas = [];
+  for (let n = el; n; n = n.parentElement) { const c = rgba(getComputedStyle(n).backgroundColor); if (c && c.a > 0) capas.push(c); }
+  let base = { r: 255, g: 255, b: 255 };
+  for (const c of capas.reverse()) base = { r: c.r * c.a + base.r * (1 - c.a), g: c.g * c.a + base.g * (1 - c.a), b: c.b * c.a + base.b * (1 - c.a) };
+  const a = lum(rgba(getComputedStyle(el).color)); const b = lum(base);
+  /* Y el acento SIN corregir sobre el mismo fondo: la prueba de que la
+     comprobación se pondría roja sin `acentoLegible`. */
+  const crudo = lum({ r: 92, g: 126, b: 154 });
+  return {
+    ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05),
+    crudo: (Math.max(crudo, b) + 0.05) / (Math.min(crudo, b) + 0.05),
+    color: getComputedStyle(el).color,
+  };
+}, { selector, texto });
+const CHOCA_fit42 = /\b(sesi[oó]n(?:es)?|workouts?|rutinas?)\b/i;
+const EMOJI_fit42 = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2B50}\u{2B55}]/u;
+
+/* 1 · LA MISMA CABECERA EN LAS TRES ÁREAS (apartado 50). */
+const cabecera_fit42 = (titulo) => page.evaluate((t) => {
+  const h = [...document.querySelectorAll('h2')].find((x) => x.textContent.trim() === t && x.offsetParent !== null);
+  if (!h) return null;
+  const s = getComputedStyle(h);
+  const sub = h.nextElementSibling ? getComputedStyle(h.nextElementSibling).fontSize : '';
+  return `${s.fontSize} ${s.fontWeight} ${s.fontFamily.split(',')[0]} · ${sub}`;
+}, titulo);
+const pantallas_fit42 = {};
+ok(await aFitness_fit39() && await pulsar('Rangos') && /Tu rango/.test(await esperarTexto(/Tu rango/)), 'FIT F42 — Rangos');
+const cabRangos_fit42 = await cabecera_fit42('Tu rango');
+pantallas_fit42.Rangos = { texto: await leerTexto_fit42(), letra: await minimoDeLetra_fit42() };
+ok(await pulsar('Progreso') && /Tu progreso/.test(await esperarTexto(/Tu progreso/)), 'FIT F42 — Progreso');
+const cabProgreso_fit42 = await cabecera_fit42('Tu progreso');
+pantallas_fit42.Progreso = { texto: await leerTexto_fit42(), letra: await minimoDeLetra_fit42() };
+ok(await pulsar('Entrenamiento') && /Tu Plan/.test(await esperarTexto(/Tu Plan/)), 'FIT F42 — Entrenamiento');
+const cabEntreno_fit42 = await cabecera_fit42('Tu Plan');
+pantallas_fit42.Entrenamiento = { texto: await leerTexto_fit42(), letra: await minimoDeLetra_fit42() };
+ok(!!cabRangos_fit42 && cabRangos_fit42 === cabProgreso_fit42 && cabProgreso_fit42 === cabEntreno_fit42,
+  `🚨 FIT F42 — las tres áreas abren con la MISMA cabecera: tamaño, peso, familia y subtítulo (apartado 50; ${cabRangos_fit42} | ${cabProgreso_fit42} | ${cabEntreno_fit42})`);
+ok(await pulsar('Abrir Historial') && /Historial/.test(await esperarTexto(/Historial/)), 'FIT F42 — Historial');
+pantallas_fit42.Historial = { texto: await leerTexto_fit42(), letra: await minimoDeLetra_fit42() };
+
+/* 2 · EL ENTRENAMIENTO EN VIVO: cifras tabulares y el acento legible. */
+ok(await aFitness_fit39() && await pulsar('Continuar entrenamiento')
+  && await page.waitForSelector('button[aria-label^="Marcar la serie"]', { timeout: 8000 }).then(() => true, () => false),
+'FIT F42 — el entrenamiento en vivo');
+pantallas_fit42['Entrenamiento en vivo'] = { texto: await leerTexto_fit42(), letra: await minimoDeLetra_fit42() };
+const tabulares_fit42 = await page.evaluate(() => {
+  const reloj = [...document.querySelectorAll('p, span')].find((x) => /^\d{1,2}:\d{2}(:\d{2})?$/.test(x.textContent.trim()) && x.offsetParent !== null);
+  const peso = document.querySelector('input[aria-label="Peso de la serie 1"]');
+  const reps = document.querySelector('input[aria-label="Repeticiones de la serie 1"]');
+  const f = (el) => (el ? getComputedStyle(el).fontVariantNumeric : 'no está');
+  return { reloj: f(reloj), peso: f(peso), reps: f(reps) };
+});
+ok(/tabular-nums/.test(tabulares_fit42.reloj) && /tabular-nums/.test(tabulares_fit42.peso) && /tabular-nums/.test(tabulares_fit42.reps),
+  `🚨 FIT F42 — el reloj y los campos KG y REPES, con cifras tabulares: no bailan (apartados 8 y 44; ${JSON.stringify(tabulares_fit42)})`);
+const ahoraOscuro_fit42 = await contrasteDe_fit42('p', 'Ahora');
+ok(!!ahoraOscuro_fit42 && ahoraOscuro_fit42.ratio >= 4.5,
+  `🚨 FIT F42 — en oscuro, «Ahora» en el acento de serie se lee a ${ahoraOscuro_fit42 ? ahoraOscuro_fit42.ratio.toFixed(2) : '—'}:1 sobre su fondo de verdad: sin arreglar no llegaba a 4,5 (apartado 55)`);
+ok(!!ahoraOscuro_fit42 && ahoraOscuro_fit42.color !== 'rgb(92, 126, 154)' && ahoraOscuro_fit42.crudo < 4.5,
+  `…y es el acento aclarado: el de serie, sin corregir, se leería a ${ahoraOscuro_fit42 ? ahoraOscuro_fit42.crudo.toFixed(2) : '—'}:1 sobre ese mismo fondo`);
+
+/* 3 · DOS HOJAS DISTINTAS, LA MISMA HOJA (apartados 38 y 39). */
+const hoja_fit42 = () => page.evaluate(() => {
+  const d = [...document.querySelectorAll('[role="dialog"]')].pop();
+  if (!d) return null;
+  const caja = d.querySelector('.dialogo-caja');
+  const cerrar = [...d.querySelectorAll('button[aria-label^="Cerrar"]')][0];
+  return {
+    velo: getComputedStyle(d).backgroundColor,
+    radio: caja ? getComputedStyle(caja).borderTopLeftRadius : '',
+    cerrar: cerrar ? `${Math.round(cerrar.getBoundingClientRect().width)}x${Math.round(cerrar.getBoundingClientRect().height)} ${getComputedStyle(cerrar).borderRadius}` : '',
+    numeros: caja ? getComputedStyle(caja).fontVariantNumeric : '',
+  };
+});
+await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Salir|Volver a Fitness/.test(b.getAttribute('aria-label') || b.innerText))?.click());
+await page.waitForTimeout(400);
+ok(await aFitness_fit39() && await pulsar('Rangos') && await pulsar('Por qué tu rango general'), 'FIT F42 — la explicación de un rango');
+await page.waitForTimeout(500);
+const explicacion_fit42 = await hoja_fit42();
+await page.keyboard.press('Escape');
+await page.waitForTimeout(400);
+ok(await pulsar('Historial de tu rango general'), '…y el historial de un rango');
+await page.waitForTimeout(500);
+const historialHoja_fit42 = await hoja_fit42();
+await page.keyboard.press('Escape');
+await page.waitForTimeout(400);
+ok(!!explicacion_fit42 && !!historialHoja_fit42 && explicacion_fit42.velo === historialHoja_fit42.velo
+  && explicacion_fit42.radio === historialHoja_fit42.radio && explicacion_fit42.cerrar === historialHoja_fit42.cerrar && !!explicacion_fit42.cerrar,
+`🚨 FIT F42 — el mismo velo, el mismo radio y el mismo botón de cerrar (apartados 38 y 39; ${JSON.stringify(explicacion_fit42)} | ${JSON.stringify(historialHoja_fit42)})`);
+ok(/tabular-nums/.test((explicacion_fit42 || {}).numeros || ''), '…y las hojas, que van por portal fuera de Fitness, también con cifras tabulares');
+
+/* 4 · LAS MINIATURAS, CUADRADAS EN LOS DOS SITIOS (apartado 21). */
+ok(await pulsar('Progreso'), 'FIT F42 — Progreso, con dos fotos');
+await page.waitForTimeout(1200);
+const tira_fit42 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Foto del"]')]
+  .map((b) => { const r = b.getBoundingClientRect(); return r.height ? r.width / r.height : 0; }));
+ok(tira_fit42.length >= 1 && tira_fit42.every((p) => Math.abs(p - 1) < 0.03),
+  `🚨 FIT F42 — la tira de fotos de Progreso, cuadrada: era la única en 3:4 (${tira_fit42.map((p) => p.toFixed(2)).join(', ')})`);
+ok(await pulsar('Fotos'), '…y la galería');
+await page.waitForTimeout(1200);
+const galeria_fit42 = await page.evaluate(() => [...document.querySelectorAll('img[alt^="Foto de progreso del"]')]
+  .map((i) => { const r = i.getBoundingClientRect(); return r.height ? r.width / r.height : 0; }));
+ok(galeria_fit42.length >= 1 && galeria_fit42.every((p) => Math.abs(p - 1) < 0.03),
+  `…cuadrada también (${galeria_fit42.map((p) => p.toFixed(2)).join(', ')})`);
+
+/* 5 · LO QUE SE LEE: ni 9 px, ni un emoji, ni «sesión» (apartados 6, 31, 55 y 57). */
+const pequenas_fit42 = Object.entries(pantallas_fit42).filter(([, p]) => p.letra.min < 10);
+ok(pequenas_fit42.length === 0,
+  `🚨 FIT F42 — ninguna letra por debajo de 10 px en ${Object.keys(pantallas_fit42).length} pantallas${pequenas_fit42.length ? ` — ${pequenas_fit42.map(([n, p]) => `${n}: ${p.letra.min}px «${p.letra.quien}»`).join('; ')}` : ''}`);
+const conEmoji_fit42 = Object.entries(pantallas_fit42).filter(([, p]) => EMOJI_fit42.test(p.texto)).map(([n]) => n);
+ok(conEmoji_fit42.length === 0, `FIT F42 — ni un emoji haciendo de icono (apartado 31)${conEmoji_fit42.length ? ` — ${conEmoji_fit42}` : ''}`);
+const conChoque_fit42 = Object.entries(pantallas_fit42).map(([n, p]) => [n, (p.texto.match(CHOCA_fit42) || [])[0]]).filter(([, w]) => w);
+ok(conChoque_fit42.length === 0, `FIT F42 — una palabra por concepto: ni «sesión» ni «rutina» (apartado 57)${conChoque_fit42.length ? ` — ${JSON.stringify(conChoque_fit42)}` : ''}`);
+
+/* 6 · Y EN CLARO (apartado 56): el acento legible también ahí. */
+almacen.ajustes = conTema_fit42('claro');
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+ok(await aFitness_fit39() && await pulsar('Continuar entrenamiento')
+  && await page.waitForSelector('button[aria-label^="Marcar la serie"]', { timeout: 8000 }).then(() => true, () => false),
+'FIT F42 — en claro, el entrenamiento en vivo');
+const ahoraClaro_fit42 = await contrasteDe_fit42('p', 'Ahora');
+ok(!!ahoraClaro_fit42 && ahoraClaro_fit42.ratio >= 4.5,
+  `🚨 FIT F42 — en claro, «Ahora» se lee a ${ahoraClaro_fit42 ? ahoraClaro_fit42.ratio.toFixed(2) : '—'}:1 (apartado 56)`);
+ok((await minimoDeLetra_fit42()).min >= 10, '…y ninguna letra baja de 10 px');
+
+const nuevos_fit42 = errores.slice(erroresAntes_fit42);
+ok(nuevos_fit42.length === 0, `FIT F42 — y ni un error por el camino${nuevos_fit42.length ? ` — ${nuevos_fit42[0]}` : ''}`);
+errores.splice(erroresAntes_fit42);
+almacen.fitness = fitnessDeAntes_fit42;
+almacen.saludFotos = fotosDeAntes_fit42;
+almacen.ajustes = ajustesDeAntes_fit42;
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

@@ -297,7 +297,7 @@ export function avisoDeEliminar(plan) {
    pantalla rota (EH F41), y aquí el botón lleva al constructor que ya existe. */
 export const ESTADO_VACIO_PLANTILLAS = {
   titulo: 'Aún no tienes plantillas',
-  texto: 'Construye tu primera rutina y aparecerá aquí.',
+  texto: 'Construye tu primera plantilla y aparecerá aquí.',
   accion: 'Crear entrenamiento',
 };
 

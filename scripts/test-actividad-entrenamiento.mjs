@@ -350,7 +350,7 @@ const PLAN = conPlan(F(S('l', '2026-09-21', { nombre: 'Push' }), S('x', '2026-09
 const rPl = resumenDeActividad(PLAN, { hoy: HOY });
 ok(rPl.plan && rPl.plan.planificadas === 5 && rPl.plan.realizadas === 2,
   '🚨 La semana del plan: 5 planificadas, 2 realizadas (apartado 11)');
-ok(rPl.plan.texto === '2 / 5 sesiones planificadas', '🚨 «2 / 5 sesiones planificadas» — sin nota (apartado 11)');
+ok(rPl.plan.texto === '2 / 5 entrenamientos planificados', '🚨 «2 / 5 entrenamientos planificados» — sin nota (apartado 11)');
 ok(rPl.plan.detalle === 'L Push · M Pull · X Legs · V Upper · S Lower',
   '🚨 La estructura REAL del plan: «L Push · M Pull · X Legs · V Upper · S Lower» (apartado 12)');
 ok(rPl.campos.sesionesPlanificadas === 5 && rPl.campos.sesionesPlanificadasHechas === 2,

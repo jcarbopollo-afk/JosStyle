@@ -1109,6 +1109,19 @@ else
   fallo "Falla la validación del catálogo"; grep '✗' /tmp/jc_validacion_catalogo.log
 fi
 
+# FIT F42 — auditoría visual y acabado. Lo que más se vigila: que ninguna pantalla de Fitness se
+# salga de su escala (letra, pesos, radios, espaciado, mayúsculas, un solo espaciado de letra); que
+# no haya un emoji haciendo de icono ni un color escrito a mano; que el acento como TEXTO llegue a
+# 4,5:1 con los doce acentos en los dos temas (`acentoLegible`); que las hojas, los filtros y los
+# selectores salgan de un sitio (`HOJA`, `piezasFitness.jsx`); una fecha con un formato por papel
+# (`fechasFitness.js`); una palabra por concepto; cifras tabulares; y que la capa visual no toque
+# ni un motor. Lo que calcula el navegador, en el recorrido de Chromium.
+if node --import ./scripts/resolver-vite.mjs scripts/test-acabado-fitness.mjs >/tmp/jc_acabado_fitness.log 2>&1; then
+  ok "Acabado visual de Fitness (FIT F42) — $(grep -c '✓' /tmp/jc_acabado_fitness.log) comprobaciones"
+else
+  fallo "Falla el acabado visual de Fitness"; grep '✗' /tmp/jc_acabado_fitness.log
+fi
+
 # FIT F41 — persistencia, recuperación y resiliencia. Lo que más se vigila: que lo que la puerta
 # de carga no entiende —una sesión sin id, dos copias distintas de la misma, un objetivo sin
 # ejercicio— se APARTE con su original en vez de perderse en el siguiente guardado; que la

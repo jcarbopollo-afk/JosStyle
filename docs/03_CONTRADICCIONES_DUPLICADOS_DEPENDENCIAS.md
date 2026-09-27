@@ -909,6 +909,24 @@ lleva «Finalizar», que lleva al resumen de la F8 —donde él decide si se gua
 construye esa pantalla ahora. La comprobación de la F39 **se dio la vuelta**, no se borró
 (`test-robustez-fitness.mjs`).
 
+### C-44 — ✅ RESUELTA AL CONSTRUIR (FIT F42, v3.124.0) · «Entrenamiento» y «plantilla» (apartado 57) contra los textos literales de fases anteriores que decían «sesión» y «rutina»
+
+**El apartado 57 de la F42 pide** *"utilizar siempre los mismos términos… no alternar
+arbitrariamente entre Workout, Sesión, Rutina cuando representan el mismo concepto"*. **Varias fases
+anteriores dejaron textos literales de su enunciado** con esas palabras: *"Descartar sesión"* y *"Tu
+sesión está en curso"* (F7), *"Se perderán los datos registrados en esta sesión"* (F8), *"Esta acción
+eliminará la sesión del historial"* (F10), *"Construye tu primera rutina"* (F4), *"crea tu propia
+rutina"* (F6) y *"3 / 4 sesiones planificadas"* (F31).
+
+**La lectura que respeta las dos:** aquellos textos decían lo que había que decir en ese momento, y
+la F42 es la fase que revisa el lenguaje de Fitness entero. Se conserva **lo que dice** cada uno y se
+cambia **la palabra**: «entrenamiento» para lo que se entrena y queda en el historial (la pestaña, el
+historial y «Empezar entrenamiento» ya lo llamaban así) y «plantilla» para lo que él se construye (la
+sección ya se llamaba «Tus plantillas»). ⚠️ **Por dentro el dato sigue siendo `sesion`**: es la clave
+guardada desde la F7, y un id se renombra por fuera, nunca por dentro (FIT F1). Las comprobaciones que
+guardaban el texto viejo **se dieron la vuelta**, no se borraron. Y de paso se cambió un texto que
+nadie había pedido: **«Cerrar la sesión»** en Tu Plan, que se leía como salir de la cuenta.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

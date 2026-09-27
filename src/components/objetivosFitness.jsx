@@ -1,6 +1,7 @@
 import React from 'react';
 import { Target, CheckCircle2, CalendarClock, Sparkles } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, EmptyHint, PrimaryButton } from './ui';
 import { CELEBRACION, SIN_PORCENTAJE } from '../lib/objetivosFitness';
@@ -35,7 +36,7 @@ export function GoalProgress({ progreso, accent, distancia = '' }) {
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-base font-bold tabular-nums" style={{ color: COLORS.text }}>{progresoTexto}</p>
         {porcentaje !== null && (
-          <p className="text-xs font-bold tabular-nums" style={{ color: accent }}>{porcentaje} %</p>
+          <p className="text-xs font-bold tabular-nums" style={{ color: acentoLegible(accent) }}>{porcentaje} %</p>
         )}
       </div>
 
@@ -74,7 +75,7 @@ export function GoalStatus({ estado, nombre, simbolo, accent, avisoFecha = '' })
         className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg"
         style={{
           background: hecho ? hexToRgba(accent, 0.14) : hexToRgba(COLORS.border, 0.45),
-          color: hecho ? accent : COLORS.textMuted,
+          color: hecho ? acentoLegible(accent) : COLORS.textMuted,
         }}
       >
         <span aria-hidden="true">{simbolo}</span>
@@ -113,7 +114,7 @@ export function GoalHistory({ filas = [], accent, unidad = '', onVerSesion = nul
           <span className="text-xs min-w-0 flex-1" style={{ color: COLORS.textMuted }}>{f.fechaTexto}</span>
           <span
             className="text-sm font-bold tabular-nums"
-            style={{ color: f.alcanza ? accent : COLORS.text }}
+            style={{ color: f.alcanza ? acentoLegible(accent) : COLORS.text }}
           >
             {f.valor}{unidad ? ` ${unidad}` : ''}
           </span>
@@ -122,7 +123,7 @@ export function GoalHistory({ filas = [], accent, unidad = '', onVerSesion = nul
               onClick={() => onVerSesion(f.sesionId)}
               aria-label={`Ver el entrenamiento del ${f.fechaTexto}`}
               className="text-xs font-bold px-2 py-2 rounded-lg toque-44 shrink-0"
-              style={{ color: accent }}
+              style={{ color: acentoLegible(accent) }}
             >
               Ver
             </button>
@@ -158,10 +159,10 @@ export function GoalCompletion({ objetivo, accent, onCerrar }) {
   return (
     <Card>
       <div className="flex items-center gap-2">
-        <Sparkles size={18} style={{ color: accent }} aria-hidden="true" />
+        <Sparkles size={18} style={{ color: acentoLegible(accent) }} aria-hidden="true" />
         <p
           className="text-lg font-extrabold"
-          style={{ color: accent, fontFamily: "'Manrope', sans-serif" }}
+          style={{ color: acentoLegible(accent), fontFamily: "'Manrope', sans-serif" }}
         >
           {CELEBRACION.titulo}
         </p>
@@ -216,21 +217,25 @@ export function GoalChart({ grafica, accent }) {
         role="img"
         aria-label={`Evolución: de ${valores[0]} a ${valores[valores.length - 1]} ${grafica.unidad}, con el objetivo en ${grafica.linea} ${grafica.unidad}`}
       >
-        {/* La línea del objetivo, discontinua y con su rótulo. */}
+        {/* La línea del objetivo, discontinua y con su rótulo. 🔓 FIT F42 (apartado
+            19) — en el lenguaje de las otras dos gráficas de Fitness: los datos con
+            el acento y la referencia discontinua y neutra, como la rejilla de la F12.
+            Aquí iba al revés —los datos en el color del texto y la meta con el
+            acento—, así que la misma línea significaba otra cosa en cada pantalla. */}
         {grafica.linea !== null && (
           <>
             <line
               x1={m} x2={ANCHO_G - m} y1={y(grafica.linea)} y2={y(grafica.linea)}
-              stroke={accent} strokeWidth="1.5" strokeDasharray="4 4" opacity="0.7"
+              stroke={COLORS.textMuted} strokeWidth="1.5" strokeDasharray="4 4"
             />
-            <text x={ANCHO_G - m} y={y(grafica.linea) - 4} textAnchor="end" fontSize="9" fill={accent}>
+            <text x={ANCHO_G - m} y={y(grafica.linea) - 4} textAnchor="end" fontSize="10" fill={COLORS.textMuted}>
               {grafica.linea} {grafica.unidad}
             </text>
           </>
         )}
-        <path d={camino} fill="none" stroke={COLORS.text} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={camino} fill="none" stroke={acentoLegible(accent)} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
         {grafica.puntos.map((p, i) => (
-          <circle key={p.fecha + i} cx={x(i)} cy={y(p.valor)} r="4" fill={COLORS.text} stroke={COLORS.surface} strokeWidth="2" />
+          <circle key={p.fecha + i} cx={x(i)} cy={y(p.valor)} r="4" fill={acentoLegible(accent)} stroke={COLORS.surface} strokeWidth="2" />
         ))}
       </svg>
       <div className="flex justify-between text-[10px] tabular-nums" style={{ color: COLORS.textMuted }}>
@@ -261,7 +266,7 @@ export function GoalSkillSteps({ skill, accent }) {
       <div className="mt-2 space-y-1">
         {skill.peldanos.map((p) => (
           <div key={p.exerciseId} className="flex items-center gap-2">
-            <span aria-hidden="true" style={{ color: p.hecho ? accent : COLORS.textMuted }}>
+            <span aria-hidden="true" style={{ color: p.hecho ? acentoLegible(accent) : COLORS.textMuted }}>
               {p.hecho ? '✓' : '·'}
             </span>
             <span className="text-xs min-w-0 flex-1" style={{ color: p.hecho ? COLORS.text : COLORS.textMuted }}>
@@ -269,7 +274,7 @@ export function GoalSkillSteps({ skill, accent }) {
             </span>
             {p.hecho && (
               <span className="text-[10px] tabular-nums" style={{ color: COLORS.textMuted }}>
-                {p.veces} {p.veces === 1 ? 'sesión' : 'sesiones'}
+                {p.veces} {p.veces === 1 ? 'entrenamiento' : 'entrenamientos'}
               </span>
             )}
           </div>
@@ -277,7 +282,7 @@ export function GoalSkillSteps({ skill, accent }) {
       </div>
       <p
         className="text-xs font-semibold mt-2"
-        style={{ color: skill.conseguida ? accent : COLORS.textMuted }}
+        style={{ color: skill.conseguida ? acentoLegible(accent) : COLORS.textMuted }}
       >
         {skill.conseguida ? `${skill.objetivoNombre}: conseguida` : `Objetivo: ${skill.objetivoNombre}`}
       </p>
@@ -297,7 +302,7 @@ export function GoalLiveHint({ enVivo, accent }) {
       className="text-[11px] tabular-nums px-2.5 py-1.5 rounded-lg inline-flex items-center gap-1.5"
       style={{ background: hexToRgba(accent, 0.1), color: COLORS.textMuted }}
     >
-      <Target size={12} style={{ color: accent }} aria-hidden="true" />
+      <Target size={12} style={{ color: acentoLegible(accent) }} aria-hidden="true" />
       <span>
         Objetivo: <strong style={{ color: COLORS.text }}>{enVivo.objetivoTexto}</strong>
         {enVivo.actualTexto ? <> · Actual: <strong style={{ color: COLORS.text }}>{enVivo.actualTexto}</strong></> : null}

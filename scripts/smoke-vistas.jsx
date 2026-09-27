@@ -325,6 +325,7 @@ import {
   ExerciseMuscleBreakdown, ExerciseEquipment, ExerciseTechnique, ExerciseTutorial, ExerciseProgressions,
   ExerciseVariantsList, ExerciseAlternatives, ExercisePersonalProgress, ExerciseAddToWorkout, ExerciseFavoriteButton,
 } from '../src/components/bibliotecaEjercicios.jsx';
+import { PastillaFiltro, OpcionSegmentada, BotonCerrarHoja } from '../src/components/piezasFitness.jsx';
 import {
   fichaDeBiblioteca as fichaF34, consultarBiblioteca as consultarF34, opcionesDeFiltroBiblioteca as opcionesF34,
   paginaDeBiblioteca as paginaF34,
@@ -3946,6 +3947,11 @@ const CASOS = [
     opciones: opcionesF34(consultarF34({}).cuenta), filtros: { entorno: 'calistenia' }, accent, onAlternar: noop, onLimpiar: noop,
   })],
   ['ExerciseFilterChip', ExerciseFilterChip, () => ({ activa: true, cuantos: 12, accent, onClick: noop, children: 'Espalda' })],
+  /* ══ FIT F42 — las piezas que se repetían: una pastilla, una opción y el cerrar ══ */
+  ['PastillaFiltro (puesta, con recuento)', PastillaFiltro, () => ({ activa: true, cuantos: 3, accent, onClick: noop, children: 'Fotos' })],
+  ['PastillaFiltro (sin resultados: apagada)', PastillaFiltro, () => ({ activa: false, cuantos: 0, accent, onClick: noop, children: 'Rangos' })],
+  ['OpcionSegmentada', OpcionSegmentada, () => ({ activa: true, accent, onClick: noop, children: '30 días' })],
+  ['BotonCerrarHoja', BotonCerrarHoja, () => ({ onClick: noop, etiqueta: 'Cerrar el historial' })],
   ['ExerciseGrid', ExerciseGrid, () => ({ pagina: paginaF34(consultarF34({}).resultado), accent, onAbrir: noop, onMas: noop, favoritos: ['flexion'] })],
   ['ExerciseCard', ExerciseCard, () => ({ ejercicio: CATALOGO_EJERCICIOS[0], accent, onAbrir: noop, favorito: true })],
   ['ExerciseHeader', ExerciseHeader, () => ({ ficha: fichaF34({}, 'dominada-prona'), accent })],

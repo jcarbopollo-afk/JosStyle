@@ -20,6 +20,7 @@
    =========================================================================== */
 
 import { fechaLocalISO, todayISO, uid, fechaValida } from './helpers.js';
+import { fechaEtiqueta } from './fechasFitness.js';
 
 const lista = (x) => (Array.isArray(x) ? x : []);
 const texto = (v) => (typeof v === 'string' ? v.trim() : '');
@@ -170,14 +171,13 @@ export function editarFotoProgreso(fotos, id, cambios = {}, { ahora = null } = {
    3 · LA GALERÍA, AGRUPADA POR DÍA (apartados 9 y 10)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const MESES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
-
-/** El rótulo del apartado 10: **«12 SEPTIEMBRE 2026»**, en su forma corta. */
+/** El rótulo del apartado 10: **«12 SEPTIEMBRE 2026»**, en su forma corta.
+ *  🔓 FIT F42 (apartado 59) — sale de `fechaEtiqueta`, el rótulo de todo
+ *  Fitness: su lista de meses era una copia de la del historial de rangos. Lo
+ *  que no es una fecha se enseña tal cual, como antes. */
 export function etiquetaDeDia(iso) {
   const s = texto(iso);
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-  if (!m) return s;
-  return `${Number(m[3])} ${MESES[Number(m[2]) - 1] || ''} ${m[1]}`;
+  return fechaEtiqueta(s, { anio: true }) || s;
 }
 
 /**

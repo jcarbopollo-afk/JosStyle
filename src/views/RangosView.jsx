@@ -21,8 +21,10 @@
 import React, { useMemo, useState } from 'react';
 import { useDialogoAccesible } from '../components/dialogoAccesible';
 import { createPortal } from 'react-dom';
-import { ChevronRight, Check, Star, Lock, X, Dumbbell, ClipboardList } from 'lucide-react';
+import { ChevronRight, Check, Star, Lock, Dumbbell, ClipboardList } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { HOJA, acentoLegible } from '../lib/acabadoFitness';
+import { BotonCerrarHoja } from '../components/piezasFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, PrimaryButton, GhostBtn } from '../components/ui';
 import { RankBadge, RankLabel } from '../components/rangos';
@@ -117,7 +119,7 @@ export function RankOverviewCard({ datos, accent, onPorQue = null, onHistorial =
           accent={accent}
         />
         <div className="min-w-0">
-          <p className="text-2xl font-extrabold leading-tight" style={{ color: sin ? COLORS.text : accent, fontFamily: "'Manrope', sans-serif" }}>
+          <p className="text-2xl font-extrabold leading-tight" style={{ color: sin ? COLORS.text : acentoLegible(accent), fontFamily: "'Manrope', sans-serif" }}>
             {sin ? SIN_RANGO.nombre : d.global.nombre}
           </p>
           <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>
@@ -196,7 +198,7 @@ export function RankItem({ nivel, accent, onAbrir }) {
       <span className="text-[11px] font-bold text-center leading-tight" style={{ color: actual ? COLORS.text : COLORS.textMuted }}>
         {nivel.nombre}
       </span>
-      <span className="flex items-center gap-1 text-[10px]" style={{ color: actual ? accent : COLORS.textMuted }}>
+      <span className="flex items-center gap-1 text-[10px]" style={{ color: actual ? acentoLegible(accent) : COLORS.textMuted }}>
         <Icono size={10} aria-hidden="true" />
         {e.palabra}
       </span>
@@ -225,8 +227,8 @@ export function HojaDeRango({ detalle, accent, onCerrar }) {
   const Icono = e.icono;
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center fondo-entra"
-      style={{ background: 'rgba(0,0,0,0.5)' }}
+      className={HOJA.velo}
+      style={{ background: HOJA.fondoVelo }}
       onClick={onCerrar}
       role="dialog"
       aria-modal="true"
@@ -235,8 +237,8 @@ export function HojaDeRango({ detalle, accent, onCerrar }) {
       <div
         ref={caja}
         tabIndex={-1}
-        className="w-full max-w-md rounded-t-3xl p-5 space-y-4 hoja-entra hoja-movil dialogo-caja"
-        style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
+        className={`${HOJA.caja} space-y-4`}
+        style={{ background: COLORS.surface, paddingBottom: HOJA.abajo }}
         onClick={(ev) => ev.stopPropagation()}
       >
         <div className="flex items-start gap-4">
@@ -254,9 +256,7 @@ export function HojaDeRango({ detalle, accent, onCerrar }) {
               {e.palabra}
             </p>
           </div>
-          <button onClick={onCerrar} className="p-2 rounded-full flex-shrink-0 toque-44" style={{ background: COLORS.surface2 }} aria-label="Cerrar">
-            <X size={16} style={{ color: COLORS.text }} />
-          </button>
+          <BotonCerrarHoja onClick={onCerrar} etiqueta="Cerrar" />
         </div>
         <p className="text-sm" style={{ color: COLORS.text }}>{detalle.que}</p>
         <p className="text-xs" style={{ color: COLORS.textMuted }}>{detalle.mensaje}</p>
@@ -327,7 +327,7 @@ export function AnatomyPreview({ musculos = [], accent, onMusculo }) {
           const Icono = iconoDeGrupo(m.id);
           const dentro = (
             <>
-              <Icono size={18} style={{ color: m.sinRango ? COLORS.textMuted : accent }} aria-hidden="true" />
+              <Icono size={18} style={{ color: m.sinRango ? COLORS.textMuted : acentoLegible(accent) }} aria-hidden="true" />
               <span className="text-[10px] font-semibold text-center leading-tight" style={{ color: COLORS.textMuted }}>{m.nombre}</span>
             </>
           );
@@ -532,6 +532,10 @@ export default function RangosView({ fitness = null, propios = [], perfil = null
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
+      {/* 🔓 FIT F42 (apartado 50) — la cabecera de las tres áreas es la misma:
+          Progreso abre con «Tu progreso», Entrenamiento con «Tu Plan», y Rangos
+          empezaba directamente con la tarjeta. */}
+      <SectionTitle sub="Tu nivel, medido con lo que registras">Tu rango</SectionTitle>
       <RankDashboard resumen={resumen} bloques={bloques} accent={accent} />
 
       {/* ⚠️ La escala de los diez rangos **no es uno de los siete bloques** del

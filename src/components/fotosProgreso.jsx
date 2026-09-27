@@ -15,7 +15,9 @@ import { useDialogoAccesible } from './dialogoAccesible';
 import { MissingImage } from './estadosFitness';
 import { createPortal } from 'react-dom';
 import { Camera, X, ChevronLeft, ChevronRight, GitCompareArrows, Dumbbell } from 'lucide-react';
-import { COLORS } from '../tokens';
+import { COLORS, CAPAS } from '../tokens';
+import { PastillaFiltro } from './piezasFitness';
+import { HOJA, acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, Field, TextInput, PrimaryButton, GhostBtn, BotonBorrarDefinitivo, SectionTitle } from './ui';
 import { getSignedPhotoUrl } from '../lib/supabase';
@@ -109,7 +111,7 @@ export function ProgressPhotoEmpty({ accent, onAnadir = null }) {
   return (
     <Card>
       <div className="flex flex-col items-center text-center py-4">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3" style={{ background: hexToRgba(accent, 0.14), color: accent }}>
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3" style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}>
           <Camera size={24} />
         </div>
         <p className="text-base font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{VACIO_FOTOS.titulo}</p>
@@ -206,19 +208,10 @@ export function ProgressPhotoForm({ accent, hoy, onGuardar, onCancelar, guardand
               {TAGS_FOTO.map((t) => {
                 const puesta = tags.includes(t.id);
                 return (
-                  <button
-                    key={t.id}
-                    onClick={() => alternarTag(t.id)}
-                    aria-pressed={puesta}
-                    className="rounded-full px-3 py-1.5 text-[11px] font-semibold toque-44"
-                    style={{
-                      background: puesta ? hexToRgba(accent, 0.16) : COLORS.surface2,
-                      color: puesta ? accent : COLORS.textMuted,
-                      border: `1px solid ${puesta ? accent : COLORS.border}`,
-                    }}
-                  >
+                  /* 🔓 FIT F42 (apartado 42) — la pastilla de todos los filtros. */
+                  <PastillaFiltro key={t.id} activa={puesta} accent={accent} onClick={() => alternarTag(t.id)}>
                     {t.nombre}
-                  </button>
+                  </PastillaFiltro>
                 );
               })}
             </div>
@@ -282,7 +275,7 @@ export function ProgressPhotoCard({ foto, url, fallida, accent, onAbrir, onFallo
       )}
       {foto.tags.length > 0 && (
         <span
-          className="absolute bottom-1.5 left-1.5 rounded-full px-2 py-0.5 text-[9px] font-semibold"
+          className="absolute bottom-1.5 left-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold"
           style={{ background: hexToRgba(COLORS.surface, 0.85), color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}
         >
           {tagFoto(foto.tags[0]).nombre}
@@ -327,19 +320,19 @@ export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitne
     <div
       ref={caja}
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex flex-col fondo-entra dialogo-caja"
-      style={{ background: 'rgba(0,0,0,0.92)' }}
+      className={HOJA.visor}
+      style={{ background: CAPAS.escenarioFoto }}
       role="dialog"
       aria-modal="true"
       aria-label={`Foto del ${etiquetaDeDia(foto.fecha)}`}
     >
       <div className="flex items-center justify-between gap-2 p-3" style={{ paddingTop: 'calc(var(--safe-top) + 0.75rem)' }}>
         <div className="min-w-0">
-          <p className="text-sm font-bold" style={{ color: '#fff', fontFamily: "'Manrope', sans-serif" }}>{etiquetaDeDia(foto.fecha)}</p>
-          <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.65)' }}>{vecinas.posicion} de {vecinas.total}</p>
+          <p className="text-sm font-bold" style={{ color: CAPAS.sobreFoto, fontFamily: "'Manrope', sans-serif" }}>{etiquetaDeDia(foto.fecha)}</p>
+          <p className="text-[11px]" style={{ color: CAPAS.textoSuaveSobreFoto }}>{vecinas.posicion} de {vecinas.total}</p>
         </div>
-        <button onClick={onCerrar} aria-label="Cerrar la foto" className="rounded-full p-2 toque-44" style={{ background: 'rgba(255,255,255,0.12)' }}>
-          <X size={18} style={{ color: '#fff' }} />
+        <button onClick={onCerrar} aria-label="Cerrar la foto" className="rounded-full p-2 toque-44" style={{ background: CAPAS.botonSobreFoto }}>
+          <X size={18} style={{ color: CAPAS.sobreFoto }} />
         </button>
       </div>
 
@@ -347,7 +340,7 @@ export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitne
           `object-contain`, nunca estirada. */}
       <div className="flex-1 min-h-0 overflow-auto flex items-center justify-center px-3">
         {fallida ? (
-          <p className="text-sm text-center" style={{ color: 'rgba(255,255,255,0.75)' }}>{ERRORES_FOTO.leer.titulo}</p>
+          <p className="text-sm text-center" style={{ color: CAPAS.textoSuaveSobreFoto }}>{ERRORES_FOTO.leer.titulo}</p>
         ) : url ? (
           <img
             src={url}
@@ -361,11 +354,11 @@ export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitne
       </div>
 
       <div className="p-3 space-y-3" style={{ paddingBottom: 'calc(var(--safe-bottom) + 0.75rem)' }}>
-        {foto.nota && <p className="text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>{foto.nota}</p>}
+        {foto.nota && <p className="text-xs" style={{ color: CAPAS.textoSuaveSobreFoto }}>{foto.nota}</p>}
         {foto.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {foto.tags.map((t) => (
-              <span key={t} className="rounded-full px-2.5 py-1 text-[10px] font-semibold" style={{ background: 'rgba(255,255,255,0.14)', color: '#fff' }}>
+              <span key={t} className="rounded-full px-2.5 py-1 text-[10px] font-semibold" style={{ background: CAPAS.botonSobreFoto, color: CAPAS.sobreFoto }}>
                 {tagFoto(t).nombre}
               </span>
             ))}
@@ -375,13 +368,13 @@ export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitne
             la borró, el enlace queda sin asociación y se dice. */}
         {sesion.hay && (
           <div className="flex items-center gap-2">
-            <Dumbbell size={13} style={{ color: 'rgba(255,255,255,0.65)' }} aria-hidden="true" />
+            <Dumbbell size={13} style={{ color: CAPAS.textoSuaveSobreFoto }} aria-hidden="true" />
             {sesion.existe && onSesion ? (
-              <button onClick={() => onSesion(sesion.sesionId)} className="text-[11px] font-semibold underline toque-44" style={{ color: '#fff' }}>
+              <button onClick={() => onSesion(sesion.sesionId)} className="text-[11px] font-semibold underline toque-44" style={{ color: CAPAS.sobreFoto }}>
                 {sesion.texto}
               </button>
             ) : (
-              <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.65)' }}>
+              <span className="text-[11px]" style={{ color: CAPAS.textoSuaveSobreFoto }}>
                 {sesion.existe ? sesion.texto : 'El entrenamiento asociado ya no existe'}
               </span>
             )}
@@ -394,9 +387,9 @@ export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitne
             disabled={!vecinas.anterior}
             aria-label="Foto anterior"
             className="rounded-full p-2.5 toque-44 disabled:opacity-30"
-            style={{ background: 'rgba(255,255,255,0.12)' }}
+            style={{ background: CAPAS.botonSobreFoto }}
           >
-            <ChevronLeft size={18} style={{ color: '#fff' }} />
+            <ChevronLeft size={18} style={{ color: CAPAS.sobreFoto }} />
           </button>
 
           {/* 🚨 FIT F27, apartado 2 — *"También debe poder iniciarse desde el
@@ -409,7 +402,7 @@ export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitne
               onClick={() => onComparar(foto.id)}
               aria-label={`${ENTRADAS_COMPARADOR[1].etiqueta}, desde el ${etiquetaDeDia(foto.fecha)}`}
               className="rounded-full px-4 py-2.5 text-xs font-semibold toque-44"
-              style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }}
+              style={{ background: CAPAS.botonSobreFoto, color: CAPAS.sobreFoto }}
             >
               {ENTRADAS_COMPARADOR[1].etiqueta}
             </button>
@@ -423,7 +416,7 @@ export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitne
             titulo="¿Eliminar esta foto?"
             detalle="Esta acción no se puede deshacer. Las demás fotos de ese día se quedan."
             className="rounded-full px-4 py-2.5 text-xs font-semibold toque-44"
-            style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }}
+            style={{ background: CAPAS.botonSobreFoto, color: CAPAS.sobreFoto }}
           />
 
           <button
@@ -431,9 +424,9 @@ export function ProgressPhotoViewer({ foto, url, fallida, vecinas, accent, fitne
             disabled={!vecinas.siguiente}
             aria-label="Foto siguiente"
             className="rounded-full p-2.5 toque-44 disabled:opacity-30"
-            style={{ background: 'rgba(255,255,255,0.12)' }}
+            style={{ background: CAPAS.botonSobreFoto }}
           >
-            <ChevronRight size={18} style={{ color: '#fff' }} />
+            <ChevronRight size={18} style={{ color: CAPAS.sobreFoto }} />
           </button>
         </div>
       </div>

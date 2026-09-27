@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card } from './ui';
 
@@ -70,7 +71,7 @@ export class AreaSegura extends React.Component {
               type="button"
               onClick={() => this.setState({ error: null })}
               className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold py-1.5 toque-44"
-              style={{ color: accent || COLORS.info }}
+              style={{ color: acentoLegible(accent) || COLORS.info }}
             >
               <RotateCcw size={13} aria-hidden="true" />Reintentar
             </button>

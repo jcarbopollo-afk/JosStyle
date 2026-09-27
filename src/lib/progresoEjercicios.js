@@ -225,10 +225,10 @@ export const RANGOS_GRAFICA = PERIODOS.filter((p) => IDS_RANGOS_GRAFICA.includes
 /* Apartado 22 — qué mide la gráfica, según la clase. Una sola métrica por
    gráfica, con su etiqueta. */
 const METRICA_GRAFICA = {
-  carga: { campo: 'peso', etiqueta: 'Mejor peso por sesión', unidad: 'kg' },
-  lastre: { campo: 'peso', etiqueta: 'Mejor peso añadido por sesión', unidad: 'kg' },
-  repeticiones: { campo: 'reps', etiqueta: 'Mejores repeticiones por sesión', unidad: 'reps' },
-  tiempo: { campo: 'duracion', etiqueta: 'Mejor tiempo por sesión', unidad: 's' },
+  carga: { campo: 'peso', etiqueta: 'Mejor peso por entrenamiento', unidad: 'kg' },
+  lastre: { campo: 'peso', etiqueta: 'Mejor peso añadido por entrenamiento', unidad: 'kg' },
+  repeticiones: { campo: 'reps', etiqueta: 'Mejores repeticiones por entrenamiento', unidad: 'reps' },
+  tiempo: { campo: 'duracion', etiqueta: 'Mejor tiempo por entrenamiento', unidad: 's' },
 };
 
 /** Cuántos puntos hacen falta para que una gráfica diga algo (apartado 23):

@@ -64,6 +64,26 @@ export const COLORS_CLARO = {
 export const CONTRASTE_ALTO_OSCURO = { textMuted: '#C4C9D2', border: '#3A4250' };
 export const CONTRASTE_ALTO_CLARO = { textMuted: '#33383F', border: '#B9C0CB' };
 
+// ENTREGA 4 · FIT F42 (apartados 4 y 63) — las capas que NO cambian con el tema.
+// El velo que oscurece lo de detrás de una hoja y el «escenario» negro de una foto
+// son iguales en claro y en oscuro (una foto se mira sobre negro, como en Fotos del
+// iPhone), así que no son colores de `COLORS`. Estaban escritos a mano en cada
+// componente de Fitness —cuatro oscuridades distintas para el mismo velo (0,5,
+// 0,55 y 0,6)— y ahora se escriben aquí, una vez (regla 2).
+export const CAPAS = {
+  veloHoja: 'rgba(0, 0, 0, 0.55)',
+  escenarioFoto: 'rgba(0, 0, 0, 0.92)',
+  sobreFoto: '#FFFFFF',
+  // Lo secundario sobre una foto: 0,65, 0,68, 0,75 y 0,8 eran lo mismo.
+  textoSuaveSobreFoto: 'rgba(255, 255, 255, 0.75)',
+  // Los botones y las etiquetas del visor: 0,12 y 0,14 eran lo mismo.
+  botonSobreFoto: 'rgba(255, 255, 255, 0.14)',
+  // La etiqueta oscura encima de una foto (el «Antes» y el «Después»).
+  etiquetaSobreFoto: 'rgba(0, 0, 0, 0.55)',
+  // El icono sobre el tirador blanco del comparador.
+  iconoSobreBlanco: 'rgba(0, 0, 0, 0.85)',
+};
+
 // Fase 3 del Sistema de Personalización Visual Extrema — Constructor de temas. El "tema
 // personalizado" de Josué es un objeto de overrides: cada campo en `null`/vacío significa
 // "automático" (se deriva del tema claro/oscuro y del Principal, como hacía la app antes de esta

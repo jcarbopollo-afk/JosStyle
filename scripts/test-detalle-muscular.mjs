@@ -227,7 +227,10 @@ ok(/Mejorando/.test(vista) && /Descenso/.test(vista) && /Sin datos/.test(vista),
    `src/components/contribucionMuscular.jsx`, que la sustituye. Lo que se
    comprueba es lo mismo, donde ahora vive. */
 ok(/aria-label/.test(vista), 'Todo lo que se toca tiene etiqueta (apartado 29)');
-ok(/aria-pressed/.test(sinComentarios(leer('src/components/contribucionMuscular.jsx'))),
+/* 🔓 FIT F42 — la pastilla de los filtros vive en `piezasFitness.jsx` (una para
+   todo Fitness): la promesa se muda con ella, y se exige en los dos sitios. */
+ok(/<PastillaFiltro\b[^>]*activa=/.test(sinComentarios(leer('src/components/contribucionMuscular.jsx')))
+  && /aria-pressed=\{activa\}/.test(sinComentarios(leer('src/components/piezasFitness.jsx'))),
   '…y los filtros dicen cuál está puesto');
 ok(/<RankBadge/.test(vista) && !/clipPath/.test(vista),
   '⚠️ El hexágono sigue siendo `RankBadge`: uno solo en la aplicación');

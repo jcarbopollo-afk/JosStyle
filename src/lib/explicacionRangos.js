@@ -209,7 +209,7 @@ export function explicacionDeEjercicio(fitness, exerciseId, { propios = [], perf
       evidencias: [
         r.mejorMarca ? { etiqueta: 'Mejor resultado', valor: r.mejorMarca } : null,
         r.tendencia && tendencias[r.tendencia] ? { etiqueta: 'Tendencia', valor: tendencias[r.tendencia] } : null,
-        r.dataPoints > 0 ? { etiqueta: 'Sesiones comparables', valor: String(r.dataPoints) } : null,
+        r.dataPoints > 0 ? { etiqueta: 'Entrenamientos comparables', valor: String(r.dataPoints) } : null,
       ],
       cobertura: null,
       acciones: { progreso: !!ej },

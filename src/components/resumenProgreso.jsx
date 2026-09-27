@@ -3,6 +3,8 @@ import {
   ChevronRight, Camera, Play, Target, Dumbbell, Columns2, Calendar, Award,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { PastillaFiltro } from './piezasFitness';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba, todayISO } from '../lib/helpers';
 import { Card, GhostBtn, PrimaryButton, SectionTitle, EmptyHint } from './ui';
 import { iconoDeGrupo } from './iconosFitness';
@@ -44,7 +46,7 @@ export function EtiquetaEstado({ estado, nombre, simbolo, accent }) {
       className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-lg"
       style={{
         background: destacado ? hexToRgba(accent, 0.14) : hexToRgba(COLORS.border, 0.45),
-        color: destacado ? accent : COLORS.textMuted,
+        color: destacado ? acentoLegible(accent) : COLORS.textMuted,
       }}
     >
       <span aria-hidden="true">{simbolo}</span>
@@ -90,7 +92,7 @@ export function ProgressSummaryCard({
             onClick={onVerTodo}
             aria-label={`${etiquetaVerTodo}: ${titulo}`}
             className="text-xs font-bold shrink-0 rounded-lg px-2 py-1.5 toque-44 active:scale-95"
-            style={{ color: accent }}
+            style={{ color: acentoLegible(accent) }}
           >
             {etiquetaVerTodo}
           </button>
@@ -108,7 +110,7 @@ export function ProgressMetricCard({ valor, nombre, sub = '', icon: Icon = null,
     <>
       <div className="flex items-center gap-2">
         {Icon && (
-          <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: hexToRgba(accent, 0.14), color: accent }}>
+          <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}>
             <Icon size={16} />
           </span>
         )}
@@ -141,7 +143,7 @@ function FilaPreview({ etiquetaAria, icono: Icono = null, nombre, secundario = '
       style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
     >
       {Icono && (
-        <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: hexToRgba(accent, 0.14), color: accent }}>
+        <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}>
           <Icono size={16} />
         </span>
       )}
@@ -282,12 +284,12 @@ export function ProgressGoalPreview({ bloque, accent, onAbrir, onVerTodo }) {
               className="hub-card w-full text-left rounded-xl px-3 py-2.5 flex items-center gap-2.5 active:scale-[0.99]"
               style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
             >
-              <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: hexToRgba(accent, 0.14), color: accent }}>
+              <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}>
                 <Target size={16} />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-bold truncate" style={{ color: COLORS.text }}>{o.nombre}</span>
-                <span className="block text-xs font-extrabold tabular-nums" style={{ color: o.sinDatos ? COLORS.textMuted : COLORS.text }}>{o.objetivoTexto}</span>
+                <span className="block text-xs font-bold tabular-nums" style={{ color: o.sinDatos ? COLORS.textMuted : COLORS.text }}>{o.objetivoTexto}</span>
                 {/* 🚨 Sin datos NO se dibuja una barra vacía (F14, apartado 23). */}
                 {o.porcentaje !== null && (
                   <span className="block h-1.5 rounded-full overflow-hidden mt-1.5" style={{ background: hexToRgba(COLORS.border, 0.6) }} aria-hidden="true">
@@ -331,7 +333,7 @@ export function ProgressPhotoPreview({ bloque, urls = {}, fallidas = {}, accent,
       {!b.hay ? (
         <Card>
           <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: hexToRgba(accent, 0.14), color: accent }}>
+            <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}>
               <Camera size={19} />
             </span>
             <p className="text-sm min-w-0 flex-1" style={{ color: COLORS.text }}>{b.vacio}</p>
@@ -348,8 +350,10 @@ export function ProgressPhotoPreview({ bloque, urls = {}, fallidas = {}, accent,
                 key={f.id}
                 onClick={onIr}
                 aria-label={`Foto del ${f.etiqueta}. Ver tus fotos de progreso`}
-                className="relative flex-1 rounded-xl overflow-hidden active:scale-[0.98]"
-                style={{ background: hexToRgba(COLORS.border, 0.4), aspectRatio: '3 / 4' }}
+                /* FIT F42 (apartados 21 y 32) — cuadrada, como en la galería y en el
+                   comparador: era la única miniatura de foto en 3:4. */
+                className="relative flex-1 rounded-xl overflow-hidden active:scale-[0.98] aspect-square"
+                style={{ background: hexToRgba(COLORS.border, 0.4) }}
               >
                 {urls[f.id] && !fallidas[f.id] ? (
                   <img
@@ -409,7 +413,7 @@ export function ProgressTimelineItem({ evento, accent, onAbrir }) {
   return (
     <li className="flex gap-3">
       <div className="flex flex-col items-center shrink-0" aria-hidden="true">
-        <span className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: hexToRgba(accent, 0.14), color: accent }}>
+        <span className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}>
           <Icono size={15} />
         </span>
         <span className="flex-1 w-px mt-1" style={{ background: COLORS.border }} />
@@ -420,7 +424,7 @@ export function ProgressTimelineItem({ evento, accent, onAbrir }) {
         className="min-w-0 flex-1 text-left rounded-xl px-3 py-2 mb-2 active:scale-[0.99]"
         style={{ background: hexToRgba(COLORS.border, 0.25) }}
       >
-        <p className="text-[10px] font-bold tracking-wide" style={{ color: COLORS.textMuted }}>{e.etiqueta}</p>
+        <p className="text-[10px] font-bold tracking-wider" style={{ color: COLORS.textMuted }}>{e.etiqueta}</p>
         <p className="text-sm font-bold truncate" style={{ color: COLORS.text }}>{e.titulo}</p>
         {e.detalle && <p className="text-[11px] truncate" style={{ color: COLORS.textMuted }}>{e.detalle}</p>}
       </button>
@@ -438,22 +442,12 @@ export function ProgressTimeline({ timeline, accent, filtro, onFiltro, onAbrir }
       <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-0.5" role="group" aria-label="Filtrar la línea temporal">
         {t.porFiltro.map((f) => {
           const activo = filtro === f.id;
-          const apagado = f.cuantos === 0 && !activo;
+          /* 🔓 FIT F42 (apartado 42) — es un filtro: la pastilla de todos, que se
+             apaga sola si dejaría la línea vacía. */
           return (
-            <button
-              key={f.id}
-              onClick={() => onFiltro(f.id)}
-              disabled={apagado}
-              aria-pressed={activo}
-              className="h-9 px-3 rounded-xl text-xs font-semibold shrink-0 toque-44 active:scale-95"
-              style={{
-                background: activo ? accent : hexToRgba(COLORS.border, 0.45),
-                color: activo ? COLORS.textOnAccent : COLORS.text,
-                opacity: apagado ? 0.45 : 1,
-              }}
-            >
-              {f.nombre} {f.cuantos}
-            </button>
+            <PastillaFiltro key={f.id} activa={activo} cuantos={f.cuantos} accent={accent} onClick={() => onFiltro(f.id)}>
+              {f.nombre}
+            </PastillaFiltro>
           );
         })}
       </div>

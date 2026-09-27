@@ -1,4 +1,5 @@
 import { todayISO, addDays, fechaValida } from './helpers';
+import { diaYMes } from './fechasFitness';
 /* ⚠️ Los días de la semana y «qué día cae esta fecha» ya existen desde HT F1, y
    se calculan **en local** —que es la trampa del UTC por séptima vez—. Escribir
    aquí una segunda lista de lunes-a-domingo sería la de siempre: dos catálogos
@@ -147,7 +148,7 @@ export function planDePlantilla(plantilla, propios = []) {
   return {
     id: p.id,
     nombre: texto(p.nombre) || 'Sin nombre',
-    subtitulo: 'Una rutina tuya',
+    subtitulo: 'Una plantilla tuya',
     descripcion: texto(p.descripcion),
     entorno: (rutina?.entornos || [])[0] || '',
     objetivo: '',
@@ -417,7 +418,7 @@ export function semanaDelPlan(plan, {
    que pasa entonces se dice con las palabras del apartado 32. */
 export const DESCANSO_HOY = {
   titulo: 'Hoy no hay entrenamiento planificado',
-  texto: 'Tu plan no tiene sesión hoy. Si entrenas por tu cuenta, contará como entrenamiento extra.',
+  texto: 'Tu plan no tiene entrenamiento hoy. Si entrenas por tu cuenta, contará como entrenamiento extra.',
 };
 
 /** El próximo entrenamiento (apartado 5): el de hoy si hoy toca, y si no el
@@ -517,11 +518,10 @@ export function cabeceraDelPlan(plan, activo, propios = []) {
   };
 }
 
-function formatoCorto(iso) {
-  const d = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
-}
+/* 🔓 FIT F42 (apartado 59) — era `toLocaleDateString`, la única fecha de
+   Fitness que no salía de una función propia (y que no es igual en todos los
+   Node, F39). Es la frase de fecha de `fechasFitness.js`: «12 de septiembre». */
+const formatoCorto = diaYMes;
 
 /** La distribución de la SEMANA entera (apartado 10), derivada del plan.
  *  ⚠️ Es la misma función de la F3: *"Utilizar los cálculos existentes."* */
@@ -586,7 +586,7 @@ export function plantillasParaTuPlan(fitness, propios = [], cuantas = PLANTILLAS
 /* Apartado 2, con sus palabras y sus dos salidas. */
 export const SIN_PLAN = {
   titulo: 'Aún no tienes un plan',
-  texto: 'Elige una planificación o crea tu propia rutina para empezar.',
+  texto: 'Elige una planificación o crea tu propia plantilla para empezar.',
   explorar: 'Explorar planes',
   crear: 'Crear entrenamiento',
 };

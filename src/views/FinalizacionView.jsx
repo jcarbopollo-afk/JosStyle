@@ -21,8 +21,10 @@
 import React, { useState, useMemo } from 'react';
 import {
   Check, ChevronRight, ChevronLeft, Trash2, Clock, Dumbbell, Calendar, AlertTriangle, RotateCcw,
+  StickyNote, Lock,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import {
   Card, SectionTitle, GhostBtn, PrimaryButton, TextInput, Textarea, Field,
@@ -44,7 +46,7 @@ export function DatoResumen({ icono: Icono, etiqueta, valor, accent }) {
     <div className="flex items-center gap-2.5">
       <div
         className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-        style={{ background: hexToRgba(accent, 0.14), color: accent }}
+        style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
       >
         <Icono size={17} />
       </div>
@@ -95,7 +97,11 @@ export function FilaEjercicioFinal({ ejercicio, accent }) {
           </p>
         )}
         {e.notas && (
-          <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>📝 {e.notas}</p>
+          <p className="text-[11px] mt-0.5 flex items-start gap-1.5" style={{ color: COLORS.textMuted }}>
+              {/* FIT F42 (apartado 31) — era un 📝: los iconos de Fitness son de lucide, y es el de las notas. */}
+              <StickyNote size={12} className="shrink-0 mt-px" aria-hidden="true" />
+              <span className="min-w-0">{e.notas}</span>
+            </p>
         )}
       </div>
     </div>
@@ -127,12 +133,12 @@ export function PantallaExito({ datos, accent, onVer, onVolver, fallo = false, r
               <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{TEXTOS_GUARDADO.detalle}</p>
               {onReintentar && (
                 reintentando ? (
-                  <p className="text-xs font-bold mt-2" style={{ color: accent }}>{TEXTOS_GUARDADO.reintentando}</p>
+                  <p className="text-xs font-bold mt-2" style={{ color: acentoLegible(accent) }}>{TEXTOS_GUARDADO.reintentando}</p>
                 ) : (
                   <button
                     onClick={onReintentar}
                     className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold py-1.5 toque-44"
-                    style={{ color: accent }}
+                    style={{ color: acentoLegible(accent) }}
                   >
                     <RotateCcw size={13} aria-hidden="true" />{TEXTOS_GUARDADO.reintentar}
                   </button>
@@ -146,7 +152,7 @@ export function PantallaExito({ datos, accent, onVer, onVolver, fallo = false, r
         <div className="py-5 text-center">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3 exito-entra"
-            style={{ background: hexToRgba(accent, 0.16), color: accent }}
+            style={{ background: hexToRgba(accent, 0.16), color: acentoLegible(accent) }}
           >
             <Check size={32} />
           </div>
@@ -157,7 +163,7 @@ export function PantallaExito({ datos, accent, onVer, onVolver, fallo = false, r
 
           <div className="flex items-center justify-center gap-6 mt-4">
             <div>
-              <p className="text-2xl font-extrabold" style={{ color: accent, fontFamily: "'Manrope', sans-serif" }}>
+              <p className="text-2xl font-extrabold" style={{ color: acentoLegible(accent), fontFamily: "'Manrope', sans-serif" }}>
                 {datos.duracion}
               </p>
               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
@@ -165,7 +171,7 @@ export function PantallaExito({ datos, accent, onVer, onVolver, fallo = false, r
               </p>
             </div>
             <div>
-              <p className="text-2xl font-extrabold" style={{ color: accent, fontFamily: "'Manrope', sans-serif" }}>
+              <p className="text-2xl font-extrabold" style={{ color: acentoLegible(accent), fontFamily: "'Manrope', sans-serif" }}>
                 {datos.series}
               </p>
               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>
@@ -430,7 +436,9 @@ export default function FinalizacionView({
       {/* Apartado 15 — la visibilidad. ⚠️ Solo hay una, así que se DICE en vez
           de pintar un selector con dos opciones que no hacen nada (regla 8). */}
       <p className="text-[11px] px-1" style={{ color: COLORS.textMuted }}>
-        🔒 {VISIBILIDADES.find((v) => v.id === 'privado').nombre}: solo lo ves tú.
+        {/* FIT F42 (apartado 31) — era un 🔒: el candado es el de lucide. */}
+        <Lock size={11} className="inline -mt-0.5 mr-1" aria-hidden="true" />
+        {VISIBILIDADES.find((v) => v.id === 'privado').nombre}: solo lo ves tú.
       </p>
       {/* 🚨 Apartado 14 — y ni un botón de foto o vídeo: no hay dónde guardarla,
           y uno que falla en silencio es peor que no tenerlo. Se dice. */}
@@ -481,7 +489,7 @@ export default function FinalizacionView({
       {/* Apartado 16 — el CTA principal, claramente identificable (apartado 32). */}
       <div className="flex gap-2 flex-wrap">
         {guardando ? (
-          <p className="text-sm font-bold" style={{ color: accent }}>{TEXTO_GUARDANDO}</p>
+          <p className="text-sm font-bold" style={{ color: acentoLegible(accent) }}>{TEXTO_GUARDANDO}</p>
         ) : (
           <>
             <PrimaryButton accent={accent} icon={Check} onClick={() => guardar(false)}>

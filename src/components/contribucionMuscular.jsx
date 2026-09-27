@@ -15,6 +15,7 @@
 import React from 'react';
 import { ChevronRight, TrendingUp, TrendingDown, Minus, Circle } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { PastillaFiltro } from './piezasFitness';
 import { hexToRgba } from '../lib/helpers';
 import { SectionTitle, EmptyHint } from './ui';
 import { RankBadge, RankLabel } from './rangos';
@@ -62,7 +63,7 @@ export function MuscleContributionMeta({ contribucion }) {
   const partes = [
     c.papelNombre,
     `${c.porcentaje} % de participación`,
-    c.dataPoints > 0 ? `${c.dataPoints} ${c.dataPoints === 1 ? 'sesión' : 'sesiones'}` : null,
+    c.dataPoints > 0 ? `${c.dataPoints} ${c.dataPoints === 1 ? 'entrenamiento' : 'entrenamientos'}` : null,
     /* Apartado 11 — con pocos datos se dice, no se esconde el ejercicio. */
     c.confianza === 'baja' && c.dataPoints > 0 ? 'Confianza limitada' : null,
   ].filter(Boolean);
@@ -164,19 +165,11 @@ export function MuscleContributionList({
           {FILTROS_EJERCICIOS.map((f) => {
             const activo = f.id === filtro;
             return (
-              <button
-                key={f.id}
-                onClick={() => onFiltro(f.id)}
-                aria-pressed={activo}
-                className="text-xs font-semibold px-3 py-1.5 rounded-full shrink-0"
-                style={{
-                  background: activo ? hexToRgba(accent, 0.16) : COLORS.surface,
-                  color: activo ? COLORS.text : COLORS.textMuted,
-                  border: `1px solid ${activo ? accent : COLORS.border}`,
-                }}
-              >
+              /* 🔓 FIT F42 (apartado 42) — la pastilla de todos los filtros de Fitness:
+                 esta era la única sin zona de toque de 44 px. */
+              <PastillaFiltro key={f.id} activa={activo} accent={accent} onClick={() => onFiltro(f.id)}>
                 {f.nombre}
-              </button>
+              </PastillaFiltro>
             );
           })}
         </div>

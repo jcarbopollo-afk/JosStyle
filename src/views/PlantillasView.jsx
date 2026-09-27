@@ -23,6 +23,8 @@ import {
   ArrowLeft, Search, X, MoreHorizontal, Pencil, Copy, Trash2, Plus, ArrowUpDown, Play,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { PastillaFiltro as Pastilla } from '../components/piezasFitness';
+import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import {
   Card, SectionTitle, TextInput, GhostBtn, PrimaryButton,
@@ -36,26 +38,8 @@ import {
 import { textoDeSeries, textoDeCarga, musculosResumidos } from '../lib/constructor';
 import { PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
 
-function Pastilla({ activa, children, cuantos = null, accent, onClick, label }) {
-  const apagada = cuantos === 0;
-  return (
-    <button
-      onClick={onClick}
-      disabled={apagada}
-      aria-pressed={activa}
-      aria-label={label}
-      className="px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 toque-44 active:scale-[0.97]"
-      style={{
-        background: activa ? accent : hexToRgba(COLORS.border, 0.5),
-        color: activa ? COLORS.textOnAccent : COLORS.textMuted,
-        opacity: apagada ? 0.4 : 1,
-      }}
-    >
-      {children}
-      {cuantos !== null && <span className="ml-1.5 opacity-70">{cuantos}</span>}
-    </button>
-  );
-}
+/* 🔓 FIT F42 (apartados 42 y 64) — aquí había una `Pastilla` propia, una de las
+   siete copias de la pastilla de un filtro: es `PastillaFiltro` (piezasFitness). */
 
 /* ── La tarjeta de una plantilla (apartados 3 y 4) ─────────────────────────
    *"thumbnail; nombre; número de ejercicios; duración aproximada; entorno;
@@ -82,7 +66,7 @@ export function TarjetaPlantilla({
             imagen inventada — sale de la distribución muscular. */}
         <div
           className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: hexToRgba(accent, 0.14), color: accent }}
+          style={{ background: hexToRgba(accent, 0.14), color: acentoLegible(accent) }}
         >
           <Icono size={22} />
         </div>
@@ -223,7 +207,7 @@ export function DetallePlantilla({
 
       {ficha.distribucion.grupos.length > 0 && (
         <div>
-          <SectionTitle sub="De toda la rutina, cuánto se lleva cada zona">Distribución muscular</SectionTitle>
+          <SectionTitle sub="De toda la plantilla, cuánto se lleva cada zona">Distribución muscular</SectionTitle>
           <Card>
             {ficha.distribucion.grupos.map((g) => (
               <div key={g.grupoId} className="mb-2.5 last:mb-0">
@@ -264,7 +248,7 @@ export function DetallePlantilla({
                       className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                       style={{
                         background: hexToRgba(l.existe ? accent : COLORS.negative, 0.14),
-                        color: l.existe ? accent : COLORS.negative,
+                        color: l.existe ? acentoLegible(accent) : COLORS.negative,
                       }}
                     >
                       <Icono size={20} />
@@ -279,7 +263,7 @@ export function DetallePlantilla({
                         <p className="text-xs" style={{ color: COLORS.negative }}>Ejercicio no disponible</p>
                       ) : (
                         <>
-                          <p className="text-xs" style={{ color: accent }}>
+                          <p className="text-xs" style={{ color: acentoLegible(accent) }}>
                             {textoDeSeries(l)}
                             {carga ? ` · ${carga}` : ''}
                             {l.descanso ? ` · ${l.descanso} s descanso` : ''}

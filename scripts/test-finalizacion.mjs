@@ -301,7 +301,7 @@ console.log('\n── 7. Descartar (apartado 27) ──');
 const D = descartarEntrenamiento(FIN);
 ok(D.ok === false && D.aviso === AVISO_DESCARTAR_FINAL, 'Descartar PREGUNTA');
 ok(AVISO_DESCARTAR_FINAL.titulo === '¿Descartar entrenamiento?', '…con su título literal');
-ok(AVISO_DESCARTAR_FINAL.texto === 'Se perderán los datos registrados en esta sesión.',
+ok(AVISO_DESCARTAR_FINAL.texto === 'Se perderán los datos registrados en este entrenamiento.',
   '…y su texto literal');
 const D2 = descartarEntrenamiento(FIN, { confirmado: true });
 ok(D2.ok === true && D2.sesion.estado === 'descartada', '…y confirmando la descarta');

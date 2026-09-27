@@ -319,7 +319,10 @@ ok(!/Compartir/i.test(VISTA), '🚨 …y no hay un «Compartir» muerto (apartad
 ok(/resumenDeSesion/.test(LIB) && /resumenPlanificado/.test(LIB) && /volumenDeSesion/.test(LIB),
   '🚨 El historial se apoya en la F8 y la F9 en vez de volver a contar (apartado 3)');
 ok(!/toISOString/.test(LIB), '⚠️ Ni una fecha sacada de `toISOString` (invariante 12)');
-ok(/aria-pressed=\{activo\}/.test(VISTA) && /<Check /.test(VISTA), 'El filtro elegido se anuncia y lleva ✓, no solo color (apartado 42)');
+/* 🔓 FIT F42 — la promesa se muda con la pastilla, que es una para todo Fitness. */
+const PIEZAS = readFileSync(join(RAIZ, 'src/components/piezasFitness.jsx'), 'utf8');
+ok(/<PastillaFiltro\b[^>]*activa=\{activo\}/.test(VISTA) && /aria-pressed=\{activa\}/.test(PIEZAS) && /<Check /.test(PIEZAS),
+  'El filtro elegido se anuncia y lleva ✓, no solo color (apartado 42)');
 ok(/aria-expanded=\{abierto\}/.test(VISTA), 'Un ejercicio se despliega y lo anuncia (apartado 19)');
 ok(/max-w-2xl mx-auto/.test(VISTA), 'En escritorio el contenido tiene un ancho cómodo (apartado 41)');
 ok(/PAGINA_HISTORIAL/.test(VISTA) && /Ver más/.test(leer('src/views/HistorialView.jsx')), 'La lista pinta por páginas (apartado 32)');
