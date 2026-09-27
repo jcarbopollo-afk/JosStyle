@@ -80,7 +80,24 @@ comprueba). Están en `NO_EN_FIT39`.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` **en verde** (`═══ TODO CORRECTO ═══`, 0 fallos): **21 551 pruebas de
+Node en 200 suites**, **3700 casos de renderizado**, **11 reglas invariantes** y **2769
+comprobaciones en Chromium** — **28 031** en total. El salto desde la v3.120.0 es exactamente lo que
+añade esta fase: **+306 de Node** en sus dos suites nuevas —`test-robustez-fitness.mjs` (74: el
+detector, la matriz de estados, los respaldos y las cuatro auditorías, cada una con su ejemplo que
+la pone roja) y `test-robustez-fitness.jsx` (232: las pantallas pintadas con un usuario nuevo y con
+datos corruptos pasados por la puerta de carga, más cuatro sin normalizar)—, **+16 de renderizado**
+(la tarjeta de la sesión antigua y los dos respaldos) y **+61 del recorrido** (usuario nuevo en diez
+pasos, datos corruptos en cada pantalla, la sesión olvidada con Finalizar y Descartar, las hojas con
+el teclado y el anillo de foco). Las suites que se tocaron **conservan su cuenta**: las
+comprobaciones de la F29 que exigían el id pelado de un ejercicio archivado **se dieron la vuelta**
+(C-36), no se borraron. Y además **`textoRoto()` corre sobre los 3700 casos** del banco de
+renderizado, que es como salieron Negocio, Sueño y Tiempo de uso.
+
+⚠️ **Las comprobaciones de teclado se falsificaron**: quitando `useDialogoAccesible` se ponen rojas
+cinco. Y una salió verde **sin** el hook —*«el tabulador no se escapa ni hacia atrás»*—, porque
+el foco estaba en la caja y no en el primer control: ahora enfoca el primero antes de Mayús+Tab, y
+sin el hook se pone roja.
 
 ## v3.120.0 — FIT F38/45: UX móvil extrema y optimización para iPhone
 

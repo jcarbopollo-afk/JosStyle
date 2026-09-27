@@ -184,13 +184,14 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **21 245 pruebas unitarias** con Node repartidas en **198 suites** (5 de ellas de auditoría),
-**3684 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2708
-comprobaciones sobre la aplicación de verdad en Chromium** — **27 648 comprobaciones**.
+Vite, **21 551 pruebas unitarias** con Node repartidas en **200 suites** (5 de ellas de auditoría),
+**3700 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2769
+comprobaciones sobre la aplicación de verdad en Chromium** — **28 031 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.120.0, una a una**, con la suma del
-propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.119.0 es exactamente lo que
-añadió la F38: +63 de Node en su suite, +8 de renderizado y +30 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.121.0, una a una**, con la suma del
+propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.120.0 es exactamente lo que
+añadió la F39: +306 de Node en sus dos suites nuevas (74 + 232, y ni una comprobación perdida en las
+que se tocaron), +16 de renderizado y +61 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
@@ -354,7 +355,7 @@ INTELIGENCIA** —F29 a F35—, y la **FIT F36 (v3.118.0)**, con la que empieza 
 - 🚨 **NADA ROTO A LA VISTA, EN TODA LA APLICACIÓN: `textoRoto()`** (FIT F39, apartado 2,
   `src/lib/robustezFitness.js`). Busca en lo que se PINTA `NaN`, `undefined`, `null`, `[object
   Object]`, `Invalid Date` e `Infinity`, en el texto **y en los estilos** (un `width: NaN%` rompe una
-  barra sin que se lea nada). **El banco de renderizado la pasa por sus 3684 casos** (sin
+  barra sin que se lea nada). **El banco de renderizado la pasa por sus 3700 casos** (sin
   porcentajes: un zoom al 180 % existe), y al estrenarse cazó tres pantallas **fuera de Fitness**:
   Negocio (*«Idea · Invalid Date»*), Sueño (*«undefined → undefined»*) y Tiempo de uso
   (*«Productividad NaN %»*). ⚠️ **Una comprobación nueva sobre pantallas viejas encuentra lo que
