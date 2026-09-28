@@ -171,9 +171,21 @@ page.on('pageerror', (e) => errores.push(e.message));
    excepciones de JavaScript llegan por `pageerror`, que es OTRO escuchador y no
    filtra nada. */
 const esFalloDeRed = (t) => /Failed to load resource/i.test(t) && /net::ERR_/.test(t);
+/* 🔓 FIT F43 — y la foto que ESTE doble rompe a propósito (la `rota` de la F26
+   y la F27, que prueba el apartado 29) tampoco: el navegador avisa de que su
+   firma contestó 400, que es justo lo que se le pide. Se reconoce por su
+   dirección, no por el texto —«status of 400» a secas taparía un 400 de
+   verdad—, y las excepciones siguen llegando por `pageerror` sin filtro.
+   ⚠️ Y el aviso que la propia aplicación escribe al no poder firmarla
+   (`supabase.js`: «No se pudo firmar la foto <camino>»), que es el fallo
+   manejado que la pantalla enseña como «no se puede mostrar». Se reconoce por
+   ESE camino y nada más: una foto de verdad que no se firme sigue contando. */
+const esFotoRotaAProposito = (m) => (/Failed to load resource/i.test(m.text())
+  && /\/object\/sign\/.*rota/.test((m.location && m.location()?.url) || ''))
+  || /^No se pudo firmar la foto usuario-prueba\/rota\.jpg\b/.test(m.text());
 page.on('console', (m) => {
   if (m.type() !== 'error') return;
-  if (/ERR_CONNECTION/.test(m.text()) || esFalloDeRed(m.text())) return;
+  if (/ERR_CONNECTION/.test(m.text()) || esFalloDeRed(m.text()) || esFotoRotaAProposito(m)) return;
   errores.push(m.text());
 });
 
@@ -7601,8 +7613,10 @@ ok(/62,5 kg/.test(seriesF10_fit12) && /\b10\b/.test(seriesF10_fit12) && /\b9\b/.
   '🚨 FIT F12 — y el historial dice LO MISMO que Progreso: 62,5 kg, 10 y 9 (apartado 31)');
 ok(/\+2 reps respecto a la última vez/.test(seriesF10_fit12), '🚨 …incluida la comparación de la F11: «+2 reps respecto a la última vez»');
 /* 🔓 FIT F31 — abierta desde Progreso, el botón dice adónde vuelve: antes
-   decía «Volver al historial» y volvía a Progreso. */
-ok(await pulsar('Volver a Progreso'), '…se vuelve (a Progreso, y lo dice)');
+   decía «Volver al historial» y volvía a Progreso.
+   🔓 FIT F43 (P2) — y lo que había debajo no era Progreso: era el progreso del
+   press. Decía «Volver a Progreso» y volvía al ejercicio; ahora dice a cuál. */
+ok(await pulsarQueEmpiece_fit10('Volver al progreso de Press'), '…se vuelve (al press, y lo dice)');
 await page.waitForTimeout(400);
 
 /* Apartado 9 — buscar un ejercicio que nunca ha hecho. */
@@ -7668,7 +7682,9 @@ const evol_fit13 = await esperarTexto(/Última vez/i);
 ok(/11 reps/.test(evol_fit13) && /\+3 reps/.test(evol_fit13),
   '🚨 FIT F13 — → «Ver evolución del ejercicio»: la pantalla de la F12, con 8 → 11 reps y «+3 reps» (apartado 27)');
 ok(!/\bkg\b/.test(evol_fit13.split('Mejor resultado')[0]), '…y a peso corporal, sin un solo kg inventado (apartado 5)');
-ok(await pulsar('Volver a Progreso'), '…se vuelve');
+/* 🔓 FIT F43 (P2) — el botón decía «Volver a Progreso» y volvía al subgrupo:
+   ahora dice «Dorsales», que es adonde lleva. */
+ok(await pulsar('Volver a Dorsales'), '…se vuelve (y lo dice: «Dorsales»)');
 ok(/Dorsales/.test(await esperarTexto(/Implicación en este músculo/i)), '🚨 …al subgrupo de donde venía');
 ok(await pulsar('Volver a Espalda'), '…a Espalda');
 ok(await pulsar('Volver a Progreso'), '…y a Progreso');
@@ -7741,7 +7757,8 @@ ok(objGuardado_fit14.length === 1 && objGuardado_fit14[0].valor === 15 && objGua
   '🚨 FIT F14 — el objetivo está GUARDADO: dominada-prona, 15 reps (apartado 24)');
 ok(await pulsar('Ver progreso del ejercicio'), 'FIT F14 — «Ver progreso del ejercicio» (apartado 16)');
 ok(/Última vez/i.test(await esperarTexto(/Última vez/i)), '…abre la pantalla de la F12');
-ok(await pulsar('Volver a Progreso'), '…y se vuelve');
+/* 🔓 FIT F43 (P2) — y aquí decía «Volver a Progreso» volviendo al objetivo. */
+ok(await pulsar('Volver al objetivo'), '…y se vuelve (y lo dice)');
 ok(/11 \/ 15 reps/.test(await esperarTexto(/11 \/ 15 reps/)), '…al objetivo');
 
 /* Y ahora un entrenamiento real con una serie de 15. */
