@@ -1,5 +1,70 @@
 # CHANGELOG.md
 
+## v3.127.0 — FIT F45/45: pulido final, QA extremo y release de fitness · 🏁 ENTREGA 4 CERRADA
+
+*"AHORA NO VAMOS A CONSTRUIR OTRO SISTEMA. Vamos a realizar el RELEASE FINAL DE FITNESS."* Y su regla
+absoluta: ni una funcionalidad, ni un módulo, ni un sistema, ni una fórmula nueva. Es la última fase
+de la Entrega 4: con ella, **Fitness queda terminado — 45 de 45** (v3.83.0 → v3.127.0).
+
+### La lista del release, casilla por casilla (apartado 58)
+
+`src/lib/releaseFitness.js` escribe las 36 casillas del apartado 58 **con la prueba que demuestra cada
+una**: la suite que `verificar.sh` ejecuta o la marca del recorrido de Chromium, y
+`scripts/test-release-fitness.mjs` comprueba que esa prueba existe —como `FLUJOS_F43`: una línea que
+dijera «probado» sin prueba sería la auditoría que no puede fallar (EH F42)—. La definición de
+«terminado» del apartado 65 se apoya en esas casillas, y el informe final del apartado 64 se calcula
+de ellas: **con una casilla en rojo dice «CON FALLOS» y «NO está listo»**, y hay una comprobación que lo
+fuerza.
+
+⚠️ **Typecheck y lint salen como «no aplica», con su motivo**, en vez de como «correcto»: JosStyle es
+JavaScript con JSDoc (FIT F35) y no tiene lint (C-48, F44). Lo que hace su papel —que cada nombre
+exista, que cada import resuelva, que no quede un import sin usar— lo comprueban el build, las reglas
+de `test-imports.mjs` y `importsSinUso` en cada pasada.
+
+### 🐛 P2 · «Empezar» dos veces el mismo entrenamiento creaba dos sesiones (apartado 21)
+
+Salir de la pantalla en vivo deja el entrenamiento en curso (F7). Si luego se volvía a pulsar
+«Empezar entrenamiento» en **el mismo** día del plan o la misma plantilla, nacía **una segunda sesión**
+y la primera se quedaba colgada: dos entrenamientos en curso del mismo día, y la serie ya hecha en el
+que no se veía. Ahora `sesionEnCursoDelMismoOrigen` la encuentra y **se continúa la que había**. ⚠️ Una
+de hace más de seis horas no cuenta —ésa tiene su tarjeta con Continuar · Finalizar · Descartar (F39),
+y retomarla sin preguntar sería decidir por él—, y una ya completada tampoco: repetir el entrenamiento
+es uno nuevo.
+
+### 🐛 P3 · La biblioteca decía «Volver a Fitness» y volvía a Entrenamiento (apartado 24)
+
+Lo cazó la propia regresión al volver de la ficha de las dominadas: la biblioteca de ejercicios abierta
+desde Entrenamiento llevaba de vuelta a Entrenamiento, pero su botón decía **«Fitness»**, mientras que
+el historial y el constructor, abiertos desde el mismo sitio, dicen **«Entrenamiento»**. Es la familia
+del fallo que la F43 arregló en Progreso —un botón que dice un sitio y lleva a otro—, en la única
+puerta que se le quedó fuera. Ahora lo dice, y la comprobación de la F35 que lo pulsaba **se dio la
+vuelta**.
+
+### La regresión completa, en un iPhone pequeño y en escritorio (apartados 45-49 y 30)
+
+La sección «FIT F45» del recorrido hace el apartado 45 entero a 375 × 667: entrar, el catálogo, buscar
+«dominada», su ficha, crear «Release F45» con tres ejercicios —press de banca, dominadas y
+sentadilla—, guardarlo, un objetivo de 50 kg para el press, abrirlo, empezar, registrar series, el
+descanso, pasar de ejercicio, terminar y guardar; y entonces el historial la tiene, Progreso dice
+«1 entrenamiento · semana en curso», el objetivo dice «40 / 50» sin tocarlo y Rangos ya tiene nivel
+—tres grupos y tres ejercicios—. Por el camino, **la interrupción** (48): recargar a medias y la
+serie sigue ahí; **el doble «Empezar»** (21): una sola sesión en curso; **la repetición** (49): un
+segundo entrenamiento se suma —dos en el historial, «2 entrenamientos · semana en curso» y el objetivo
+en «42,5 / 50», la mejor marca—; y **el escritorio** (30): Tu Plan, Progreso y Rangos sin salirse de
+lado. Todo sin un error en la consola.
+
+### Lo que queda, y es de verdad (apartado 64, punto 18)
+
+**Abrirlo en su iPhone** (R1: todas las pruebas corren en Chromium), **Supabase de verdad** (el
+recorrido usa un doble), y las decisiones que son de Josué: el zoom de los campos y el pellizco
+(C-32), trabajar sin conexión (DEP-30) y dividir el bundle (C-42). Por eso el informe dice
+**«COMPLETADO CON PROBLEMAS PENDIENTES»** y no «COMPLETADO» a secas. Y **no hay una fase 46**
+(apartado 63): lo que venga después es un ciclo nuevo, y lo abre él.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.126.0 — FIT F44/45: limpieza arquitectónica y deuda técnica de fitness
 
 *"NO hacer una reescritura completa. NO cambiar la funcionalidad. NO cambiar las fórmulas."* Y su

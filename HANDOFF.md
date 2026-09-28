@@ -2,6 +2,17 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.127.0 — FIT F45/45: pulido final, QA extremo y release · 🏁 ENTREGA 4 CERRADA):**
+> 🏁 **Fitness está terminado: 45 de 45.** La última fase no añade nada: comprueba. Las 36 casillas de
+> la lista del release (`releaseFitness.js`) llevan **la prueba que demuestra cada una**, y el informe
+> final se calcula de ellas. La regresión completa se hace en un iPhone pequeño (375 × 667) y en
+> escritorio: crear un entrenamiento con tres ejercicios, entrenarlo, recargar a medias, guardarlo y
+> ver que el historial, la actividad, el objetivo y el rango lo cuentan; y repetirlo otro día. 🐛
+> **«Empezar» dos veces el mismo entrenamiento creaba dos sesiones**: ahora continúa la que había. Lo
+> que queda es de verdad y está dicho: **abrirlo en su iPhone** (R1), Supabase real, y sus decisiones
+> —el zoom de los campos (C-32), trabajar sin conexión (DEP-30) y dividir el bundle (C-42)—. **No hay
+> una fase 46**: lo siguiente lo abre él.
+
 > **📅 ACTUALIZACIÓN (v3.126.0 — FIT F44/45: limpieza arquitectónica y deuda técnica):**
 > Segunda del bloque de **Cierre**. No cambia ni una función ni un número —el mismo escenario por los
 > motores da la misma salida byte a byte—: **ordena**. Cada archivo de Fitness está en su capa

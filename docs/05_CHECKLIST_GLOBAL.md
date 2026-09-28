@@ -1023,7 +1023,11 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       sin usar; `decimal` para los números con coma; siete constantes renombradas; dependencias de
       otros módulos solo por una interfaz con nombre; componentes sin pantalla declarados; once
       auditorías con su ejemplo malo; y ni un número movido (salida idéntica byte a byte).
-- [ ] F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F45 — Pulido final, QA extremo y release de fitness** (v3.127.0): la lista del release
+      (36 casillas, cada una con su prueba), la definición de «terminado» y el informe final
+      calculados de ella; la regresión completa en un iPhone pequeño y en escritorio (interrupción,
+      doble «Empezar», repetición); y «Empezar» ya no crea una segunda sesión del mismo
+      entrenamiento. 🏁 **ENTREGA 4 CERRADA: 45 de 45.** No hay una F46 (apartado 63).
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción

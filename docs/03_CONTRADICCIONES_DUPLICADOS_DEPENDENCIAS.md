@@ -963,6 +963,18 @@ una regla de hooks rota, 28 imports sin usar que se retiraron— y lo que se que
 pasada es `importsSinUso`, más el build y las reglas de `test-imports.mjs`. En la lista del release
 se dice «no aplica», con su motivo.
 
+### C-49 — ✅ RESUELTA AL CONSTRUIR (FIT F45, v3.127.0) · «Encadenar sin parar» contra «NO continuar con otra fase»
+
+**Josué pidió el 2026-09-13** encadenar las fases sin esperarle (*"no pares de currar… la cosa está en
+que literal puedas continuar sin que yo te diga nada"*), y así se leyó el «ESPERA INSTRUCCIONES» de
+las fases anteriores (C-46). **El apartado 63 de la F45** dice otra cosa, y no es la misma frase: *"NO
+continuar automáticamente con otra fase. No crear una Fase 46. Si posteriormente se quieren añadir
+nuevas funcionalidades: deberán tratarse como un nuevo ciclo de desarrollo."* Las dos se respetan a la
+vez, porque **no hay una fase siguiente**: la entrega tiene 45. Encadenar se acaba donde se acaba el
+documento; inventar una F46 —o seguir «mejorando» Fitness por cuenta propia— sería lo que el apartado
+prohíbe. Se entrega la F45 con la verificación en verde, se le cuenta qué se hizo y hasta dónde, y lo
+siguiente lo abre él.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

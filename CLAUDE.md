@@ -14,14 +14,15 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.126.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.127.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
-🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
+🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 44 primeras (v3.83.0 → v3.126.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 45 (v3.83.0 → v3.127.0)**, y 🚨 **no hay una F46**: el apartado 63 de la última
+dice *"NO continuar automáticamente con otra fase. No crear una Fase 46"* (C-49). ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +48,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **la fase que queda de la Entrega 4** (Fitness), la F45 del release, el bloque **AXION**
+**Pendiente por delante:** el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -168,6 +169,8 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
   `main`**: si la verificación está en verde, se sube; no hay que pedir permiso para entregar.
   ⚠️ **Esta línea decía lo contrario hasta hoy** —*"una fase por turno, y se para"*—, y era cierto
   entonces: él lo pidió así en su día. Manda lo último que ha dicho.
+  🏁 **Y la cadena terminó en la FIT F45 (v3.127.0).** No hay una fase 46, y el apartado 63 de la
+  última pide no inventarla (C-49): lo siguiente lo abre él, como un ciclo nuevo.
 - **Al terminar, decirle siempre dos cosas:** qué se ha hecho y hasta dónde se ha llegado.
 - **Lo que más le importa es recibir la entrega actualizada cuanto antes.** Priorizarlo sobre
   explicaciones largas; nunca dejar un turno a medias sin entregarla.
@@ -351,9 +354,32 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 (v3.115.0)**, la **FIT F34 (v3.116.0)** y la **FIT F35 (v3.117.0)**, que 🏁 **CERRÓ EL BLOQUE DE
 INTELIGENCIA** —F29 a F35—, y la **FIT F36 (v3.118.0)**, con la que empieza el bloque de **Acabado**
 (F36–F42), la **FIT F37 (v3.119.0)**, la **FIT F38 (v3.120.0)**, la **FIT F39 (v3.121.0)**, la **FIT F40 (v3.122.0)**, la **FIT F41 (v3.123.0)** y la **FIT F42 (v3.124.0)**, que 🏁 **CERRÓ EL BLOQUE DE
-ACABADO** —F36 a F42—, y la **FIT F43 (v3.125.0)**, la primera del bloque de **Cierre**, y la **FIT F44
-(v3.126.0)**, hechas. Lo que dejaron, y que vale para la que queda:
+ACABADO** —F36 a F42—, y la **FIT F43 (v3.125.0)**, la primera del bloque de **Cierre**, la **FIT F44
+(v3.126.0)** y la **FIT F45 (v3.127.0)**, que 🏁 **CERRÓ EL BLOQUE DE CIERRE Y LA ENTREGA 4 ENTERA
+(45/45)**. Lo que dejaron, y que vale para cualquier cambio que se haga en Fitness:
 
+- 🏁 **FITNESS ESTÁ TERMINADO, Y LA LISTA DEL RELEASE SE DEMUESTRA CASILLA POR CASILLA** (FIT F45,
+  `src/lib/releaseFitness.js`). Las 36 casillas del apartado 58 llevan **la prueba que demuestra cada
+  una** —una suite que `verificar.sh` ejecuta o una marca del recorrido—, y la suite comprueba que
+  existe. El informe final (apartado 64) se **calcula** de ellas: con una casilla roja dice «CON
+  FALLOS». ⚠️ **Typecheck y lint dicen «no aplica», con su motivo**: el proyecto no tiene ni uno ni
+  otro (FIT F35, C-48), y fingirlos sería la regla 8.
+- 🐛 **«EMPEZAR» EN UN ENTRENAMIENTO QUE YA ESTÁ EN CURSO LO CONTINÚA** (FIT F45, apartado 21,
+  `sesionEnCursoDelMismoOrigen` en `entrenamiento.js`). Salir de la pantalla en vivo lo deja en curso,
+  y volver a pulsar «Empezar» en el mismo día o la misma plantilla creaba una segunda sesión. ⚠️ **Una
+  de más de seis horas no se retoma sin preguntar** (tiene su tarjeta, F39) y **una completada no
+  cuenta**: repetir el entrenamiento es uno nuevo.
+- 🐛 **LA BIBLIOTECA ABIERTA DESDE ENTRENAMIENTO DECÍA «VOLVER A FITNESS»** (FIT F45, apartado 24):
+  volvía a Entrenamiento, como el historial y el constructor, que sí lo decían. Era la única puerta
+  que se le quedó fuera a la F43. **Una pantalla de Fitness que reciba `onVolver` recibe también a
+  dónde vuelve** (`volverA`, `volverTexto`): el valor por defecto de un componente no sabe desde dónde
+  se abrió.
+- ⚠️ **LA REGRESIÓN COMPLETA DEL RELEASE ES LA SECCIÓN «FIT F45» DEL RECORRIDO** (apartados 45-49 y
+  30): el apartado 45 entero en un iPhone pequeño (375 × 667), la interrupción, el doble «Empezar»,
+  una segunda sesión que se suma en el historial, la actividad y el objetivo, y Fitness en escritorio.
+  **Una fase futura que toque Fitness la tiene que dejar en verde.**
+- 🚨 **NO HAY FASE 46** (FIT F45, apartado 63): *"Si posteriormente se quieren añadir nuevas
+  funcionalidades: deberán tratarse como un nuevo ciclo de desarrollo."* Lo abre Josué, no una sesión.
 - 🚨 **EL MAPA DE FITNESS ES `CAPAS_FITNESS`, Y SE COMPRUEBA CONTRA LOS IMPORTS DE VERDAD** (FIT F44,
   `src/lib/arquitecturaFitness.js`). Cada archivo de Fitness está en su capa —datos, modelo, motores,
   lecturas, utilidades, auditorías, pantallas, componentes— y la prueba **recorre los imports desde
@@ -1934,21 +1960,22 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F45/45 — Pulido final, QA extremo y release de fitness**
-   (líneas 1–1 651 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **última** del bloque de
-   **Cierre** y de la entrega. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
-   🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez.
-   ⚠️ **Su regla absoluta: ni una funcionalidad, ni un módulo, ni un sistema, ni una fórmula nueva**, y
-   su apartado 63: *"NO continuar automáticamente con otra fase. No crear una Fase 46."* Es un release:
-   se comprueba la lista del apartado 58 casilla por casilla —**cada una con la prueba que la demuestra**,
-   como `FLUJOS_F43`—, se hace la regresión completa del apartado 45 en un iPhone pequeño y en
-   escritorio, y se arregla lo que salga. **Typecheck y lint no existen en este proyecto** (JavaScript
-   con JSDoc, F35; sin lint, F44): se dice, con lo que hace su papel, en vez de fingirlos.
-   ⚠️ **Y lo que ya se aprendió:** el mapa de capas (`CAPAS_FITNESS`, F44) tiene que cubrir todo lo que
-   la aplicación importa, un nombre exportado se busca en todo `src/lib` antes de estrenarlo (F40 y
-   F44), un componente que solo pinta el banco de renderizado se declara (F44), «volver» pasa un origen
-   (F43) y **al cambiar lo que dice un botón, se barren las comprobaciones viejas del recorrido que lo
-   pulsan** (F43: tres se quedaron diciendo «Volver a Progreso»).
+1. 🏁 **NO HAY UNA FASE SIGUIENTE QUE CONSTRUIR SOLO.** La Entrega 4 está cerrada (45/45) y su
+   apartado 63 lo dice: *"NO continuar automáticamente con otra fase. No crear una Fase 46. Si
+   posteriormente se quieren añadir nuevas funcionalidades: deberán tratarse como un nuevo ciclo de
+   desarrollo."* Lo que venga **lo abre Josué**. Hasta entonces, **correcciones**: si reporta un fallo,
+   pedirle el mensaje exacto (R1), arreglar la causa y subirlo con `bash scripts/verificar.sh` en
+   verde — incluida la sección **«FIT F45»** del recorrido, que es la regresión completa de Fitness.
+   🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación puede estar trabajando.
+   ⚠️ **Lo que se aprendió en la entrega vale para cualquier cambio en Fitness:** una puerta entre
+   pantallas se comprueba abriendo el archivo que la cablea (F36) **y su envoltorio de área** (F43), un
+   guardado que nadie lee puede mentir (F37 y F41), una hoja lleva `HOJA` y `useDialogoAccesible` (F38,
+   F39 y F42), nada roto a la vista (`textoRoto`, F39), una optimización se compara con el cálculo de
+   antes (F40), lo que la carga no entiende se aparta en la cuarentena (F41), la escala visual se
+   audita con `auditarAcabado` (F42), «volver» pasa un origen (`vueltaFitness.js`, F43), **cada archivo
+   nuevo entra en su capa de `CAPAS_FITNESS`** (F44) —si no, la suite de la arquitectura se pone roja—,
+   **al cambiar lo que dice un botón se barren las comprobaciones viejas del recorrido que lo pulsan**
+   (F43) y **la lista del release (`releaseFitness.js`, F45) se queda en verde casilla por casilla**.
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único
@@ -1957,10 +1984,10 @@ había que adivinarlo.**
    sesiones es **`historial.js` (F10)**, que tampoco cuenta nada por su cuenta: lee
    `fitness.sesiones` con `estado === 'completada'` y saca duración, series y volumen de
    `resumenDeSesion` (F8) — si una fase cuenta series aparte, acabarán diciendo dos números.
-   🏁 **Y hay cuatro bloques CERRADOS de los que se lee, nunca se recalcula:** el sistema de rangos
+   🏁 **Y toda la entrega está CERRADA, y de ella se lee, nunca se recalcula:** el sistema de rangos
    entero (**F15–F25**), el **progreso físico (F26–F28)**, la **Inteligencia (F29–F35)** y el
    **Acabado (F36–F42)**: integración, feedback, iPhone, accesibilidad, rendimiento, persistencia y
-   acabado visual.
+   acabado visual; y el **Cierre (F43–F45)**: la cadena entera, el mapa de capas y el release.
 2. **Que abra la aplicación en su iPhone.** Es lo único que ninguna de las comprobaciones cubre
    (R1), y hay siete bloques rehechos más Fitness que nadie ha tocado con el dedo.
 3. 🔓 **C-33 ya está contestada** (los diez rangos de Fitness contra D2-02): dio permiso el mismo día
