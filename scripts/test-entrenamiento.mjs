@@ -34,15 +34,17 @@ import {
   empezarSesion, ejerciciosDeSesion, ejercicioActual, duracionSesion, reloj,
   pausarSesion, reanudarSesion, irAEjercicio, siguienteEjercicio, anteriorEjercicio,
   editarSerie, marcarSerie, anadirSerie, quitarSerie, recuperarSerie,
-  sustituirEjercicio, sustitutosSugeridos, notaDeEjercicio,
-  crearDescanso, restanteDescanso, descansoTerminado, pausarDescanso,
-  reanudarDescanso, reiniciarDescanso, EVENTO_FIN_DESCANSO, SONIDO_DESCANSO,
+  sustituirEjercicio, notaDeEjercicio,
+  crearDescanso, restanteDescanso, finDelDescanso, pausarDescanso,
+  reanudarDescanso, EVENTO_FIN_DESCANSO, SONIDO_DESCANSO,
   AVISO_SALIR, AVISO_DESCARTAR,
   descartarSesion, sesionActiva, avisoDeRecuperacion,
   guardarSesion, fichaDeEjercicio, filasDeSeries, progresoSesion,
   estadoDeEjercicio, carruselDeSesion, NO_EN_FIT7, PREPARADO_PARA_FIT7,
   auditarSesion, normalizarSesionCompleta, normalizarFitnessConSesiones,
 } from '../src/lib/entrenamiento.js';
+/* 🧹 FIT F44 — lo que llama la pantalla: sustitutos del motor único y reiniciar el descanso. */
+import { sustitutosCompatibles, iniciarDescanso } from '../src/lib/entrenamientoUx.js';
 import * as ENTRENAMIENTO_F7 from '../src/lib/entrenamiento.js';
 import { definicionEvento } from '../src/lib/audio.js';
 import {
@@ -366,10 +368,12 @@ const E_PRESS = ejerciciosDeSesion(SS)[0];
 SS = editarSerie(SS, E_PRESS.id, E_PRESS.series[0].id, { peso: 60, reps: 10 });
 SS = marcarSerie(SS, E_PRESS.id, E_PRESS.series[0].id, true);
 
-const SUGERIDOS = sustitutosSugeridos(E_PRESS, []);
+/* 🧹 FIT F44 — los sustitutos salen del motor único (F33), por la misma función
+   que llama la pantalla (F9). La lista de la F7 se retiró. */
+const SUGERIDOS = sustitutosCompatibles(E_PRESS, []);
 ok(SUGERIDOS.length > 0, `Se proponen sustitutos compatibles (${SUGERIDOS.length}, apartado 26)`);
 ok(SUGERIDOS.every((s) => s.id !== E_PRESS.exerciseId), '…sin ofrecerle el que ya está');
-ok(sustitutosSugeridos(null, []).length === 0, '…y sin ejercicio no se propone nada');
+ok(sustitutosCompatibles(null, []).length === 0, '…y sin ejercicio no se propone nada');
 
 const SS2 = sustituirEjercicio(SS, E_PRESS.id, 'press-banca-mancuernas', []);
 const E_MANC = ejerciciosDeSesion(SS2)[0];
@@ -426,16 +430,21 @@ ok(D.segundos === 90 && D.desde === T0, 'El descanso arranca con sus segundos y 
 ok(restanteDescanso(D, T0) === 90000, '…90 segundos al empezar');
 ok(reloj(restanteDescanso(D, seg(45))) === '00:45', `…\`00:45\` a la mitad (${reloj(restanteDescanso(D, seg(45)))})`);
 ok(restanteDescanso(D, seg(120)) === 0, '…y no baja de cero');
-ok(descansoTerminado(D, seg(90)) === true, 'Termina a los 90 segundos');
-ok(descansoTerminado(D, seg(89)) === false, '…y no antes');
+ok(restanteDescanso(D, seg(90)) === 0, 'Termina a los 90 segundos');
+ok(restanteDescanso(D, seg(89)) > 0, '…y no antes');
+ok(finDelDescanso(D) === seg(90), '🧹 FIT F44 — y el momento del fin sale de la librería, no de la pantalla');
 
 const DP = pausarDescanso(D, seg(30));
 ok(restanteDescanso(DP, seg(300)) === 60000, '🚨 Pausar el descanso lo congela en 60 s, pasen los que pasen');
 const DR = reanudarDescanso(DP, seg(300));
 ok(restanteDescanso(DR, seg(330)) === 30000, '…y al reanudar sigue por donde iba');
-const DI = reiniciarDescanso(DR, seg(400));
+ok(finDelDescanso(DP) === null, '…en pausa no hay un fin que decir');
+ok(finDelDescanso(DR) === seg(360), '…y al reanudar el fin se corre lo que duró la pausa');
+/* 🧹 FIT F44 — reiniciar es `iniciarDescanso` (F9), el que guarda el descanso
+   EN la sesión: la pantalla no llamaba a `reiniciarDescanso` de la F7. */
+const DI = iniciarDescanso({ id: 'x', descanso: DR }, DR.segundos, seg(400)).descanso;
 ok(restanteDescanso(DI, seg(400)) === 90000, '…reiniciar lo devuelve a 90 s (apartado 23)');
-ok(reiniciarDescanso(null) === null, '…y sin descanso no se inventa uno');
+ok(iniciarDescanso(null, 90) === null, '…y sin sesión no se inventa uno');
 ok(pausarDescanso(DP, seg(50)) === DP, '…pausar dos veces no descuenta dos veces');
 ok(reanudarDescanso(D, seg(50)) === D, '…ni reanudar lo que no está pausado');
 ok(restanteDescanso(null) === 0, '…y sin descanso el restante es cero');
@@ -701,7 +710,7 @@ FIT = guardarSesion(FIT, W);
 /* Ejercicio 2: sustituirlo y registrar. */
 W = siguienteEjercicio(W);
 const SEGUNDO_ORIGINAL = ejerciciosDeSesion(W)[1].exerciseId;
-const OTRO = sustitutosSugeridos(ejerciciosDeSesion(W)[1], [])[0];
+const OTRO = sustitutosCompatibles(ejerciciosDeSesion(W)[1], [])[0];
 if (OTRO) W = sustituirEjercicio(W, IDS[1], OTRO.id, []);
 W = editarSerie(W, IDS[1], ejerciciosDeSesion(W)[1].series[0].id, { peso: 40, reps: 12 });
 W = marcarSerie(W, IDS[1], ejerciciosDeSesion(W)[1].series[0].id, true);

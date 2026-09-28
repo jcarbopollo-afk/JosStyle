@@ -5,7 +5,7 @@ import {
   ejercicioPorId, nombreCompleto, musculoPrincipal, musculosDe, nombreSinCatalogo,
 } from './ejercicios';
 import {
-  nombreDeLinea, variantesDeLinea, DESCANSO_POR_DEFECTO, MAX_SERIES, crearLinea,
+  nombreDeLinea, DESCANSO_POR_DEFECTO, MAX_SERIES, crearLinea,
 } from './constructor';
 /* 🔓 FIT F33 — la medida al sustituir la decide un solo sitio. */
 import { configuracionRecomendada } from './sustitucion';
@@ -570,12 +570,12 @@ export function sustituirEjercicio(sesion, ejercicioId, exerciseIdNuevo, propios
   });
 }
 
-/** Los ejercicios que se le proponen al sustituir (apartado 26: *"Priorizar
- *  ejercicios compatibles"*). ⚠️ Es `variantesDeLinea` de la F3: la misma
- *  familia, no una lista nueva. */
-export function sustitutosSugeridos(ejercicioSesion, propios = []) {
-  return variantesDeLinea({ exerciseId: ejercicioSesion?.exerciseId }, propios);
-}
+/* 🧹 FIT F44 (apartado 12) — aquí vivía `sustitutosSugeridos`, la lista de
+   sustitutos de la F7 (la familia del constructor). Desde la F33 lo que se le
+   propone al sustituir sale de UN motor, `getExerciseReplacements`, y la
+   pantalla lo pide por `sustitutosCompatibles` (entrenamientoUx.js): ésta ya no
+   la llamaba nadie más que su prueba, y era una segunda forma de decidir qué es
+   compatible. */
 
 /** Apartado 27 — la nota del ejercicio, que persiste dentro de la sesión. */
 export function notaDeEjercicio(sesion, ejercicioId, nota) {
@@ -602,7 +602,14 @@ export function restanteDescanso(d, ahora = Date.now()) {
   return Math.max(0, d.segundos * 1000 - pasado);
 }
 
-export const descansoTerminado = (d, ahora = Date.now()) => !!d && restanteDescanso(d, ahora) === 0;
+/** 🧹 FIT F44 — el momento en que termina (o terminó) un descanso sin pausa.
+ *  Lo calculaba a mano la pantalla del entrenamiento en vivo, con la misma
+ *  fórmula que `restanteDescanso`; ahora hay una sola. Con el descanso en pausa
+ *  no hay fin que decir: `null`. */
+export function finDelDescanso(d) {
+  if (!d || !d.desde || d.pausadoEn) return null;
+  return d.desde + (d.pausadoMs || 0) + d.segundos * 1000;
+}
 
 export function pausarDescanso(d, ahora = Date.now()) {
   if (!d || d.pausadoEn) return d;
@@ -614,8 +621,9 @@ export function reanudarDescanso(d, ahora = Date.now()) {
   return { ...d, pausadoMs: (d.pausadoMs || 0) + Math.max(0, ahora - d.pausadoEn), pausadoEn: null };
 }
 
-export const reiniciarDescanso = (d, ahora = Date.now()) =>
-  (d ? crearDescanso({ segundos: d.segundos, ahora }) : null);
+/* 🧹 FIT F44 — `reiniciarDescanso` y `descansoTerminado` (F7) se retiraron: la
+   pantalla reinicia con `iniciarDescanso` (F9, entrenamientoUx.js), que es el
+   que guarda el descanso EN la sesión, y el fin lo dice `restanteDescanso`. */
 
 /* 🚨 Apartado 25 — el sonido al terminar el descanso **se EMITE al bus**, y es
    un evento que YA EXISTE. La biblioteca es de SO F4 y tiene sus 46 archivos;

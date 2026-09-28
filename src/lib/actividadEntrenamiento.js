@@ -10,6 +10,8 @@ import { DIAS_SEMANA, diaDeFecha } from './horario';
 import { CATALOGO_PLANES, planesAnterioresDe } from './planes';
 import { celdasMes } from './calendario';
 import { MESES, diaYMes } from './fechasFitness';
+/* 🧹 FIT F44 (apartado 39) — el número con coma, de un solo sitio. */
+import { decimal } from './numerosFitness';
 
 /* Entrega 4 · Fase 31/45 — «Consistencia y actividad de entrenamiento».
    ═══════════════════════════════════════════════════════════════════════════
@@ -48,7 +50,6 @@ import { MESES, diaYMes } from './fechasFitness';
 
 const lista = (v) => (Array.isArray(v) ? v : []);
 const texto = (v) => (typeof v === 'string' ? v.trim() : '');
-const decimal = (n) => String(n).replace('.', ',');
 
 /* ═══════════════════════════════════════════════════════════════════════════
    1 · LO QUE YA EXISTÍA (apartados 2, 5, 12, 16, 18 y 22)

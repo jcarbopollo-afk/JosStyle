@@ -1109,6 +1109,19 @@ else
   fallo "Falla la validación del catálogo"; grep '✗' /tmp/jc_validacion_catalogo.log
 fi
 
+# FIT F44 — limpieza arquitectónica y deuda técnica. Lo que más se vigila: que el mapa de capas
+# cubra todo lo que la aplicación importa de Fitness; que ningún motor importe una pantalla ni la
+# capa visual; que no haya un ciclo de imports, un `catch` vacío sin motivo, un `console.log`, una
+# pantalla tocando el almacenamiento, una dependencia de otro módulo sin declarar, dos nombres
+# iguales con dos significados, una coma decimal escrita a mano ni una exportación que no use
+# nadie; y que lo retirado (el segundo buscador de sustitutos, los descansos de la F7, los alias)
+# no vuelva.
+if node --import ./scripts/resolver-vite.mjs scripts/test-arquitectura-fitness.mjs >/tmp/jc_arquitectura_fitness.log 2>&1; then
+  ok "Arquitectura de Fitness (FIT F44) — $(grep -c '✓' /tmp/jc_arquitectura_fitness.log) comprobaciones"
+else
+  fallo "Falla la arquitectura de Fitness"; grep '✗' /tmp/jc_arquitectura_fitness.log
+fi
+
 # FIT F43 — auditoría funcional integral. No prueba ningún motor por separado: los ENCADENA con las
 # mismas funciones que llaman las pantallas —explorar → crear → planificar → entrenar → guardar →
 # historial → progreso → rango → objetivo → foto → comparar— pasando por la puerta de carga entre

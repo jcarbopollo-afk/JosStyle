@@ -78,7 +78,7 @@ export const TEXTO_PEQUENO = ['text-[10px]', 'text-[11px]', 'text-xs'];
 
 /* Apartado 7 — tres pesos, y el más fuerte solo a partir de `text-sm`: un
    «extrabold» a 11 px es una mancha, no un título. */
-export const PESOS = ['font-normal', 'font-semibold', 'font-bold', 'font-extrabold'];
+export const PESOS_LETRA = ['font-normal', 'font-semibold', 'font-bold', 'font-extrabold'];
 export const PESO_FUERTE = 'font-extrabold';
 
 /* Apartado 10 — cinco radios, no quince. */

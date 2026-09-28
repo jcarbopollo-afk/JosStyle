@@ -395,11 +395,9 @@ export const ALINEACION_POR_DEFECTO = 'centro';
 export const alineacion = (id) => ALINEACIONES.find((a) => a.id === texto(id))
   || ALINEACIONES.find((a) => a.id === ALINEACION_POR_DEFECTO);
 
-/**
- * ⚠️ Apartado 12 — *"No implementar edición manual compleja en esta fase"*.
- * Dos opciones y ninguna más: ni recorte, ni rotación, ni rejilla.
- */
-export const NO_HAY_EDICION = 'Esto no es un editor de fotos.';
+/* ⚠️ Apartado 12 — *"No implementar edición manual compleja en esta fase"*.
+   Dos opciones y ninguna más: ni recorte, ni rotación, ni rejilla. (🧹 FIT F44:
+   la constante `NO_HAY_EDICION` que lo decía no la pintaba ninguna pantalla.) */
 
 /* ═══════════════════════════════════════════════════════════════════════════
    10 · LOS GESTOS (apartado 22)

@@ -5,7 +5,7 @@ import {
   PATRONES_MOVIMIENTO, FAMILIAS_PATRON, patronMovimiento, familiaPatron,
   entorno as entornoPorId, equipo as equipoPorId, dificultad as dificultadPorId,
 } from './ejercicios';
-import { GRUPOS_MUSCULARES, subgrupoMuscular } from './fitness';
+import { GRUPOS_MUSCULARES } from './fitness';
 
 /* Entrega 4 · Fase 33/45 — «Sistema avanzado de sustitución de ejercicios».
    ═══════════════════════════════════════════════════════════════════════════
@@ -189,10 +189,6 @@ const MATERIAL_DE_CARGA = new Set(['barra', 'discos', 'mancuernas', 'kettlebell'
    ═══════════════════════════════════════════════════════════════════════════ */
 
 export const patronDe = (ej) => patronMovimiento(ej?.patron) || null;
-export const familiaDePatronDe = (ej) => {
-  const p = patronDe(ej);
-  return p ? familiaPatron(p.familia) : null;
-};
 
 /** Apartado 4 — isométrico, explosivo y skill, **reutilizados** de la F2. */
 export function modalidadesDe(ej) {
@@ -784,8 +780,9 @@ export function getExerciseReplacements(exerciseId, context = {}) {
   return salida;
 }
 
-/** El nombre de la casa. */
-export const sustitucionesDe = getExerciseReplacements;
+/* 🧹 FIT F44 (apartado 45) — aquí había un alias, `sustitucionesDe`, «el nombre
+   de la casa» de `getExerciseReplacements`: dos nombres para la misma función,
+   y nadie lo usaba. Se llama de una sola manera. */
 
 /**
  * Lo que se enseña al confirmar una elección, venga de la lista o de la
@@ -1025,8 +1022,4 @@ export function auditarSustitucion() {
   return { casillas, ok: casillas.every((c) => c.ok) };
 }
 
-/* Para quien necesite el nombre de un patrón o de un subgrupo sin importar dos
-   archivos. */
-export const nombreDePatron = (id) => patronMovimiento(id)?.nombre || '';
-export const nombreDeSubgrupo = (id) => subgrupoMuscular(id)?.nombre || '';
 export { PATRONES_MOVIMIENTO, FAMILIAS_PATRON };

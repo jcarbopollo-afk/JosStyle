@@ -9,6 +9,7 @@ import {
   nombreDeLinea, textoDeSeries, textoDeCarga, musculosResumidos,
 } from './constructor';
 import { CATALOGO_PLANES_BRUTO } from './catalogoPlanes';
+import { FILTRO_TODOS } from './plantillas';
 
 /* Entrega 4 · Fase 5/45 — «Biblioteca de planificaciones».
    ═══════════════════════════════════════════════════════════════════════════
@@ -131,8 +132,11 @@ export const OBJETIVOS_PLAN = [
 ];
 export const objetivoDe = (id) => OBJETIVOS_PLAN.find((o) => o.id === id) || null;
 
-/** La pastilla «Todos» de las tres barras de filtro (apartado 7). */
-export const FILTRO_TODOS = 'todos';
+/** La pastilla «Todos» de las tres barras de filtro (apartado 7).
+    🧹 FIT F44 (apartado 45) — es la misma de «Tus plantillas» (F4), que estaba
+    escrita dos veces con el mismo valor: ahora vive allí y aquí se reexporta
+    (`export { }`, nunca `export … from`: este archivo también la usa, EH F17). */
+export { FILTRO_TODOS };
 
 /* ⚠️ Las dificultades **son las de la F2**, no una escala nueva: un plan
    «Intermedio» y un ejercicio «Intermedio» tienen que significar lo mismo, o la

@@ -656,7 +656,7 @@ function etiquetaInicial(p) {
 }
 
 /** Con cuántos puntos deja de bastar el timeline y aporta un gráfico. */
-export const PUNTOS_MINIMOS_GRAFICA = 4;
+export const PUNTOS_PARA_GRAFICA_RANGO = 4;
 
 /**
  * `RankScoreHistory` (apartados 24 y 25).
@@ -669,12 +669,12 @@ export const PUNTOS_MINIMOS_GRAFICA = 4;
 export function graficaDeHistorial(historial) {
   const h = historial || vacio('', '', 'sin_historial');
   const conScore = h.puntos.filter((p) => Number.isFinite(p.score));
-  if (conScore.length < PUNTOS_MINIMOS_GRAFICA) {
+  if (conScore.length < PUNTOS_PARA_GRAFICA_RANGO) {
     return {
       hay: false,
       motivo: conScore.length <= 1 ? 'pocos_puntos' : 'timeline_basta',
       puntos: conScore.length,
-      minimo: PUNTOS_MINIMOS_GRAFICA,
+      minimo: PUNTOS_PARA_GRAFICA_RANGO,
       interpolado: false,
     };
   }
@@ -689,7 +689,7 @@ export function graficaDeHistorial(historial) {
     hay: true,
     motivo: null,
     interpolado: false,
-    minimo: PUNTOS_MINIMOS_GRAFICA,
+    minimo: PUNTOS_PARA_GRAFICA_RANGO,
     desde: conScore[0].fecha,
     hasta: conScore[conScore.length - 1].fecha,
     puntos: conScore.map((p, i) => ({

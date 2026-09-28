@@ -514,10 +514,7 @@ export function auditarFinalizacion(sesion, propios = []) {
   return { ok: problemas.length === 0, problemas };
 }
 
-/** Guardar y dejarlo en `fitness`, que es lo que llama la pantalla.
- *  ⚠️ Quien escribe sigue siendo `App.jsx`: esto solo devuelve el siguiente. */
-export function aplicarGuardado(fitness, sesion, opciones = {}) {
-  const r = guardarEntrenamiento(sesion, opciones);
-  if (!r.ok) return { ...r, fitness };
-  return { ...r, fitness: guardarSesion(fitness, r.sesion) };
-}
+/* 🧹 FIT F44 — aquí vivía `aplicarGuardado`, que decía ser «lo que llama la
+   pantalla» y no lo llamaba nadie: `FinalizacionView` llama a
+   `guardarEntrenamiento` y `FitnessView` guarda con `guardarSesion`. Las pruebas
+   hacen ahora esas mismas dos llamadas. */

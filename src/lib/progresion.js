@@ -1,5 +1,7 @@
 import { ejerciciosDeSesion } from './entrenamiento';
 import { ejercicioPorId, nombreSinCatalogo } from './ejercicios';
+/* 🧹 FIT F44 (apartado 39) — el número con coma, de un solo sitio. */
+import { decimal } from './numerosFitness';
 
 /* Entrega 4 · Fase 11/45 — «Progresión y comparación del rendimiento».
    ═══════════════════════════════════════════════════════════════════════════
@@ -293,10 +295,6 @@ export const TENDENCIAS = [
   { id: 'sin_datos', nombre: 'Sin datos suficientes' },
 ];
 
-const decimal = (n) => {
-  const r = Math.round(n * 100) / 100;
-  return String(r).replace('.', ',');
-};
 const conSigno = (n, unidad) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${decimal(Math.abs(n))}${unidad}`;
 
 /** Un cambio de A a B, con porcentaje **solo cuando tiene sentido** (apartado 24). */

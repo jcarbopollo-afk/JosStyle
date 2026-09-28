@@ -6,6 +6,7 @@
    pantallas esté cableada de verdad, que guardar recalcule todo sin guardar
    nada derivado, y los cinco fallos de integración que encontró la fase. */
 
+import { ARCHIVOS_DEL_MAPA } from '../src/lib/arquitecturaFitness.js';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -91,25 +92,15 @@ const conceptos = FUENTES_DE_VERDAD.map((x) => x.concepto);
   .forEach((c) => ok(conceptos.includes(c), `El concepto «${c}» del apartado 1 tiene su fuente`));
 
 /* Un nombre exportado dos veces en Fitness es lógica duplicada (apartado 52). */
-const LIBRERIAS_FITNESS = [
-  'fitness', 'ejercicios', 'constructor', 'plantillas', 'planes', 'tuPlan', 'entrenamiento', 'entrenamientoUx',
-  'finalizacion', 'historial', 'progresion', 'progresoEjercicios', 'progresoMuscular', 'objetivosProgreso', 'rangos',
-  'pantallaRangos', 'clasificacion', 'motorRangos', 'detalleMuscular', 'explicacionRangos', 'contribucionMuscular',
-  'historialRangos', 'siguienteRango', 'colaClasificacion', 'resumenRangos', 'fotosProgreso', 'comparadorFotos',
-  'resumenProgreso', 'detalleEjercicio', 'objetivosFitness', 'actividadEntrenamiento', 'planificacionSemanal',
-  'sustitucion', 'bibliotecaEjercicios', 'validacionCatalogo', 'integracionFitness',
-  /* 🐛 FIT F40 — y las cuatro del bloque de Acabado (F37-F40), que se habían
-     quedado fuera de este barrido: es la lección de `ARCHIVOS_FITNESS` en la
-     F39, en otra lista. ⚠️ El barrido sigue DENTRO de Fitness: con el resto de
-     `src/lib` coinciden 19 nombres que ya eran ayudantes propios de cada módulo
-     (`crearObjetivo`, `lunesDe`…). El choque de la F40 —un
-     `auditarRendimiento` que ya era de la EH F44— se cazó buscándolo en todo
-     el proyecto, y ahora se llama `auditarRendimientoFitness`. */
-  'feedbackFitness', 'movilFitness', 'robustezFitness', 'rendimientoFitness', 'persistenciaFitness',
-  /* 🐛 FIT F43 — y las de la F42 (el acabado y las fechas), que se quedaron
-     fuera de la lista por tercera vez, más las dos de la F43. */
-  'acabadoFitness', 'fechasFitness', 'vueltaFitness', 'auditoriaFuncionalFitness',
-].filter((n) => { try { leer(`src/lib/${n}.js`); return true; } catch { return false; } });
+/* 🧹 FIT F44 (apartado 45) — la lista sale del MAPA de capas de la F44, que
+   es la que se comprueba contra lo que de verdad importa la aplicación. Escrita
+   a mano se quedó corta tres veces (F39, F40 y F43). */
+const LIBRERIAS_FITNESS = ARCHIVOS_DEL_MAPA
+  .filter((r) => /^src\/lib\/[^/]+\.js$/.test(r))
+  .map((r) => r.slice('src/lib/'.length, -'.js'.length))
+  .filter((n) => { try { leer(`src/lib/${n}.js`); return true; } catch { return false; } });
+ok(['acabadoFitness', 'fechasFitness', 'vueltaFitness', 'numerosFitness', 'motorRangos', 'fitness'].every((n) => LIBRERIAS_FITNESS.includes(n)),
+  '…y trae las que se quedaban fuera: el acabado, las fechas, la vuelta y los números');
 ok(LIBRERIAS_FITNESS.length >= 30, `El barrido mira ${LIBRERIAS_FITNESS.length} librerías de Fitness que existen de verdad`);
 const exportadas = new Map();
 LIBRERIAS_FITNESS.forEach((n) => {

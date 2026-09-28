@@ -13,8 +13,8 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  YA_EXISTIA, PERIODOS_RESUMEN, PERIODO_POR_DEFECTO, periodoResumen, EN_PERIODO,
-  LO_QUE_EL_PERIODO_NO_TOCA, EL_PERIODO_RECORTA, BLOQUES, bloqueResumen,
+  YA_EXISTIA, PERIODOS_RESUMEN, PERIODO_RESUMEN_POR_DEFECTO, periodoResumen, EN_PERIODO,
+  LO_QUE_EL_PERIODO_NO_TOCA, EL_PERIODO_RECORTA, BLOQUES_PROGRESO, bloqueResumen,
   EJERCICIOS_RESUMEN_MAX, MUSCULOS_RESUMEN_MAX, OBJETIVOS_RESUMEN_MAX, FOTOS_RESUMEN_MAX,
   bloqueEntrenamientos, bloqueEjercicios, bloqueMusculos, bloqueFotos, bloqueObjetivos, bloqueRango,
   comparacionRapida, CTA_FOTOS, CTA_COMPARAR, FOTOS_NO_DISPONIBLES,
@@ -206,16 +206,16 @@ console.log('\n── 6. Datos combinados (apartados 2, 19, 25 y 34) ──');
 
 const c = centroDeProgreso(TODO, FOTOS, { hoy: HOY });
 ok(c.estado === 'completo', '🚨 Con los seis sistemas con datos, el resumen está COMPLETO');
-ok(BLOQUES.length === 7 && BLOQUES.filter((b) => b.id !== 'timeline').length === 6, 'Los seis bloques del apartado 34 más la línea temporal');
+ok(BLOQUES_PROGRESO.length === 7 && BLOQUES_PROGRESO.filter((b) => b.id !== 'timeline').length === 6, 'Los seis bloques del apartado 34 más la línea temporal');
 ok(c.orden.join(',') === 'rango,entrenamientos,ejercicios,fotos,musculos,objetivos', '⚠️ El orden del apartado 25 está escrito UNA sola vez, en la librería');
-ok(BLOQUES.filter((b) => b.id !== 'timeline').every((b) => !!b.destino), '🚨 Cada bloque lleva a su módulo (apartado 19)');
-const destinos = BLOQUES.map((b) => b.destino).filter(Boolean);
+ok(BLOQUES_PROGRESO.filter((b) => b.id !== 'timeline').every((b) => !!b.destino), '🚨 Cada bloque lleva a su módulo (apartado 19)');
+const destinos = BLOQUES_PROGRESO.map((b) => b.destino).filter(Boolean);
 ok(new Set(destinos).size === destinos.length && destinos.length === 6, '…y a destinos DISTINTOS: ni una pantalla duplicada (apartado 19)');
 /* 🚨 La prueba mecánica del apartado 10. */
 ok(mezclaFuentes(c).hay === false, '🚨 Ninguna clave del resumen mezcla dos sistemas (apartado 10)');
 ok(mezclaFuentes({ bloques: { rango: { score: 520 } } }).hay === true, '…y esa comprobación SÍ se puede poner roja (EH F42)');
 ok(CLAVES_PROHIBIDAS.includes('progresoFisico'), '…con «progresoFisico» entre las prohibidas, que es el ejemplo del propio apartado');
-ok(BLOQUES.every((b) => !b.fuente.includes('+') || b.id === 'timeline'), '🚨 Cada bloque declara UNA fuente: sin eso no puede existir un número que mezcle dos');
+ok(BLOQUES_PROGRESO.every((b) => !b.fuente.includes('+') || b.id === 'timeline'), '🚨 Cada bloque declara UNA fuente: sin eso no puede existir un número que mezcle dos');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 7. La línea temporal (apartados 12, 13 y 14) ──');
@@ -264,7 +264,7 @@ ok(PERIODOS_RESUMEN === f12.RANGOS_GRAFICA, '⚠️ …y son EXACTAMENTE los de 
 /* 🔓 FIT F29 — el catálogo creció a seis para el detalle de un ejercicio, y el
    resumen sigue ofreciendo CUATRO: un subconjunto por ids, no una copia. */
 ok(PERIODOS_RESUMEN.every((p) => f12.PERIODOS.includes(p)) && f12.PERIODOS.length === 6, '🔓 …y los cuatro salen de los seis de PERIODOS, sin copiarlos (FIT F29)');
-ok(periodoResumen('loquesea').id === PERIODO_POR_DEFECTO, 'Un periodo que no existe cae en «Todo»');
+ok(periodoResumen('loquesea').id === PERIODO_RESUMEN_POR_DEFECTO, 'Un periodo que no existe cae en «Todo»');
 
 const c7 = centroDeProgreso(TODO, FOTOS, { hoy: HOY, periodo: '7d' });
 const cTodo = centroDeProgreso(TODO, FOTOS, { hoy: HOY, periodo: 'todo' });

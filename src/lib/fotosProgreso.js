@@ -55,7 +55,7 @@ export const VISIBILIDAD_PRIVADA = 'private';
  * selector de visibilidad con un solo valor sería un control decorativo
  * (regla 8) — y «compartir» está en la lista de lo prohibido.
  */
-export const VISIBILIDADES = [{ id: VISIBILIDAD_PRIVADA, nombre: 'Privada', disponible: true }];
+export const VISIBILIDADES_FOTO = [{ id: VISIBILIDAD_PRIVADA, nombre: 'Privada', disponible: true }];
 
 /** Apartado 19 — *"No hacer obligatorio clasificar cada foto"*. */
 export const TAGS_FOTO = [

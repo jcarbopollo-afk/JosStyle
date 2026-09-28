@@ -71,6 +71,7 @@ import {
 /* Apartado 26 — el historial de rango es el de la FIT F22, no uno nuevo. */
 import { RankHistory } from '../components/historialRango';
 import { PROPS_CAMPO_NUMERICO, PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
+import { decimal } from '../lib/numerosFitness';
 
 /* Las secciones de Progreso (apartado 2). */
 export const SECCIONES_PROGRESO = [
@@ -217,7 +218,8 @@ export function GraficaProgreso({ grafica, accent, onVerSesion }) {
   const min = Math.min(...valores);
   const sel = elegido !== null ? puntos[elegido] : null;
   const camino = puntos.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const fmt = (v) => String(Math.round(v * 100) / 100).replace('.', ',');
+  /* 🧹 FIT F44 — el número con coma, de `numerosFitness.js`. */
+  const fmt = decimal;
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">

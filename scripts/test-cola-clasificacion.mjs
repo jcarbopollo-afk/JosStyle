@@ -26,7 +26,7 @@ import { addDays } from '../src/lib/helpers.js';
 import {
   ESTADOS_DATO, estadoDato, estadoDeDato, coberturaDeClasificacion,
   equivalentesDe, mapaDeEquivalentes, masRepresentativo, subgruposDe, factorRiqueza,
-  PESOS, MOTIVOS, motivoCola,
+  PESOS_PRIORIDAD, MOTIVOS, motivoCola,
   grupoPrincipalDe, prioridadDeEjercicio, impactoEstimado,
   RECOMENDADOS, MAX_SEGUIDOS, equilibrar, colaDeClasificacion,
   COBERTURA_BAJA, VACIOS_COLA, AVISO_COBERTURA_BAJA, pantallaDeClasificacion,
@@ -151,8 +151,8 @@ ok(!q1.cola.some((x) => x.exerciseId === DOMINADA),
 ok(q1.secundarios.some((x) => x.exerciseId === DOMINADA),
   '…pero NO desaparece: queda como secundario (apartado 12: bajar prioridad, no eliminar)');
 const pDom = prioridadDeEjercicio(DOMINADA_CLASIFICADA, DOMINADA);
-ok(pDom.factores.clasificacion === PESOS.yaClasificado,
-  `Y su factor de clasificación baja a ${PESOS.yaClasificado}`);
+ok(pDom.factores.clasificacion === PESOS_PRIORIDAD.yaClasificado,
+  `Y su factor de clasificación baja a ${PESOS_PRIORIDAD.yaClasificado}`);
 
 console.log('\n\x1b[1m4 · PRUEBAS 3 Y 18 · DATOS REALES SUFICIENTES\x1b[0m');
 
@@ -180,7 +180,7 @@ ok(q4.secundarios.some((x) => x.exerciseId === DOMINADA),
   '…pero sí aparece como clasificación secundaria');
 ok(prioridadDeEjercicio(UNA_SESION, DOMINADA).reason === 'Datos insuficientes',
   'Su razón es «Datos insuficientes», la del apartado 16');
-ok(PESOS.datos.datos_parciales > 0 && PESOS.datos.datos_parciales < PESOS.datos.sin_datos,
+ok(PESOS_PRIORIDAD.datos.datos_parciales > 0 && PESOS_PRIORIDAD.datos.datos_parciales < PESOS_PRIORIDAD.datos.sin_datos,
   'Y pesa menos que uno sin datos, pero no cero');
 
 console.log('\n\x1b[1m6 · PRUEBA 5 · GRUPO SIN COBERTURA (el «Cuello = 0/3» del apartado 9)\x1b[0m');
@@ -233,7 +233,7 @@ ok(equivalentesDe(DOMINADA, { mapa: mapaEq }).join() === equivalentesDe(DOMINADA
   '…y el mapa compartido da lo mismo que calcularlo suelto: es una caché, no otra regla');
 const redAntes = prioridadDeEjercicio(VACIO, SUPINA).factores.redundancia;
 const redDespues = prioridadDeEjercicio(DOMINADA_CLASIFICADA, SUPINA).factores.redundancia;
-ok(redAntes === 1 && redDespues === PESOS.redundancia,
+ok(redAntes === 1 && redDespues === PESOS_PRIORIDAD.redundancia,
   `🚨 Apartado 12 — clasificar una dominada baja la prioridad de su variante (${redAntes} → ${redDespues})`);
 ok(colaDeClasificacion(DOMINADA_CLASIFICADA).todos.some((x) => x.exerciseId === SUPINA),
   '…pero NO la elimina del catálogo: «Simplemente bajar prioridad»');
@@ -261,7 +261,7 @@ ok(ejSkillSin && !(ejSkillSin.progresiones || []).length && ejSkillCon && (ejSki
   'El catálogo tiene una habilidad SIN progresiones declaradas y otra CON ellas');
 const sSin = prioridadDeEjercicio(VACIO, SKILL_SIN).factores.tipo;
 const sCon = prioridadDeEjercicio(VACIO, SKILL_CON).factores.tipo;
-ok(sSin === PESOS.tipo.habilidadSinProgresiones && sCon > sSin,
+ok(sSin === PESOS_PRIORIDAD.tipo.habilidadSinProgresiones && sCon > sSin,
   `🚨 Apartados 13 y 14 — la habilidad ambigua baja (${sSin}) y la que tiene progresiones no (${sCon})`);
 const iso = prioridadDeEjercicio(VACIO, CUELLO_3);
 ok(iso && iso.priorityScore > 0,
@@ -270,7 +270,7 @@ ok(claseDePregunta(ejercicioPorId(MOVILIDAD)) === null,
   '🚨 Prueba 11 — la F17 ya deja la movilidad fuera: `claseDePregunta` devuelve null');
 ok(!colaDeClasificacion(VACIO).todos.some((x) => x.exerciseId === MOVILIDAD),
   '…así que ni siquiera se puntúa: no baja de prioridad, es que no entra');
-ok(!/movilidad/.test(JSON.stringify(PESOS)),
+ok(!/movilidad/.test(JSON.stringify(PESOS_PRIORIDAD)),
   '…y por eso NO hay un peso de movilidad: sería un multiplicador que no se aplica nunca (regla 8)');
 const tiposDelCatalogo = new Set(todosLosEjercicios().flatMap((e) => e.tipos || []));
 ok(!tiposDelCatalogo.has('calentamiento'),

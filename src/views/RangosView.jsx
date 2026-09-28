@@ -38,11 +38,11 @@ import { RankHistory, BotonHistorial } from '../components/historialRango';
 /* FIT F23 — qué falta para el siguiente rango, debajo del rango general. */
 import { RankNextLevelCard } from '../components/siguienteRango';
 import { tarjetaSiguienteRango } from '../lib/siguienteRango';
-import { explicacionGlobal } from '../lib/explicacionRangos';
+import { explicacionDeRango } from '../lib/explicacionRangos';
 /* FIT F18 — el detalle de un grupo muscular, dentro de Rangos. */
 import DetalleMuscularView from './DetalleMuscularView';
 /* 🔓 FIT F25 — la pantalla deja de pedir sus datos por trozos: una instantánea
-   (apartado 24) y la jerarquía del apartado 2, que vive en `BLOQUES`. */
+   (apartado 24) y la jerarquía del apartado 2, que vive en `BLOQUES_RANGOS`. */
 import { resumenDeRangos, DESTINO_GLOBAL } from '../lib/resumenRangos';
 import { RankConfidence, RankCoverage } from '../components/explicacionRango';
 import { RankRelevantExercises } from '../components/siguienteRango';
@@ -470,7 +470,7 @@ export default function RangosView({
     );
   }
 
-  /* 🚨 **La jerarquía del apartado 2, y la decide `BLOQUES`, no este JSX.**
+  /* 🚨 **La jerarquía del apartado 2, y la decide `BLOQUES_RANGOS`, no este JSX.**
      Cada bloque llega ya pintado y `RankDashboard` los ordena; uno que no tenga
      nada que decir llega como `null` y desaparece solo (apartado 18). */
   const bloques = {
@@ -568,7 +568,7 @@ export default function RangosView({
 
       {porQue && (
         <RankExplanation
-          explicacion={explicacionGlobal(fitness || {}, { propios, perfil })}
+          explicacion={explicacionDeRango(fitness || {}, { tipo: 'global' }, { propios, perfil })}
           accent={accent}
           onCerrar={() => setPorQue(false)}
           onEntrenar={onEntrenar ? () => { setPorQue(false); onEntrenar(); } : null}

@@ -223,8 +223,14 @@ ok(/<RankExplanation/.test(rangosView), '🚨 Se abre desde el rango global (apa
 ok(/<RankExplanation/.test(detalleView) && /tipo: 'grupo'/.test(detalleView) && /tipo: 'subgrupo'/.test(detalleView),
   '…desde el muscular (32.2)…');
 ok(/tipo: 'ejercicio'/.test(detalleView), '…y desde un ejercicio (32.3)');
-ok((rangosView.match(/RankExplanation/g) || []).length <= 3 && /explicacionGlobal/.test(rangosView),
+ok((rangosView.match(/RankExplanation/g) || []).length <= 3 && /explicacionDeRango/.test(rangosView),
   '⚠️ Y es el MISMO componente en los tres sitios, no tres copias (apartado 2)');
+/* 🧹 FIT F44 — y la explicación se pide por LA puerta, `explicacionDeRango`,
+   en las dos pantallas: antes cada una llamaba a su función y ésta solo la
+   usaba esta prueba. */
+ok(/explicacionDeRango\(fitness \|\| \{\}, \{ tipo: 'global' \}/.test(rangosView) && /explicacionDeRango\(/.test(detalleView)
+  && !/explicacionGlobal\(|explicacionDeMusculo\(|explicacionDeEjercicio\(/.test(rangosView + detalleView),
+  '🧹 …y se pide por la misma puerta desde las dos pantallas (apartado 2, F44)');
 
 ok(NO_EN_FIT20.length >= 3 && NO_EN_FIT20.every((x) => x.que && x.porque),
   'Lo que no trae la fase, con su motivo');

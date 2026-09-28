@@ -13,7 +13,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  SUPERFICIES, ESCALA_TEXTO, CLASES_TEXTO, TEXTO_PEQUENO, PESOS, RADIOS, PASOS_ESPACIADO, TRACKING,
+  SUPERFICIES, ESCALA_TEXTO, CLASES_TEXTO, TEXTO_PEQUENO, PESOS_LETRA, RADIOS, PASOS_ESPACIADO, TRACKING,
   CONTRASTE_TEXTO, acentoLegible, HOJA, CERRAR_HOJA, fuenteResuelta, MINIATURA_FOTO,
   TERMINOS_FITNESS, terminosQueChocan, REGLAS_ACABADO, reglaDeAcabado, EXCEPCIONES_PASTILLA,
   revisarArchivo, auditarAcabado, PANTALLAS_F42,
@@ -144,7 +144,7 @@ ok(CLASES_TEXTO.length === 10 && !CLASES_TEXTO.includes('text-[9px]') && !CLASES
 ok(ESCALA_TEXTO.map((e) => e.rol).join(',') === 'Display,H1,H2,H3,Body,Body secondary,Label,Caption',
   'Los papeles del apartado 6, con su nombre');
 ok(RADIOS.length === 5 && RADIOS.map((r) => r.rol).join(',') === 'small,medium,large,sheet,pill', 'Cinco radios, no quince (apartado 10)');
-ok(PESOS.length === 4 && TEXTO_PEQUENO.length === 3 && TRACKING === 'tracking-wider' && PASOS_ESPACIADO.includes('4'),
+ok(PESOS_LETRA.length === 4 && TEXTO_PEQUENO.length === 3 && TRACKING === 'tracking-wider' && PASOS_ESPACIADO.includes('4'),
   'Pesos, letra pequeña, un espaciado de letra y la escala de 4 px');
 ok(SUPERFICIES.map((s) => s.rol).join(',') === 'background,surface,surfaceElevated,surfacePressed,border,text,textSecondary,disabled',
   'Las superficies del apartado 4, cada una con el token que ya existía');

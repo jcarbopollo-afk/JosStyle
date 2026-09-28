@@ -33,9 +33,9 @@
    comprueba sobre todos los textos que genera esta fase.
    =========================================================================== */
 
-import { GRUPOS_MUSCULARES, nivelRango, SIN_RANGO } from './fitness.js';
+import { nivelRango, SIN_RANGO } from './fitness.js';
 import {
-  RANK_THRESHOLDS, PUNTUACION_MAXIMA, CONFIANZA, progresoHaciaSiguiente,
+  RANK_THRESHOLDS, CONFIANZA, progresoHaciaSiguiente,
 } from './rangos.js';
 import { fuenteRango } from './motorRangos.js';
 /* 🚨 `rangoDeDestino` (F22) es la única función que devuelve el rango de
@@ -427,6 +427,3 @@ export function sinNumerosRotos(valor) {
   return true;
 }
 
-/** El máximo de la escala, para quien necesite el tope (nunca un hex ni un 600 a mano). */
-export const TOPE_ESCALA = PUNTUACION_MAXIMA;
-export const GRUPOS_TOTALES = GRUPOS_MUSCULARES.length;

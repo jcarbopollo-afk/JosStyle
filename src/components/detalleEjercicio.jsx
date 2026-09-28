@@ -4,6 +4,7 @@ import { COLORS } from '../tokens';
 import { OpcionSegmentada } from './piezasFitness';
 import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
+import { decimal } from '../lib/numerosFitness';
 import { Card, EmptyHint } from './ui';
 import { RankBadge } from './rangos';
 import { RankNextLevelCard } from './siguienteRango';
@@ -123,7 +124,7 @@ export function ExercisePreviousResult({ comparacion, estado, avisoMedida, accen
         {comparacion.porcentaje !== null && comparacion.porcentaje !== undefined && (
           <p className="text-[10px] tabular-nums" style={{ color: COLORS.textMuted }}>
             {comparacion.porcentaje > 0 ? '+' : ''}
-            {String(comparacion.porcentaje).replace('.', ',')} % de peso
+            {decimal(comparacion.porcentaje)} % de peso
           </p>
         )}
       </div>

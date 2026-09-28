@@ -111,9 +111,9 @@ export const YA_EXISTIA = [
        conseguido en el filtro de 7 días. */
 
 export const PERIODOS_RESUMEN = RANGOS_GRAFICA;
-export const PERIODO_POR_DEFECTO = 'todo';
+export const PERIODO_RESUMEN_POR_DEFECTO = 'todo';
 export const periodoResumen = (id) => PERIODOS_RESUMEN.find((p) => p.id === texto(id))
-  || PERIODOS_RESUMEN.find((p) => p.id === PERIODO_POR_DEFECTO);
+  || PERIODOS_RESUMEN.find((p) => p.id === PERIODO_RESUMEN_POR_DEFECTO);
 
 /** *"3 en los últimos 7 días"* — nunca *"3 esta semana"*, que es otra cosa: una
  *  semana natural empieza el lunes y esto son los últimos siete días. */
@@ -146,7 +146,7 @@ export const TIMELINE_RESUMEN_MAX = 12;
 export const VER_TODO = 'Ver todo';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   4 · LOS BLOQUES Y SU ORDEN (apartados 2, 20 y 25)
+   4 · LOS BLOQUES_PROGRESO Y SU ORDEN (apartados 2, 20 y 25)
    ═══════════════════════════════════════════════════════════════════════════
    ⚠️ El apartado 25 propone un orden y termina con *"adapta el orden a la
    arquitectura actual si existe una solución mejor"*. El que va aquí es el
@@ -159,7 +159,7 @@ export const VER_TODO = 'Ver todo';
    comprobable: sin un bloque que lea dos fuentes no puede existir un número que
    las mezcle. */
 
-export const BLOQUES = [
+export const BLOQUES_PROGRESO = [
   { id: 'rango', nombre: 'Tu rango', fuente: 'motorRangos.js (F19/F22)', orden: 0, destino: 'rangos', apartado: 9 },
   { id: 'entrenamientos', nombre: 'Entrenamientos', fuente: 'historial.js (F10)', orden: 1, destino: 'historial', apartado: 3 },
   { id: 'ejercicios', nombre: 'Ejercicios en progreso', fuente: 'progresoEjercicios.js (F12)', orden: 2, destino: 'ejercicios', apartado: 4 },
@@ -168,13 +168,13 @@ export const BLOQUES = [
   { id: 'objetivos', nombre: 'Tus objetivos', fuente: 'objetivosProgreso.js (F14)', orden: 5, destino: 'objetivos', apartado: 8 },
   { id: 'timeline', nombre: 'Línea temporal', fuente: 'las cinco de arriba, sin mezclarlas', orden: 6, destino: null, apartado: 13 },
 ];
-export const bloqueResumen = (id) => BLOQUES.find((b) => b.id === texto(id)) || null;
+export const bloqueResumen = (id) => BLOQUES_PROGRESO.find((b) => b.id === texto(id)) || null;
 
 /* ═══════════════════════════════════════════════════════════════════════════
    5 · ENTRENAMIENTOS (apartado 3)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-export function bloqueEntrenamientos(fitness, { periodo = PERIODO_POR_DEFECTO, hoy = todayISO() } = {}) {
+export function bloqueEntrenamientos(fitness, { periodo = PERIODO_RESUMEN_POR_DEFECTO, hoy = todayISO() } = {}) {
   const sesiones = sesionesDelHistorial(fitness);
   const total = sesiones.length;
   const p = periodoResumen(periodo);
@@ -207,7 +207,7 @@ export function bloqueEntrenamientos(fitness, { periodo = PERIODO_POR_DEFECTO, h
    tarjetas de la F12 —que salen de la F11— y **se cortan a cuatro**. */
 
 export function bloqueEjercicios(fitness, {
-  propios = [], periodo = PERIODO_POR_DEFECTO, hoy = todayISO(), max = EJERCICIOS_RESUMEN_MAX,
+  propios = [], periodo = PERIODO_RESUMEN_POR_DEFECTO, hoy = todayISO(), max = EJERCICIOS_RESUMEN_MAX,
 } = {}) {
   const f = fitnessEnPeriodo(fitness, periodo, hoy);
   const tarjetas = tarjetasDeProgreso(f, { propios });
@@ -258,7 +258,7 @@ export function bloqueEjercicios(fitness, {
    la sección Músculos, a un toque. */
 
 export function bloqueMusculos(fitness, {
-  propios = [], periodo = PERIODO_POR_DEFECTO, hoy = todayISO(), max = MUSCULOS_RESUMEN_MAX,
+  propios = [], periodo = PERIODO_RESUMEN_POR_DEFECTO, hoy = todayISO(), max = MUSCULOS_RESUMEN_MAX,
 } = {}) {
   const m = resumenMuscular(fitness, { rango: periodo, hoy, propios });
   const conDatos = m.grupos
@@ -597,7 +597,7 @@ export function detallarEventosDeObjetivo(eventos, objetivos) {
  * vista, no un cálculo.
  */
 export function timelineDeProgreso(eventos, {
-  filtro = 'todos', periodo = PERIODO_POR_DEFECTO, hoy = todayISO(), limite = TIMELINE_RESUMEN_MAX,
+  filtro = 'todos', periodo = PERIODO_RESUMEN_POR_DEFECTO, hoy = todayISO(), limite = TIMELINE_RESUMEN_MAX,
 } = {}) {
   const todos = lista(eventos);
   const p = periodoResumen(periodo);
@@ -697,13 +697,13 @@ export function bloqueSeguro(id, calcular) {
 /**
  * `ProgressOverview` en datos.
  *
- * 🚨 **NI UNA CIFRA QUE MEZCLE DOS BLOQUES** (apartados 10 y 33). Lo que
+ * 🚨 **NI UNA CIFRA QUE MEZCLE DOS BLOQUES_PROGRESO** (apartados 10 y 33). Lo que
  * devuelve esta función son seis bloques y una línea temporal; no hay un
  * `progresoFisico`, ni un porcentaje global, ni una puntuación combinada, y hay
  * una casilla de auditoría que lo comprueba recorriendo las claves.
  */
 export function centroDeProgreso(fitness, fotos = [], {
-  propios = [], perfil = null, periodo = PERIODO_POR_DEFECTO, hoy = todayISO(),
+  propios = [], perfil = null, periodo = PERIODO_RESUMEN_POR_DEFECTO, hoy = todayISO(),
   filtroTimeline = 'todos', errorFotos = false, puede = {},
 } = {}) {
   const f = fitness && typeof fitness === 'object' ? fitness : {};
@@ -742,7 +742,7 @@ export function centroDeProgreso(fitness, fotos = [], {
       periodos: PERIODOS_RESUMEN,
       /* El orden del apartado 25, escrito **una sola vez**: ninguna pantalla
          decide la jerarquía (F25 con `RankDashboard`). */
-      orden: BLOQUES.filter((b) => b.id !== 'timeline').map((b) => b.id),
+      orden: BLOQUES_PROGRESO.filter((b) => b.id !== 'timeline').map((b) => b.id),
       bloques: Object.fromEntries(calculados.map((c) => [c.bloque.id, c.bloque])),
       timeline,
       avisos,
@@ -791,7 +791,7 @@ export const NO_EN_FIT28 = [
 export const DECISIONES_FIT28 = [
   {
     que: 'Los seis motores se llaman; ninguno se reescribe',
-    porque: 'Contexto del enunciado: «Cada sistema mantiene su propia lógica». Y cada bloque declara su fuente única en BLOQUES, que es la forma comprobable del apartado 10.',
+    porque: 'Contexto del enunciado: «Cada sistema mantiene su propia lógica». Y cada bloque declara su fuente única en BLOQUES_PROGRESO, que es la forma comprobable del apartado 10.',
   },
   {
     que: 'Un grupo muscular sin datos no ocupa un hueco de la vista previa',
@@ -844,7 +844,7 @@ export function casillasDeIntegracion(resumen) {
   const r = resumen || {};
   const b = r.bloques || {};
   const mezcla = mezclaFuentes(r);
-  const fuentes = BLOQUES.filter((x) => x.id !== 'timeline');
+  const fuentes = BLOQUES_PROGRESO.filter((x) => x.id !== 'timeline');
   return [
     { id: 'conecta', ok: fuentes.length === 6, que: 'Conecta entrenamientos, ejercicios, músculos, rangos, objetivos y fotos' },
     { id: 'una_fuente', ok: fuentes.every((x) => !!x.fuente && !x.fuente.includes('+')), que: 'Cada bloque lee de un solo motor' },
@@ -866,7 +866,7 @@ export const AUDITORIA_FIT28 = {
   /* 🚨 El apartado 21 en una línea, con una prueba que lee el código fuente. */
   guardaAlgo: false,
   normalizador: false,
-  fuentes: BLOQUES.map((b) => ({ bloque: b.id, fuente: b.fuente })),
+  fuentes: BLOQUES_PROGRESO.map((b) => ({ bloque: b.id, fuente: b.fuente })),
 };
 
 export function auditarIntegracion(fitness, fotos = [], opciones = {}) {

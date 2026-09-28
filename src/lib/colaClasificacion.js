@@ -4,7 +4,7 @@
    🚨 **ESTO NO ES IA, Y EL ENUNCIADO LO DICE DOS VECES** (contexto y apartado
    35). Es una priorización **determinista** sobre los datos que ya existen: el
    catálogo de la F2, las sesiones de la F8 y las clasificaciones de la F17.
-   Cada número sale de una constante declarada en `PESOS`, y cada ejercicio de
+   Cada número sale de una constante declarada en `PESOS_PRIORIDAD`, y cada ejercicio de
    la cola puede explicar por qué está ahí (apartados 16 y 36).
 
    🚨 **LA F17 DECIDE CÓMO SE PREGUNTA; ESTA FASE, SOLO A QUIÉN** (apartado 8,
@@ -200,7 +200,7 @@ export function masRepresentativo(ids, { propios = [], mapa = null } = {}) {
  * por el código nadie podría decir por qué un ejercicio va antes que otro, y
  * hay una comprobación que busca multiplicadores sueltos fuera de aquí.
  */
-export const PESOS = {
+export const PESOS_PRIORIDAD = {
   /* Apartado 6 — con datos de sobra ni se puntúa: sale de la cola. */
   datos: { sin_datos: 1, datos_parciales: 0.35, datos_suficientes: 0 },
   /* Apartado 5.2 — «clasificación inexistente» va antes que una ya hecha. */
@@ -253,7 +253,7 @@ export const motivoCola = (id) => MOTIVOS.find((m) => m.id === id) || null;
  *  Con dos, acabarían ordenando distinto la misma lista. */
 export const subgruposDe = (ej) => new Set(repartoMuscular(ej).map((m) => m.subgrupoId)).size;
 export const factorRiqueza = (ej) =>
-  1 + PESOS.riqueza.porSubgrupo * Math.min(Math.max(subgruposDe(ej) - 1, 0), PESOS.riqueza.tope);
+  1 + PESOS_PRIORIDAD.riqueza.porSubgrupo * Math.min(Math.max(subgruposDe(ej) - 1, 0), PESOS_PRIORIDAD.riqueza.tope);
 
 const tipoFactor = (ej) => {
   const tipos = lista(ej.tipos);
@@ -263,9 +263,9 @@ const tipoFactor = (ej) => {
      escrito una progresión. La que la tiene se puede preguntar; la que no, es
      la habilidad ambigua del 13. */
   if (tipos.includes('habilidad') && !lista(ej.progresiones).length) {
-    return PESOS.tipo.habilidadSinProgresiones;
+    return PESOS_PRIORIDAD.tipo.habilidadSinProgresiones;
   }
-  if (tipos.includes('fuerza') || tipos.includes('hipertrofia')) return PESOS.tipo.fuerzaOHipertrofia;
+  if (tipos.includes('fuerza') || tipos.includes('hipertrofia')) return PESOS_PRIORIDAD.tipo.fuerzaOHipertrofia;
   return 1;
 };
 
@@ -294,8 +294,8 @@ export function prioridadDeEjercicio(fitness, exerciseId, { propios = [], cobert
   const estimacion = clasificacionDe(fitness, ej.id);
   const reparto = repartoMuscular(ej);
 
-  const fDatos = PESOS.datos[dato.id] ?? 1;
-  const fClas = estimacion ? PESOS.yaClasificado : 1;
+  const fDatos = PESOS_PRIORIDAD.datos[dato.id] ?? 1;
+  const fClas = estimacion ? PESOS_PRIORIDAD.yaClasificado : 1;
 
   /* Cobertura: se mira la del grupo y la del subgrupo que más pesan de este
      ejercicio. ⚠️ Una fracción `null` (grupo sin ejercicios) no aporta nada. */
@@ -305,7 +305,7 @@ export function prioridadDeEjercicio(fitness, exerciseId, { propios = [], cobert
   const filaSub = subMejor ? cob.subgrupos.find((s) => s.subgrupoId === subMejor.subgrupoId) : null;
   const faltaGrupo = filaGrupo && filaGrupo.fraccion !== null ? 1 - filaGrupo.fraccion : 0;
   const faltaSub = filaSub && filaSub.fraccion !== null ? 1 - filaSub.fraccion : 0;
-  const fCobertura = (1 + PESOS.cobertura.grupo * faltaGrupo) * (1 + PESOS.cobertura.subgrupo * faltaSub);
+  const fCobertura = (1 + PESOS_PRIORIDAD.cobertura.grupo * faltaGrupo) * (1 + PESOS_PRIORIDAD.cobertura.subgrupo * faltaSub);
 
   /* Equivalentes: redundancia si alguno ya aporta, y representatividad dentro
      del conjunto. Con un solo ejercicio en el conjunto, ninguno de los dos
@@ -314,13 +314,13 @@ export function prioridadDeEjercicio(fitness, exerciseId, { propios = [], cobert
   const conjunto = [ej.id, ...equis];
   const algunoSabido = equis.some((id) =>
     estadoDeDato(fitness, id, { propios }).sesiones > 0 || clasificacionDe(fitness, id));
-  const fRedundancia = algunoSabido ? PESOS.redundancia : 1;
+  const fRedundancia = algunoSabido ? PESOS_PRIORIDAD.redundancia : 1;
   const esRepresentativo = equis.length
     ? masRepresentativo(conjunto, { propios, mapa: mapaEq }) === ej.id
     : null;
   const fRepresentativo = esRepresentativo === null
     ? 1
-    : (esRepresentativo ? PESOS.representativo.si : PESOS.representativo.no);
+    : (esRepresentativo ? PESOS_PRIORIDAD.representativo.si : PESOS_PRIORIDAD.representativo.no);
 
   const fRiqueza = factorRiqueza(ej);
 
@@ -606,7 +606,7 @@ export const NO_EN_FIT24 = [
   },
   {
     que: 'IA, predicciones o recomendaciones de entrenamiento',
-    porque: 'El apartado 35 las excluye una por una, y el contexto abre diciendo que esto NO es IA. Toda la prioridad sale de multiplicar constantes declaradas en PESOS por datos que ya existen.',
+    porque: 'El apartado 35 las excluye una por una, y el contexto abre diciendo que esto NO es IA. Toda la prioridad sale de multiplicar constantes declaradas en PESOS_PRIORIDAD por datos que ya existen.',
   },
   {
     que: 'XP, logros, recompensas, competición o comparación social',

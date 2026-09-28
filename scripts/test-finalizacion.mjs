@@ -25,7 +25,7 @@ import {
   AVISO_SIN_SERIES, AVISO_DESCARTAR_FINAL, TEXTO_GUARDANDO, diaDePlanDe,
   guardarEntrenamiento, descartarEntrenamiento, MENSAJES_FINAL, mensajeFinal,
   pantallaDeExito, NO_EN_FIT8, MEDIA_PENDIENTE, PREPARADO_PARA_FIT8,
-  auditarFinalizacion, aplicarGuardado,
+  auditarFinalizacion,
 } from '../src/lib/finalizacion.js';
 import {
   DEFAULT_FITNESS, ESTADOS_SESION, VISIBILIDADES, crearWorkoutSession,
@@ -252,6 +252,13 @@ ok(G.sesion.visibilidad === 'privado', '…privada (apartado 15)');
 ok(G.sesion.id === FIN.id, '…y es la MISMA sesión, con su id');
 
 /* 🚨 La comprobación del apartado 17, que está marcado como MUY IMPORTANTE. */
+/* 🧹 FIT F44 — `aplicarGuardado` se retiró: se guarda con las MISMAS dos llamadas
+   que hace la aplicación — `guardarEntrenamiento` (FinalizacionView) y
+   `guardarSesion` (FitnessView). */
+const aplicarGuardado = (fitness, sesion, opciones = {}) => {
+  const r = guardarEntrenamiento(sesion, opciones);
+  return r.ok ? { ...r, fitness: guardarSesion(fitness, r.sesion) } : { ...r, fitness };
+};
 let FIT = guardarSesion(F_CON_PLAN, FIN);
 let ultima = FIN;
 for (let i = 0; i < 5; i += 1) {

@@ -285,7 +285,10 @@ export function explicacionGlobal(fitness, { propios = [], perfil = null } = {})
 }
 
 /** El global necesita su `siguiente`, que el motor no calcula: lo añade aquí
- *  quien lo pide, con la misma función que todo lo demás. */
+ *  quien lo pide, con la misma función que todo lo demás.
+ *  🧹 FIT F44 — y es LA puerta de verdad (apartado 2 de la F20): Rangos y el
+ *  detalle muscular llamaban cada uno a su función por separado, y ésta solo la
+ *  usaba su prueba. */
 export function explicacionDeRango(fitness, destino, opciones = {}) {
   const d = destino || {};
   if (d.tipo === 'ejercicio') return explicacionDeEjercicio(fitness, d.id, opciones);

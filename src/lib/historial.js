@@ -6,6 +6,8 @@ import { ENTORNOS, nombreSinCatalogo } from './ejercicios';
 import { planPorId, planActivoDe, CATALOGO_PLANES } from './planes';
 /* 🔓 FIT F11 — la comparación con la vez anterior, discreta (su apartado 34). */
 import { comparacionEnSesion } from './progresion';
+/* 🧹 FIT F44 (apartado 39) — el número con coma, de un solo sitio. */
+import { decimal } from './numerosFitness';
 
 /* Entrega 4 · Fase 10/45 — «Historial de entrenamientos y detalle de sesiones».
    ═══════════════════════════════════════════════════════════════════════════
@@ -353,7 +355,6 @@ export function consultarHistorial(fichas, filtros = {}, { hoy = todayISO() } = 
    6 · EL DETALLE (apartados 16-27)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const decimal = (n) => String(n).replace('.', ',');
 
 const ESTADO_SERIE_TEXTO = { hecha: 'Hecha', omitida: 'Omitida', pendiente: 'Sin hacer' };
 

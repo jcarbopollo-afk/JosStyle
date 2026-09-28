@@ -37,7 +37,7 @@ import { RankHistory, BotonHistorial } from '../components/historialRango';
    ejercicios que más contribuyen debajo (su apartado 16). */
 import { RankNextLevelCard } from '../components/siguienteRango';
 import { tarjetaSiguienteRango } from '../lib/siguienteRango';
-import { explicacionDeMusculo, explicacionDeEjercicio } from '../lib/explicacionRangos';
+import { explicacionDeRango } from '../lib/explicacionRangos';
 /* 🔓 FIT F21 — la lista de ejercicios pasa a decir **cuánto aporta cada uno** a
    este músculo, y separa los que todavía no tienen datos. Sustituye a la de la
    F18 (que era la misma lista con menos información): dos listas de lo mismo en
@@ -333,9 +333,8 @@ export default function DetalleMuscularView({
   /* La explicación, que es la misma para las tres cosas (F20, apartado 2). */
   const hoja = porQue ? (
     <RankExplanation
-      explicacion={porQue.tipo === 'ejercicio'
-        ? explicacionDeEjercicio(fitness || {}, porQue.id, { propios, perfil })
-        : explicacionDeMusculo(fitness || {}, porQue.tipo === 'grupo' ? { grupoId: porQue.id } : { subgrupoId: porQue.id }, { propios, perfil })}
+      /* 🧹 FIT F44 — por la puerta única: `porQue.tipo` ya es el ámbito. */
+      explicacion={explicacionDeRango(fitness || {}, { tipo: porQue.tipo, id: porQue.id }, { propios, perfil })}
       accent={accent}
       onCerrar={() => setPorQue(null)}
       onProgreso={porQue.tipo === 'ejercicio' && onEjercicio ? () => { const id = porQue.id; setPorQue(null); alEjercicio(id); } : null}

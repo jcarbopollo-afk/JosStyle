@@ -26,7 +26,7 @@ import { CATALOGO_BRUTO } from '../src/lib/catalogoEjercicios.js';
 import { getExerciseReplacements, TIPOS_FILTRO, materialDeLasPropuestas } from '../src/lib/sustitucion.js';
 import { cabeceraDeEjercicio, EJERCICIO_ARCHIVADO } from '../src/lib/detalleEjercicio.js';
 import { fichaDeBiblioteca, consultarBiblioteca, TIPOS_DEL_FILTRO, ETIQUETAS_RELEVANTES } from '../src/lib/bibliotecaEjercicios.js';
-import { PAPELES as PAPELES_CONTRIBUCION, contribucionesDeMusculo } from '../src/lib/contribucionMuscular.js';
+import { NOMBRE_DE_PAPEL as PAPELES_CONTRIBUCION, contribucionesDeMusculo } from '../src/lib/contribucionMuscular.js';
 import { clasificacionDeEjercicios } from '../src/lib/pantallaRangos.js';
 import { rangoGlobalEfectivo } from '../src/lib/motorRangos.js';
 import { resumenDeSesion } from '../src/lib/finalizacion.js';

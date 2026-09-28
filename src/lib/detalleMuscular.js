@@ -20,7 +20,7 @@
    un subgrupo sin entrenar dice «Sin datos», no «Novato» ni «0 %».
    =========================================================================== */
 
-import { GRUPOS_MUSCULARES, subgrupoMuscular } from './fitness.js';
+import { GRUPOS_MUSCULARES, subgrupoMuscular, grupoMuscular } from './fitness.js';
 import { todayISO } from './helpers.js';
 import { ejercicioPorId, todosLosEjercicios } from './ejercicios.js';
 import { senalesDeEjercicios, ejerciciosDeMusculo, repartoMuscular } from './progresoMuscular.js';
@@ -32,7 +32,9 @@ import { rangosEfectivos, rangoEfectivoDeGrupo, rangoEfectivoDeSubgrupo } from '
 const lista = (x) => (Array.isArray(x) ? x : []);
 const texto = (v) => (typeof v === 'string' ? v.trim() : '');
 
-export const grupoMuscular = (id) => GRUPOS_MUSCULARES.find((g) => g.id === texto(id)) || null;
+/* 🧹 FIT F44 — `grupoMuscular` estaba escrito aquí otra vez, igual que el de
+   `fitness.js`. Se reexporta el de allí: quien lo importaba de aquí no cambia. */
+export { grupoMuscular };
 
 /* ═══════════════════════════════════════════════════════════════════════════
    1 · LOS EJERCICIOS QUE TOCAN UN MÚSCULO (apartados 6, 7, 8 y 21)

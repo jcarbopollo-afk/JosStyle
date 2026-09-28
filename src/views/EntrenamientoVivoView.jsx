@@ -54,7 +54,7 @@ import {
   ejerciciosDeSesion, ejercicioActual, duracionSesion, duracionCreible, reloj,
   irAEjercicio, siguienteEjercicio, anteriorEjercicio,
   editarSerie, anadirSerie, quitarSerie, recuperarSerie,
-  sustituirEjercicio, notaDeEjercicio, restanteDescanso,
+  sustituirEjercicio, notaDeEjercicio, restanteDescanso, finDelDescanso,
   EVENTO_FIN_DESCANSO, EVENTO_SERIE_HECHA,
   AVISO_SALIR, AVISO_DESCARTAR,
   fichaDeEjercicio, filasDeSeries, progresoSesion, carruselDeSesion,
@@ -79,6 +79,8 @@ import { pasarAFinalizacion } from '../lib/finalizacion';
 /* 🚨 Se EMITE al bus; ninguna pantalla reproduce ni vibra por su cuenta (SO F1). */
 import { emitir } from '../lib/eventos';
 import { PROPS_CAMPO_NUMERICO } from '../lib/movilFitness';
+/* 🧹 FIT F44 (apartado 39) — números como se leen en español: 62,5 y no 62.5, de un solo sitio. */
+import { decimal } from '../lib/numerosFitness';
 
 /* ⚠️ Cada cuánto se redibuja el reloj. **Solo redibuja**: la cuenta la lleva
    `duracionSesion()` restando marcas de tiempo (E3 F25). */
@@ -100,8 +102,6 @@ function useAhora(activo, ms = TIC_MS) {
   return ahora;
 }
 
-/* Números como se leen en español: 62,5 y no 62.5. */
-const decimal = (n) => String(n).replace('.', ',');
 
 /* ── La cabecera (F7 apartados 5 y 6 · F9 apartados 2, 30 y 33) ───────────── */
 export function CabeceraSesion({ nombre, tiempo, progreso, accent, onSalir, onTerminar }) {
@@ -735,9 +735,11 @@ export function DescansoVivo({ sesion, sonadoPara, accent, onPausar, onReanudar,
     const clave = `${descanso.desde}-${descanso.segundos}`;
     if (sonadoPara.current === clave) return;
     if (restanteDescanso(descanso, ahora) > 0) return;
-    const fin = descanso.desde + (descanso.pausadoMs || 0) + descanso.segundos * 1000;
+    /* 🧹 FIT F44 — el fin lo dice la librería: esta fórmula estaba escrita aquí
+       a mano, repitiendo la de `restanteDescanso`. */
+    const fin = finDelDescanso(descanso);
     sonadoPara.current = clave;
-    if (ahora - fin <= AVISO_FIN_DESCANSO_MS) {
+    if (fin !== null && ahora - fin <= AVISO_FIN_DESCANSO_MS) {
       try { emitir(EVENTO_FIN_DESCANSO, { de: 'descanso' }); } catch { /* que no suene no es un error */ }
     }
   }, [descanso, ahora, sonadoPara]);

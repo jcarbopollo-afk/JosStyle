@@ -20,7 +20,7 @@ import {
   plantillasDe, plantillaPorId, textoEditado, grupoDominante, fichaDePlantilla,
   lineasDePlantilla, buscarPlantillas, filtrarPlantillas, ordenarPlantillas,
   plantillasVisibles, contarPorEntorno, nombreDeCopia, SUFIJO_COPIA, duplicarPlantilla,
-  planEliminarPlantilla, avisoDeEliminar, ESTADO_VACIO_PLANTILLAS, SIN_OBJETIVO, NO_EN_FIT4,
+  avisoDeEliminar, ESTADO_VACIO_PLANTILLAS, SIN_OBJETIVO, NO_EN_FIT4,
 } from '../src/lib/plantillas.js';
 import {
   crearRutina, anadirEjercicio, editarLinea, rutinaAPlan, planARutina, guardarRutina,
@@ -171,23 +171,23 @@ ok(duplicarPlantilla(TRES, 'no-existe').ok === false, 'Duplicar algo que no est�
 ok(duplicarPlantilla(TRES, 'no-existe').plantillas.length === 3, '…y no toca la lista');
 
 console.log('\n── 6. Eliminar: con confirmación, y sin mentir (apartado 8) ──');
-const sinConfirmar = planEliminarPlantilla(TRES, PUSH.id);
-ok(sinConfirmar.ok === false && sinConfirmar.plantillas.length === 3,
-  '🚨 Sin confirmar NO borra nada: es el `aplicarPlan` de siempre');
-ok(sinConfirmar.aviso.titulo === '¿Eliminar esta plantilla?',
-  '…y devuelve el aviso, con las palabras del apartado 8');
-ok(/Push Hipertrofia/.test(sinConfirmar.aviso.que), '…nombrando cuál');
-ok(/2 ejercicios/.test(sinConfirmar.aviso.que), '…y lo que se lleva');
-ok(/Eliminados recientes/.test(sinConfirmar.aviso.vuelve),
+/* 🧹 FIT F44 — el borrado lo hace `App.jsx` por la papelera, después de que
+   `ConfirmarEliminarPlantilla` enseñe el aviso. Se prueba lo que de verdad se usa:
+   el aviso, y que la pantalla solo borra desde la confirmación. */
+const aviso = avisoDeEliminar(PUSH);
+ok(aviso.titulo === '¿Eliminar esta plantilla?', 'El aviso, con las palabras del apartado 8');
+ok(/Push Hipertrofia/.test(aviso.que), '…nombrando cuál');
+ok(/2 ejercicios/.test(aviso.que), '…y lo que se lleva');
+ok(/Eliminados recientes/.test(aviso.vuelve),
   '🚨 …y que se recupera: la plantilla va a la papelera, así que prometer lo contrario sería mentir (E3 F26)');
-ok(!/no se puede deshacer|para siempre|definitivamente/i.test(JSON.stringify(sinConfirmar.aviso)),
+ok(!/no se puede deshacer|para siempre|definitivamente/i.test(JSON.stringify(aviso)),
   '⚠️ Y por eso el aviso NO dice que sea definitivo');
-const confirmado = planEliminarPlantilla(TRES, PUSH.id, { confirmado: true });
-ok(confirmado.ok && confirmado.plantillas.length === 2, 'Confirmando, se va');
-ok(!confirmado.plantillas.some((p) => p.id === PUSH.id), '…y es la que se eligió');
-ok(TRES.length === 3, '⚠️ Y la lista original no se muta');
-ok(planEliminarPlantilla(TRES, 'no-existe').ok === false,
-  'Eliminar algo que ya no está no revienta (apartado 24)');
+{
+  const vista = leer('src/views/PlantillasView.jsx');
+  const tarjeta = vista.slice(vista.indexOf('export default function PlantillasView'));
+  ok(/onEliminar=\{\(\) => \{ setBorrando\(/.test(tarjeta) && /<ConfirmarEliminarPlantilla/.test(tarjeta),
+    '🚨 Tocar «Eliminar» NO borra: abre la confirmación, y solo ella llama al borrado');
+}
 ok(avisoDeEliminar(CORE).que.includes('1 ejercicio') && !avisoDeEliminar(CORE).que.includes('1 ejercicios'),
   '⚠️ Y el singular está bien escrito: lo lee Josué');
 
@@ -258,9 +258,5 @@ ok(buscarPlantillas(undefined, 'x').length === 0 && ordenarPlantillas(undefined)
 console.log('\n── 12. Las comprobaciones pueden ponerse rojas (EH F42) ──');
 ok(duplicarPlantilla([PUSH], PUSH.id).copia.ejercicios[0].id !== PUSH.ejercicios[0].id,
   '⚠️ Si las líneas compartieran id, esta comprobación se pondría roja');
-ok(planEliminarPlantilla([PUSH], PUSH.id, { confirmado: true }).plantillas.length === 0
-  && planEliminarPlantilla([PUSH], PUSH.id).plantillas.length === 1,
-  '…y la de confirmar distingue los dos casos, no dice siempre lo mismo');
-
 console.log(`\n${fallos === 0 ? '\x1b[32m✓' : '\x1b[31m✗'} ${total - fallos}/${total} comprobaciones\x1b[0m`);
 process.exit(fallos === 0 ? 0 : 1);

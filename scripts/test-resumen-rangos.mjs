@@ -25,12 +25,12 @@ import { rangoGlobalEfectivo, confianzaCombinada } from '../src/lib/motorRangos.
 import { explicacionGlobal } from '../src/lib/explicacionRangos.js';
 import { colaDeClasificacion } from '../src/lib/colaClasificacion.js';
 import {
-  DESTINO_GLOBAL, ESTADOS_PANTALLA, estadoPantalla, estadoDeDatos,
+  DESTINO_GLOBAL, ESTADOS_PANTALLA_RANGOS, estadoPantalla, estadoDeDatos,
   DESTACADOS_MAX, ETIQUETA_DESTACADOS, SUBTITULO_DESTACADOS, destacadosMusculares,
   SIN_EVOLUCION, evolucionReciente, EJERCICIOS_MAX, ETIQUETA_EJERCICIOS, ejerciciosDestacados,
   CTA_CLASIFICACION, CLASIFICACION_COMPLETA, promptDeClasificacion,
   ETIQUETAS_CONFIANZA, coberturaDelResumen, confianzaDelResumen,
-  BLOQUES, bloqueRangos, COMPONENTES_FIT25, ERROR_RANGOS, resumenDeRangos,
+  BLOQUES_RANGOS, bloqueRangos, COMPONENTES_FIT25, ERROR_RANGOS, resumenDeRangos,
   casillasDelResumen, auditarResumen, NO_EN_FIT25, DECISIONES_FIT25,
 } from '../src/lib/resumenRangos.js';
 
@@ -302,7 +302,7 @@ seccion('18 · Error del RankEngine');
   /* 🚨 *"No mostrar datos parcialmente corruptos como si fueran correctos"*. */
   ok(r.datos === null && r.siguiente === null, 'Y NO se devuelve media pantalla con tarjetas buenas');
   ok(r.destacados.length === 0 && r.ejercicios.hay === false, 'Ni destacados ni ejercicios de un cálculo que falló');
-  ok(r.bloques.length === BLOQUES.length, '…pero la jerarquía se conserva, para poder reintentar');
+  ok(r.bloques.length === BLOQUES_RANGOS.length, '…pero la jerarquía se conserva, para poder reintentar');
   /* Y que la prueba PUEDE ponerse verde con algo que no falla (falsificable). */
   ok(resumenDeRangos({}, {}).error === null, 'Un fitness vacío NO es un error: la comprobación distingue las dos cosas');
   /* 🚨 Y lo que de verdad protege a Josué: que lo corrupto realista NO llegue
@@ -373,9 +373,9 @@ seccion('Apartado 35 · Ni IA, ni XP, ni recomendaciones de entrenamiento');
      que vería Josué**; que esas tablas sí los nombren se comprueba aparte, y es
      lo que hay que exigir. */
   const textos = JSON.stringify([
-    ESTADOS_PANTALLA, ETIQUETA_DESTACADOS, SUBTITULO_DESTACADOS, SIN_EVOLUCION,
+    ESTADOS_PANTALLA_RANGOS, ETIQUETA_DESTACADOS, SUBTITULO_DESTACADOS, SIN_EVOLUCION,
     ETIQUETA_EJERCICIOS, CTA_CLASIFICACION, CLASIFICACION_COMPLETA, ETIQUETAS_CONFIANZA,
-    ERROR_RANGOS, BLOQUES.map((b) => b.nombre),
+    ERROR_RANGOS, BLOQUES_RANGOS.map((b) => b.nombre),
     resumenDeRangos(MUCHO(), {}).destacados,
     resumenDeRangos(MUCHO(), {}).evolucion,
     resumenDeRangos(MUCHO(), {}).clasificacion,
@@ -431,13 +431,13 @@ seccion('Apartado 9 · La selección es determinista');
 
 seccion('Apartados 2 y 22 · La jerarquía, escrita una vez');
 {
-  const ids = BLOQUES.map((b) => b.id);
+  const ids = BLOQUES_RANGOS.map((b) => b.id);
   ok(ids.join(',') === 'global,siguiente,cobertura,evolucion,musculos,ejercicios,clasificacion',
     'El orden es EXACTAMENTE el del apartado 2');
-  ok(BLOQUES.every((b) => !!b.nombre && !!b.detalle), 'Cada bloque dice a dónde lleva su detalle (apartado 22)');
+  ok(BLOQUES_RANGOS.every((b) => !!b.nombre && !!b.detalle), 'Cada bloque dice a dónde lleva su detalle (apartado 22)');
   ok(bloqueRangos('global') && !bloqueRangos('inventado'), 'Y se le puede preguntar por uno');
   /* 🚨 La vista no reordena por su cuenta. */
-  ok(/RankDashboard/.test(VISTA), 'La pantalla usa el contenedor que lee BLOQUES');
+  ok(/RankDashboard/.test(VISTA), 'La pantalla usa el contenedor que lee BLOQUES_RANGOS');
   ok(/orden\.map|bloques\[b\.id\]/.test(COMP), 'Y el contenedor pinta en el orden que le dan, sin decidirlo');
   ok(!/if\s*\(\s*estado/.test(soloCodigo(VISTA)), 'No hay un `if` por estado de datos en la pantalla (apartado 20)');
 }

@@ -260,17 +260,11 @@ export function duplicarPlantilla(plantillas, id, hoy = todayISO()) {
    5 · ELIMINAR (apartado 8)
    ═══════════════════════════════════════════════════════════════════════════
 
-   El patrón `aplicarPlan` del proyecto, que ya va por más de veinte: **sin
-   `confirmado` no toca nada**. Y quien borra de verdad es `App.jsx` con
-   `eliminarConPapelera`, la única puerta (ME F3). */
-export function planEliminarPlantilla(plantillas, id, { confirmado = false } = {}) {
-  const actuales = lista(plantillas);
-  const plan = plantillaPorId(actuales, id);
-  if (!plan) return { ok: false, motivo: 'Esa plantilla ya no está.', aviso: null, plantillas: actuales };
-  const aviso = avisoDeEliminar(plan);
-  if (!confirmado) return { ok: false, motivo: 'confirmacion', aviso, plantillas: actuales };
-  return { ok: true, motivo: null, aviso, plantillas: actuales.filter((p) => p.id !== plan.id) };
-}
+   Quien borra de verdad es `App.jsx` con `eliminarConPapelera`, la única
+   puerta (ME F3), y solo después de que `ConfirmarEliminarPlantilla` enseñe el
+   aviso y él lo confirme. 🧹 FIT F44 — aquí había además `planEliminarPlantilla`,
+   un plan de borrado con `confirmado` que no llamaba ninguna pantalla: era una
+   segunda definición de «borrar una plantilla» al lado de la de verdad. */
 
 /* ⚠️ El aviso dice **lo que se lleva** y **que vuelve**: la plantilla va a
    Eliminados recientes (EH F45), así que prometer que no se puede deshacer sería

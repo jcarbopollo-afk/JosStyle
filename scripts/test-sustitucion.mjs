@@ -14,11 +14,12 @@ import {
   MODALIDADES, modalidadesDe, claseDeMedida, patronDe, solapeMuscular, relacionDeVariante,
   contextoDeSustitucion, faltaMaterial, disponibilidad, rasgosEnComun, nivelDeCompatibilidad, nivelEnContexto,
   motivosDe, EXPRESIONES_PROHIBIDAS, configuracionRecomendada, configuracionDeSesion, tipoDeCargaPropuesto,
-  indiceDeSustitucion, getExerciseReplacements, sustitucionesDe, sustitucionElegida, necesitaConfirmar,
+  indiceDeSustitucion, getExerciseReplacements, sustitucionElegida, necesitaConfirmar,
   filtrarSustituciones, opcionesDeFiltro, materialDeLasPropuestas, pantallaDeSustitucion, TEXTOS_SUSTITUCION,
   AVISO_OBJETIVO, OPCIONES_OBJETIVO, LO_QUE_NO_SE_TRANSFIERE, NO_EN_FIT33, DECISIONES_FIT33,
   auditarSustitucion, claveDeDuplicado, UMBRAL_SOLAPE_GRUPO,
 } from '../src/lib/sustitucion.js';
+import * as SUSTITUCION from '../src/lib/sustitucion.js';
 import {
   CATALOGO_EJERCICIOS, PATRONES_MOVIMIENTO, FAMILIAS_PATRON, EQUIPAMIENTO, ejercicioPorId, crearEjercicioCompleto,
 } from '../src/lib/ejercicios.js';
@@ -502,7 +503,8 @@ ok(nivel(ALIAS, 'press-maquina-pecho') === 'poco_recomendable' && ALIAS[0].recom
 const conSesion = contextoDeSustitucion({ liveSession: { entorno: 'calistenia', origen: { ejercicios: [{ exerciseId: 'dominada-prona' }] } } });
 ok(conSesion.entornos.join() === 'calistenia' && conSesion.detectado.has('barra-dominadas'),
   '…y de una sesión en vivo saca su entorno (F10) y su material');
-ok(sustitucionesDe === getExerciseReplacements, 'El nombre de la casa es la misma función');
+/* 🧹 FIT F44 (apartado 45) — el alias `sustitucionesDe` se retiró: un nombre por función. */
+ok(!('sustitucionesDe' in SUSTITUCION), 'Un nombre por función: el alias de `getExerciseReplacements` ya no existe (F44)');
 ok(solapeMuscular(ejercicioPorId('curl-barra'), ejercicioPorId('sentadilla-barra')) === 0 && solapeMuscular(ORIG, ORIG) === 1,
   'El solape muscular: 0 entre un curl y una sentadilla, 1 consigo mismo');
 ok(UMBRAL_SOLAPE_GRUPO > 0 && UMBRAL_SOLAPE_GRUPO < 1, 'El umbral de «mismo grupo de verdad» es una constante declarada');

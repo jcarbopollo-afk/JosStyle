@@ -45,7 +45,7 @@ export const DESTINO_GLOBAL = { tipo: 'overall', id: '' };
  * (tres grupos **y** tres ejercicios) y «hay evolución» la F22. Inventar aquí un
  * «a partir de N sesiones» habría sido un tercer criterio sobre lo mismo.
  */
-export const ESTADOS_PANTALLA = [
+export const ESTADOS_PANTALLA_RANGOS = [
   {
     id: 'sin_datos',
     nombre: 'Sin datos',
@@ -72,7 +72,7 @@ export const ESTADOS_PANTALLA = [
     onboarding: false,
   },
 ];
-export const estadoPantalla = (id) => ESTADOS_PANTALLA.find((e) => e.id === id) || null;
+export const estadoPantalla = (id) => ESTADOS_PANTALLA_RANGOS.find((e) => e.id === id) || null;
 
 /**
  * ⚠️ «Sin datos» es **ni una sesión ni una clasificación**, no «sin rango»: con
@@ -93,7 +93,6 @@ export function estadoDeDatos({ global = null, sesiones = 0, clasificaciones = 0
 
 /** Apartado 9 — *"Mostrar 2–3 grupos que tengan información útil"*. */
 export const DESTACADOS_MAX = 3;
-export const DESTACADOS_MIN = 2;
 
 /**
  * 🚨 Apartado 10, literal: *"No llamarlo «mejores músculos». No asumir que un
@@ -323,7 +322,7 @@ export function confianzaDelResumen(global) {
  * el destino: los lee. Un `if` por bloque en el JSX sería lo que esta tabla
  * viene a evitar.
  */
-export const BLOQUES = [
+export const BLOQUES_RANGOS = [
   { id: 'global', nombre: 'Rango general', detalle: 'explicacion' },
   { id: 'siguiente', nombre: 'Siguiente rango', detalle: 'explicacion' },
   { id: 'cobertura', nombre: 'Cobertura y confianza', detalle: 'explicacion' },
@@ -332,7 +331,7 @@ export const BLOQUES = [
   { id: 'ejercicios', nombre: 'Ejercicios relevantes', detalle: 'ejercicio' },
   { id: 'clasificacion', nombre: 'Clasificación pendiente', detalle: 'clasificacion' },
 ];
-export const bloqueRangos = (id) => BLOQUES.find((b) => b.id === id) || null;
+export const bloqueRangos = (id) => BLOQUES_RANGOS.find((b) => b.id === id) || null;
 
 /**
  * 🚨 **LOS NUEVE COMPONENTES DEL APARTADO 21, Y CINCO YA ESTABAN ESCRITOS**
@@ -393,7 +392,7 @@ export function resumenDeRangos(fitness, { propios = [], perfil = null } = {}) {
     return {
       error: null,
       estado,
-      bloques: BLOQUES,
+      bloques: BLOQUES_RANGOS,
       /* Lo que ya resolvía la F16, tal cual: rango, cobertura, escala y músculos. */
       datos,
       siguiente,
@@ -411,7 +410,7 @@ export function resumenDeRangos(fitness, { propios = [], perfil = null } = {}) {
     return {
       error: { ...ERROR_RANGOS, detalle: (e && e.message) || '' },
       estado: estadoPantalla('sin_datos'),
-      bloques: BLOQUES,
+      bloques: BLOQUES_RANGOS,
       datos: null,
       siguiente: null,
       evolucion: { hay: false, texto: SIN_EVOLUCION, tarjeta: null, dentro: null },
@@ -455,7 +454,7 @@ export function casillasDelResumen(resumen) {
     },
     { id: 'sin_rango_sin_cero', ok: !r.datos || !r.datos.global.sinRango || !r.siguiente || !r.siguiente.barra, que: 'Sin rango general no se pinta ninguna barra' },
     { id: 'estado', ok: !!estadoPantalla(estado.id), que: 'La pantalla declara en qué estado de datos está' },
-    { id: 'jerarquia', ok: lista(r.bloques).length === BLOQUES.length, que: 'La jerarquía del apartado 2 llega entera' },
+    { id: 'jerarquia', ok: lista(r.bloques).length === BLOQUES_RANGOS.length, que: 'La jerarquía del apartado 2 llega entera' },
     /* 🐛 La casilla que habría cazado la cobertura cruda: sin `fraccion` la
        barra se pinta a `NaN%` y nadie se entera (FIT F25). */
     {
@@ -500,7 +499,7 @@ export const NO_EN_FIT25 = [
   },
   {
     que: 'Cuatro pantallas distintas según cuántos datos haya',
-    porque: 'El apartado 20 lo dice al revés: «No crear cuatro UIs completamente distintas. Utilizar componentes que cambien su contenido según el estado». Por eso `ESTADOS_PANTALLA` decide qué se puede decir, no qué pantalla se abre.',
+    porque: 'El apartado 20 lo dice al revés: «No crear cuatro UIs completamente distintas. Utilizar componentes que cambien su contenido según el estado». Por eso `ESTADOS_PANTALLA_RANGOS` decide qué se puede decir, no qué pantalla se abre.',
   },
   {
     que: 'Confeti, vibración o sonido al subir de rango',

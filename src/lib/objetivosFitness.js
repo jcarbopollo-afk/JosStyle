@@ -8,6 +8,7 @@ import {
 import { aparicionesDeEjercicio } from './progresion';
 import { ejercicioPorId, nombreCompleto, progresionesDe } from './ejercicios';
 import { etiquetaDeFecha } from './historial';
+import { decimal } from './numerosFitness';
 
 /* ===========================================================================
    ENTREGA 4 · FASE 30/45 — SISTEMA AVANZADO DE OBJETIVOS FITNESS
@@ -125,7 +126,8 @@ export function distanciaAlObjetivo(progreso) {
   if (falta <= 0) return '';
   const t = tipoObjetivo(p.tipo);
   const n = Math.round(falta * 100) / 100;
-  const cifra = String(n).replace('.', ',');
+  /* 🧹 FIT F44 — el número con coma, de un solo sitio. */
+  const cifra = decimal(n);
   if (t.id === 'reps') return `Te falta${n === 1 ? '' : 'n'} ${cifra} ${n === 1 ? 'rep' : 'reps'}`;
   return `Te falta${n === 1 ? '' : 'n'} ${cifra} ${t.unidad}`;
 }

@@ -7,6 +7,8 @@ import { aparicionesDeEjercicio, mejorHistorico, progresoDeEjercicio } from './p
 import { fechaLarga } from './finalizacion';
 import { estadoDe, estadoProgreso } from './progresoEjercicios';
 import { ejercicioEnGrupo } from './progresoMuscular';
+/* 🧹 FIT F44 (apartado 39) — el número con coma, de un solo sitio. */
+import { decimal } from './numerosFitness';
 
 /* Entrega 4 · Fase 14/45 — «Objetivos y metas de progreso».
    ═══════════════════════════════════════════════════════════════════════════
@@ -167,7 +169,6 @@ export const ESTADOS_VISIBLES = {
   cancelado: { nombre: 'Cancelado', simbolo: '—' },
 };
 
-const decimal = (n) => String(Math.round(n * 100) / 100).replace('.', ',');
 const conUnidad = (valor, tipo) => {
   const t = tipoObjetivo(tipo);
   if (valor === null || valor === undefined) return '';

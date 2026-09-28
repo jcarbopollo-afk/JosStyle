@@ -171,7 +171,7 @@ export function resumenDeProgreso(fitness, tarjetas) {
    4 · EL DETALLE (apartados 11-20)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const decimal = (n) => String(Math.round(n * 100) / 100).replace('.', ',');
+/* 🧹 FIT F44 — aquí había una copia de `decimal` que no usaba nadie. */
 
 /** *"Serie 1 — 20 kg × 10"* (apartado 17). ⚠️ Lo mismo que el historial: las
  *  series HECHAS, con los datos que se guardaron. */

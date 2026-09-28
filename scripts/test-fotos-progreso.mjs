@@ -12,7 +12,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  CAMPOS_QUE_YA_EXISTIAN, VISIBILIDAD_PRIVADA, VISIBILIDADES, TAGS_FOTO, tagFoto,
+  CAMPOS_QUE_YA_EXISTIAN, VISIBILIDAD_PRIVADA, VISIBILIDADES_FOTO, TAGS_FOTO, tagFoto,
   crearFotoProgreso, normalizarFotoProgreso, normalizarFotosProgreso, editarFotoProgreso,
   etiquetaDeDia, diasDeFotos, fotosEnOrden, fotoPorId, vecinasDeFoto,
   MINIMO_PARA_COMPARAR, FALTA_OTRA_FOTO, compararFotos, diasEntreFechas, textoDeDistancia,
@@ -322,7 +322,7 @@ seccion('🚨 Privacidad (apartados 21 y 38)');
   /* 🚨 Y cualquier valor raro vuelve a privada, nunca al revés. */
   ok(normalizarFotoProgreso({ path: 'u/a.jpg', visibility: 'public' }).visibility === VISIBILIDAD_PRIVADA,
     '🚨 Un «public» guardado a mano vuelve a privada al cargar');
-  ok(VISIBILIDADES.length === 1, 'Y solo existe un valor: un selector con uno sería decorativo (regla 8)');
+  ok(VISIBILIDADES_FOTO.length === 1, 'Y solo existe un valor: un selector con uno sería decorativo (regla 8)');
   ok(!/compartir|share|publico|followers/i.test(soloCodigo(LIB)), 'Ninguna función de compartir');
   ok(!/fetch\(|axios|ask-ai/.test(soloCodigo(LIB)) && !/fetch\(|ask-ai/.test(soloCodigo(COMP)),
     '🚨 Y ni una foto sale hacia ninguna API externa (apartado 38)');

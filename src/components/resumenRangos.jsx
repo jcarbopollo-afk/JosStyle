@@ -1,5 +1,5 @@
 /* ===========================================================================
-   ENTREGA 4 · FASE 25/45 — LOS BLOQUES DEL RESUMEN DE RANGOS
+   ENTREGA 4 · FASE 25/45 — LOS BLOQUES_RANGOS DEL RESUMEN DE RANGOS
 
    🚨 **DE LOS NUEVE COMPONENTES DEL APARTADO 21, SEIS YA ESTABAN ESCRITOS.**
    El apartado dice *"Crear/reutilizar"* y en la línea siguiente *"Evitar
@@ -11,11 +11,11 @@
    grande del rango general es `RankOverviewCard` (F16). La tabla que lo dice es
    `COMPONENTES_FIT25`, y hay una comprobación que la lee.
 
-   ⚠️ **`RankDashboard` RECIBE LOS BLOQUES YA PINTADOS** (y es la `ClassificationHub`
+   ⚠️ **`RankDashboard` RECIBE LOS BLOQUES_RANGOS YA PINTADOS** (y es la `ClassificationHub`
    de la F24 otra vez). La tarjeta del rango general, la escala y los rankings
    musculares viven en `src/views/RangosView.jsx`; importarlos desde aquí sería
    un ciclo `components → views`. Lo que este componente aporta es **el orden**
-   —el del apartado 2, leído de `BLOQUES`— y que ninguna pantalla lo decida por
+   —el del apartado 2, leído de `BLOQUES_RANGOS`— y que ninguna pantalla lo decida por
    su cuenta.
    =========================================================================== */
 
@@ -26,7 +26,7 @@ import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, PrimaryButton, Esqueleto } from './ui';
 import { RankBadge, RankLabel } from './rangos';
-import { BLOQUES, ETIQUETA_DESTACADOS, SUBTITULO_DESTACADOS, SIN_EVOLUCION } from '../lib/resumenRangos';
+import { BLOQUES_RANGOS, ETIQUETA_DESTACADOS, SUBTITULO_DESTACADOS, SIN_EVOLUCION } from '../lib/resumenRangos';
 
 /* ═══ Apartado 9 · Los grupos destacados ═══════════════════════════════════
    🚨 El apartado 10 prohíbe llamarlo *"mejores músculos"* y explica por qué:
@@ -196,7 +196,7 @@ export function RankDashboardSkeleton() {
 }
 
 /* ═══ Apartados 2, 20 y 27 · El contenedor ═════════════════════════════════
-   🚨 **El orden lo manda `BLOQUES`, no el JSX.** Así la jerarquía del apartado 2
+   🚨 **El orden lo manda `BLOQUES_RANGOS`, no el JSX.** Así la jerarquía del apartado 2
    está escrita en un solo sitio y una fase futura que la cambie no tiene que
    acordarse de tocar también la pantalla.
 
@@ -207,7 +207,7 @@ export function RankDashboard({ resumen, bloques = {}, accent, cargando = false,
   if (cargando) return <RankDashboardSkeleton />;
   const r = resumen || null;
   if (r && r.error) return <RankDashboardError error={r.error} accent={accent} onReintentar={onReintentar} />;
-  const orden = (r && r.bloques && r.bloques.length ? r.bloques : BLOQUES);
+  const orden = (r && r.bloques && r.bloques.length ? r.bloques : BLOQUES_RANGOS);
   return (
     <div className="space-y-5">
       {orden.map((b) => {

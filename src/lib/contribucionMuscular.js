@@ -38,11 +38,12 @@ const texto = (v) => (typeof v === 'string' ? v.trim() : '');
 /* Los papeles que el catálogo ya distingue (F2). ⚠️ Se enseñan porque explican
    por qué un ejercicio pesa poco: en las dominadas, el antebrazo es
    estabilizador, no el objetivo. */
-export const PAPELES = Object.fromEntries(PAPELES_CATALOGO.map((p) => [p.id, p.nombre]));
+export const NOMBRE_DE_PAPEL = Object.fromEntries(PAPELES_CATALOGO.map((p) => [p.id, p.nombre]));
 /* 🔓 FIT F35, apartado 34 — *"No repetir arrays equivalentes en distintos
    archivos"*: este mapa estaba escrito a mano con los tres papeles de la F2.
-   Ahora se **deriva** de `PAPELES` de `ejercicios.js`, y se sigue exportando con
-   el mismo nombre porque lo leen la pantalla y su prueba. */
+   Ahora se **deriva** de `PAPELES` de `ejercicios.js`. 🧹 FIT F44 — y ya no se
+   llama también `PAPELES`: la lista de la F2 y este mapa eran dos cosas con el
+   mismo nombre, y importar la que no era devolvía otra forma sin fallar. */
 
 /* La etiqueta del apartado 15: lo que significa esa barra, dicho al lado. 🚨 No
    es «el 60 % de tu desarrollo». */
@@ -86,7 +87,7 @@ export function contribucionDeEjercicio(fitness, exerciseId, { grupoId = null, s
     participacion,
     porcentaje: Math.round(participacion * 100),
     papel,
-    papelNombre: papel ? PAPELES[papel] : null,
+    papelNombre: papel ? NOMBRE_DE_PAPEL[papel] : null,
     /* Lo que dice el motor (F19): puntuación, rango, confianza, tendencia. */
     sinDatos: r.sinRango,
     rango: r.sinRango ? null : r.rango,

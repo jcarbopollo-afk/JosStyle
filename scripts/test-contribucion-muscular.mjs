@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  PAPELES, ETIQUETA_PARTICIPACION, AVISO_CONTRIBUCION, ORDENES_CONTRIBUCION,
+  NOMBRE_DE_PAPEL, ETIQUETA_PARTICIPACION, AVISO_CONTRIBUCION, ORDENES_CONTRIBUCION,
   contribucionDeEjercicio, contribucionesDeMusculo, contribucionesPorSubgrupo,
   NO_EN_FIT21, DECISIONES_FIT21,
 } from '../src/lib/contribucionMuscular.js';
@@ -79,7 +79,7 @@ ok(domBrazos.porcentaje < dom.porcentaje && domBrazos.porcentaje > 0,
   `🚨 En Brazos cuenta por su parte (${domBrazos.porcentaje} %), no por el total del ejercicio (apartado 4)`);
 ok(dom.papel === 'principal' && domBrazos.papel === 'secundario',
   '⚠️ Y con el papel que tiene en cada músculo: principal en espalda, secundario en brazos');
-ok(PAPELES[dom.papel] === dom.papelNombre, 'El papel se enseña con su nombre, no con el id');
+ok(NOMBRE_DE_PAPEL[dom.papel] === dom.papelNombre, 'El papel se enseña con su nombre, no con el id');
 
 /* Caso 3 — hasta el subgrupo (apartado 7). */
 const domDorsales = contribucionDeEjercicio(fit, 'dominada-prona', { subgrupoId: 'dorsales' }, {});

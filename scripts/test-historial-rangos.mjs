@@ -24,7 +24,7 @@ import {
   PERIODOS_HISTORIAL, periodoHistorial, PERIODO_POR_DEFECTO, SIN_CAMBIOS_EN_PERIODO,
   SENTIDOS, marcaDeCambio, cambiosDe, momentosDe, momentoDeClasificacion, idsDeSesion,
   historialDeRango, rangoDeDestino, enPeriodo, resumenDeHistorial, timelineDeHistorial,
-  graficaDeHistorial, PUNTOS_MINIMOS_GRAFICA, vacioDeHistorial, VACIOS_HISTORIAL,
+  graficaDeHistorial, PUNTOS_PARA_GRAFICA_RANGO, vacioDeHistorial, VACIOS_HISTORIAL,
   detalleDeCambio, ejerciciosResponsables, CAMBIO_SIN_DETALLE, pantallaDeHistorial,
   nombreDeDestino, HISTORIAL_INSUFICIENTE, auditarHistorialRangos, casillasDeHistorial,
   NO_EN_FIT22, DECISIONES_FIT22,
@@ -416,8 +416,8 @@ ok(graficaDeHistorial(hUna).hay === false && graficaDeHistorial(hUna).motivo ===
 ok(graficaDeHistorial(hDos).hay === false && graficaDeHistorial(hDos).motivo === 'timeline_basta',
   'Con pocos puntos basta el timeline, y se dice por qué');
 const gr = graficaDeHistorial(hSub);
-ok(gr.hay === true && gr.puntos.length >= PUNTOS_MINIMOS_GRAFICA,
-  `Con ${PUNTOS_MINIMOS_GRAFICA} puntos o más, gráfico`);
+ok(gr.hay === true && gr.puntos.length >= PUNTOS_PARA_GRAFICA_RANGO,
+  `Con ${PUNTOS_PARA_GRAFICA_RANGO} puntos o más, gráfico`);
 ok(gr.interpolado === false, 'Prueba 20 — el gráfico declara que no interpola');
 ok(gr.puntos.every((p) => hSub.puntos.some((q) => q.fecha === p.fecha && q.score === p.score)),
   '🚨 …y lo demuestra: TODOS sus puntos existen en el historial, ni uno fabricado');
