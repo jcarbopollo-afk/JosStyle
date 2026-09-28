@@ -89,6 +89,7 @@ export const CAPAS_FITNESS = Object.freeze([
       'src/lib/validacionCatalogo.js', 'src/lib/integracionFitness.js', 'src/lib/feedbackFitness.js',
       'src/lib/movilFitness.js', 'src/lib/robustezFitness.js', 'src/lib/rendimientoFitness.js',
       'src/lib/acabadoFitness.js', 'src/lib/auditoriaFuncionalFitness.js', 'src/lib/arquitecturaFitness.js',
+      'src/lib/releaseFitness.js',
     ],
   },
   {

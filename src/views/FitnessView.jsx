@@ -78,7 +78,7 @@ import {
 } from '../lib/planes';
 import { planActivoCompleto, sesionDelDia, tuPlan } from '../lib/tuPlan';
 import {
-  empezarSesion, guardarSesion, sesionActiva, descartarSesion,
+  empezarSesion, guardarSesion, sesionActiva, descartarSesion, sesionEnCursoDelMismoOrigen,
 } from '../lib/entrenamiento';
 import {
   sesionEnFinalizacion, AVISO_RECUPERAR_FINAL, descartarEntrenamiento, pasarAFinalizacion,
@@ -830,6 +830,11 @@ function FitnessViewContenido({
 
   const empezar = (sesion) => {
     if (!sesion) return;
+    /* 🐛 FIT F45 (apartado 21) — «Empezar» en el mismo entrenamiento que ya
+       está en curso lo CONTINÚA: antes creaba una segunda sesión y dejaba la
+       primera colgada. */
+    const yaEnCurso = sesionEnCursoDelMismoOrigen(fitness || {}, sesion);
+    if (yaEnCurso) { setEntrenando(yaEnCurso.id); return; }
     guardarSesionViva(sesion);
     setEntrenando(sesion.id);
   };

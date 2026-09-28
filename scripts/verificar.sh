@@ -1109,6 +1109,18 @@ else
   fallo "Falla la validación del catálogo"; grep '✗' /tmp/jc_validacion_catalogo.log
 fi
 
+# FIT F45 — pulido final, QA y release. Lo que más se vigila: que cada casilla de la lista del
+# release (apartado 58) nombre una prueba que EXISTE —una suite que este script ejecuta o una marca
+# del recorrido de Chromium—; que el informe final diga «con problemas pendientes» mientras quede
+# algo real (el iPhone de verdad, lo que decide Josué) y «con fallos» si una casilla se pone roja; y
+# el arreglo de la fase: «Empezar» en un entrenamiento que ya está en curso lo continúa, sin una
+# segunda sesión. La regresión completa en un iPhone pequeño y en escritorio, en el recorrido.
+if node --import ./scripts/resolver-vite.mjs scripts/test-release-fitness.mjs >/tmp/jc_release_fitness.log 2>&1; then
+  ok "Release de Fitness (FIT F45) — $(grep -c '✓' /tmp/jc_release_fitness.log) comprobaciones"
+else
+  fallo "Falla el release de Fitness"; grep '✗' /tmp/jc_release_fitness.log
+fi
+
 # FIT F44 — limpieza arquitectónica y deuda técnica. Lo que más se vigila: que el mapa de capas
 # cubra todo lo que la aplicación importa de Fitness; que ningún motor importe una pantalla ni la
 # capa visual; que no haya un ciclo de imports, un `catch` vacío sin motivo, un `console.log`, una

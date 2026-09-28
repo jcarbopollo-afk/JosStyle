@@ -379,6 +379,27 @@ export function sesionAntigua(sesion, ahora = Date.now()) {
   return Number.isFinite(inicio) && inicio > 0 && ahora - inicio > MS_SESION_ANTIGUA;
 }
 
+/**
+ * 🐛 FIT F45 (apartado 21) — la sesión EN CURSO que ya empezó este mismo
+ * entrenamiento (el mismo día del plan o la misma plantilla), si la hay.
+ *
+ * Salir de la pantalla en vivo la deja en curso (F7), y volver a pulsar
+ * «Empezar» en el mismo día creaba una SEGUNDA sesión y dejaba la primera
+ * colgada: dos entrenamientos en curso del mismo día. Con ésta, quien empieza
+ * continúa la que ya había. ⚠️ Una de hace más de seis horas no cuenta: ésa ya
+ * tiene su tarjeta con Continuar · Finalizar · Descartar (F39), y retomarla sin
+ * preguntar sería decidir por él.
+ */
+export function sesionEnCursoDelMismoOrigen(fitness, nueva, ahora = Date.now()) {
+  const o = (nueva && nueva.origen) || {};
+  if (!o.tipo || !o.id) return null;
+  return lista((fitness || {}).sesiones)
+    .filter((s) => s && (s.estado === 'en_curso' || s.estado === 'pausada')
+      && s.origen && s.origen.tipo === o.tipo && s.origen.id === o.id
+      && !sesionAntigua(s, ahora))
+    .sort((a, b) => (b.iniciadaEn || 0) - (a.iniciadaEn || 0))[0] || null;
+}
+
 /** `00:00`, `01:24`, y con horas `1:02:03` (apartado 6). */
 export function reloj(ms) {
   const t = Math.max(0, Math.floor((Number(ms) || 0) / 1000));

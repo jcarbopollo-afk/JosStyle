@@ -11632,6 +11632,194 @@ almacen.fitness = fitnessDeAntes_fit43;
 almacen.saludFotos = fotosDeAntes_fit43;
 almacen.ajustes = ajustesDeAntes_fit43;
 
+/* ══════════════════════════════════════════════════════════════════════════
+   FIT F45 — Pulido final, QA extremo y release de Fitness (Entrega 4 · 45/45)
+   ══════════════════════════════════════════════════════════════════════════
+   La regresión completa del apartado 45, en un iPhone pequeño (46): entrar,
+   el catálogo, buscar, la ficha, crear un entrenamiento de tres ejercicios,
+   guardarlo, abrirlo, empezar, registrar series, el descanso, pasar de
+   ejercicio, terminar, el historial, el progreso, un objetivo, la actividad y
+   el rango; recargar y que todo siga. Por el camino, la interrupción (48):
+   recargar a medias y salir a otra pantalla; el doble «Empezar» del mismo
+   entrenamiento, que ya no crea una segunda sesión (21); una segunda sesión
+   que se ACUMULA en el historial, el objetivo y el progreso (49); y Fitness en
+   escritorio (30). Todo sin un error en la consola. */
+console.log('\n── FIT F45 · Release: regresión completa, interrupción, repetición y escritorio ──');
+const fitnessDeAntes_fit45 = almacen.fitness;
+const fotosDeAntes_fit45 = almacen.saludFotos;
+const erroresAntes_fit45 = errores.length;
+almacen.fitness = {
+  ...(fitnessDeAntes_fit45 || {}),
+  sesiones: [], plantillas: [], planActivo: null, planesAnteriores: [], objetivos: [],
+  clasificaciones: [], ejercicios: [], cuarentena: [], favoritosEjercicios: [],
+};
+almacen.saludFotos = [];
+await page.evaluate(() => { try { localStorage.removeItem('fitness-borrador-rutina'); } catch { /* vacío */ } });
+const recargar_fit45 = async () => {
+  await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(2000);
+};
+const cuenta_fit45 = () => almacen.fitness || {};
+const enCurso_fit45 = () => (cuenta_fit45().sesiones || []).filter((x) => x && (x.estado === 'en_curso' || x.estado === 'pausada'));
+const completadas_fit45 = () => (cuenta_fit45().sesiones || []).filter((x) => x && x.estado === 'completada' && x.nombre === 'Release F45');
+const hayMarcar_fit45 = () => page.waitForSelector('button[aria-label^="Marcar la serie"]', { timeout: 8000 }).then(() => true, () => false);
+const anchoBien_fit45 = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+const escribirSerie_fit45 = async (etiqueta, valor) => {
+  await page.click(`input[aria-label="${etiqueta}"]`);
+  await page.keyboard.press('Control+A');
+  await page.keyboard.type(String(valor), { delay: 30 });
+};
+const marcar_fit45 = async (n) => { await page.click(`button[aria-label="Marcar la serie ${n} como hecha"]`); await page.waitForTimeout(700); };
+/* El iPhone pequeño del apartado 29 (SE, 375 × 667). */
+await page.setViewportSize({ width: 375, height: 667 });
+await recargar_fit45();
+
+/* 1-4 · ENTRAR, EL CATÁLOGO, BUSCAR Y LA FICHA. */
+ok(await aFitness_fit39(), 'FIT F45 — regresión completa · 1: se entra en Fitness (apartado 45)');
+const sinRango_fit45 = await pulsar('Rangos') && await esperarTexto(/Completa ejercicios para comenzar/i);
+ok(/Completa ejercicios para comenzar/i.test(sinRango_fit45 || ''), '…y, sin un entrenamiento, Rangos dice que no hay nivel todavía');
+ok(await pulsar('Entrenamiento') && await pulsar('Abrir Ejercicios') && await esperarCampo('Buscar un ejercicio'), 'FIT F45 · 2 — el catálogo');
+ok(await escribir_fit34('dominada'), 'FIT F45 · 3 — se busca «dominada»');
+await page.waitForTimeout(500);
+ok(await pulsar('Ver Dominadas pronas · Agarre prono') && /C[oó]mo hacerlo/i.test(await esperarTexto(/C[oó]mo hacerlo/i)), 'FIT F45 · 4 — y se abre su ficha');
+ok(await anchoBien_fit45(), '…sin salirse de lado en un iPhone pequeño');
+ok(await pulsar('Volver a Ejercicios') && await pulsar('Volver a Entrenamiento'), '…y se vuelve a Entrenamiento');
+
+/* 5-7 · CREAR UN ENTRENAMIENTO DE TRES EJERCICIOS Y GUARDARLO. */
+ok(await pulsar('Crear entrenamiento'), 'FIT F45 · 5 — «Crear entrenamiento»');
+await esperarTexto(/A[ñn]adir ejercicio/i);
+ok(await escribirCampo('Nombre del entrenamiento', 'Release F45'), '…con su nombre');
+await page.waitForTimeout(300);
+for (const [busca, tarjeta] of [['press de banca', 'Añadir Press de banca · Con barra'], ['dominada prona', 'Añadir Dominadas pronas · Agarre prono'], ['sentadilla', 'Añadir Sentadilla · Con barra atrás']]) {
+  ok(await pulsar('Añadir ejercicio') && await esperarCampo('Buscar un ejercicio') && await buscarEnSelector(busca), `FIT F45 · 6 — se busca «${busca}»`);
+  await page.waitForTimeout(500);
+  ok(await pulsar(tarjeta), `…y se añade (${tarjeta.replace('Añadir ', '')})`);
+  await page.waitForTimeout(400);
+  ok(await pulsar('Volver a Entrenamiento'), '…de vuelta al constructor');
+}
+const constructor_fit45 = await esperarTexto(/Sentadilla/);
+ok(/Press de banca/.test(constructor_fit45) && /Dominadas pronas/.test(constructor_fit45) && /Sentadilla/.test(constructor_fit45),
+  'FIT F45 — el constructor con los tres ejercicios, en su orden');
+ok(await pulsar('Guardar') && /Entrenamiento guardado/i.test(await esperarTexto(/Entrenamiento guardado/i)), 'FIT F45 · 7 — Guardar');
+const plantilla_fit45 = (cuenta_fit45().plantillas || []).find((p) => p.nombre === 'Release F45');
+ok(!!plantilla_fit45 && (plantilla_fit45.ejercicios || []).length === 3, '…y en la cuenta, con sus tres ejercicios');
+ok(await pulsar('Volver a Entrenamiento'), '…se sale del constructor');
+
+/* Un objetivo ANTES de entrenar, para ver cómo lo mueve el entrenamiento (apartado 12). */
+ok(await pulsar('Progreso') && await pulsar('Objetivos') && await pulsar('+ Crear objetivo') && await pulsar('Elegir ejercicio'), 'FIT F45 — un objetivo antes de entrenar');
+ok(await buscarEnSelector('press de banca'), '…para el press de banca');
+await page.waitForTimeout(500);
+ok(await pulsarQueEmpiece_fit10('Añadir Press de banca'), '…se elige');
+await esperarTexto(/Qué quieres medir/i);
+ok(await escribirObjetivo_fit14('50') && await pulsar('Crear objetivo'), '…50 → Crear objetivo');
+await esperarTexto(/\/ 50/);
+await page.waitForTimeout(500);
+ok((cuenta_fit45().objetivos || []).length === 1, '…y queda guardado');
+
+/* 8-12 · ABRIRLO, EMPEZAR, SERIES, DESCANSO Y PASAR DE EJERCICIO. */
+ok(await aFitness_fit39() && await pulsar('Ver Release F45'), 'FIT F45 · 8 — se abre desde Tu Plan');
+await page.waitForTimeout(400);
+ok(await pulsar('Ver Release F45') && /Empezar entrenamiento/i.test(await esperarTexto(/Empezar entrenamiento/i)), '…su detalle');
+ok(await pulsar('Empezar entrenamiento') && await hayMarcar_fit45(), 'FIT F45 · 9 — se empieza');
+await page.waitForTimeout(500);
+await escribirSerie_fit45('Peso de la serie 1', 40);
+await escribirSerie_fit45('Repeticiones de la serie 1', 10);
+await marcar_fit45(1);
+const serie1_fit45 = ((enCurso_fit45()[0]?.origen?.ejercicios || [])[0]?.series || [])[0] || {};
+ok(serie1_fit45.estado === 'hecha' && serie1_fit45.hecho?.peso === 40 && serie1_fit45.hecho?.reps === 10,
+  `FIT F45 · 10 — la serie del press, hecha y guardada: ${serie1_fit45.hecho?.peso} kg × ${serie1_fit45.hecho?.reps}`);
+ok(/Descanso/i.test(await esperarTexto(/Descanso/i)), 'FIT F45 · 11 — y arranca el descanso');
+ok(await anchoBien_fit45(), '…con la tabla de series dentro del ancho del iPhone pequeño (apartado 29)');
+
+/* 48 · LA INTERRUPCIÓN: recargar a medias, y salir a otra pantalla. */
+await recargar_fit45();
+ok(await aFitness_fit39() && /Tienes un entrenamiento en curso/i.test(await esperarTexto(/Tienes un entrenamiento en curso/i)),
+  'FIT F45 — interrupción: se recarga en mitad del entrenamiento y se ofrece (apartado 48)');
+ok(await pulsar('Continuar entrenamiento') && await hayMarcar_fit45(), '…Continuar');
+await page.waitForTimeout(400);
+ok(await page.evaluate(() => document.querySelector('input[aria-label="Peso de la serie 1"]')?.value) === '40',
+  '…y la serie sigue donde estaba');
+
+/* 21 · EL DOBLE «EMPEZAR»: salir y volver a empezar EL MISMO entrenamiento. */
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), 'FIT F45 — se sale del entrenamiento sin terminarlo');
+ok(await pulsar('Ver Release F45'), '…y se vuelve a la plantilla');
+await page.waitForTimeout(400);
+ok(await pulsar('Ver Release F45') && await pulsar('Empezar entrenamiento') && await hayMarcar_fit45(), '…y se pulsa «Empezar entrenamiento» OTRA VEZ');
+await page.waitForTimeout(500);
+ok(enCurso_fit45().length === 1,
+  `🐛 FIT F45 — y NO nace una segunda sesión: se continúa la que había (apartado 21; ${enCurso_fit45().length} en curso)`);
+ok(await page.evaluate(() => document.querySelector('input[aria-label="Peso de la serie 1"]')?.value) === '40',
+  '…con su serie hecha');
+
+ok(await pulsarQueEmpiece_fit10('Ejercicio 2:'), 'FIT F45 · 12 — se pasa al segundo ejercicio');
+await page.waitForTimeout(500);
+ok(/Dominadas pronas/.test(await ver()), '…las dominadas');
+await escribirSerie_fit45('Repeticiones de la serie 1', 8);
+await marcar_fit45(1);
+ok(await pulsarQueEmpiece_fit10('Ejercicio 3:'), '…y al tercero');
+await page.waitForTimeout(500);
+await escribirSerie_fit45('Peso de la serie 1', 60);
+await escribirSerie_fit45('Repeticiones de la serie 1', 8);
+await marcar_fit45(1);
+const hechas_fit45 = (enCurso_fit45()[0]?.origen?.ejercicios || []).map((e) => (e.series || []).filter((s) => s.estado === 'hecha').length);
+ok(JSON.stringify(hechas_fit45) === '[1,1,1]', `…una serie hecha en cada uno (${JSON.stringify(hechas_fit45)})`);
+
+/* 13-14 · TERMINAR Y GUARDAR. */
+ok(await pulsar('Terminar el entrenamiento') && /Terminar entrenamiento/i.test(await esperarTexto(/Terminar entrenamiento/i)), 'FIT F45 · 13 — Terminar');
+ok(await pulsar('Terminar entrenamiento') && /Entrenamiento completado/i.test(await esperarTexto(/Entrenamiento completado/i)), 'FIT F45 · 14 — y se guarda');
+await page.waitForTimeout(500);
+ok(completadas_fit45().length === 1 && enCurso_fit45().length === 0, 'FIT F45 — una sesión completada y ninguna en curso');
+
+/* 15-19 · HISTORIAL, PROGRESO, OBJETIVO, ACTIVIDAD Y RANGO. */
+ok(await aFitness_fit39() && await pulsar('Abrir Historial') && /Release F45/.test(await esperarTexto(/Release F45/)), 'FIT F45 · 15 — el historial la tiene');
+ok(await aFitness_fit39() && await pulsar('Progreso'), 'FIT F45 · 16 — Progreso');
+const resumen_fit45 = await esperarTexto(/1 entrenamiento · semana en curso/);
+ok(resumen_fit45.includes('1 entrenamiento · semana en curso'), 'FIT F45 · 18 — la actividad lo cuenta: «1 entrenamiento · semana en curso» (apartado 13)');
+ok(await pulsar('Objetivos') && /40 \/ 50/.test(await esperarTexto(/40 \/ 50/)), 'FIT F45 · 17 — y el objetivo se mueve solo: «40 / 50»');
+ok(await pulsar('Rangos') && !/Completa ejercicios para comenzar/i.test(await esperarTexto(/Rango/i)),
+  'FIT F45 · 19 — y Rangos ya tiene nivel: tres grupos y tres ejercicios');
+
+/* 20-21 · RECARGAR, Y TODO SIGUE. */
+await recargar_fit45();
+ok(await aFitness_fit39() && await pulsar('Abrir Historial') && /Release F45/.test(await esperarTexto(/Release F45/)), 'FIT F45 · 20-21 — se recarga y el historial sigue');
+ok(completadas_fit45().length === 1, '…con UNA sesión, no dos');
+
+/* 49 · LA REPETICIÓN: un segundo entrenamiento se ACUMULA. */
+ok(await aFitness_fit39() && await pulsar('Ver Release F45'), 'FIT F45 — repetición: se vuelve a empezar el mismo entrenamiento (apartado 49)');
+await page.waitForTimeout(400);
+ok(await pulsar('Ver Release F45') && await pulsar('Empezar entrenamiento') && await hayMarcar_fit45(), '…empieza');
+await page.waitForTimeout(500);
+ok(enCurso_fit45().length === 1 && (enCurso_fit45()[0].origen?.ejercicios || []).every((e) => (e.series || []).every((s) => s.estado !== 'hecha')),
+  '…como un entrenamiento NUEVO: la de antes ya está completada, así que no se continúa');
+await escribirSerie_fit45('Peso de la serie 1', 42.5);
+await escribirSerie_fit45('Repeticiones de la serie 1', 10);
+await marcar_fit45(1);
+ok(await pulsar('Terminar el entrenamiento') && await esperarTexto(/Terminar entrenamiento/i) && await pulsar('Terminar entrenamiento')
+  && /Entrenamiento completado/i.test(await esperarTexto(/Entrenamiento completado/i)), '…y se termina');
+await page.waitForTimeout(500);
+ok(completadas_fit45().length === 2, `🚨 FIT F45 — dos entrenamientos en la cuenta (${completadas_fit45().length})`);
+ok(await aFitness_fit39() && await pulsar('Abrir Historial'), '…el historial');
+await esperarTexto(/Release F45/);
+const enHistorial_fit45 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
+  .filter((b) => /Release F45/.test(b.getAttribute('aria-label'))).length);
+ok(enHistorial_fit45 >= 2, `…con los dos (${enHistorial_fit45})`);
+ok(await aFitness_fit39() && await pulsar('Progreso') && (await esperarTexto(/2 entrenamientos · semana en curso/)).includes('2 entrenamientos · semana en curso'),
+  '🚨 …la actividad los suma: «2 entrenamientos · semana en curso» (apartado 49)');
+ok(await pulsar('Objetivos') && /42,5 \/ 50/.test(await esperarTexto(/42,5 \/ 50/)),
+  '🚨 …y el objetivo sube con la mejor marca: «42,5 / 50» (apartado 49)');
+
+/* 30 · ESCRITORIO: Fitness no se rompe en una pantalla grande. */
+await page.setViewportSize({ width: 1280, height: 900 });
+await recargar_fit45();
+ok(await aFitness_fit39() && /Release F45/.test(await esperarTexto(/Release F45/)), 'FIT F45 — escritorio: Tu Plan, con la plantilla (apartado 30)');
+ok(await anchoBien_fit45(), '…sin salirse de lado');
+ok(await pulsar('Progreso') && await anchoBien_fit45() && await pulsar('Rangos') && await anchoBien_fit45(), '…y Progreso y Rangos tampoco');
+
+const nuevos_fit45 = errores.slice(erroresAntes_fit45);
+ok(nuevos_fit45.length === 0, `🚨 FIT F45 — y ni un error en la consola en todo el release${nuevos_fit45.length ? `: ${nuevos_fit45.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
+almacen.fitness = fitnessDeAntes_fit45;
+almacen.saludFotos = fotosDeAntes_fit45;
+
 await page.setViewportSize({ width: 1280, height: 900 });
 
 /* ── 9 · Y en escritorio se comporta igual: no se ha roto lo que iba bien ─── */
