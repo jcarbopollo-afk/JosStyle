@@ -90,7 +90,24 @@ comprobación existe.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` **en verde** (`═══ TODO CORRECTO ═══`, 0 fallos): **22 097 pruebas de
+Node en 204 suites**, **3760 casos de renderizado**, **11 reglas invariantes** y **2930
+comprobaciones en Chromium** — **28 798** en total. El salto desde la v3.124.0 es exactamente lo que
+añade esta fase: **+155 de Node** —su suite nueva, `test-auditoria-fitness.mjs`: la cadena entera con
+la puerta de carga entre paso y paso, las cinco consistencias y `FLUJOS_F43` buscando cada
+comprobación en su archivo—, **+24 de renderizado** (seis casos de «volver»: a un subgrupo, a un
+músculo, a Rangos, a una ficha, a una sesión y a una sesión borrada, en los dos temas y los dos
+anchos) y **+55 del recorrido** (la navegación profunda, el volver paso a paso, la orientación y el
+movimiento reducido, y ni un error de JavaScript en todo el camino). **Ninguna otra suite cambió de
+cuenta.**
+
+🐛 **Y la primera pasada salió roja por algo que dejó esta misma fase**: tres comprobaciones del
+recorrido —de la F12, la F13 y la F14— seguían pulsando «Volver a Progreso», que es justo el botón que
+la F43 cambió para que diga a dónde vuelve («Volver al progreso de Press», «Volver a Dorsales»,
+«Volver al objetivo»). Y la comprobación nueva de ni un error en la consola cazó el registro de **la
+foto rota a propósito** del escenario de la F27 —la aplicación avisa, como debe—, que ahora se
+reconoce por su camino. Arreglado eso, la segunda pasada salió entera en verde. **Al cambiar lo que
+dice un botón, se barren las comprobaciones viejas del recorrido que lo pulsan.**
 
 ## v3.124.0 — FIT F42/45: auditoría visual y acabado premium de fitness
 

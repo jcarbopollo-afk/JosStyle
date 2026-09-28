@@ -184,15 +184,14 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **21 942 pruebas unitarias** con Node repartidas en **203 suites** (5 de ellas de auditoría),
-**3736 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2875
-comprobaciones sobre la aplicación de verdad en Chromium** — **28 564 comprobaciones**.
+Vite, **22 097 pruebas unitarias** con Node repartidas en **204 suites** (5 de ellas de auditoría),
+**3760 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2930
+comprobaciones sobre la aplicación de verdad en Chromium** — **28 798 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.124.0, una a una**, con la suma del
-propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.123.0 es exactamente lo que
-añadió la F42: +213 de Node (101 de su suite nueva y 112 de la de datos corruptos pintados, que
-ahora busca términos que chocan y emojis en sus 56 pasadas; la diferencia suite a suite es solo
-ésa), +16 de renderizado y +24 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.125.0, una a una**, con la suma del
+propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.124.0 es exactamente lo que
+añadió la F43: +155 de Node (su suite nueva, `test-auditoria-fitness.mjs`; la diferencia suite a
+suite es solo ésa), +24 de renderizado (seis casos de «volver») y +55 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
@@ -386,6 +385,11 @@ que dejaron, y que vale para las 2 que quedan:
 - 🐛 **LA VARIANTE Y EL AGARRE SE JUNTAN CON `agarreQueAnadir`** (FIT F43): en las tres dominadas y el
   curl martillo la variante ES el agarre, y se leía «Agarre prono · Agarre prono». Una pantalla nueva
   que ponga los dos juntos llama ahí; la suite barre el catálogo entero.
+- 🐛 **AL CAMBIAR LO QUE DICE UN BOTÓN, SE BARREN LAS COMPROBACIONES VIEJAS DEL RECORRIDO QUE LO
+  PULSAN** (FIT F43, y costó la primera pasada entera): la F43 hizo que «volver» diga a dónde vuelve, y
+  tres secciones de la F12, la F13 y la F14 seguían pulsando «Volver a Progreso». Y **la comprobación
+  de ni un error en la consola caza también lo que la aplicación registra a propósito** —la foto rota
+  del escenario de la F27—: lo provocado se reconoce por su camino, nunca se afloja la comprobación.
 - 🐛 **AL RENOMBRAR UN TEXTO, SE BARRE EL RECORRIDO — TAMBIÉN LAS EXPRESIONES CON `[oó]`** (FIT F42,
   cazado en su pasada entera): la F42 cambió «sesión» por «entrenamiento» y cuatro comprobaciones
   del recorrido (F12, F36 y F40) seguían buscando `/sesi[oó]n/`. Un `grep` del texto exacto no las
