@@ -63,7 +63,18 @@ recorrido usa un doble), y las decisiones que son de Josué: el zoom de los camp
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` **en verde** (`═══ TODO CORRECTO ═══`, 0 fallos) a la primera: **22 276
+pruebas de Node en 206 suites**, **3760 casos de renderizado**, **11 reglas invariantes** y **2998
+comprobaciones en Chromium** — **29 045** en total. El salto desde la v3.126.0 es exactamente lo que
+añade esta fase: **+65 de Node** —su suite nueva, `test-release-fitness.mjs`: las 36 casillas con su
+prueba, la definición de «terminado», el informe final (también con una casilla en rojo), el doble
+«Empezar» y el volver de la biblioteca— y **+68 del recorrido**, la regresión completa de la sección
+«FIT F45». **Ninguna otra suite cambió de cuenta**, y el renderizado tampoco.
+
+⚠️ **Y las dos comprobaciones que guardan los arreglos se pusieron rojas quitándolos antes de
+subirlos**: sin `sesionEnCursoDelMismoOrigen`, la regresión dijo *«2 en curso»* y la serie hecha se
+quedó en la sesión que no se veía; sin `volverA`, la suite de Node salió 64 de 65. Una comprobación que
+pasaría igual sin el arreglo no mide nada (F38).
 
 ## v3.126.0 — FIT F44/45: limpieza arquitectónica y deuda técnica de fitness
 

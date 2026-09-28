@@ -187,20 +187,24 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **22 211 pruebas unitarias** con Node repartidas en **205 suites** (5 de ellas de auditoría),
-**3760 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2930
-comprobaciones sobre la aplicación de verdad en Chromium** — **28 912 comprobaciones**.
+Vite, **22 276 pruebas unitarias** con Node repartidas en **206 suites** (5 de ellas de auditoría),
+**3760 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **2998
+comprobaciones sobre la aplicación de verdad en Chromium** — **29 045 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.126.0, una a una**, con la suma del
-propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.125.0 es exactamente lo que
-añadió la F44: +114 de Node, su suite nueva (`test-arquitectura-fitness.mjs`); cuatro suites viejas
-cambiaron de cuenta y se compensan (F4 −5, F7 +3, F20 +1, F36 +1). Renderizado y recorrido, iguales. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.127.0, una a una**, con la suma del
+propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.126.0 es exactamente lo que
+añadió la F45: +65 de Node (su suite nueva, `test-release-fitness.mjs`; la diferencia suite a suite
+es solo ésa) y +68 del recorrido (la regresión completa de la sección «FIT F45»). Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
 
-Eso ya ha encontrado **ciento nueve bugs reales** que la revisión a mano no vio. El último es de
-la FIT F35, y lo cazó la propia validación del catálogo al estrenarse: **la esterilla se perdía
+Eso ya ha encontrado **más de ciento nueve bugs reales** que la revisión a mano no vio —la cuenta
+exacta se dejó de llevar en la FIT F35, y las fases del Acabado y del Cierre encontraron más, cada uno
+en su entrada del `CHANGELOG`—. Los últimos son de la FIT F45, y los cazó la regresión completa:
+**«Empezar» dos veces el mismo entrenamiento creaba dos sesiones** y **la biblioteca decía «Volver a
+Fitness» y volvía a Entrenamiento**. El de la FIT F35 lo cazó la propia validación del catálogo al
+estrenarse: **la esterilla se perdía
 desde la F2** —nueve ejercicios la declaraban y, como no estaba en `EQUIPAMIENTO`, el normalizador
 la tiraba sin decir nada—. Los dos de antes, de la FIT F34: **la biblioteca se salía 61 px de lado en el iPhone** —una rejilla sin columna
 base crecía con el nombre entero de cada tarjeta— y **el mismo patrón, latente, en la lista de
