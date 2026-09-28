@@ -12,8 +12,8 @@ import { diasEntre } from './hoy';
 import { planARutina, distribucionMuscular, duracionEstimada } from './constructor';
 import { fichaDePlantilla } from './plantillas';
 import {
-  CATALOGO_PLANES, planPorId, planActivoDe, fichaDePlan, fichaDeDia, lineasDeDia,
-  rutinaDelPlan, diasDeEntreno, idDiaDePlantilla, planesAnterioresDe,
+  CATALOGO_PLANES, planPorId, planActivoDe, fichaDePlan, fichaDeDia, lineasDeDia, rutinaDelPlan,
+  idDiaDePlantilla, planesAnterioresDe,
 } from './planes';
 /* 🔓 FIT F32 — las sesiones de cada día, agrupadas y en el orden en que las
    hizo. Es la de la F31, que pasó a `historial.js` para que la semana del plan

@@ -11,7 +11,7 @@
    se va al cerrar. Lo que persiste son las fotos, y de eso se encarga la F26.
    =========================================================================== */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
 import {

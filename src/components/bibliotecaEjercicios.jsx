@@ -15,7 +15,7 @@
 
 import React, { useState } from 'react';
 import {
-  Search, SlidersHorizontal, X, Check, Heart, Plus, ChevronRight, ArrowDown, Dumbbell, Target,
+  SlidersHorizontal, X, Check, Heart, Plus, ChevronRight, ArrowDown, Dumbbell, Target,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { PastillaFiltro } from './piezasFitness';

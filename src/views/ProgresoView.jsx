@@ -37,8 +37,8 @@ import { ejercicioPorId, nombreCompleto, nombreDeEjercicio } from '../lib/ejerci
 import { origenVigente, vueltaDelDetalle, vueltaDeSesion } from '../lib/vueltaFitness';
 /* 🔓 FIT F14 — los objetivos de rendimiento. */
 import {
-  listaDeObjetivos, progresoDeObjetivo, metricasDeEjercicio, tipoObjetivo, anadirObjetivo, editarObjetivo,
-  cancelarObjetivo, FILTROS_OBJETIVOS, OBJETIVOS_VACIO, AVISO_CANCELAR_OBJETIVO, AVISO_ELIMINAR_OBJETIVO,
+  listaDeObjetivos, metricasDeEjercicio, tipoObjetivo, editarObjetivo, cancelarObjetivo,
+  FILTROS_OBJETIVOS, OBJETIVOS_VACIO, AVISO_CANCELAR_OBJETIVO, AVISO_ELIMINAR_OBJETIVO,
 } from '../lib/objetivosProgreso';
 import { detalleDeSesion, sesionDelHistorial } from '../lib/historial';
 import {
@@ -62,16 +62,18 @@ import { detalleCompletoDeEjercicio } from '../lib/detalleEjercicio';
 /* 🔓 FIT F30 — el sistema avanzado de objetivos. Las cinco piezas nuevas del
    apartado 39; las otras cuatro son de la F14 y viven en este mismo archivo. */
 import {
-  GoalProgress, GoalHistory, GoalStatus, GoalEmpty, GoalCompletion, GoalChart, GoalSkillSteps,
+  GoalHistory, GoalStatus, GoalChart, GoalSkillSteps,
 } from '../components/objetivosFitness';
 import {
-  detalleDeObjetivo, crearObjetivoConAviso, reactivarObjetivo, tiposDeObjetivoPara,
-  objetivoParaEjercicio, AVISO_DUPLICADO, CTA_CREAR_OBJETIVO, FECHA_SUPERADA,
+  detalleDeObjetivo, crearObjetivoConAviso, reactivarObjetivo, AVISO_DUPLICADO, FECHA_SUPERADA,
 } from '../lib/objetivosFitness';
 /* Apartado 26 — el historial de rango es el de la FIT F22, no uno nuevo. */
 import { RankHistory } from '../components/historialRango';
 import { PROPS_CAMPO_NUMERICO, PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
 import { decimal } from '../lib/numerosFitness';
+
+/** Una sola lista vacía para quien no tiene ejercicios propios (FIT F44). */
+const SIN_PROPIOS = [];
 
 /* Las secciones de Progreso (apartado 2). */
 export const SECCIONES_PROGRESO = [
@@ -1046,7 +1048,9 @@ export default function ProgresoView({
   const [origen, setOrigen] = useState(null);
   const [previos, setPrevios] = useState([]);
   const f = fitness || {};
-  const propios = f.ejercicios || [];
+  /* 🧹 FIT F44 (apartado 25) — sin ejercicios propios, la MISMA lista vacía en
+     cada pintado: un `[]` nuevo cada vez invalidaba las cinco memorias de abajo. */
+  const propios = f.ejercicios || SIN_PROPIOS;
   const hoy = todayISO();
   /* 🔓 FIT F38, apartado 32 — cualquier detalle de Progreso → volver: la
      sección, donde estaba. La clave es QUÉ está abierto, así que pasar de un

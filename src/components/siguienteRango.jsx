@@ -6,6 +6,8 @@
    `RankCoverage` y `RankConfidence` también son de la F20. *"Evitar
    duplicaciones"*, literal — así que aquí solo nace **`RankNextLevelCard`**, la
    tarjeta compacta del apartado 27, y reutiliza las otras.
+   🧹 FIT F44 — menos la barra: aquí nació `RankNextLevelBar`, y `RankProgress`
+   (F15) no lo pinta ninguna pantalla. Declarado en `COMPONENTES_SIN_PANTALLA`.
 
    🚨 **No calcula nada** (apartado 37). El porcentaje, los puntos que faltan, la
    confianza y la cobertura los ha resuelto `src/lib/siguienteRango.js`, que a

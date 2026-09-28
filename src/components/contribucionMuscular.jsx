@@ -18,7 +18,7 @@ import { COLORS } from '../tokens';
 import { PastillaFiltro } from './piezasFitness';
 import { hexToRgba } from '../lib/helpers';
 import { SectionTitle, EmptyHint } from './ui';
-import { RankBadge, RankLabel } from './rangos';
+import { RankBadge } from './rangos';
 import { ETIQUETA_PARTICIPACION } from '../lib/contribucionMuscular';
 /* 🔓 Los filtros por estado son los de la F18: esta lista la sustituye, así que
    se los queda en vez de dejar dos listas de lo mismo en la misma pantalla. */
@@ -37,7 +37,6 @@ export const ESTADOS_CONTRIBUCION = {
   sin_datos: { icono: Circle, palabra: 'Sin datos' },
 };
 export const estadoDeContribucion = (id) => ESTADOS_CONTRIBUCION[id] || ESTADOS_CONTRIBUCION.sin_datos;
-const ESTADOS = ESTADOS_CONTRIBUCION;
 const estadoDe = estadoDeContribucion;
 
 /* ── 15 · La barra de participación ──────────────────────────────────────── */

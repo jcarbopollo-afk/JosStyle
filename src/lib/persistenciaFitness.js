@@ -61,7 +61,7 @@
 // arquitectura de backend, que el «IMPORTANTE» prohíbe.
 // ============================================================================
 
-import { ejercicioPorId, nombreDeEjercicio } from './ejercicios.js';
+import { nombreDeEjercicio } from './ejercicios.js';
 import { historialDeRango } from './historialRangos.js';
 import { sesionesDelHistorial } from './historial.js';
 import { resumenDeSesion } from './finalizacion.js';

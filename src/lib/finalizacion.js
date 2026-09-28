@@ -1,10 +1,9 @@
-import { todayISO } from './helpers';
 import { MESES, fechaLarga } from './fechasFitness';
 import { VISIBILIDADES, ESTADOS_SESION } from './fitness';
 import { ejercicioPorId } from './ejercicios';
 import { nombreDeLinea } from './constructor';
 import {
-  ejerciciosDeSesion, duracionSesion, duracionCreible, reloj, reanudarSesion, guardarSesion,
+  ejerciciosDeSesion, duracionCreible, reloj, reanudarSesion,
 } from './entrenamiento';
 
 /* Entrega 4 · Fase 8/45 — «Finalización y guardado del entrenamiento».

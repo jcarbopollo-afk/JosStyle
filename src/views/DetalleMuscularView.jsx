@@ -21,7 +21,6 @@ import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, GhostBtn, EmptyHint } from '../components/ui';
 import { RankBadge, RankLabel } from '../components/rangos';
-import { iconoDeGrupo } from '../components/iconosFitness';
 import { nivelRango, SIN_RANGO } from '../lib/fitness';
 import { AVISO_RENDIMIENTO } from '../lib/progresoMuscular';
 import {
@@ -72,7 +71,6 @@ function Barra({ fraccion, accent, etiqueta }) {
 /* ── 2, 3 y 4 · La cabecera ──────────────────────────────────────────────── */
 export function MuscleRankHeader({ detalle, accent, onVolver, volverA = 'Rangos', onPorQue = null, onHistorial = null }) {
   const d = detalle;
-  const Icono = iconoDeGrupo(d.grupoId || d.id);
   const siguiente = d.siguiente;
   const nivelSiguiente = siguiente && siguiente.siguiente ? nivelRango(siguiente.siguiente) : null;
   return (

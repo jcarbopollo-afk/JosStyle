@@ -324,6 +324,68 @@ export function comasADesmano(archivos, { permitidas = COMAS_PERMITIDAS } = {}) 
     .filter((h) => !ok.has(h.ruta));
 }
 
+/** Apartado 31 — un import que el archivo no usa. Se mira el código sin
+    comentarios y sin la propia línea del import; un uso como propiedad
+    (`x.nombre`) no cuenta, y `React` en un `.jsx` sí (lo usa el JSX). La
+    primera pasada de un lint de verdad encontró veinticinco. */
+export function importsSinUso(archivos) {
+  return Object.entries(archivos || {}).flatMap(([ruta, src]) => {
+    const limpio = sinComentarios(src);
+    const out = [];
+    for (const m of limpio.matchAll(/^\s*import\s+([^'";]+?)\s+from\s+'[^']+';?/gm)) {
+      const clausula = m[1];
+      const nombres = [];
+      const porDefecto = clausula.match(/^([A-Za-z_$][\w$]*)\s*(,|$)/);
+      if (porDefecto) nombres.push(porDefecto[1]);
+      const todo = clausula.match(/\*\s+as\s+([A-Za-z_$][\w$]*)/);
+      if (todo) nombres.push(todo[1]);
+      const llaves = clausula.match(/\{([^}]*)\}/);
+      if (llaves) llaves[1].split(',').map((x) => x.trim()).filter(Boolean)
+        .forEach((x) => { const partes = x.split(/\s+as\s+/); nombres.push((partes[1] || partes[0]).trim()); });
+      /* El `...` de una expansión SÍ es un uso: se quita antes de descartar `x.nombre`. */
+      const resto = (limpio.slice(0, m.index) + ' '.repeat(m[0].length) + limpio.slice(m.index + m[0].length)).replace(/\.\.\./g, '   ');
+      nombres
+        .filter((n) => !(n === 'React' && /\.jsx$/.test(ruta)))
+        .filter((n) => !new RegExp(`(^|[^\\w$.])${n.replace(/\$/g, '\\$')}(?![\\w$])`).test(resto))
+        .forEach((n) => out.push({ ruta, linea: lineaDe(limpio, m.index), que: `importa ${n} y no lo usa` }));
+    }
+    return out;
+  });
+}
+
+/** Apartado 57 — un componente que solo pinta el banco de renderizado. La
+    F44 encontró ocho: uno (`VacioFitness`, F1) se retiró porque ya no lo usaba
+    nada; los otros siete los nombró el enunciado de su fase como piezas
+    reutilizables («preparar componentes simples si son necesarios»), así que
+    se quedan, pero DICHO: qué pinta la pantalla en su lugar. Unirlos cambiaría
+    el aspecto que dejó la F42, y eso no es de una fase de limpieza. Un
+    componente nuevo que ninguna pantalla pinte pone la suite roja. */
+export const COMPONENTES_SIN_PANTALLA = Object.freeze([
+  { componente: 'RankStatus', archivo: 'src/components/rangos.jsx', fase: 'F15', enSuLugar: 'La etiqueta de confianza de la F20 (`RankConfidence`) y la línea de estado de cada tarjeta de Rangos.' },
+  { componente: 'RankProgress', archivo: 'src/components/rangos.jsx', fase: 'F15', enSuLugar: '`RankNextLevelBar` (F23), la barra de la tarjeta del siguiente rango, con su porcentaje al lado. La F23 decía reutilizar ésta y no lo hizo.' },
+  { componente: 'MuscleContribution', archivo: 'src/views/DetalleMuscularView.jsx', fase: 'F18', enSuLugar: 'La lista de contribución de la F21 (`contribucionMuscular.jsx`), que dice además cuánto aporta cada ejercicio.' },
+  { componente: 'GoalProgress', archivo: 'src/components/objetivosFitness.jsx', fase: 'F30', enSuLugar: 'El detalle del objetivo de la F14 (`DetalleObjetivo`), ampliado en la F30 con la distancia: «Te faltan 3 reps».' },
+  { componente: 'GoalEmpty', archivo: 'src/components/objetivosFitness.jsx', fase: 'F30', enSuLugar: 'El vacío de «Mis objetivos» (`OBJETIVOS_VACIO`, F14), con su botón de crear.' },
+  { componente: 'GoalCompletion', archivo: 'src/components/objetivosFitness.jsx', fase: 'F30', enSuLugar: 'El «Objetivo conseguido» del detalle y la pantalla de éxito de la F8, que lo dice con `objetivosQueConsigueLaSesion` (F14).' },
+  { componente: 'MissingData', archivo: 'src/components/estadosFitness.jsx', fase: 'F39', enSuLugar: 'El «—» que escribe cada pantalla cuando `duracionCreible()` o el volumen devuelven `null`.' },
+]);
+const limpiarCodigo = (src) => sinComentarios(src).replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/g, "''");
+export function componentesSinPantalla(componentes, produccion) {
+  const usos = Object.fromEntries(Object.entries(produccion || {}).map(([r, s]) => {
+    const c = new Map();
+    for (const t of limpiarCodigo(s).match(/[A-Za-z_$][\w$]*/g) || []) c.set(t, (c.get(t) || 0) + 1);
+    return [r, c];
+  }));
+  return Object.entries(componentes || {}).flatMap(([ruta, src]) => [...String(src || '').matchAll(/^export (?:default )?function ([A-Z]\w*)/gm)]
+    .map((m) => m[1])
+    .filter((n) => {
+      const porDefecto = new RegExp(`export default ${n}\\b`).test(src) ? 1 : 0;
+      const propio = ((usos[ruta] && usos[ruta].get(n)) || 0) > 1 + porDefecto;
+      return !propio && !Object.entries(usos).some(([r, c]) => r !== ruta && c.get(n));
+    })
+    .map((componente) => ({ ruta, componente })));
+}
+
 /** Apartado 45 — dos librerías de Fitness que exportan el MISMO nombre con
     significados distintos. Un `export { x }` que reexporta el de otra es el
     mismo, y se permite (EH F17). Las tablas que declaran lo que ya existía o lo
@@ -370,6 +432,8 @@ export const ELIMINADO_F44 = Object.freeze([
   { que: 'La copia de `grupoMuscular` en detalleMuscular.js', porque: 'La misma función que la de fitness.js, escrita otra vez; ahora se reexporta la de allí.' },
   { que: 'Siete copias de «número con coma decimal»', porque: 'Cuatro redondeaban a dos decimales y tres no (apartado 39). Ahora es `decimal` de `numerosFitness.js`, con su prueba de que ninguna vuelve (`comasADesmano`).' },
   { que: 'La octava: el «% de peso» de la comparación en la ficha de un ejercicio', porque: 'Ya venía redondeado a un decimal, así que se lee igual; ahora pasa por `decimal` como las otras siete.' },
+  { que: '28 imports y 2 variables que nadie usaba, en 16 archivos', porque: 'Los encontró un lint pasado una vez (apartado 31); ahora los caza `importsSinUso` en cada pasada.' },
+  { que: '`VacioFitness` (FitnessView, F1)', porque: 'El vacío de las áreas de la F1: desde que cada área es su pantalla no lo pintaba nadie, ni una prueba.' },
   { que: 'La fórmula del fin del descanso en la pantalla del entrenamiento en vivo', porque: 'Repetía la de `restanteDescanso`: ahora es `finDelDescanso` (apartado 3).' },
 ]);
 
@@ -401,6 +465,8 @@ export const REVISADO_Y_BIEN_F44 = Object.freeze([
   { apartado: 5, que: 'Hooks', porque: 'Los cinco de Fitness hacen una cosa cada uno y ninguno guarda: `useAhora` (el tic del reloj, F40), `useDialogoAccesible` (el foco, F39), `useScrollAlVolver` (la posición, F38), `useUrlsFirmadas` (firmar fotos, F26) y `useComparador` (el estado del comparador, F27). Lo comprueba `CATALOGO_HOOKS`.' },
   { apartado: 6, que: 'Servicios', porque: 'No hay una capa de servicios, y no hace falta: guardar es `guardarFitness` de `App.jsx` sobre `saveData`, y cada motor es una librería de funciones (apartado 6: «no crear servicios artificiales si una función sencilla es suficiente»).' },
   { apartado: 58, que: 'Flags', porque: 'Uno solo, y no es temporal: `esDesarrollo()` esconde el diagnóstico del catálogo en el build (F35). Ni una función duplicada detrás de un flag viejo.' },
+  { apartado: 24, que: 'Efectos', porque: 'Un lint de verdad da cinco avisos de dependencias en tres efectos, y los tres son a propósito: van por la CLAVE —el id del ejercicio actual, los ids de los vídeos a comparar, el foco que llega de Inicio—, no por el objeto que se rehace en cada pintado. El cuarto, en Progreso, sí era real y se arregló (`SIN_PROPIOS`).' },
+  { apartado: 31, que: 'Lint', porque: 'El proyecto no tiene lint y no se le añade (apartado 40 de la F45: ni una dependencia sin necesidad). Se pasó UNA vez, fuera del proyecto —ESLint 9 con las reglas recomendadas y las de los hooks sobre los 84 archivos del mapa—: ni una regla de hooks rota, ni un nombre sin declarar, ni un `catch` vacío; 28 imports y 2 variables sin usar, retirados. Lo que se queda vigilándolo es `importsSinUso`, en cada pasada.' },
   { apartado: 14, que: 'TypeScript', porque: 'El proyecto es JavaScript con JSDoc (FIT F35, apartado 35): no hay `any` ni `as unknown as` que limpiar.' },
 ]);
 
@@ -452,7 +518,9 @@ export const DECISIONES_FIT44 = Object.freeze([
 ]);
 
 /** La auditoría de la fase: lo que tiene que dar cero. */
-export function auditarArquitectura({ todos = {}, fitness = {}, pantallas = {}, librerias = {} } = {}) {
+export function auditarArquitectura({ todos = {}, fitness = {}, pantallas = {}, librerias = {}, produccion = null } = {}) {
+  const src = produccion || Object.fromEntries(Object.entries(todos).filter(([r]) => r.startsWith('src/')));
+  const declarados = new Set(COMPONENTES_SIN_PANTALLA.map((c) => `${c.archivo}#${c.componente}`));
   const casillas = [
     { id: 'sin_ciclos', que: 'Ni un ciclo de imports en `src/`', hallado: ciclosDeImports(todos) },
     { id: 'sin_almacenamiento', que: 'Ninguna pantalla de Fitness toca el almacenamiento', hallado: almacenamientoDirecto(pantallas) },
@@ -462,6 +530,8 @@ export function auditarArquitectura({ todos = {}, fitness = {}, pantallas = {}, 
     { id: 'dependencias', que: 'Fitness solo importa de fuera lo declarado (ni Economía, ni Estudios, ni Armario, ni Hábitos)', hallado: dependenciasNoDeclaradas(fitness) },
     { id: 'un_nombre', que: 'Un nombre exportado, un significado', hallado: nombresRepetidos(librerias) },
     { id: 'una_coma', que: 'Los decimales se escriben con `decimal`', hallado: comasADesmano(fitness) },
+    { id: 'sin_imports_muertos', que: 'Ni un import que el archivo no use', hallado: importsSinUso(fitness) },
+    { id: 'componentes_pintados', que: 'Ni un componente que solo pinte el banco de renderizado sin estar declarado', hallado: componentesSinPantalla(pantallas, src).filter((c) => !declarados.has(`${c.ruta}#${c.componente}`)) },
     { id: 'sin_muertos', que: 'Ni una exportación que no use nadie', hallado: exportacionesSinUso(librerias, todos) },
   ];
   return { ok: casillas.every((c) => c.hallado.length === 0), casillas };

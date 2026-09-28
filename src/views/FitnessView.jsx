@@ -23,11 +23,11 @@
    =========================================================================== */
 
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, ChevronLeft, Camera, Flame, Dumbbell, Pencil, X } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Flame, Dumbbell, Pencil, X } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
-import { Card, SectionTitle, GhostBtn, PrimaryButton, EmptyHint } from '../components/ui';
+import { Card, SectionTitle, GhostBtn, EmptyHint } from '../components/ui';
 import {
   AREAS_FITNESS, AREA_INICIAL, ESTADOS_VACIOS, ACCESOS_ENTRENAMIENTO,
   rachaDeFitness, resumenProgreso, resumenEntrenamiento,
@@ -174,32 +174,9 @@ export function PestanasFitness({ areas, activa, onCambiar, accent }) {
   );
 }
 
-/* ── Un estado vacío (apartado 17) ─────────────────────────────────────────
-   *"Nunca quiero: una pantalla en blanco […] botones sin función que parezcan
-   rotos"*. El texto y la salida salen de `ESTADOS_VACIOS`, declarados con su
-   motivo; si un área no tiene botón, es que todavía no hay nada que pulsar, y
-   entonces no se pinta ninguno. */
-export function VacioFitness({ estado, accent, onAccion = null }) {
-  return (
-    <Card>
-      <div className="py-6 text-center">
-        <p className="text-base font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-          {estado.titulo}
-        </p>
-        <p className="text-sm mt-1.5 mx-auto max-w-xs" style={{ color: COLORS.textMuted }}>
-          {estado.texto}
-        </p>
-        {estado.accion && onAccion && (
-          <div className="mt-4 flex justify-center">
-            <GhostBtn icon={Camera} onClick={() => onAccion(estado.accion)}>
-              {estado.accion.texto}
-            </GhostBtn>
-          </div>
-        )}
-      </div>
-    </Card>
-  );
-}
+/* 🧹 FIT F44 (apartado 57) — `VacioFitness`, el vacío de las áreas de la F1,
+   se retira: desde que cada área es su pantalla (F12, F16, F6) no lo pintaba
+   nadie, ni una prueba. Los textos siguen en `ESTADOS_VACIOS`, que sí se leen. */
 
 /* ── Área: RANGOS (apartados 9 y 10) ─────────────────────────────────────── */
 /* 🔓 **FIT F16 — el área entera es ahora `RangosView`**, igual que Progreso es

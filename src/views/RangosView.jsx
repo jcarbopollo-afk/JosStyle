@@ -30,14 +30,13 @@ import { Card, SectionTitle, PrimaryButton, GhostBtn } from '../components/ui';
 import { RankBadge, RankLabel } from '../components/rangos';
 import { iconoDeGrupo } from '../components/iconosFitness';
 import { CTA_CLASIFICAR, SIN_RANGO, nivelRango } from '../lib/fitness';
-import { pantallaDeRangos, detalleDeRango } from '../lib/pantallaRangos';
+import { detalleDeRango } from '../lib/pantallaRangos';
 /* FIT F20 — la explicación de un rango, la misma en los tres sitios. */
 import { RankExplanation, BotonPorQue } from '../components/explicacionRango';
 /* FIT F22 — el historial del rango, colgando del rango global (su apartado 30). */
 import { RankHistory, BotonHistorial } from '../components/historialRango';
 /* FIT F23 — qué falta para el siguiente rango, debajo del rango general. */
 import { RankNextLevelCard } from '../components/siguienteRango';
-import { tarjetaSiguienteRango } from '../lib/siguienteRango';
 import { explicacionDeRango } from '../lib/explicacionRangos';
 /* FIT F18 — el detalle de un grupo muscular, dentro de Rangos. */
 import DetalleMuscularView from './DetalleMuscularView';

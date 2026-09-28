@@ -8,6 +8,11 @@
 
    · `RankProgressBar` **es `RankProgress`** (F15) — y ya dibuja la barra y ya
      dice *"Rango más alto de la escala"* cuando no hay siguiente.
+     🧹 **FIT F44 — y no lo fue**: la tarjeta nació con su propia barra,
+     `RankNextLevelBar` (con el porcentaje al lado), y `RankProgress` no lo
+     pinta ninguna pantalla. Está declarado en `COMPONENTES_SIN_PANTALLA`
+     (`arquitecturaFitness.js`): unir las dos cambiaría el aspecto que dejó la
+     F42, y eso no es de una fase de limpieza.
    · `RankNextStep` **es `siguientePaso()` + su componente** (F20), y ya está
      escrito como informa, no como entrenador (apartado 20).
    · `RankCoverage` y `RankConfidence` **son los de la F20**.
@@ -381,7 +386,7 @@ export const NO_EN_FIT23 = [
 ];
 
 export const DECISIONES_FIT23 = [
-  { que: 'Cuatro de los cinco componentes del apartado 29 YA EXISTÍAN', porque: '`RankProgressBar` es `RankProgress` (F15), `RankNextStep` es `siguientePaso()` (F20), y `RankCoverage` y `RankConfidence` son los de la F20. Lo único nuevo es `RankNextLevelCard`. *"Evitar duplicaciones"*, literal.' },
+  { que: 'Cuatro de los cinco componentes del apartado 29 YA EXISTÍAN', porque: '`RankNextStep` es `siguientePaso()` (F20), y `RankCoverage` y `RankConfidence` son los de la F20. *"Evitar duplicaciones"*, literal. ⚠️ FIT F44: la barra NO es `RankProgress` (F15), como decía esta línea: la tarjeta trae la suya, `RankNextLevelBar`, y `RankProgress` no lo pinta nadie (`COMPONENTES_SIN_PANTALLA`).' },
   { que: 'Y la fórmula del apartado 4 también estaba resuelta', porque: '`progresoHaciaSiguiente` mide entre el umbral del rango actual y el del siguiente —no `score / 600`—, que es justo lo que el apartado pide que NO se haga. Esta fase solo le añade los puntos que faltan.' },
   { que: 'La cifra exacta de puntos solo se dice con datos reales detrás', porque: 'El apartado 11 la condiciona a que *"la confianza permita mostrarlo"* y el 9 deja enseñar lo del cuestionario **etiquetado**. La barra y el porcentaje se ven siempre; *"te faltan 84 puntos"* de una estimación prometería una precisión que no tiene.' },
   { que: 'Sin siguiente rango NO hay barra, ni siquiera al 100 %', porque: 'Apartado 6: *"No mostrar una barra vacía"*. Una barra llena tampoco dice nada — lo que hay que leer es «Rango máximo alcanzado».' },

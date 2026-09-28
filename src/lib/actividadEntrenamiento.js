@@ -1,8 +1,7 @@
 import { todayISO, addDays, fechaValida } from './helpers';
 import { sinDuplicadosPorId } from './fitness';
 import {
-  sesionesDelHistorial, fichaDeHistorial, historialPorReciente, etiquetaDeFecha, contadorTexto,
-  sesionesPorDia,
+  sesionesDelHistorial, fichaDeHistorial, historialPorReciente, contadorTexto, sesionesPorDia,
 } from './historial';
 import { RANGOS_GRAFICA, periodo as periodoDelCatalogo, inicioDePeriodo } from './progresoEjercicios';
 import { planActivoCompleto, posicionDelDia, planificadoEnFecha } from './tuPlan';

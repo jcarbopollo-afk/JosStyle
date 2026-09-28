@@ -14,10 +14,10 @@
    =========================================================================== */
 
 import { GRUPOS_MUSCULARES, SIN_RANGO, NIVELES_RANGO, nivelRango, subgrupoMuscular } from './fitness.js';
-import { RANK_THRESHOLDS, PUNTUACION_MAXIMA, CONFIANZA } from './rangos.js';
+import { RANK_THRESHOLDS, PUNTUACION_MAXIMA } from './rangos.js';
 import {
-  rangoEfectivoDeEjercicio, rangoEfectivoDeGrupo, rangoEfectivoDeSubgrupo,
-  rangoGlobalEfectivo, rangosEfectivos, evolucionDeRango, fuenteRango,
+  rangoEfectivoDeEjercicio, rangoEfectivoDeGrupo, rangoEfectivoDeSubgrupo, rangoGlobalEfectivo,
+  evolucionDeRango,
 } from './motorRangos.js';
 import { ejercicioPorId, nombreSinCatalogo } from './ejercicios.js';
 import { ejerciciosDelMusculo, resumenDeTendencias, grupoMuscular } from './detalleMuscular.js';

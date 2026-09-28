@@ -17,7 +17,7 @@ import {
   ciclosDeImports, almacenamientoDirecto, catchSinExplicar, logsSueltos, CLAVES_POR_POSICION, clavesPorPosicion,
   DEPENDENCIAS_PERMITIDAS, dependenciasNoDeclaradas, COMAS_PERMITIDAS, comasADesmano,
   NOMBRES_DE_DECLARACION, nombresRepetidos, exportacionesSinUso,
-  PRUEBAS_CRITICAS, CATALOGO_HOOKS, CICLO_DE_SESION, ELIMINADO_F44, RENOMBRADO_F44, CENTRALIZADO_F44, REVISADO_Y_BIEN_F44, PENDIENTES_F44, NO_EN_FIT44, DECISIONES_FIT44,
+  PRUEBAS_CRITICAS, CATALOGO_HOOKS, COMPONENTES_SIN_PANTALLA, componentesSinPantalla, importsSinUso, CICLO_DE_SESION, ELIMINADO_F44, RENOMBRADO_F44, CENTRALIZADO_F44, REVISADO_Y_BIEN_F44, PENDIENTES_F44, NO_EN_FIT44, DECISIONES_FIT44,
   auditarArquitectura,
 } from '../src/lib/arquitecturaFitness.js';
 import { decimal, DECIMALES_FITNESS } from '../src/lib/numerosFitness.js';
@@ -152,9 +152,9 @@ ok(!/pausarSesion\(/.test(leer('src/views/EntrenamientoVivoView.jsx')) && /pausa
   '…y lo que dice de la pausa es verdad: la pantalla pausa el descanso, no la sesión');
 
 console.log('\n── 4. Las auditorías, sobre el código de verdad ──');
-const auditoria = auditarArquitectura({ todos, fitness: deFitness, pantallas, librerias });
+const auditoria = auditarArquitectura({ todos, fitness: deFitness, pantallas, librerias, produccion: todosSrc });
 auditoria.casillas.forEach((c) => ok(c.hallado.length === 0, `${c.que}${lista(c.hallado)}`));
-ok(auditoria.ok && auditoria.casillas.length === 9, 'La auditoría de la fase entera, en verde (nueve casillas)');
+ok(auditoria.ok && auditoria.casillas.length === 11, 'La auditoría de la fase entera, en verde (once casillas)');
 
 console.log('\n── 5. Y cada una se pone roja con su ejemplo malo (EH F42) ──');
 ok(ciclosDeImports({ 'src/a.js': "import { b } from './b';", 'src/b.js': "import { a } from './a';", 'src/c.js': "import { a } from './a';" }).length === 1,
@@ -215,6 +215,24 @@ ok(detalleMuscular.grupoMuscular === fitness.grupoMuscular, '`grupoMuscular` es 
 ok(planes.FILTRO_TODOS === plantillas.FILTRO_TODOS && !/export const FILTRO_TODOS/.test(librerias['src/lib/planes.js']),
   'La pastilla «Todos» de los planes es la de las plantillas, escrita una vez');
 ok(ELIMINADO_F44.every((e) => e.que && e.porque) && ELIMINADO_F44.length >= 9, 'Cada cosa retirada, con su motivo');
+
+ok(!/export function VacioFitness/.test(leer('src/views/FitnessView.jsx')), '`VacioFitness`, el vacío de las áreas de la F1 que ya no pintaba nadie, retirado');
+const componentes = Object.fromEntries(ARCHIVOS_DEL_MAPA.filter((r) => /src\/(views|components)\//.test(r)).map((r) => [r, deFitness[r]]));
+const sinPantalla = componentesSinPantalla(componentes, todosSrc);
+const declarados = new Set(COMPONENTES_SIN_PANTALLA.map((c) => `${c.archivo}#${c.componente}`));
+const nuevos = sinPantalla.filter((c) => !declarados.has(`${c.ruta}#${c.componente}`));
+ok(nuevos.length === 0, `🚨 Ni un componente de Fitness que solo pinte el banco de renderizado sin estar declarado (apartado 57)${lista(nuevos)}`);
+const yaPintados = COMPONENTES_SIN_PANTALLA.filter((c) => !sinPantalla.some((x) => x.ruta === c.archivo && x.componente === c.componente));
+ok(yaPintados.length === 0, `…y ninguno de los declarados se pinta ya: si una pantalla lo usa, se quita de la lista${lista(yaPintados.map((c) => c.componente))}`);
+ok(COMPONENTES_SIN_PANTALLA.every((c) => c.fase && c.enSuLugar && c.enSuLugar.length > 20), '…cada uno con lo que pinta la pantalla en su lugar');
+ok(componentesSinPantalla({ 'src/components/x.jsx': 'export function Nadie() { return null; }\nexport function Alguien() { return null; }' },
+  { 'src/views/y.jsx': "import { Alguien } from '../components/x';\nconst a = <Alguien />;\nconst t = 'Nadie';" }).map((c) => c.componente).join() === 'Nadie',
+  '…y la auditoría caza uno que solo se nombra en un texto');
+ok(importsSinUso({ 'src/lib/x.js': "import { a, b as c } from './y';\nimport D from './d';\nexport const z = a + D;" }).map((h) => h.que).join() === 'importa c y no lo usa',
+  'Un import sin usar, cazado (y un `as` se mira por su nombre nuevo)');
+ok(importsSinUso({ 'src/lib/x.js': "import { a, b } from './y';\nconst z = [...a];\nconst w = { ...b };" }).length === 0
+  && importsSinUso({ 'src/lib/x.js': "import { a } from './y';\nconst z = obj.a;" }).length === 1,
+  '…una expansión sí es un uso; una propiedad que se llama igual, no');
 
 console.log('\n── 7. Un nombre, un significado (apartado 45) ──');
 ok(RENOMBRADO_F44.every((r) => r.antes && r.despues && r.porque), 'Cada renombrado dice el antes, el después y por qué');

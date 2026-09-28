@@ -29,7 +29,7 @@ import {
    importa nada de este archivo, y por eso no hay ciclo (la lección de la
    FIT F24 con el hub de clasificación). */
 import { ProgressComparison, useComparador } from './comparadorFotos';
-import { pantallaComparador, seleccionDesdeFoto, ENTRADAS_COMPARADOR } from '../lib/comparadorFotos';
+import { pantallaComparador, ENTRADAS_COMPARADOR } from '../lib/comparadorFotos';
 
 /* ═══ Las URLs firmadas, por tandas ════════════════════════════════════════
    🚨 Apartado 26 — *"No cargar todas las imágenes de máxima resolución

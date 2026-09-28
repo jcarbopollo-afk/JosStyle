@@ -23,14 +23,14 @@ import { ChevronLeft, Check, X } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { HOJA, acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
-import { Card, SectionTitle, GhostBtn, PrimaryButton, EmptyHint } from '../components/ui';
+import { Card, SectionTitle, GhostBtn, PrimaryButton } from '../components/ui';
 import { RankBadge, RankLabel } from '../components/rangos';
 import { iconoDeGrupo } from '../components/iconosFitness';
 import { nivelRango } from '../lib/fitness';
 import { ejercicioPorId, nombreSinCatalogo } from '../lib/ejercicios';
 import {
-  cuestionario, preguntaDeEjercicio, clasificarEjercicio, estadoDeClasificacion,
-  musculosQueRecibe, resumenFinal, AVISO_ESTIMACION, AVISO_RECLASIFICAR,
+  preguntaDeEjercicio, clasificarEjercicio, estadoDeClasificacion, musculosQueRecibe, resumenFinal,
+  AVISO_ESTIMACION, AVISO_RECLASIFICAR,
 } from '../lib/clasificacion';
 /* FIT F24 — la cola priorizada y su hub. ⚠️ La pantalla NO calcula ninguna
    prioridad: se la dan resuelta (apartado 32). */

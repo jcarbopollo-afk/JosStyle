@@ -20,7 +20,7 @@
 import React, { useMemo, useState } from 'react';
 import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
-import { ChevronRight, Search, SlidersHorizontal, Check, Repeat } from 'lucide-react';
+import { ChevronRight, Search, SlidersHorizontal, Repeat } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { HOJA, acentoLegible } from '../lib/acabadoFitness';
 import { BotonCerrarHoja, PastillaFiltro as Pastilla } from './piezasFitness';

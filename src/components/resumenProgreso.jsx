@@ -13,7 +13,7 @@ import { useUrlsFirmadas } from './fotosProgreso';
 import { fotosEnOrden } from '../lib/fotosProgreso';
 import { TrainingPeriodSelector, TrainingActivitySummary } from './actividadEntrenamiento';
 import {
-  centroDeProgreso, FILTROS_TIMELINE, PERIODOS_RESUMEN, VER_TODO, FOTOS_RESUMEN_MAX,
+  centroDeProgreso, PERIODOS_RESUMEN, VER_TODO, FOTOS_RESUMEN_MAX,
 } from '../lib/resumenProgreso';
 
 /* ===========================================================================
