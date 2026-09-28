@@ -86,6 +86,11 @@ export const HALLAZGOS_F45 = Object.freeze([
     que: 'Volver a pulsar «Empezar» en el mismo entrenamiento que ya estaba en curso creaba una segunda sesión y dejaba la primera colgada.',
     arreglo: '`sesionEnCursoDelMismoOrigen` (entrenamiento.js): quien empieza el mismo día del plan o la misma plantilla continúa la que había. Una de más de seis horas no cuenta: ésa tiene su tarjeta (F39).',
   },
+  {
+    id: 'volver_biblioteca', prioridad: 'P3', apartado: 24,
+    que: 'La biblioteca de ejercicios abierta desde Entrenamiento decía «Volver a Fitness» y volvía a Entrenamiento, mientras que el historial y el constructor, abiertos desde el mismo sitio, decían «Volver a Entrenamiento».',
+    arreglo: 'FitnessView le pasa `volverA="Entrenamiento"` a la biblioteca: el botón dice a dónde vuelve, como los otros dos (F43). Lo cazó la regresión completa del apartado 45 al volver de la ficha.',
+  },
 ]);
 
 /** Apartado 64, punto 18 — lo que queda de verdad. No son fallos del código:

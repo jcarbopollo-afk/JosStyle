@@ -106,5 +106,13 @@ const vista = leer('src/views/FitnessView.jsx');
 ok(/sesionEnCursoDelMismoOrigen\(fitness \|\| \{\}, sesion\)/.test(vista) && /setEntrenando\(yaEnCurso\.id\)/.test(vista),
   'La pantalla lo usa al empezar: continúa la que había en vez de guardar otra');
 
+console.log('\n── 5. Volver dice a dónde vuelve, también desde la biblioteca (apartado 24) ──');
+const bloqueBiblioteca = (vista.match(/<EjerciciosView[\s\S]*?\/>/) || [''])[0];
+ok(/volverA="Entrenamiento"/.test(bloqueBiblioteca) && /onVolver=\{\(\) => setDentro\(null\)\}/.test(bloqueBiblioteca),
+  '🐛 La biblioteca abierta desde Entrenamiento vuelve a Entrenamiento y lo dice —antes decía «Fitness»—, como el historial y el constructor');
+ok(/volverTexto=\{historialVuelveA \? historialVuelveA\.texto : 'Entrenamiento'\}/.test(vista),
+  '…que es lo que ya decía el historial abierto desde el mismo sitio');
+ok(HALLAZGOS_F45.some((h) => h.id === 'volver_biblioteca' && h.prioridad === 'P3'), '…y queda en los hallazgos, con su prioridad');
+
 console.log(`\n${fallos === 0 ? '\x1b[32m' : '\x1b[31m'}FIT F45: ${total - fallos}/${total} — ${total} comprobaciones\x1b[0m`);
 process.exit(fallos === 0 ? 0 : 1);

@@ -10209,7 +10209,8 @@ ok(await escribir_fit34(''), '…se limpia la búsqueda');
 await page.waitForTimeout(300);
 
 /* 4 · …PERO SU HISTORIAL SIGUE AHÍ, CON SU NOMBRE. */
-ok(await pulsar('Volver a Fitness'), 'FIT F35 — se vuelve a Fitness');
+/* 🐛 FIT F45 — la biblioteca vuelve a Entrenamiento, y lo dice (antes «Volver a Fitness»). */
+ok(await pulsar('Volver a Entrenamiento'), 'FIT F35 — se vuelve a Entrenamiento');
 ok(await pulsar('Progreso'), '…a Progreso');
 ok(await pulsar('Ejercicios'), '…y a sus ejercicios');
 await page.waitForTimeout(500);

@@ -464,6 +464,9 @@ export function AreaEntrenamiento({
         propios={propios}
         accent={accent}
         onVolver={() => setDentro(null)}
+        /* 🐛 FIT F45 — vuelve a Entrenamiento, y lo dice: como el historial y el
+           constructor que se abren desde el mismo sitio (apartado 24). */
+        volverA="Entrenamiento"
         fitness={fitness}
         perfil={perfil}
         onGuardarFitness={onGuardarFitness}
