@@ -1,5 +1,121 @@
 # CHANGELOG.md
 
+## v3.126.0 — FIT F44/45: limpieza arquitectónica y deuda técnica de fitness
+
+*"NO hacer una reescritura completa. NO cambiar la funcionalidad. NO cambiar las fórmulas."* Y su
+regla principal: *"Primero INSPECCIONAR. No refactorizar automáticamente solo porque algo «podría
+estar mejor»."* Así que la fase empezó midiendo, no tocando: ciclos de imports (ni uno en todo
+`src/`), pantallas que tocan el almacenamiento (ninguna), errores tragados, logs olvidados, claves por
+posición, dependencias de otros módulos, exportaciones que no usa nadie y nombres repetidos. Lo que se
+cambió, se cambió porque la medida lo encontró; lo que estaba bien se dejó escrito
+(`REVISADO_Y_BIEN_F44`) para que la siguiente sesión no lo vuelva a barrer. Segunda de las tres fases
+del bloque de **Cierre**.
+
+⚠️ **Ni un número se ha movido**: el mismo escenario de 60 sesiones por los motores —rango global,
+progreso, objetivos, resúmenes, historial del rango y detalle de un ejercicio, 344 KB de salida— da
+la misma salida **byte a byte** con el código de la F43 y con el de la F44, como en la F40 y la F42.
+
+### El mapa (apartado 2), y lo que lo hace verdad
+
+`src/lib/arquitecturaFitness.js` pone cada archivo de Fitness en su capa —datos del catálogo, modelo y
+puerta de carga, motores, lecturas, utilidades, auditorías, pantallas y componentes— con los motores
+de los apartados 8 a 13 guardados como **las funciones importadas**, el flujo principal paso a paso
+(qué guarda cada uno) y la estrategia de invalidación (nada derivado se guarda). Y el ciclo de vida de
+una sesión en una tabla: `en_curso` → `finalizando` → `completada` o `descartada`, cada paso con la
+función que lo hace.
+
+🚨 **Un mapa escrito a mano se queda corto sin que nadie lo note** —le pasó a `ARCHIVOS_FITNESS` en la
+F39 y a la lista de librerías de la F36 tres veces—, así que la prueba **recorre los imports de la
+aplicación desde sus dos puertas** (`TrainingView` y `FitnessView`) y exige que todo lo que alcanza esté
+en el mapa, y que lo que está en el mapa sin que la aplicación lo importe sean solo auditorías. Y la
+lista de librerías de la F36 ya no se escribe: sale del mapa (49 librerías, antes 44).
+
+### Lo retirado (apartados 12, 45 y 57)
+
+- **`sustitutosSugeridos`** (F7): un segundo buscador de sustitutos. Desde la F33 lo decide
+  `getExerciseReplacements`, y ahora hay una comprobación que caza el que vuelva a nacer.
+- **`reiniciarDescanso` y `descansoTerminado`** (F7), superados por la F9; y la fórmula del fin del
+  descanso que la pantalla del entrenamiento en vivo escribía a mano pasa a ser `finDelDescanso`.
+- **El alias `sustitucionesDe`**, **`aplicarGuardado`** —decía ser «lo que llama la pantalla» y no lo
+  llamaba nadie— y **`planEliminarPlantilla`**, una segunda definición de «borrar una plantilla».
+- **Siete exportaciones que no usaba nadie**, ni una pantalla ni una prueba.
+- **La copia de `grupoMuscular`** en el detalle muscular: ahora reexporta la de `fitness.js`. Y la
+  pastilla «Todos» de los planes es la de las plantillas, que estaba escrita dos veces.
+- **`VacioFitness`**, el vacío de las áreas de la F1: desde que cada área es su pantalla no lo pintaba
+  nadie, ni una prueba.
+- **28 imports y 2 variables que nadie usaba, en 16 archivos.** Los encontró un lint pasado **una vez,
+  fuera del proyecto** —ESLint 9 con las reglas recomendadas y las de los hooks sobre los 84 archivos
+  del mapa—, porque JosStyle no tiene lint y no se le añade una dependencia para esto. Lo bueno de la
+  pasada: **ni una regla de hooks rota, ni un nombre sin declarar, ni un `catch` vacío**. De los cinco
+  avisos de dependencias de efectos, cuatro son a propósito —el efecto va por la clave, no por el
+  objeto de cada pintado— y uno era real: en Progreso, sin ejercicios propios, un `[]` nuevo en cada
+  pintado invalidaba cinco memorias (`SIN_PROPIOS`). Lo que se queda vigilando es `importsSinUso`.
+
+🐛 **Y siete componentes que solo pinta el banco de renderizado.** `RankStatus` y `RankProgress`
+(F15), `MuscleContribution` (F18), `GoalProgress`, `GoalEmpty` y `GoalCompletion` (F30) y `MissingData`
+(F39) existen, tienen sus casos de renderizado… y ninguna pantalla los usa: lo que se ve lo pintan
+otros (la barra del siguiente rango es `RankNextLevelBar`, el progreso de un objetivo es el detalle de
+la F14…). Los siete los nombró el enunciado de su fase como piezas reutilizables, así que **se quedan,
+pero dicho** (`COMPONENTES_SIN_PANTALLA`, con lo que pinta la pantalla en su lugar); unirlos cambiaría
+el aspecto que dejó la F42. ⚠️ Y la F23 decía que su barra **era** `RankProgress` —«aquí solo nace la
+tarjeta»— y no lo era: la línea se ha corregido, conservando la de entonces. **Un componente nuevo que
+ninguna pantalla pinte pone la suite roja.**
+
+⚠️ **Se retira solo lo que nadie usa o lo que ya hace otra función** (apartado 57: *"eliminar
+únicamente después de confirmar que no se utilizan"*). `pausarSesion` y `olvidarClasificacion` solo las
+usan las pruebas y se quedan: el motor sabe llevar una sesión pausada aunque la pantalla solo pause el
+descanso, y cambiar los estados guardados es lo que esta fase no hace.
+
+### Lo centralizado
+
+- **Un número con coma, de una manera** (apartado 39): había **ocho** copias de «número con coma
+  decimal» y no redondeaban igual —cuatro dejaban dos decimales y el resto escribía el número tal cual,
+  así que un peso de 33,333… habría salido «33,33» en una pantalla y «33,333333333333336» en otra—.
+  Ahora es `decimal`, en `numerosFitness.js`, una hoja del árbol de imports como `fechasFitness.js`.
+  Las dos comas que se quedan escritas a mano dicen por qué: el zoom del comparador («2,0×» lleva
+  siempre un decimal) y el valor de un campo al editarlo (redondearlo le cambiaría el dato).
+- **La explicación de un rango se pide por `explicacionDeRango`**, la puerta única de la F20: Rangos y
+  el detalle muscular llamaban cada uno a su función.
+
+### Un nombre, un significado (apartado 45)
+
+El barrido de la F36 miraba las funciones; las **constantes** tenían siete choques: dos
+`ESTADOS_PANTALLA`, dos `BLOQUES`, dos `PESOS`, dos `PAPELES` (una lista y un mapa), dos
+`VISIBILIDADES`, dos `PUNTOS_MINIMOS_GRAFICA` —uno valía 3 y el otro 4— y dos `PERIODO_POR_DEFECTO`.
+Se renombró el de la librería que menos lo usaba (`RENOMBRADO_F44`). 🐛 **Y la propia auditoría cazó
+dos cosas mías al estrenarse**: su comprobación de `catch` vacíos se encontraba a sí misma en su
+cabecera —que nombra el patrón para decir que no se hace—, y el catálogo de hooks que escribí se
+llamaba `HOOKS_FITNESS`, que ya era la lista de archivos de la F40.
+
+### Las auditorías que mantienen limpio lo limpiado
+
+`auditarArquitectura()` lee el código de verdad y devuelve cada hallazgo con su archivo y su línea, en
+once casillas que tienen que dar cero: ni un ciclo de imports, ninguna pantalla tocando el
+almacenamiento, ni un `catch` vacío sin motivo, ni un `console.log`, ninguna lista reordenable con
+`key={i}`, ninguna dependencia de otro módulo sin declarar, un nombre por significado, ni una coma
+escrita a mano, ni un import sin usar, ni un componente sin pantalla sin declarar y ni una exportación
+que no use nadie. **Cada una se pone roja con su ejemplo malo.**
+
+- 🚨 **Fitness no depende de Economía, Estudios, Armario ni Hábitos** (apartado 60), y del Calendario,
+  el Horario y las Rachas solo trae **una interfaz con nombre**: la cuadrícula del mes (`celdasMes`), la
+  semana (`DIAS_SEMANA`, `diaDeFecha`) y la racha (`rachaActual`). Traerse las clases del horario pone
+  la suite roja.
+- **Los cinco hooks de Fitness** hacen una cosa cada uno y ninguno toca lo guardado; **un solo flag**,
+  el de desarrollo del diagnóstico del catálogo (F35); y **las pruebas críticas** del apartado 44
+  —completar y guardar dos veces, la puerta de carga y las migraciones, los cinco motores y los flujos
+  completos— dicen qué suite las cubre, y se comprueba que `verificar.sh` la ejecuta.
+
+### Lo que no se hace
+
+Partir `ProgresoView.jsx` (1 500 líneas de componentes de Progreso: moverlos no aporta nada que la
+fase pida, apartado 46), cambiar las treinta comparaciones de estados de sesión por constantes (la
+reescritura que el apartado prohíbe) y la pila de navegación común que dejó escrita la F43. Ni IA, ni
+estadísticas nuevas, ni un rediseño (apartados 63 y 64), ni TypeScript (FIT F35).
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.125.0 — FIT F43/45: auditoría funcional integral de fitness
 
 *"Esta fase no consiste en añadir funcionalidades nuevas. El objetivo es comprobar que TODO lo

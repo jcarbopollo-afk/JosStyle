@@ -2,6 +2,16 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.126.0 — FIT F44/45: limpieza arquitectónica y deuda técnica):**
+> Segunda del bloque de **Cierre**. No cambia ni una función ni un número —el mismo escenario por los
+> motores da la misma salida byte a byte—: **ordena**. Cada archivo de Fitness está en su capa
+> (`arquitecturaFitness.js`), comprobado contra lo que de verdad importa la aplicación; se retiraron un
+> segundo buscador de sustitutos, funciones que nadie llamaba y 28 imports sin usar; los números con
+> coma tienen una sola función (`decimal`); siete constantes que se llamaban igual con dos significados
+> se renombraron; y Fitness no depende de ningún otro módulo más allá de una interfaz con nombre. Siete
+> componentes que solo pintaba el banco de pruebas quedan declarados con lo que se ve en su lugar. Lo
+> siguiente es la **FIT F45**, la última: el release.
+
 > **📅 ACTUALIZACIÓN (v3.125.0 — FIT F43/45: auditoría funcional integral):**
 > Primera del bloque de **Cierre**. No añade funciones: **encadena** las que había —explorar, crear,
 > planificar, entrenar, guardar, historial, progreso, rango, objetivo, foto, comparar— y arregla lo

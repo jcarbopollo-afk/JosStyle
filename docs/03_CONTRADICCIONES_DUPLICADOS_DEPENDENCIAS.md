@@ -943,6 +943,26 @@ El apartado 71 de la F43 termina así, como las fases anteriores. **Josué lo de
 nada"*, y *"no me preguntes, porque si no paras el flujo"*. Manda lo último que ha dicho: se entrega la
 F43 con la verificación en verde, se le cuenta al cerrar y se sigue con la F44.
 
+### C-47 — ✅ RESUELTA AL CONSTRUIR (FIT F44, v3.126.0) · Componentes que pidió su fase y no pinta ninguna pantalla
+
+**La F44** pide eliminar el código muerto (apartado 57) y **la F15, la F18, la F30 y la F39** pidieron
+crear, por su nombre, piezas «reutilizables posteriormente» —`RankStatus`, `RankProgress`,
+`MuscleContribution`, `GoalProgress`, `GoalEmpty`, `GoalCompletion`, `MissingData`— que al final no
+pinta ninguna pantalla: lo que se ve lo pintan otros componentes. La lectura que respeta las dos:
+**se quedan, pero declaradas** (`COMPONENTES_SIN_PANTALLA`, con lo que se ve en su lugar), y la suite
+se pone roja con un componente nuevo en la misma situación. Unirlas con las de pantalla cambiaría el
+aspecto que dejó la F42. `VacioFitness` (F1), que no pidió nadie por su nombre y ya no usaba nada, se
+retira.
+
+### C-48 — ✅ RESUELTA AL CONSTRUIR (FIT F44, v3.126.0) · «Ejecutar typecheck y lint» en un proyecto sin ninguno de los dos
+
+El apartado 65 de la F44 (y el 41 y el 42 de la F45) piden typecheck y lint. JosStyle es JavaScript
+con JSDoc (FIT F35, apartado 35) y no tiene lint; la F45 prohíbe añadir dependencias sin necesidad
+(apartado 40). Se pasó ESLint **una vez, fuera del proyecto**, sobre los 84 archivos de Fitness —ni
+una regla de hooks rota, 28 imports sin usar que se retiraron— y lo que se queda vigilando en cada
+pasada es `importsSinUso`, más el build y las reglas de `test-imports.mjs`. En la lista del release
+se dice «no aplica», con su motivo.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

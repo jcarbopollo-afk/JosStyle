@@ -14,14 +14,14 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.125.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.126.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏋️ **Y ESTÁ EN MARCHA LA ENTREGA 4: FITNESS, 45 FASES.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y
 él lo avisó** (*"he puesto las fases al revés bro"*): la F45 abre el archivo y la F1 lo cierra, así
 que el índice con la línea de cada fase está en **`docs/12_ENTREGA4_FITNESS_ORDEN.md`** y **se
-construye de la F1 a la F45**. **Hechas las 43 primeras (v3.83.0 → v3.125.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
+construye de la F1 a la F45**. **Hechas las 44 primeras (v3.83.0 → v3.126.0).** ⚠️ **Y la F9–F21 las construyó la OTRA
 conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (historial), F11
 (progresión), F12 (progreso por ejercicio), F13 (por grupos musculares), F14 (objetivos), F15–F21
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
@@ -47,7 +47,7 @@ biblioteca de sonidos—, la cerró la otra conversación**, y Josué lo confirm
 los sonidos está acabado oficialmente"*. Los 46 archivos están en `public/sonidos/` **y en `main`**,
 con su suite verde (94 comprobaciones).
 
-**Pendiente por delante:** **las 2 fases que quedan de la Entrega 4** (Fitness), el bloque **AXION**
+**Pendiente por delante:** **la fase que queda de la Entrega 4** (Fitness), la F45 del release, el bloque **AXION**
 de la Entrega 1 (≈1100 apartados, aplazado por decisión de Josué), y lo que él vaya pidiendo fase a
 fase.
 
@@ -351,8 +351,53 @@ que es cómo este proyecto acabó con la mentira de los sonidos escrita en tres 
 (v3.115.0)**, la **FIT F34 (v3.116.0)** y la **FIT F35 (v3.117.0)**, que 🏁 **CERRÓ EL BLOQUE DE
 INTELIGENCIA** —F29 a F35—, y la **FIT F36 (v3.118.0)**, con la que empieza el bloque de **Acabado**
 (F36–F42), la **FIT F37 (v3.119.0)**, la **FIT F38 (v3.120.0)**, la **FIT F39 (v3.121.0)**, la **FIT F40 (v3.122.0)**, la **FIT F41 (v3.123.0)** y la **FIT F42 (v3.124.0)**, que 🏁 **CERRÓ EL BLOQUE DE
-ACABADO** —F36 a F42—, y la **FIT F43 (v3.125.0)**, la primera del bloque de **Cierre**, hechas. Lo
-que dejaron, y que vale para las 2 que quedan:
+ACABADO** —F36 a F42—, y la **FIT F43 (v3.125.0)**, la primera del bloque de **Cierre**, y la **FIT F44
+(v3.126.0)**, hechas. Lo que dejaron, y que vale para la que queda:
+
+- 🚨 **EL MAPA DE FITNESS ES `CAPAS_FITNESS`, Y SE COMPRUEBA CONTRA LOS IMPORTS DE VERDAD** (FIT F44,
+  `src/lib/arquitecturaFitness.js`). Cada archivo de Fitness está en su capa —datos, modelo, motores,
+  lecturas, utilidades, auditorías, pantallas, componentes— y la prueba **recorre los imports desde
+  `TrainingView` y `FitnessView`**: lo que alcanza tiene que estar en el mapa, y lo que está en el mapa
+  sin que la aplicación lo importe solo pueden ser auditorías. **Un archivo nuevo de Fitness va a su
+  capa**, o la suite se pone roja. ⚠️ Y la lista de librerías de la F36 **ya no se escribe a mano: sale
+  del mapa** (se quedó corta tres veces). Ningún motor importa una pantalla ni la capa visual.
+- 🚨 **UN NÚMERO CON COMA ES `decimal`, DE `numerosFitness.js`** (FIT F44, apartado 39): había ocho
+  copias y no redondeaban igual. Es una hoja del árbol de imports, como `fechasFitness.js`. Una coma
+  escrita a mano en Fitness pone la suite roja (`comasADesmano`), salvo las dos de `COMAS_PERMITIDAS`
+  con su motivo: el zoom del comparador y el valor de un campo al editarlo.
+- 🚨 **FITNESS NO IMPORTA ECONOMÍA, ESTUDIOS, ARMARIO NI HÁBITOS, Y DEL CALENDARIO, EL HORARIO Y LAS
+  RACHAS SOLO UNA INTERFAZ CON NOMBRE** (FIT F44, apartado 60): `DEPENDENCIAS_PERMITIDAS` dice cada
+  módulo de fuera y por qué, y con `solo` los nombres que presta —`celdasMes`, `DIAS_SEMANA` y
+  `diaDeFecha`, `rachaActual`—. Traerse una clase del horario pone la suite roja.
+- 🚨 **UN NOMBRE EXPORTADO, UN SIGNIFICADO, TAMBIÉN EN LAS CONSTANTES** (FIT F44, apartado 45): el
+  barrido de la F36 miraba las funciones y había siete choques de constantes (`BLOQUES`, `PESOS`,
+  `PAPELES`, dos `PUNTOS_MINIMOS_GRAFICA` que valían 3 y 4…). Ahora `nombresRepetidos` mira los dos.
+  🐛 **Y cazó uno mío al estrenarse**: el catálogo de hooks que escribí se llamaba `HOOKS_FITNESS`, que
+  ya era la lista de archivos de la F40 — es `CATALOGO_HOOKS`. **Antes de estrenar un nombre, buscarlo.**
+- ⚠️ **SE RETIRA SOLO LO QUE NADIE USA O LO QUE YA HACE OTRA FUNCIÓN** (FIT F44, apartado 57): el
+  segundo buscador de sustitutos de la F7 (`sustitutosSugeridos`), los descansos de la F7 que superó la
+  F9, un alias, `aplicarGuardado` —decía ser lo que llamaba la pantalla y no lo llamaba nadie— y siete
+  exportaciones sin uso. **`pausarSesion` se queda**: solo la usan las pruebas, pero el motor sabe
+  llevar una sesión pausada y quitarla cambiaría los estados guardados. Lo que se miró y estaba bien
+  está en `REVISADO_Y_BIEN_F44`, para no volver a barrerlo.
+- ⚠️ **UN BARRIDO QUE NOMBRA EN SU CABECERA LO QUE BUSCA SE ENCUENTRA A SÍ MISMO, Y UNO QUE QUITA LOS
+  COMENTARIOS NO VE EL MOTIVO** (FIT F44): la comprobación de `catch` vacíos lee el código **en bruto**
+  —`catch { /* motivo */ }` dice por qué, y sin comentarios quedaría vacío— y descarta lo que cae
+  **dentro** de un comentario. Las dos cosas a la vez.
+- ⚠️ **EL CICLO DE VIDA DE UNA SESIÓN ESTÁ EN UNA TABLA, CON LA FUNCIÓN DE CADA PASO** (FIT F44,
+  apartado 61, `CICLO_DE_SESION`): `en_curso` (`empezarSesion`) → `finalizando` (`pasarAFinalizacion`)
+  → `completada` (`guardarEntrenamiento`) o `descartada`. Y los cinco hooks de Fitness en
+  `CATALOGO_HOOKS`: un hook nuevo va ahí, y ninguno puede tocar lo guardado.
+- 🐛 **UN COMPONENTE CON CASO DE RENDERIZADO PUEDE NO PINTARLO NINGUNA PANTALLA** (FIT F44): siete
+  —`RankStatus`, `RankProgress`, `MuscleContribution`, `GoalProgress`, `GoalEmpty`, `GoalCompletion`,
+  `MissingData`— los pinta solo el banco, y la F23 decía que su barra **era** `RankProgress` cuando
+  nació con otra. Se quedan porque sus fases los pidieron como piezas reutilizables, pero declarados
+  en `COMPONENTES_SIN_PANTALLA` con lo que se ve en su lugar. **Un componente nuevo de Fitness que
+  ninguna pantalla pinte pone la suite roja**, y uno declarado que empiece a pintarse, también (se
+  quita de la lista).
+- ⚠️ **JOSSTYLE NO TIENE LINT, Y NO SE LE AÑADE** (FIT F44, apartado 31): se pasó ESLint una vez, fuera
+  del proyecto, sobre los 84 archivos del mapa —0 reglas de hooks rotas, 28 imports sin usar— y lo que
+  se queda vigilando es `importsSinUso`. ⚠️ Una expansión (`...X`) **es** un uso; `x.nombre` no.
 
 - 🚨 **«VOLVER» LLEVA AL CONTEXTO ANTERIOR, Y LO DECIDE `vueltaFitness.js`** (FIT F43, apartados 46 y
   47). El progreso de un ejercicio se abre desde cinco sitios y volvía siempre a la portada de
@@ -1889,29 +1934,21 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏋️ **SEGUIR POR LA FIT F44/45 — Limpieza arquitectónica y deuda técnica de fitness**
-   (líneas 1 652–2 182 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **segunda** del
-   bloque de **Cierre** (F43–F45). Se construye de la F1 a la F45, en orden, encadenando sin parar.
-   El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
-   🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez
-   y ya pasó una vez que aquí se escribió entera una fase que ella había cerrado.
-   ⚠️ **Y lo segundo, en ESTA: su «IMPORTANTE» dice *"NO hacer una reescritura completa. NO cambiar la
-   funcionalidad. NO cambiar las fórmulas. NO cambiar el diseño salvo correcciones necesarias. NO
-   introducir nuevas funcionalidades"***, y su regla principal: *"Primero INSPECCIONAR. No
-   refactorizar automáticamente solo porque algo «podría estar mejor»"*. Cada cambio se justifica por
-   claridad, seguridad, reutilización, mantenibilidad, rendimiento o duplicación, y **se demuestra
-   que no mueve un número** como en la F40 y la F42 (el mismo escenario por los motores antes y
-   después). La F43 dejó escrito qué NO se hizo por ser demasiado grande (`PENDIENTES_F43`, apartado
-   68): **una pila de navegación común a toda Fitness** es de las que se documentan, no se reescriben.
-   ⚠️ **Y lo que ya se aprendió:** una puerta entre pantallas se comprueba abriendo el archivo que la
-   cablea (F36) **y su envoltorio de área** (F43), un guardado que nadie lee puede mentir (F37 y F41),
-   una hoja lleva `HOJA` y `useDialogoAccesible` (F38, F39 y F42), nada roto a la vista (`textoRoto`,
-   F39), una optimización se compara con el cálculo de antes (F40), lo que la carga no entiende se
-   aparta en la cuarentena (F41), la escala visual se audita con `auditarAcabado` (F42), **«volver»
-   pasa un origen (`vueltaFitness.js`) y el recorrido no admite ni un error de JavaScript (F43)**, y
-   **al crear un componente de Fitness, a `ARCHIVOS_FITNESS`; al crear una librería, a
-   `LIBRERIAS_FITNESS`** o las auditorías no lo miran — la F42 y la F43 se quedaron fuera de la
-   segunda y la F43 lo arregló.
+1. 🏋️ **SEGUIR POR LA FIT F45/45 — Pulido final, QA extremo y release de fitness**
+   (líneas 1–1 651 de `especificaciones/ORIGINAL_ENTREGA4_FITNESS.txt`), la **última** del bloque de
+   **Cierre** y de la entrega. El índice está en `docs/12_ENTREGA4_FITNESS_ORDEN.md`.
+   🚨 **Y lo PRIMERO, siempre, es `git fetch origin main`**: la otra conversación construye a la vez.
+   ⚠️ **Su regla absoluta: ni una funcionalidad, ni un módulo, ni un sistema, ni una fórmula nueva**, y
+   su apartado 63: *"NO continuar automáticamente con otra fase. No crear una Fase 46."* Es un release:
+   se comprueba la lista del apartado 58 casilla por casilla —**cada una con la prueba que la demuestra**,
+   como `FLUJOS_F43`—, se hace la regresión completa del apartado 45 en un iPhone pequeño y en
+   escritorio, y se arregla lo que salga. **Typecheck y lint no existen en este proyecto** (JavaScript
+   con JSDoc, F35; sin lint, F44): se dice, con lo que hace su papel, en vez de fingirlos.
+   ⚠️ **Y lo que ya se aprendió:** el mapa de capas (`CAPAS_FITNESS`, F44) tiene que cubrir todo lo que
+   la aplicación importa, un nombre exportado se busca en todo `src/lib` antes de estrenarlo (F40 y
+   F44), un componente que solo pinta el banco de renderizado se declara (F44), «volver» pasa un origen
+   (F43) y **al cambiar lo que dice un botón, se barren las comprobaciones viejas del recorrido que lo
+   pulsan** (F43: tres se quedaron diciendo «Volver a Progreso»).
    ⚠️ **Y lo que se heredó de la F31: LA RACHA DE ENTRENAMIENTO YA EXISTE Y NO SE GUARDA.** La lleva el
    motor de rachas (`src/lib/rachas.js`, tipo `training`), que **no guarda ni un contador**: todo se
    deriva del historial (RA F1, apartado 24), y quien escribe es `rachasServicio.js` — **el único

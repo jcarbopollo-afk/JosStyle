@@ -1017,7 +1017,13 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
       (`setDentro` fuera de su ámbito, F28 y F31); 🐛 P1 «volver» siempre a la portada de Progreso →
       `vueltaFitness.js`; P2 el volver que decía un sitio y llevaba a otro; P3 el agarre repetido y
       «Fecha superada»; y ni un error de JavaScript en todo el recorrido.
-- [ ] F44–F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
+- [x] **F44 — Limpieza arquitectónica y deuda técnica de fitness** (v3.126.0): el mapa de capas
+      (`CAPAS_FITNESS`) comprobado contra los imports de la aplicación; retirados el segundo buscador
+      de sustitutos, los descansos de la F7, un alias, `aplicarGuardado`, `VacioFitness` y 28 imports
+      sin usar; `decimal` para los números con coma; siete constantes renombradas; dependencias de
+      otros módulos solo por una interfaz con nombre; componentes sin pantalla declarados; once
+      auditorías con su ejemplo malo; y ni un número movido (salida idéntica byte a byte).
+- [ ] F45 — ver `docs/12_ENTREGA4_FITNESS_ORDEN.md`
 
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción
