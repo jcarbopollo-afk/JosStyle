@@ -114,7 +114,19 @@ estadísticas nuevas, ni un rediseño (apartados 63 y 64), ni TypeScript (FIT F3
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` **en verde** (`═══ TODO CORRECTO ═══`, 0 fallos) a la primera: **22 211
+pruebas de Node en 205 suites**, **3760 casos de renderizado**, **11 reglas invariantes** y **2930
+comprobaciones en Chromium** — **28 912** en total. El salto desde la v3.125.0 es **+114 de Node**, que
+son exactamente la suite nueva, `test-arquitectura-fitness.mjs` (el mapa de capas contra los imports de
+verdad, las once auditorías sobre el código real con su ejemplo malo, lo retirado, lo renombrado,
+`decimal` y las pruebas críticas registradas). **Renderizado y recorrido no cambian**: la fase no toca
+ni una pantalla por fuera, y ésa es la prueba de que no mueve nada. Cuatro suites viejas cambiaron de
+cuenta y se compensan entre sí: la de **Tus plantillas (F4) pierde 5**, las de la segunda definición de
+borrar una plantilla que se retiró (`planEliminarPlantilla`: el borrado de verdad es el de la papelera,
+y se comprueba en la tarjeta); la del **entrenamiento en vivo (F7) gana 3**, las de `finDelDescanso`,
+que sustituyen a las de los descansos retirados; y la de la **explicación de rangos (F20)** y la de
+**integración (F36)** ganan una cada una —la explicación del rango global sale de
+`explicacionDeRango` y la lista de librerías se deriva del mapa—.
 
 ## v3.125.0 — FIT F43/45: auditoría funcional integral de fitness
 
