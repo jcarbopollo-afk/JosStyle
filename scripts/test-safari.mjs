@@ -52,7 +52,7 @@ ok(/WebkitBackdropFilter/.test(HUB), 'HubView ya lo llevaba desde la Fase N4 (de
 ok(backdropSinPrefijo(UI) === 0, `🚨 ui.jsx no deja ningún desenfoque sin prefijo (${backdropSinPrefijo(UI)} sueltos)`);
 ok(backdropSinPrefijo(APP) === 0, `🚨 App.jsx tampoco — la barra inferior y la lupa incluidas (${backdropSinPrefijo(APP)})`);
 ok(backdropSinPrefijo(AJUSTES) === 0, `Ajustes tampoco (${backdropSinPrefijo(AJUSTES)})`);
-ok(backdropSinPrefijo(CSS) === 0, `y el CSS tampoco, banda de la cabecera incluida (${backdropSinPrefijo(CSS)})`);
+ok(backdropSinPrefijo(CSS) === 0, `y el CSS tampoco (${backdropSinPrefijo(CSS)})`);
 /* ⚠️ Y el caso rojo, que es lo que hace que el barrido sirva (EH F42). */
 ok(backdropSinPrefijo("style={{ backdropFilter: 'blur(8px)' }}") === 1,
   '⚠️ …y el barrido CAZA uno suelto: si no, daría siempre cero problemas');
@@ -75,18 +75,34 @@ ok(!/minHeight: '100vh'/.test(APP),
 ok(HALLAZGOS_SF.find((h) => h.id === 'vh_en_la_raiz'),
   'el hallazgo está declarado con su consecuencia en el iPhone');
 
-console.log('\n── 3b. La página no rebota (captura de Josué, 2026-10-04) ──');
-/* 🚨 Al tirar de la página, Safari bajaba todo lo que se desplaza —la cabecera pegada incluida— y
-   la última tarjeta se metía bajo la barra translúcida: parecía una placa detrás de las pestañas del
-   centro. Chromium no rebota, así que esto se comprueba en el CSS. */
-const reglaRebote = (CSS.replace(/\/\*[\s\S]*?\*\//g, ' ').match(/html,\s*body\s*\{[^}]*\}/) || [''])[0];
-ok(/overscroll-behavior-y:\s*none/.test(reglaRebote), '🚨 `html` y `body` cortan el rebote vertical');
-ok(!/overscroll-behavior-x|overscroll-behavior:\s/.test(reglaRebote),
-  '⚠️ …y SOLO el vertical: el horizontal es el gesto de volver atrás de Safari');
-ok(HALLAZGOS_SF.find((h) => h.id === 'rebote_de_la_pagina'), '…y el hallazgo está declarado con lo que se veía en el iPhone');
-const casillaRebote = (css) => condicionSF({ css }).casillas.find((c) => c.id === 'sin_rebote').ok;
-ok(!casillaRebote('.alto-visible { min-height: 100dvh; }'), '⚠️ la casilla se pone ROJA sin la regla');
-ok(!casillaRebote('/* html, body { overscroll-behavior-y: none; } */'), '⚠️ …y un comentario que la menciona no la cumple');
+console.log('\n── 3b. La página rebota otra vez, y la banda de arriba no pinta (vídeo de Josué, 2026-10-04) ──');
+/* 🔓 La v3.127.1 cortó el rebote creyendo que era la «placa» de una captura suya, y era la banda
+   borrosa de la cabecera de los hubs. En su iPhone los tres hubs caben enteros, así que sin rebote
+   se quedaron clavados: "ahora ya no puedo ni scrollear en las de en medio". Esto se dio la vuelta:
+   lo que se exige ahora es que la raíz NO lo corte, y que la banda no pinte nada. */
+const CSS_CODIGO = CSS.replace(/\/\*[\s\S]*?\*\//g, ' ');
+ok(!/overscroll-behavior/.test((CSS_CODIGO.match(/(^|[\s}])(html|body)[^{]*\{[^}]*\}/g) || []).join(' ')),
+  '🚨 ni `html` ni `body` cortan el rebote: los hubs que caben enteros se pueden arrastrar');
+ok(/\.hoja-movil\s*\{[^}]*overscroll-behavior:\s*contain/.test(CSS_CODIGO),
+  '⚠️ …y lo que sí se queda es el `contain` de las hojas de Fitness (F38): eso no es la página');
+const bandaCss = (CSS_CODIGO.match(/\.hub-sticky\s*\{[^}]*\}/) || [''])[0];
+ok(bandaCss && !/background|backdrop-filter/.test(bandaCss),
+  '🚨 la banda de la cabecera de los hubs no lleva fondo ni desenfoque en el CSS');
+ok(!/className="hub-sticky"\s+style=/.test(HUB) && !/navBgAlpha/.test(HUB),
+  '🚨 …ni en el hub: el color de la barra de abajo ya no está arriba');
+ok(HALLAZGOS_SF.find((h) => h.id === 'banda_borrosa_del_hub' && /0 px/.test(h.porQueDuele)),
+  '…y el hallazgo está declarado con el diagnóstico corregido: los hubs caben y el rebote era lo único que los movía');
+ok(!HALLAZGOS_SF.some((h) => h.id === 'rebote_de_la_pagina'),
+  '⚠️ …y el hallazgo equivocado se retira: el rebote no era el fallo');
+ok(MIRADO_Y_SE_QUEDA.some((x) => /rebote/i.test(x.que) && /scrollear/.test(x.porque)),
+  '⚠️ …y el rebote pasa a «se mira y se queda», con sus palabras');
+const casillaRebote = (css) => condicionSF({ css }).casillas.find((c) => c.id === 'con_rebote').ok;
+ok(casillaRebote(CSS), '🚨 la casilla `con_rebote` sale verde con el CSS de verdad');
+ok(!casillaRebote('html,\nbody {\n  overscroll-behavior-y: none;\n}'),
+  '⚠️ …y se pone ROJA si alguien vuelve a cortarlo (la regla exacta de la v3.127.1)');
+ok(!casillaRebote('body { overscroll-behavior: contain; }'), '⚠️ …también con la forma corta o con `contain` en `body`');
+ok(casillaRebote('/* html, body { overscroll-behavior-y: none; } */ .hoja-movil { overscroll-behavior: contain; }'),
+  '⚠️ …y no salta con un comentario que la nombra ni con el `contain` de una hoja');
 
 console.log('\n── 4. La marca del aviso no puede llevarse el aviso ──');
 /* 🚨 En una ventana privada de Safari, escribir en `localStorage` LANZA. Y esa escritura estaba
@@ -114,7 +130,7 @@ ok(MIRADO_Y_SE_QUEDA.length >= 2 && MIRADO_Y_SE_QUEDA.every((x) => x.que && x.po
   '⚠️ …y lo que se deja como está, también con su motivo: cambiar por si acaso hace el código peor');
 
 console.log('\n── 6. Los hallazgos, con su consecuencia real ──');
-ok(['backdrop_sin_prefijo', 'vh_en_la_raiz', 'localstorage_sin_guarda', 'rebote_de_la_pagina'].every((id) => HALLAZGOS_SF.some((h) => h.id === id)),
+ok(['backdrop_sin_prefijo', 'vh_en_la_raiz', 'localstorage_sin_guarda', 'banda_borrosa_del_hub'].every((id) => HALLAZGOS_SF.some((h) => h.id === id)),
   'los hallazgos están declarados');
 ok(HALLAZGOS_SF.every((h) => h.que && h.enElIphone && h.porQueDuele && h.arreglo && h.regla),
   '🚨 cada uno dice QUÉ SE VE EN EL iPHONE, no "podría fallar"');

@@ -1,5 +1,51 @@
 # CHANGELOG.md
 
+## v3.129.1 — La franja borrosa de arriba de los hubs, fuera, y el rebote de vuelta
+
+Josué mandó un vídeo de su iPhone: en **Bienestar, Vida y Gestión** —no en Inicio ni en Ajustes—, la
+parte de arriba se veía como **un rectángulo borroso** sobre su foto de fondo, desde la hora hasta
+debajo del título. *"Quiero que sea transparente totalmente, como un cristal."* Y la otra mitad del
+mensaje: *"a mí me gustaba que podías scrollear y bajar y que se escondieran las de abajo… lo has
+hecho mal, ahora ya no puedo ni scrollear en las de en medio"*.
+
+### 🐛 La «placa» de la v3.127.1 estaba mal diagnosticada
+
+Con su captura del mismo día di por hecho que el rectángulo era la barra de abajo y que lo provocaba el
+rebote de Safari, y la v3.127.1 cortó el rebote de toda la página (`overscroll-behavior-y: none` en
+`html` y `body`). **Era la cabecera fija de los hubs** (SC F1): llevaba el color de la barra de abajo con
+`blur(20px)`, y sobre una foto eso es un rectángulo desenfocado de lado a lado. Y medido en Chromium al
+tamaño de su iPhone (414 × 896), **los tres hubs caben enteros —0 px que desplazar—**, así que el
+rebote era lo único que dejaba moverlos: con él cortado se quedaron clavados y la banda seguía ahí.
+
+### Lo que cambia
+
+- **El rebote vuelve.** La regla de la v3.127.1 se retira. La casilla `sin_rebote` de `condicionSF` se
+  dio la vuelta (`con_rebote`): ahora se pone roja si alguien vuelve a cortarlo. El hallazgo equivocado
+  de `safari.js` se sustituye por el de verdad (`banda_borrosa_del_hub`), con el diagnóstico corregido,
+  y el rebote pasa a «se mira y se queda», con sus palabras.
+- **La cabecera de los hubs no pinta nada**: ni fondo ni desenfoque. Se ve el fondo, como en Inicio.
+- **Y sigue fija**, que es lo que pidió la SC F1 (*"HEADER → FIJOS, TARJETAS → SCROLL"*). Lo que la banda
+  tapaba —que las tarjetas que suben no se lean encima del título— lo hacen ahora las tarjetas: cada una
+  se recorta con una máscara **justo en el borde de abajo de la cabecera**, con una rampa de 12 px
+  (`useFundidoBajoCabecera` en `src/components/fundidoBajoCabecera.js`, y la regla en
+  `mascaraBajoCabecera`, en `scrollCabecera.js`). En su iPhone ninguna tarjeta llega a ese borde, así
+  que en reposo no cambia nada más que la franja; en un iPhone pequeño (375 × 667, 133 px que
+  desplazar) el corte cae exactamente en el borde. Está anotado como **C-50** en `docs/03`: las dos
+  peticiones caben a la vez.
+- ⚠️ **Una máscara y no una opacidad**: con opacidad, una tarjeta con tres cuartos todavía a la vista se
+  iría entera. Y el efecto escribe en el estilo del nodo, no en el estado de React, para no repintar el
+  hub a cada píxel; no guarda nada.
+
+### Lo que no se toca
+
+La barra de abajo (sigue siendo una sola superficie, y se vuelve a medir), la lupa y el botón de
+sugerencias, la geometría de la cabecera y las tarjetas. ⚠️ Chromium no rebota: que se vea como debe
+**en su iPhone** lo confirma él (R1).
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.129.0 — AC F2: auditoría de Apariencia
 
 La condición de Josué: *"Apariencia actualmente funciona y visualmente está correcta. No quiero un

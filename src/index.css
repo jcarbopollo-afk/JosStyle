@@ -96,26 +96,16 @@ input[type='range']::-webkit-slider-thumb {
   min-height: 100dvh;
 }
 
-/* 🚨 EL REBOTE DE LA PÁGINA EN EL iPHONE (y es lo que parecía una «placa» detrás
-   de la barra de abajo). Al arrastrar la página más allá de su principio, Safari
-   la deja bajar y luego rebota. En ese rato baja TODO lo que se desplaza —también
-   la cabecera pegada de los hubs, que deja de estar arriba y enseña la foto sin
-   desenfocar por encima— y lo fijo se queda: la foto de fondo y la barra de abajo.
-   Así que la última tarjeta se mete debajo de la barra translúcida y se ve a
-   través de ella, difuminada, como un rectángulo oscuro detrás de las pestañas del
-   centro (y el icono verde de la tarjeta, como un brillo bajo «Inicio»). La barra
-   es UNA sola superficie: lo que cambiaba era lo que tenía detrás.
-
-   `none` y no `contain`: `contain` solo evita que el arrastre pase a otro
-   contenedor, y en la raíz no hay otro — el rebote seguiría. Solo el eje
-   vertical: el horizontal es el gesto de volver atrás de Safari. Desplazar la
-   página sigue igual; lo único que desaparece es el tirón de más en los extremos.
-   ⚠️ Chromium no rebota, así que el recorrido no puede VER el fallo: comprueba
-   que la regla está aplicada (SF F1, `condicionSF`). */
-html,
-body {
-  overscroll-behavior-y: none;
-}
+/* 🔓 LA PÁGINA REBOTA, Y ES A PROPÓSITO (v3.129.1). La v3.127.1 le puso
+   `overscroll-behavior-y: none` a `html` y `body` creyendo que el rebote era la
+   «placa» de una captura de Josué, y se equivocó dos veces: la placa era la
+   banda borrosa de la cabecera de los hubs (ver `.hub-sticky`), y en su iPhone
+   (414 × 896) Bienestar, Vida y Gestión CABEN ENTERAS — su desplazamiento real
+   es 0 px—, así que el rebote era lo ÚNICO que dejaba moverlas. Sus palabras:
+   *"a mí me gustaba que podías scrollear y bajar y que se escondieran las de
+   abajo… ahora ya no puedo ni scrollear en las de en medio"*.
+   ⚠️ No se vuelve a cortar sin que él lo pida: `condicionSF` (casilla
+   `con_rebote`) lee este archivo y se pone roja si reaparece. */
 
 /* Área táctil de 44 px sin agrandar el dibujo (la regla de EH F42). Los dos
    botones de arriba miden 36 px de diámetro y quedaban por debajo del mínimo:
@@ -302,8 +292,15 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
 
    ⚠️ `z-index: 20` a propósito: por debajo de los dos accesos `fixed` (que van a 30) y por encima
    del contenido. Nunca subirlo a 30 o más — taparía la lupa y el botón de sugerencias.
-   ⚠️ Y el color va en línea desde `COLORS` (HubView.jsx), nunca aquí: `index.css` no puede tener un
-   color suelto (regla 2). */
+
+   🔓 **Y LA BANDA NO PINTA NADA: NI FONDO NI DESENFOQUE** (v3.129.1, vídeo de Josué del
+   2026-10-04). Llevaba el color de la barra de abajo y `blur(20px)`, y sobre su foto de fondo eso
+   era un rectángulo borroso de lado a lado, desde la hora hasta debajo del título, que solo tenían
+   los tres hubs — Inicio y Ajustes enseñan la foto tal cual: *"quiero que sea transparente
+   totalmente, como un cristal"*. Lo que la banda tapaba —las tarjetas que suben por debajo— lo
+   resuelve ahora `useFundidoBajoCabecera` (HubView.jsx): cada tarjeta se desvanece al llegar al
+   borde de la cabecera, así que el título nunca se pisa con una tarjeta y arriba solo se ve el
+   fondo. Se queda `sticky`, que es lo que pidió la SC F1. */
 .hub-sticky {
   position: sticky;
   top: 0;
@@ -315,8 +312,6 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
   margin-top: calc(-1 * (var(--safe-top) + 4rem));
   padding-top: calc(var(--safe-top) + 4rem);
   padding-bottom: 0.5rem;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
 }
 
 /* Transición de pantalla al entrar en un módulo desde un hub: fundido + deslizamiento horizontal

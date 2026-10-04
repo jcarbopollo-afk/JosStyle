@@ -2,6 +2,14 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.129.1 — la franja borrosa de arriba de los hubs, fuera, y el rebote de vuelta):**
+> Con un vídeo de su iPhone: la parte de arriba de Bienestar, Vida y Gestión era **un rectángulo
+> borroso** —la cabecera fija llevaba el color de la barra de abajo con desenfoque— y la quería
+> *"transparente totalmente, como un cristal"*. Ya no pinta nada y **sigue fija** (SC F1): las tarjetas
+> que suben se recortan con una máscara justo en su borde (`useFundidoBajoCabecera`, C-50). Y **el
+> rebote vuelve**: la v3.127.1 lo había cortado por un diagnóstico equivocado y, como en su iPhone los
+> tres hubs caben enteros, se habían quedado sin poder moverse.
+
 > **📅 ACTUALIZACIÓN (v3.129.0 — AC F2: auditoría de Apariencia):**
 > Apariencia estaba bien organizada y no se ha movido nada. Se corrigieron tres cosas que decía y no
 > hacía: el **alto contraste** ya tiene interruptor (Texto y movimiento), **«Restablecer apariencia» ya
@@ -13,7 +21,7 @@
 > en Apariencia. Sus palabras del buscador llevan ahora a *Tamaño de texto y densidad*. Apariencia no se
 > ha tocado. Destapó que el alto contraste no tiene interruptor en ninguna pantalla: lo mira la AC F2.
 
-> **📅 ACTUALIZACIÓN (v3.127.1 — la «placa» detrás de la barra de abajo):**
+> **📅 ACTUALIZACIÓN (v3.127.1 — la «placa» detrás de la barra de abajo):** ⚠️ **Diagnóstico equivocado, deshecho en la v3.129.1**: la placa era la banda borrosa de la cabecera de los hubs, y cortar el rebote los dejó sin poder moverse.
 > Josué vio en el área Vida un rectángulo oscuro detrás de Bienestar, Vida y Gestión. La barra estaba
 > bien —una sola superficie—: era **el rebote de Safari** al tirar de la página, que bajaba todo lo que
 > se desplaza (la cabecera también) y metía la última tarjeta debajo de la barra translúcida. Ahora la

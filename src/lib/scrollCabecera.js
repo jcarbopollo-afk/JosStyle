@@ -63,7 +63,7 @@ export const CAPAS_SUPERIORES = [
     que: 'La cabecera del área (ÁREA / Vida)',
     comoSeQuedaQuieto: 'sticky',
     z: 20,
-    nota: 'Lo nuevo de esta fase. Va por DEBAJO de los dos botones a propósito: con z-index 30 o más los taparía.',
+    nota: 'Lo nuevo de esta fase. Va por DEBAJO de los dos botones a propósito: con z-index 30 o más los taparía. Desde la v3.129.1 es transparente: lo que sube por debajo se desvanece al llegar a ella.',
   },
 ];
 
@@ -130,7 +130,57 @@ export const BANDA = {
   seSaleALosLados: '1rem',
   porque: 'La franja de arriba —la del reloj del iPhone y los dos accesos— y los 16 px de respiro de los lados no son de la cabecera, pero el contenido pasa por ahí. Sin extender la banda, las tarjetas se veían subir por ese hueco.',
   sinSalto: 'El margen negativo y el relleno miden lo mismo, así que en reposo la cabecera está exactamente donde estaba y al desplazar no se mueve. Nada de un brinco al pegarse.',
+  /* 🔓 v3.129.1 — vídeo de Josué del 2026-10-04. */
+  pinta: 'Nada. Hasta la v3.129.0 llevaba el color de la barra de abajo y `blur(20px)`, y sobre su foto de fondo eso era un rectángulo borroso de lado a lado que solo tenían los tres hubs. Ahora es transparente: se ve el fondo, como en Inicio y en Ajustes.',
 };
+
+/* ---------------------------------------------------------------------------
+   3b · 🔓 LA BANDA YA NO TAPA: LAS TARJETAS SE DESVANECEN AL LLEGAR A ELLA.
+
+   Josué, con un vídeo de su iPhone (2026-10-04): *"arriba, cuando bajas para
+   abajo, se ve como que una parte borrosa que es un rectángulo en vez de estar
+   transparente… quiero que sea transparente totalmente, como un cristal"*. Y la
+   SC F1 sigue pidiendo lo suyo: *"HEADER → FIJOS, CONTENIDO / TARJETAS →
+   SCROLL"*. Las dos caben si la banda deja de pintar y **lo que la banda
+   tapaba se resuelve en las tarjetas**: cada una se recorta con una máscara
+   justo en el borde de abajo de la cabecera. Arriba solo queda el fondo, y el
+   título nunca se lee encima de una tarjeta.
+
+   ⚠️ **Una máscara y no una opacidad**: con opacidad, una tarjeta con tres
+   cuartos todavía a la vista se habría ido entera. La máscara solo quita lo que
+   ya está detrás del título.
+   ⚠️ **Y la rampa va POR ENCIMA del borde**, en el relleno de abajo de la
+   cabecera: así, en el instante en que una tarjeta toca el borde no le aparece
+   de golpe un degradado — la máscara empieza fuera de la tarjeta y entra con
+   ella, sin un salto.
+   --------------------------------------------------------------------------- */
+
+/** Los píxeles de rampa por encima del borde de la cabecera. Es su relleno de abajo (8 px) y poco
+ *  más: lo justo para que el corte no sea una línea, sin meterse en las letras del título. */
+export const FUNDIDO_BAJO_CABECERA_PX = 12;
+
+/**
+ * La máscara de una tarjeta que está pasando por debajo de la cabecera, o `null` si no lo está.
+ *
+ * `corte` son los píxeles de la tarjeta que ya han subido por encima del borde de abajo de la
+ * cabecera (`bordeCabecera - arribaTarjeta`). Con 0 o menos no toca la cabecera y no lleva nada:
+ * en reposo ninguna tarjeta lleva máscara. Lo de por encima del borde es transparente, la rampa
+ * acaba justo en el borde y lo de debajo se ve entero.
+ *
+ * ⚠️ Solo `transparent` y `black`: en una máscara el color no se pinta, solo cuenta su opacidad, y
+ * así no hay ni un color suelto fuera de `tokens.js` (regla 2).
+ */
+export function mascaraBajoCabecera(corte, fundido = FUNDIDO_BAJO_CABECERA_PX) {
+  const c = Number(corte);
+  if (!Number.isFinite(c) || c <= 0) return null;
+  const f = Number.isFinite(Number(fundido)) && Number(fundido) > 0 ? Number(fundido) : FUNDIDO_BAJO_CABECERA_PX;
+  const fin = Math.round(c);
+  /* Sin recortar a 0: con la tarjeta recién llegada al borde, la rampa empieza por ENCIMA de ella
+     (una parada negativa es CSS válido) y la tarjeta entra en ella poco a poco. Recortada, el borde
+     de arriba de la tarjeta se volvería transparente de golpe. */
+  const inicio = fin - Math.round(f);
+  return `linear-gradient(to bottom, transparent ${inicio}px, black ${fin}px)`;
+}
 
 /* ---------------------------------------------------------------------------
    4 · LAS FILAS, MÁS COMPACTAS — Y CUÁNTO.
@@ -190,7 +240,7 @@ export const ACORDEONES = [
 export const NO_SE_TOCA = [
   { que: 'La barra inferior', porque: 'No entra en el encargo y sigue siendo la de siempre, con sus cinco pestañas (regla 10).' },
   { que: 'La función de la lupa', porque: 'Él lo dijo con todas las letras: "No quiero cambiar su función ni su diseño. Solamente corregir su comportamiento respecto al scroll".' },
-  { que: 'Los colores, la tipografía y los iconos', porque: 'Su primer límite. El único color nuevo es el de la banda, y sale del MISMO token que la barra inferior, no de un color inventado.' },
+  { que: 'Los colores, la tipografía y los iconos', porque: 'Su primer límite. La banda llegó a llevar el color de la barra inferior; desde la v3.129.1 no lleva ninguno (vídeo de Josué: "quiero que sea transparente totalmente, como un cristal").' },
   { que: 'El comportamiento en el ordenador', porque: 'Su apartado 6, en mayúsculas. Las tres correcciones son de las que arreglan el móvil sin cambiar nada donde ya iba bien: el `sticky` se comporta igual en los dos, y el `min-height: 0` es lo que Chromium ya hacía por su cuenta.' },
 ];
 
@@ -213,9 +263,24 @@ export function condicionSC({ css = '', hub = '', dashboard = '' } = {}) {
     },
     {
       id: 'banda_completa',
-      texto: 'La banda tapa el hueco de arriba y el de los lados, así que nada se cuela por detrás',
+      texto: 'La banda llega hasta arriba y hasta los lados, así que la cabecera no salta al pegarse',
       ok: /\.hub-sticky\s*\{[^}]*margin-top:\s*calc\(-1 \* \(var\(--safe-top\) \+ 4rem\)\)/.test(css)
         && /\.hub-sticky\s*\{[^}]*margin-left:\s*-1rem/.test(css),
+    },
+    {
+      /* 🔓 v3.129.1 — su vídeo del 2026-10-04. Se lee en los DOS sitios donde podría volver: el
+         estilo en línea del hub y la regla del CSS, sin comentarios (la lección de siempre). */
+      id: 'banda_transparente',
+      texto: 'La banda de la cabecera no pinta nada: ni fondo ni desenfoque, se ve el fondo como en Inicio',
+      ok: /<div[^>]*className="hub-sticky"[^>]*>/.test(hub)
+        && !/style=/.test((hub.match(/<div[^>]*className="hub-sticky"[^>]*>/) || [''])[0])
+        && !/\.hub-sticky\s*\{[^}]*(background|backdrop-filter)/.test(String(css).replace(/\/\*[\s\S]*?\*\//g, ' ')),
+    },
+    {
+      id: 'fundido_bajo_cabecera',
+      texto: 'Lo que sube por debajo de la cabecera se desvanece al llegar a ella: el título nunca se pisa con una tarjeta',
+      ok: /useFundidoBajoCabecera\(\s*cabeceraRef\s*,\s*listaRef\s*[,)]/.test(hub)
+        && /ref=\{cabeceraRef\}/.test(hub) && /ref=\{listaRef\}/.test(hub),
     },
     {
       id: 'por_debajo_de_los_botones',

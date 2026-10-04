@@ -975,6 +975,29 @@ documento; inventar una F46 —o seguir «mejorando» Fitness por cuenta propia�
 prohíbe. Se entrega la F45 con la verificación en verde, se le cuenta qué se hizo y hasta dónde, y lo
 siguiente lo abre él.
 
+### C-50 — ✅ RESUELTA AL CONSTRUIR (v3.129.1) · Cabecera «transparente como un cristal» contra la cabecera fija de la SC F1
+
+**Josué, con un vídeo de su iPhone (2026-10-04):** *"arriba, cuando bajas para abajo, se ve como que
+una parte borrosa que es un rectángulo en vez de estar transparente… quiero que sea transparente
+totalmente, como un cristal"* — solo en Bienestar, Vida y Gestión, *"sin contar inicio y ajustes"*. Y
+**la SC F1 (v3.80.0), también suya:** *"HEADER / CONTROLES SUPERIORES → FIJOS. CONTENIDO / TARJETAS →
+SCROLL"*. La banda borrosa era justamente lo que hacía que la cabecera fija no se pisara con las
+tarjetas que suben por debajo: quitarle el fondo a secas deja el título escrito encima de una tarjeta
+en cuanto hay que desplazar (en un iPhone de 375 × 667, 133 px).
+
+**Lectura que respeta las dos:** la cabecera **sigue fija** y **no pinta nada** —ni fondo ni
+desenfoque: se ve su fondo de pantalla, como en Inicio—, y lo que la banda tapaba lo hacen las
+tarjetas: cada una se recorta con una máscara **justo en el borde de abajo de la cabecera**, con una
+rampa de 12 px (`useFundidoBajoCabecera`, `mascaraBajoCabecera`). En su iPhone (414 × 896) los tres
+hubs caben enteros, así que en reposo ninguna tarjeta lleva máscara y no cambia nada más que la franja.
+
+⚠️ **Y la otra mitad de su mensaje no es una contradicción, es un error mío que se deshace:** la
+v3.127.1 cortó el rebote de la página (`overscroll-behavior-y: none`) creyendo que era la «placa» de
+una captura suya. Era la banda. Con los hubs cabiendo enteros, el rebote era lo único que dejaba
+moverlos: *"a mí me gustaba que podías scrollear y bajar y que se escondieran las de abajo… ahora ya
+no puedo ni scrollear en las de en medio"*. Vuelve, y `condicionSF` (casilla `con_rebote`) se pone
+roja si alguien lo corta otra vez.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

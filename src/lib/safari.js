@@ -71,13 +71,14 @@ export const HALLAZGOS_SF = [
     regla: 'Comprobación de que toda escritura en `localStorage` de `src/lib/` va dentro de un `try`.',
   },
   {
-    /* Llegó después de la SF F1, con una captura de Josué del área Vida (2026-10-04). */
-    id: 'rebote_de_la_pagina',
-    que: 'La página rebota al arrastrarla más allá de su principio o de su final',
-    enElIphone: 'Al tirar de la página hacia abajo, Safari baja todo lo que se desplaza —también la cabecera pegada del hub, que se despega del techo y deja ver la foto sin desenfocar encima— mientras la barra de abajo y el fondo se quedan quietos. La última tarjeta se mete debajo de la barra translúcida y se ve a través de ella como un rectángulo oscuro detrás de Bienestar, Vida y Gestión, con el icono verde de la tarjeta haciendo de brillo bajo Inicio.',
-    porQueDuele: 'Parece un fallo de la barra —una placa detrás de las pestañas del centro— y la barra está bien: es un solo elemento con un solo fondo. Medido en la captura, toda la página estaba desplazada lo mismo, 130 px, cabecera incluida. En Chromium no se puede ver porque Chromium no rebota.',
-    arreglo: '`overscroll-behavior-y: none` en `html` y `body`, en `index.css`. Solo el eje vertical: el horizontal es el gesto de volver de Safari. El desplazamiento normal no cambia; lo que se va es el tirón de más en los extremos.',
-    regla: 'Casilla `sin_rebote` de `condicionSF`, que lee el CSS, y comprobación en Chromium de que la regla está aplicada de verdad a la raíz.',
+    /* Llegó después de la SF F1, con una captura de Josué del área Vida (2026-10-04), y con un
+       vídeo el mismo día que demostró que la primera lectura estaba MAL (v3.127.1 → v3.129.1). */
+    id: 'banda_borrosa_del_hub',
+    que: 'La cabecera pegada de los hubs llevaba fondo y `backdrop-filter: blur(20px)`',
+    enElIphone: 'Sobre su foto de fondo, la franja de arriba de Bienestar, Vida y Gestión —desde la hora hasta debajo del título— se veía como un rectángulo borroso con borde, y al tirar de la página el rebote de Safari lo despegaba del techo y lo enseñaba aún más. Inicio y Ajustes no tienen esa banda: allí se ve la foto tal cual.',
+    porQueDuele: 'Se diagnosticó mal primero. Con la captura se dio por hecho que el rectángulo era la barra de abajo y que lo provocaba el rebote, y la v3.127.1 cortó el rebote de toda la página (`overscroll-behavior-y: none`). En su iPhone (414 × 896) los tres hubs CABEN —su desplazamiento real es 0 px—, así que el rebote era lo único que dejaba moverlos: se quedaron clavados y la banda seguía ahí. Su vídeo: "quiero que sea transparente totalmente, como un cristal… quiero que se pueda scrollear".',
+    arreglo: 'La banda deja de pintar (ni fondo ni desenfoque) y sigue siendo `sticky` (SC F1). Lo que tapaba lo hacen las tarjetas: `useFundidoBajoCabecera` las recorta con una máscara justo en el borde de abajo de la cabecera. Y el rebote vuelve: la regla de la v3.127.1 se retira.',
+    regla: 'Casilla `con_rebote` de `condicionSF` (lee el CSS sin comentarios) y casilla `banda_transparente` de `condicionSC`; en Chromium, la sección «SF2» del recorrido mide la banda, la raíz y la máscara de las tarjetas.',
   },
 ];
 
@@ -114,6 +115,11 @@ export const MIRADO_Y_CORRECTO = [
    por si acaso es como se acaba con código que nadie entiende.
    --------------------------------------------------------------------------- */
 export const MIRADO_Y_SE_QUEDA = [
+  {
+    /* 🔓 v3.129.1 — la v3.127.1 lo cortó por un diagnóstico equivocado, y él lo pidió de vuelta. */
+    que: 'El rebote de la página al tirar de ella más allá del principio o del final',
+    porque: 'Josué lo quiere: "a mí me gustaba que podías scrollear y bajar y que se escondieran las de abajo… ahora ya no puedo ni scrollear en las de en medio". En su iPhone los tres hubs caben enteros, así que sin rebote no se pueden mover nada. Lo que se veía mal era la banda borrosa de la cabecera, no el rebote.',
+  },
   {
     que: '`Array.prototype.at(-1)`, en cuatro librerías',
     porque: 'Safari lo tiene desde la 15.4 (marzo de 2022). Un iPhone que abra una PWA hoy lo tiene; sustituirlo por `[x.length - 1]` haría el código peor a cambio de nada. Queda escrito para que nadie lo "arregle" sin motivo.',
@@ -185,9 +191,11 @@ export function condicionSF({ css = '', app = '', ui = '', ajustes = '', notific
         && /className="alto-visible"/.test(app) && !/minHeight: '100vh'/.test(app),
     },
     {
-      id: 'sin_rebote',
-      texto: 'La página no rebota al tirar de ella: la cabecera no se despega y ninguna tarjeta se mete bajo la barra',
-      ok: /html,\s*body\s*\{[^}]*overscroll-behavior-y:\s*none/.test(sinComentariosCss(css)),
+      /* 🔓 Se dio la vuelta en la v3.129.1: la casilla `sin_rebote` exigía justo lo que Josué no
+         quería. Ahora se pone roja si alguien vuelve a cortar el rebote de la página. */
+      id: 'con_rebote',
+      texto: 'La página rebota al tirar de ella, como cualquier pantalla del iPhone: también los hubs que caben enteros se pueden arrastrar',
+      ok: !/(^|[\s,}])(html|body)\b[^{]*\{[^}]*overscroll-behavior(-y)?:\s*(none|contain)/.test(sinComentariosCss(css)),
     },
     {
       id: 'marca_de_aviso_protegida',

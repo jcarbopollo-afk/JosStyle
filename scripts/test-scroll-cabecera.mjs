@@ -15,6 +15,7 @@ import {
   DONDE_HAY_SCROLL, CAPAS_SUPERIORES, Z_CABECERA, Z_ACCESOS_FIJOS, BANDA,
   COMPACTADO, LINEAS_QUE_SE_CONSERVAN, ACORDEON, ACORDEONES, NO_SE_TOCA,
   condicionSC, FUERA_DEL_ALCANCE_SC, FIXED_QUE_NO_LO_ERA,
+  FUNDIDO_BAJO_CABECERA_PX, mascaraBajoCabecera,
 } from '../src/lib/scrollCabecera.js';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -33,6 +34,7 @@ const CSS = leer('src/index.css');
 const HUB = leer('src/views/HubView.jsx');
 const DASH = leer('src/views/DashboardView.jsx');
 const APP = leer('src/App.jsx');
+const FUNDIDO = leer('src/components/fundidoBajoCabecera.js');
 
 /* 🐛 **DECIMOCTAVA VEZ DE LA LECCIÓN DE SIEMPRE, y esta prueba la cazó en su primera pasada.** Una
    comprobación que busca si el código HACE algo tiene que quitar los comentarios antes: el barrido
@@ -93,14 +95,50 @@ ok(/margin-left:\s*-1rem/.test(CSS) && /margin-right:\s*-1rem/.test(CSS),
   '…y se ensancha a los lados, que es por donde también se colaban las tarjetas');
 /* 🚨 La Safe Area del iPhone vive en `index.css` y se usa con sus variables, nunca con un número a
    ojo (E3 F1). Aquí importa el doble: un número fijo dejaría la cabecera debajo de la hora. */
-ok(/var\(--safe-top\)/.test(CSS.split('.hub-sticky')[1] || ''),
+ok(/var\(--safe-top\)/.test((sinComentarios(CSS).match(/\.hub-sticky\s*\{[^}]*\}/) || [''])[0]),
   '🚨 usa `--safe-top`, nunca un número a ojo (la lección de la E3 F1)');
 ok(BANDA.clase === 'hub-sticky' && /className="hub-sticky"/.test(HUB), 'y la clase está puesta en el hub');
-/* ⚠️ Regla 2: ni un color suelto fuera de tokens.js. El de la banda sale de COLORS, en línea. */
-ok(/background: COLORS\.navBgAlpha \|\| COLORS\.bg/.test(HUB),
-  '⚠️ el color sale de COLORS —el MISMO token que la barra de abajo—, no de un hex nuevo');
-ok(!/#[0-9a-fA-F]{6}/.test((CSS.split('.hub-sticky')[1] || '').split('}')[0]),
-  '…y no hay ni un hex dentro de la regla de la banda (regla 2)');
+/* 🔓 v3.129.1 — ESTA COMPROBACIÓN SE DIO LA VUELTA. Exigía que la banda llevara el color de la
+   barra de abajo, y con su `blur(20px)` eso era el rectángulo borroso que Josué enseñó en un vídeo:
+   "quiero que sea transparente totalmente, como un cristal". Ahora se exige que no pinte nada. */
+const bandaCodigo = (sinComentarios(CSS).match(/\.hub-sticky\s*\{[^}]*\}/) || [''])[0];
+const etiquetaBanda = (HUB.match(/<div[^>]*className="hub-sticky"[^>]*>/) || [''])[0];
+ok(bandaCodigo && !/background|backdrop-filter/.test(bandaCodigo),
+  '🚨 v3.129.1 — la regla de la banda no lleva ni fondo ni desenfoque');
+ok(etiquetaBanda && !/style=/.test(etiquetaBanda) && !/navBgAlpha/.test(HUB),
+  '🚨 …y en el hub tampoco: ni un estilo en línea en la banda, ni el color de la barra de abajo');
+ok(/ref=\{cabeceraRef\}/.test(etiquetaBanda), '…y la banda lleva su `ref`, que es lo que mide el fundido');
+ok('pinta' in BANDA && /transparente/.test(BANDA.pinta),
+  '⚠️ y la decisión queda escrita en `BANDA`, con lo que había antes y por qué se quitó');
+
+console.log('\n── 3b. Lo que la banda tapaba lo hacen las tarjetas: se desvanecen al llegar a ella ──');
+/* En reposo ninguna tarjeta lleva máscara: con su contenido entero en pantalla —su iPhone— el hook
+   no cambia nada. Solo actúa cuando una tarjeta ha subido por encima del borde de la cabecera. */
+ok(mascaraBajoCabecera(-12) === null, 'en reposo (la tarjeta 12 px por debajo del borde) no hay máscara');
+ok(mascaraBajoCabecera(0) === null, '…ni tocando el borde: hasta que no sube, nada');
+ok(mascaraBajoCabecera(null) === null && mascaraBajoCabecera(NaN) === null && mascaraBajoCabecera(undefined) === null,
+  '⚠️ …ni con una medida que no es un número (nunca un `NaN` en un estilo)');
+const m40 = mascaraBajoCabecera(40);
+ok(m40 === `linear-gradient(to bottom, transparent ${40 - FUNDIDO_BAJO_CABECERA_PX}px, black 40px)`,
+  `🚨 con 40 px por encima del borde, lo de arriba es transparente y la rampa ACABA en el borde (${m40})`);
+/* 🚨 Sin salto: recién llegada al borde, la rampa empieza por ENCIMA de la tarjeta (una parada
+   negativa), así que su borde de arriba no se vuelve transparente de golpe. */
+ok(/transparent -\d+px, black 1px/.test(mascaraBajoCabecera(1) || ''),
+  '🚨 …y con 1 px la rampa empieza fuera de la tarjeta: entra en ella poco a poco, sin un salto');
+ok(FUNDIDO_BAJO_CABECERA_PX > 0 && FUNDIDO_BAJO_CABECERA_PX <= 16,
+  `⚠️ la rampa es corta (${FUNDIDO_BAJO_CABECERA_PX} px): cabe en el relleno de abajo de la cabecera, sin meterse en el título`);
+ok(!/#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(m40), '⚠️ sin un color suelto: en una máscara solo cuenta la opacidad (regla 2)');
+/* El hook: escribe en el nodo, no en el estado de React, y se apoya en la función de arriba. */
+ok(/import \{ mascaraBajoCabecera \} from '\.\.\/lib\/scrollCabecera'/.test(FUNDIDO),
+  'el hook usa ESTA función: la regla vive una vez, donde se prueba');
+ok(/webkitMaskImage/.test(FUNDIDO) && /\.maskImage/.test(FUNDIDO),
+  '⚠️ …y pone las dos, la de Safari con prefijo incluida');
+ok(/passive: true/.test(FUNDIDO) && /requestAnimationFrame/.test(FUNDIDO),
+  '⚠️ …escuchando el desplazamiento sin frenarlo y como mucho una vez por fotograma');
+ok(!/useState|setState/.test(sinComentarios(FUNDIDO)) && !/saveData|localStorage/.test(sinComentarios(FUNDIDO)),
+  '🚨 …sin pasar por el estado de React (no repinta el hub a cada píxel) y sin guardar nada');
+ok(/useFundidoBajoCabecera\(cabeceraRef, listaRef,/.test(HUB) && /ref=\{listaRef\} className="space-y-3 pb-4"/.test(HUB),
+  '…y el hub lo usa con su cabecera y la lista de sus tarjetas');
 
 console.log('\n── 4. Las filas, algo más finas y sin perder información ──');
 ok(COMPACTADO.length === 5, 'se declara qué encogió y cuánto');
@@ -141,13 +179,22 @@ ok(/nav-segura fixed bottom-0/.test(APP), 'la barra inferior sigue exactamente i
 console.log('\n── 7. La condición de la fase, CALCULADA ──');
 const informe = condicionSC({ css: CSS, hub: HUB, dashboard: DASH });
 informe.casillas.forEach((c) => ok(c.ok, `${c.texto}`));
-ok(informe.ok, '🚨 LAS SEIS CASILLAS SALEN VERDES');
+ok(informe.ok, `🚨 LAS ${informe.casillas.length} CASILLAS SALEN VERDES`);
+ok(['banda_transparente', 'fundido_bajo_cabecera'].every((id) => informe.casillas.some((c) => c.id === id)),
+  '⚠️ …incluidas las dos de la v3.129.1: la banda transparente y el fundido de las tarjetas');
 /* ⚠️ Y el caso rojo, que es lo que hace que la auditoría sirva (EH F42): con los archivos vacíos
    tiene que ponerse roja entera. Una auditoría que no puede fallar no sirve. */
 ok(!condicionSC({ css: '', hub: '', dashboard: '' }).ok,
   '⚠️ …y se pone ROJA si alguien deshace los arreglos');
 ok(!condicionSC({ css: CSS, hub: HUB, dashboard: DASH.replace(/, minHeight: 0/g, '') }).ok,
   '🚨 …y basta con quitar UN `minHeight: 0` para que salte');
+const casillaSC = (arch, id) => condicionSC({ css: CSS, hub: HUB, dashboard: DASH, ...arch }).casillas.find((c) => c.id === id).ok;
+ok(!casillaSC({ hub: HUB.replace('className="hub-sticky">', 'className="hub-sticky" style={{ background: COLORS.navBgAlpha || COLORS.bg }}>') }, 'banda_transparente'),
+  '🚨 …y la de la banda se pone roja si vuelve el color de la v3.129.0');
+ok(!casillaSC({ css: CSS.replace(/(\.hub-sticky\s*\{[^}]*)\}/, '$1  backdrop-filter: blur(20px);\n}') }, 'banda_transparente'),
+  '🚨 …y si vuelve el desenfoque al CSS');
+ok(!casillaSC({ hub: HUB.replace(/^\s*useFundidoBajoCabecera\(.*$/m, '') }, 'fundido_bajo_cabecera'),
+  '⚠️ …y la del fundido, si el hub deja de llamarlo');
 
 console.log('\n── 8. Lo que esta fase NO puede comprobar, dicho ──');
 ok(FUERA_DEL_ALCANCE_SC.length >= 2, 'se declara lo que queda fuera de alcance');

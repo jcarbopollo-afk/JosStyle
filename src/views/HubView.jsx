@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { Card } from '../components/ui';
+import { useFundidoBajoCabecera } from '../components/fundidoBajoCabecera';
 
 // Fase N1 — Nueva navegación por áreas (sustituye la barra inferior de 4 accesos + "Más" plano
 // por 5 pestañas fijas: Inicio, Salud, Vida, Gestión, Más). Al tocar cualquiera que no sea
@@ -26,6 +27,8 @@ const EXPAND_MS = 190;
 export default function HubView({ area, modulos, personalizacion, resumenes, accent, onOpenModulo }) {
   const [expandingId, setExpandingId] = useState(null);
   const timeoutRef = useRef(null);
+  const cabeceraRef = useRef(null);
+  const listaRef = useRef(null);
 
   // Si el hub se desmonta a medio pulsar (ej. Josué toca otra pestaña de la barra inferior
   // mientras la tarjeta todavía está expandiéndose), se cancela la navegación pendiente — si no,
@@ -54,8 +57,13 @@ export default function HubView({ area, modulos, personalizacion, resumenes, acc
   const visibles = ordenados.filter((id) => !(personalizacion.ocultos || []).includes(id));
   const idsFinales = [...visibles, ...fijos];
 
+  // 🔓 v3.129.1 — la cabecera ya no pinta nada (vídeo de Josué: "quiero que sea transparente
+  // totalmente, como un cristal"), así que lo que ella tapaba lo resuelven las tarjetas: cada una
+  // se desvanece al llegar a su borde. Ver `fundidoBajoCabecera.js`.
+  useFundidoBajoCabecera(cabeceraRef, listaRef, `${area.id}:${idsFinales.join(',')}`);
+
   return (
-    <div className="space-y-3 pb-4">
+    <div ref={listaRef} className="space-y-3 pb-4">
       {/* Fase N2 — key={area.id} fuerza que el fundido del encabezado se repita cada vez que se
           entra a un área distinta, no solo la primera vez (mismo motivo que key={tab} en App.jsx).
           Fase N4 — "Área" pasa a mayúsculas con tracking amplio (estilo "eyebrow" de apps premium),
@@ -65,10 +73,12 @@ export default function HubView({ area, modulos, personalizacion, resumenes, acc
           tarjetas se desplazan. Va FUERA de `.hub-header` a propósito: ese de dentro lleva una
           animación que mueve el elemento (`transform`), y montar las dos cosas en el mismo nodo es
           pedir que la posición pegada pelee con la animación de entrada. Uno se queda quieto, el
-          otro se funde. ⚠️ El color va aquí y no en el CSS porque `COLORS` es el único sitio del que
-          puede salir un color (regla 2), y se usa el MISMO token que la barra de abajo: así la
-          franja de arriba y la de abajo se ven como la misma pieza y no como un parche. */}
-      <div className="hub-sticky" style={{ background: COLORS.navBgAlpha || COLORS.bg }}>
+          otro se funde.
+          🔓 v3.129.1 — Y NO LLEVA NI FONDO NI DESENFOQUE. Llevaba el color de la barra de abajo
+          con `blur(20px)`, y sobre la foto de fondo de Josué eso era un rectángulo borroso desde
+          la hora hasta debajo del título que solo tenían los tres hubs. Lo que tapaba —las
+          tarjetas que suben— lo hace ahora `useFundidoBajoCabecera`. */}
+      <div ref={cabeceraRef} className="hub-sticky">
         <div key={area.id} className="hub-header">
           <p className="text-xs font-semibold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.08em' }}>Área</p>
           <h1 className="text-2xl font-extrabold mt-1 tracking-tight" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
