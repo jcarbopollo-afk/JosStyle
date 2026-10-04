@@ -75,6 +75,19 @@ ok(!/minHeight: '100vh'/.test(APP),
 ok(HALLAZGOS_SF.find((h) => h.id === 'vh_en_la_raiz'),
   'el hallazgo está declarado con su consecuencia en el iPhone');
 
+console.log('\n── 3b. La página no rebota (captura de Josué, 2026-10-04) ──');
+/* 🚨 Al tirar de la página, Safari bajaba todo lo que se desplaza —la cabecera pegada incluida— y
+   la última tarjeta se metía bajo la barra translúcida: parecía una placa detrás de las pestañas del
+   centro. Chromium no rebota, así que esto se comprueba en el CSS. */
+const reglaRebote = (CSS.replace(/\/\*[\s\S]*?\*\//g, ' ').match(/html,\s*body\s*\{[^}]*\}/) || [''])[0];
+ok(/overscroll-behavior-y:\s*none/.test(reglaRebote), '🚨 `html` y `body` cortan el rebote vertical');
+ok(!/overscroll-behavior-x|overscroll-behavior:\s/.test(reglaRebote),
+  '⚠️ …y SOLO el vertical: el horizontal es el gesto de volver atrás de Safari');
+ok(HALLAZGOS_SF.find((h) => h.id === 'rebote_de_la_pagina'), '…y el hallazgo está declarado con lo que se veía en el iPhone');
+const casillaRebote = (css) => condicionSF({ css }).casillas.find((c) => c.id === 'sin_rebote').ok;
+ok(!casillaRebote('.alto-visible { min-height: 100dvh; }'), '⚠️ la casilla se pone ROJA sin la regla');
+ok(!casillaRebote('/* html, body { overscroll-behavior-y: none; } */'), '⚠️ …y un comentario que la menciona no la cumple');
+
 console.log('\n── 4. La marca del aviso no puede llevarse el aviso ──');
 /* 🚨 En una ventana privada de Safari, escribir en `localStorage` LANZA. Y esa escritura estaba
    ANTES de mandar el aviso: no es que se perdiera la marca, es que no llegaba el aviso. */
@@ -101,7 +114,8 @@ ok(MIRADO_Y_SE_QUEDA.length >= 2 && MIRADO_Y_SE_QUEDA.every((x) => x.que && x.po
   '⚠️ …y lo que se deja como está, también con su motivo: cambiar por si acaso hace el código peor');
 
 console.log('\n── 6. Los hallazgos, con su consecuencia real ──');
-ok(HALLAZGOS_SF.length === 3, 'los tres hallazgos están declarados');
+ok(['backdrop_sin_prefijo', 'vh_en_la_raiz', 'localstorage_sin_guarda', 'rebote_de_la_pagina'].every((id) => HALLAZGOS_SF.some((h) => h.id === id)),
+  'los hallazgos están declarados');
 ok(HALLAZGOS_SF.every((h) => h.que && h.enElIphone && h.porQueDuele && h.arreglo && h.regla),
   '🚨 cada uno dice QUÉ SE VE EN EL iPHONE, no "podría fallar"');
 ok(HALLAZGOS_SF.every((h) => h.enElIphone.length > 60),
@@ -110,7 +124,7 @@ ok(HALLAZGOS_SF.every((h) => h.enElIphone.length > 60),
 console.log('\n── 7. La condición de la fase, CALCULADA ──');
 const informe = condicionSF({ css: CSS, app: APP, ui: UI, ajustes: AJUSTES, notificaciones: NOTIF });
 informe.casillas.forEach((c) => ok(c.ok, c.texto));
-ok(informe.ok, '🚨 LAS CUATRO CASILLAS SALEN VERDES');
+ok(informe.ok, '🚨 TODAS LAS CASILLAS SALEN VERDES');
 ok(!condicionSF({}).ok, '⚠️ …y se pone ROJA si alguien deshace los arreglos');
 
 console.log('\n── 8. Lo que esta fase NO puede demostrar, dicho ──');

@@ -70,6 +70,15 @@ export const HALLAZGOS_SF = [
     arreglo: 'Envolver la marca en `try`, y que un fallo al guardarla no impida el aviso: perder la marca repite un aviso como mucho; perder el aviso lo pierde del todo.',
     regla: 'Comprobación de que toda escritura en `localStorage` de `src/lib/` va dentro de un `try`.',
   },
+  {
+    /* Llegó después de la SF F1, con una captura de Josué del área Vida (2026-10-04). */
+    id: 'rebote_de_la_pagina',
+    que: 'La página rebota al arrastrarla más allá de su principio o de su final',
+    enElIphone: 'Al tirar de la página hacia abajo, Safari baja todo lo que se desplaza —también la cabecera pegada del hub, que se despega del techo y deja ver la foto sin desenfocar encima— mientras la barra de abajo y el fondo se quedan quietos. La última tarjeta se mete debajo de la barra translúcida y se ve a través de ella como un rectángulo oscuro detrás de Bienestar, Vida y Gestión, con el icono verde de la tarjeta haciendo de brillo bajo Inicio.',
+    porQueDuele: 'Parece un fallo de la barra —una placa detrás de las pestañas del centro— y la barra está bien: es un solo elemento con un solo fondo. Medido en la captura, toda la página estaba desplazada lo mismo, 130 px, cabecera incluida. En Chromium no se puede ver porque Chromium no rebota.',
+    arreglo: '`overscroll-behavior-y: none` en `html` y `body`, en `index.css`. Solo el eje vertical: el horizontal es el gesto de volver de Safari. El desplazamiento normal no cambia; lo que se va es el tirón de más en los extremos.',
+    regla: 'Casilla `sin_rebote` de `condicionSF`, que lee el CSS, y comprobación en Chromium de que la regla está aplicada de verdad a la raíz.',
+  },
 ];
 
 /* ---------------------------------------------------------------------------
@@ -158,6 +167,9 @@ export function escriturasSinTry(src = '') {
   return fuera;
 }
 
+/* Local, no exportada: un comentario que hable de la regla no la cumple (la lección de siempre). */
+const sinComentariosCss = (css) => String(css).replace(/\/\*[\s\S]*?\*\//g, ' ');
+
 export function condicionSF({ css = '', app = '', ui = '', ajustes = '', notificaciones = '' } = {}) {
   const casillas = [
     {
@@ -171,6 +183,11 @@ export function condicionSF({ css = '', app = '', ui = '', ajustes = '', notific
       texto: 'La raíz mide la altura VISIBLE del iPhone, no la que incluye las barras de Safari',
       ok: /\.alto-visible\s*\{[^}]*min-height:\s*100vh;[^}]*min-height:\s*100dvh/.test(css)
         && /className="alto-visible"/.test(app) && !/minHeight: '100vh'/.test(app),
+    },
+    {
+      id: 'sin_rebote',
+      texto: 'La página no rebota al tirar de ella: la cabecera no se despega y ninguna tarjeta se mete bajo la barra',
+      ok: /html,\s*body\s*\{[^}]*overscroll-behavior-y:\s*none/.test(sinComentariosCss(css)),
     },
     {
       id: 'marca_de_aviso_protegida',

@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.127.1 — la «placa» detrás de la barra de abajo):**
+> Josué vio en el área Vida un rectángulo oscuro detrás de Bienestar, Vida y Gestión. La barra estaba
+> bien —una sola superficie—: era **el rebote de Safari** al tirar de la página, que bajaba todo lo que
+> se desplaza (la cabecera también) y metía la última tarjeta debajo de la barra translúcida. Ahora la
+> página no rebota en vertical (`overscroll-behavior-y: none`); desplazar sigue igual. Apuntado en
+> `src/lib/safari.js`. Que se vea bien en el iPhone lo confirma él.
+
 > **📅 ACTUALIZACIÓN (v3.127.0 — FIT F45/45: pulido final, QA extremo y release · 🏁 ENTREGA 4 CERRADA):**
 > 🏁 **Fitness está terminado: 45 de 45.** La última fase no añade nada: comprueba. Las 36 casillas de
 > la lista del release (`releaseFitness.js`) llevan **la prueba que demuestra cada una**, y el informe

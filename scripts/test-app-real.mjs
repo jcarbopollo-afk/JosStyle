@@ -11830,4 +11830,56 @@ const escritorio_sc = await medirAcordeon();
 ok(escritorio_sc && escritorio_sc.panel <= 2,
   `🚨 SC F1 — en escritorio la tarjeta cerrada también mide cero: no se ha roto lo que ya funcionaba (${escritorio_sc?.panel} px)`);
 
+
+/* ── SF · El rebote de la página y la barra de abajo (captura de Josué, 2026-10-04) ──
+   En su iPhone, al tirar de la página hacia abajo, todo lo que se desplaza bajaba
+   —la cabecera pegada del hub también— y la última tarjeta se metía bajo la barra
+   translúcida: parecía una placa detrás de las pestañas del centro. Chromium no
+   rebota, así que aquí se comprueba lo que sí se puede medir: que la regla llega
+   a la raíz y solo en vertical, que la barra es UNA superficie, y que desplazar
+   la página sigue funcionando igual. */
+console.log('\n── SF · El rebote de la página y la barra de abajo ──');
+await page.setViewportSize({ width: 414, height: 896 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+ok(await pulsar('Vida'), 'SF — al área Vida, al tamaño del iPhone de la captura (414 × 896)');
+await page.waitForTimeout(800);
+const rebote_sf = await page.evaluate(() => {
+  const h = getComputedStyle(document.documentElement);
+  const b = getComputedStyle(document.body);
+  return { html: h.overscrollBehaviorY, body: b.overscrollBehaviorY, x: h.overscrollBehaviorX };
+});
+ok(rebote_sf.html === 'none' && rebote_sf.body === 'none',
+  `🚨 SF — la página no rebota: \`html\` y \`body\` llevan \`overscroll-behavior-y: none\` (${JSON.stringify(rebote_sf)})`);
+ok(rebote_sf.x === 'auto', '…y solo en vertical: el gesto horizontal de volver atrás no se toca');
+const barra_sf = await page.evaluate(() => {
+  const nav = document.querySelector('nav.nav-segura');
+  if (!nav) return null;
+  const propios = [...nav.querySelectorAll('*')].filter((e) => {
+    const c = getComputedStyle(e);
+    return c.backgroundColor !== 'rgba(0, 0, 0, 0)' || (c.backdropFilter && c.backdropFilter !== 'none')
+      || c.boxShadow !== 'none' || c.filter !== 'none' || c.backgroundImage !== 'none';
+  }).length;
+  const r = nav.getBoundingClientRect();
+  const botones = [...nav.querySelectorAll('button')];
+  const encima = botones.filter((bt) => {
+    const q = bt.getBoundingClientRect();
+    const el = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2);
+    return !(el && nav.contains(el));
+  }).length;
+  const cs = getComputedStyle(nav);
+  return { propios, ancho: Math.round(r.width), pantalla: window.innerWidth, botones: botones.length, encima, desenfoque: cs.backdropFilter || cs.webkitBackdropFilter };
+});
+ok(!!barra_sf && barra_sf.propios === 0 && /blur/.test(barra_sf.desenfoque || ''),
+  `🚨 SF — la barra de abajo es UNA superficie: su desenfoque y su fondo son suyos, y ninguna pestaña lleva fondo, desenfoque ni sombra propios (${barra_sf && barra_sf.propios})`);
+ok(!!barra_sf && barra_sf.ancho === barra_sf.pantalla && barra_sf.botones === 5 && barra_sf.encima === 0,
+  `…de lado a lado de la pantalla, con las cinco pestañas y nada pintado encima de ninguna (${barra_sf && `${barra_sf.ancho}/${barra_sf.pantalla}, ${barra_sf.botones}, ${barra_sf.encima}`})`);
+ok(await pulsar('Ajustes'), 'SF — a Ajustes, que es una pantalla larga');
+await page.waitForTimeout(800);
+await page.mouse.move(207, 400);
+await page.mouse.wheel(0, 700);
+await page.waitForTimeout(700);
+const desplazado_sf = await page.evaluate(() => window.scrollY);
+ok(desplazado_sf > 300, `…y desplazar la página sigue funcionando igual (bajó ${Math.round(desplazado_sf)} px)`);
+await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

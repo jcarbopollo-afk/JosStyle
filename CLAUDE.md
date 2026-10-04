@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.127.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.127.1**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -1882,6 +1882,13 @@ ACABADO** —F36 a F42—, y la **FIT F43 (v3.125.0)**, la primera del bloque de
   —«Sueño», «Entrenamiento», «Nutrición»— cuenta para `innerText`. **Buscar por texto en Inicio
   encuentra ese desglose antes que cualquier tarjeta.**
 
+- 🚨 **LA «PLACA» DETRÁS DE LA BARRA DE ABAJO ERA EL REBOTE DE LA PÁGINA** (v3.127.1, captura de
+  Josué). Al tirar de la página, Safari baja todo lo que se desplaza —también la cabecera pegada del
+  hub— y deja quieto lo fijo, así que la última tarjeta se metía bajo la barra translúcida y se veía
+  como un rectángulo oscuro detrás de las pestañas del centro. **La barra era una sola superficie**;
+  lo que cambiaba era lo de detrás. Arreglo: `overscroll-behavior-y: none` en `html, body`, **solo
+  vertical** (el horizontal es volver atrás). ⚠️ **Cuando algo «se ve raro» en una captura, medirla**:
+  toda la página estaba desplazada 130 px, cabecera incluida, y eso dice rebote, no maquetación.
 - 🚨 **UN `className` NO ES UNA PRUEBA DE NADA, Y ESTO COSTÓ CARO** (SF F1). La lupa se declara
   `fixed`… y **nunca lo ha estado**: `.toque-44` —el área táctil de la E3 F1— pone
   `position: relative`, misma especificidad, y `index.css` va después de las utilidades de Tailwind.

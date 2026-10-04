@@ -96,6 +96,27 @@ input[type='range']::-webkit-slider-thumb {
   min-height: 100dvh;
 }
 
+/* 🚨 EL REBOTE DE LA PÁGINA EN EL iPHONE (y es lo que parecía una «placa» detrás
+   de la barra de abajo). Al arrastrar la página más allá de su principio, Safari
+   la deja bajar y luego rebota. En ese rato baja TODO lo que se desplaza —también
+   la cabecera pegada de los hubs, que deja de estar arriba y enseña la foto sin
+   desenfocar por encima— y lo fijo se queda: la foto de fondo y la barra de abajo.
+   Así que la última tarjeta se mete debajo de la barra translúcida y se ve a
+   través de ella, difuminada, como un rectángulo oscuro detrás de las pestañas del
+   centro (y el icono verde de la tarjeta, como un brillo bajo «Inicio»). La barra
+   es UNA sola superficie: lo que cambiaba era lo que tenía detrás.
+
+   `none` y no `contain`: `contain` solo evita que el arrastre pase a otro
+   contenedor, y en la raíz no hay otro — el rebote seguiría. Solo el eje
+   vertical: el horizontal es el gesto de volver atrás de Safari. Desplazar la
+   página sigue igual; lo único que desaparece es el tirón de más en los extremos.
+   ⚠️ Chromium no rebota, así que el recorrido no puede VER el fallo: comprueba
+   que la regla está aplicada (SF F1, `condicionSF`). */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 /* Área táctil de 44 px sin agrandar el dibujo (la regla de EH F42). Los dos
    botones de arriba miden 36 px de diámetro y quedaban por debajo del mínimo:
    este pseudoelemento transparente amplía la zona que responde al dedo sin

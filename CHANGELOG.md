@@ -1,5 +1,45 @@
 # CHANGELOG.md
 
+## v3.127.1 — La «placa» detrás de la barra de abajo era el rebote de la página
+
+Josué mandó una captura del área **Vida** en su iPhone: detrás de Bienestar, Vida y Gestión se veía un
+rectángulo más oscuro y borroso, y debajo de Inicio un brillo verde, como si la barra de abajo
+tuviera una placa aparte en el centro.
+
+### Lo que era (y lo que no)
+
+**La barra está bien, y se comprobó antes de tocar nada**: es un solo elemento, con un solo fondo y un
+solo desenfoque, de lado a lado; ninguna pestaña lleva fondo, desenfoque ni sombra propios y nada se
+pinta encima de ninguna. Lo que cambiaba era **lo que tenía detrás**. Medida la captura píxel a
+píxel, **toda la página estaba 130 px más abajo de su sitio** —la cabecera «ÁREA · Vida», que va pegada
+arriba, empezaba a media altura y dejaba ver la foto de fondo sin desenfocar por encima— mientras la
+barra y la foto seguían en su sitio. Eso es **el rebote de Safari**: al tirar de la página más allá de
+su principio, iOS baja todo lo que se desplaza (también lo pegado) y deja quieto lo fijo. La última
+tarjeta, **Mente**, se metía entonces debajo de la barra translúcida y se veía a través de ella,
+difuminada: el rectángulo oscuro del centro era ella, y el brillo verde bajo Inicio, su icono.
+
+### El arreglo
+
+`overscroll-behavior-y: none` en `html` y `body` (`index.css`). La página se desplaza igual que antes;
+lo único que desaparece es el tirón de más en los extremos, así que ni la cabecera se despega del
+techo ni una tarjeta se cuela bajo la barra por un arrastre. **Solo el eje vertical**: el horizontal
+es el gesto de volver atrás de Safari. La barra, sus iconos, textos, colores, estados y su
+transparencia no se han tocado.
+
+⚠️ **Lo que sigue pasando, porque es el diseño**: en una pantalla larga, al desplazar, el contenido
+pasa por detrás de la barra y se ve a través de ella difuminado —es el efecto cristal—. Cuánto se ve
+lo decide **Ajustes → Apariencia → Colores → «Opacidad de la barra inferior»**, que es suya.
+
+Queda apuntado en el registro de Safari (`src/lib/safari.js`, hallazgo `rebote_de_la_pagina`, y la
+casilla `sin_rebote` de `condicionSF`, que lee el CSS y se pone roja sin la regla). ⚠️ **Chromium no
+rebota**, así que ninguna prueba podía ver el fallo: el recorrido comprueba que la regla llega a la
+raíz y solo en vertical, que la barra es una sola superficie y que desplazar sigue funcionando. Que se
+vea bien **en su iPhone** solo lo puede confirmar él (R1).
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.127.0 — FIT F45/45: pulido final, QA extremo y release de fitness · 🏁 ENTREGA 4 CERRADA
 
 *"AHORA NO VAMOS A CONSTRUIR OTRO SISTEMA. Vamos a realizar el RELEASE FINAL DE FITNESS."* Y su regla
