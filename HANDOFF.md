@@ -2,6 +2,12 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.129.0 — AC F2: auditoría de Apariencia):**
+> Apariencia estaba bien organizada y no se ha movido nada. Se corrigieron tres cosas que decía y no
+> hacía: el **alto contraste** ya tiene interruptor (Texto y movimiento), **«Restablecer apariencia» ya
+> no borra el fondo de pantalla** y **importar un archivo sin fondo tampoco**. Las descripciones nombran
+> el fondo y el contraste.
+
 > **📅 ACTUALIZACIÓN (v3.128.0 — AC F1: Ajustes sin Accesibilidad):**
 > La categoría Accesibilidad de Ajustes se retira: era una pantalla que decía que sus opciones estaban
 > en Apariencia. Sus palabras del buscador llevan ahora a *Tamaño de texto y densidad*. Apariencia no se

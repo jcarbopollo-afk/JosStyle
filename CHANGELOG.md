@@ -1,5 +1,61 @@
 # CHANGELOG.md
 
+## v3.129.0 — AC F2: auditoría de Apariencia
+
+La condición de Josué: *"Apariencia actualmente funciona y visualmente está correcta. No quiero un
+rediseño"*, y si la estructura ya es correcta, no se toca. **La estructura lo es**, y no se ha movido
+nada: el tema arriba, y debajo Fondo, Colores, Recomendado, Apariencias guardadas, Legibilidad y Texto
+y movimiento, todo presentación visual, sin una sola opción repetida ni ninguna que pertenezca a otra
+sección. Lo que sí salió son **tres problemas reales**, los tres de lo que la pantalla decía y no hacía.
+
+### 🐛 El alto contraste no tenía interruptor en ninguna pantalla
+
+Existía desde la Fase A7: `aplicarTema` lo aplica con sus dos paletas (texto secundario y bordes más
+visibles, en oscuro y en claro) y se guarda en `apariencia.altoContraste`. **Pero nada lo encendía**, y
+la pantalla de Accesibilidad que retiró la AC F1 decía que estaba en Apariencia. Ahora tiene su
+interruptor en **Apariencia → Texto y movimiento**, al lado del tamaño de texto y del movimiento. ⚠️ **No
+es una función nueva** (lo que prohíbe la fase): es el control que le faltaba a una que ya existía. Y
+dice lo que hace de verdad: si él eligió su propio color de bordes o de texto secundario en el
+constructor de temas, **mandan los suyos** —es el orden del motor, comprobado—.
+
+### 🐛 «Restablecer apariencia» borraba el fondo de pantalla sin decirlo
+
+Desde la FO F1 el fondo vive **dentro** de `apariencia`, y restablecer escribía `DEFAULT_APARIENCIA` a
+secas: se llevaba la foto de fondo, su encuadre y las anteriores, mientras el aviso solo hablaba de
+tema, texto, densidad, bordes y animaciones. Ahora **el fondo se queda** —tiene sus propios controles
+para quitarlo— y también el modo sencillo/avanzado del color, que es cómo se enseña la pantalla. El
+aviso dice qué vuelve a su valor (también el contraste) y que *"el color de acento y el fondo no se
+tocan"*. Y **importar** un archivo exportado antes de la FO F1, que no trae fondo, ya no lo deja a cero:
+el del archivo manda si lo trae, y el aviso lo dice.
+
+### Nombres
+
+La descripción de Apariencia en la lista de Ajustes decía *"Tema, acento, texto, bordes y
+animaciones"* y no nombraba ni el fondo ni el contraste: ahora es *"Tema, fondo, colores, texto,
+contraste y animaciones"*. La de «Texto y movimiento» suma el contraste. Y buscar «alto contraste» o
+«contraste» lleva a Apariencia (`ajuste:contraste`, como el modo oscuro del apartado 15).
+
+### Lo que se miró y está bien
+
+Ni un control duplicado: el tamaño de texto, reducir movimiento y el alto contraste se escriben **cada
+uno desde un solo sitio** de Ajustes, y es Apariencia. Ninguna referencia viva a la categoría retirada.
+⚠️ Fuera de Apariencia, y por eso no se ha tocado: la descripción de **Pantalla principal** todavía
+nombra el menú *"Además"*, que desapareció en la DIST F1.
+
+### Pruebas
+
+`scripts/test-apariencia.mjs` (nueva, en `verificar.sh`): las secciones y su orden, cada opción de
+accesibilidad con un solo control y en Apariencia, el interruptor de contraste con su nombre para
+VoiceOver, que el motor cambia los bordes en oscuro y en claro y que el constructor manda, que
+restablecer e importar no se llevan el fondo —**y quitando ese arreglo se pone roja**— y que los avisos
+dicen lo que hacen. En Chromium: se enciende el alto contraste y el texto secundario cambia de color de
+verdad y se guarda; se restablece con un fondo puesto y el contraste se apaga mientras el fondo se
+queda.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.128.0 — AC F1: Ajustes sin la categoría Accesibilidad
 
 Josué, viendo Ajustes: Apariencia está bien, y **Accesibilidad es literalmente una pantalla que explica

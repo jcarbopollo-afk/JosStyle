@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.128.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.129.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -1881,6 +1881,12 @@ ACABADO** —F36 a F42—, y la **FIT F43 (v3.125.0)**, la primera del bloque de
   —«Sueño», «Entrenamiento», «Nutrición»— cuenta para `innerText`. **Buscar por texto en Inicio
   encuentra ese desglose antes que cualquier tarjeta.**
 
+- 🔍 **APARIENCIA, AUDITADA SIN REDISEÑAR** (AC F2, v3.129.0): la estructura estaba bien y no se movió.
+  🐛 **El alto contraste ya tiene interruptor** (Texto y movimiento): el motor lo aplicaba desde la A7 y
+  nada lo encendía. 🐛 **«Restablecer apariencia» ya no borra el fondo** —vive dentro de `apariencia`
+  desde la FO F1— y **importar un archivo sin fondo tampoco**. ⚠️ **Al meter un campo nuevo dentro de
+  un objeto que otro botón «restablece» o «importa» entero, mirar ese botón**: es la regla 5 con otra
+  cara. `scripts/test-apariencia.mjs` lo vigila.
 - 🧹 **AJUSTES YA NO TIENE LA CATEGORÍA ACCESIBILIDAD** (AC F1, v3.128.0, pedido por Josué): su
   pantalla solo decía que sus opciones estaban en Apariencia. **Sus palabras del buscador se mudaron**
   a *Tamaño de texto y densidad*, y `test-buscador` comprueba que **ninguna entrada lleva a una

@@ -931,6 +931,13 @@ fi
 # SF F1 — el barrido de Safari: lo que Chromium perdona y Safari no. Nace de la
 # SC F1, donde un fallo llevaba meses invisible porque todas las pruebas corren
 # en Chromium y la aplicación solo se usa en un iPhone.
+# AC F2 — Apariencia tras retirar Accesibilidad: el alto contraste con su interruptor, y
+# restablecer/importar que no se llevan el fondo sin decirlo.
+if node --import ./scripts/resolver-vite.mjs scripts/test-apariencia.mjs >/tmp/jc_apariencia.log 2>&1; then
+  ok "La auditoría de Apariencia (AC F2) — $(grep -c '✓' /tmp/jc_apariencia.log) comprobaciones"
+else
+  fallo "Falla la auditoría de Apariencia"; grep '✗' /tmp/jc_apariencia.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

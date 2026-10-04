@@ -11902,4 +11902,38 @@ ok(/Tamaño de texto/.test(texto_ac1) && await page.evaluate(() => !!document.qu
   '🚨 AC F1 — y el tamaño de texto y reducir movimiento siguen donde estaban, en Apariencia');
 ok(errores.length === erroresAntes_ac1, `…sin un error en la consola${errores.length > erroresAntes_ac1 ? `: ${errores.slice(erroresAntes_ac1).join(' | ').slice(0, 200)}` : ''}`);
 await page.setViewportSize({ width: 1280, height: 900 });
+
+/* ── AC F2 · Apariencia: el alto contraste, y restablecer sin llevarse el fondo ── */
+console.log('\n── AC F2 · Apariencia: alto contraste y restablecer ──');
+const ajustesDeAntes_ac2 = almacen.ajustes;
+almacen.ajustes = { ...(almacen.ajustes || {}), apariencia: { ...((almacen.ajustes || {}).apariencia || {}), tema: 'oscuro', altoContraste: false,
+  fondo: { tipo: 'degradado', activo: true, degradado: { de: '#d0702c', a: '#2c6ad0', angulo: 90 } } } };
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+const erroresAntes_ac2 = errores.length;
+ok(await pulsar('Ajustes') && await pulsar('Apariencia') && await pulsar('Texto y movimiento'), 'AC F2 — Ajustes → Apariencia → Texto y movimiento');
+await esperarTexto(/Alto contraste/);
+const borde_ac2 = () => page.evaluate(() => {
+  const s = document.querySelector('button[role="switch"][aria-label="Alto contraste"]');
+  const caja = s && s.closest('.rounded-2xl, .rounded-3xl, [class*="rounded"]');
+  return s ? { marcado: s.getAttribute('aria-checked'), color: getComputedStyle(s).borderColor || '', muted: getComputedStyle(s.parentElement.querySelector('p.text-xs')).color } : null;
+});
+const antes_ac2 = await borde_ac2();
+ok(!!antes_ac2 && antes_ac2.marcado === 'false', `🐛 AC F2 — el interruptor de alto contraste existe, apagado (${antes_ac2 && antes_ac2.marcado})`);
+ok(await page.evaluate(() => { const s = document.querySelector('button[role="switch"][aria-label="Alto contraste"]'); if (!s) return false; s.click(); return true; }), '…se enciende');
+await page.waitForTimeout(800);
+const despues_ac2 = await borde_ac2();
+ok(!!despues_ac2 && despues_ac2.marcado === 'true' && despues_ac2.muted !== antes_ac2.muted,
+  `🚨 AC F2 — y cambia de verdad: el texto secundario pasa de ${antes_ac2 && antes_ac2.muted} a ${despues_ac2 && despues_ac2.muted}`);
+ok(((almacen.ajustes || {}).apariencia || {}).altoContraste === true, '…y se guarda en la cuenta');
+ok(await pulsar('Restablecer apariencia') && await pulsar('Sí, restablecer'), 'AC F2 — «Restablecer apariencia» → «Sí, restablecer»');
+await page.waitForTimeout(800);
+const tras_ac2 = (almacen.ajustes || {}).apariencia || {};
+ok(tras_ac2.altoContraste === false, '…vuelve a apagar el alto contraste, como dice el aviso');
+ok(!!tras_ac2.fondo && tras_ac2.fondo.tipo === 'degradado' && tras_ac2.fondo.activo === true,
+  `🐛 AC F2 — y el fondo de pantalla se QUEDA (antes se borraba sin decirlo): ${tras_ac2.fondo && tras_ac2.fondo.tipo}`);
+ok(errores.length === erroresAntes_ac2, `…sin un error en la consola${errores.length > erroresAntes_ac2 ? `: ${errores.slice(erroresAntes_ac2).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ac2;
+await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

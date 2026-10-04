@@ -79,7 +79,7 @@ import GestionTemas from '../components/GestionTemas';
 function useCategorias() {
   return useMemo(() => ([
     { id: 'perfil', label: 'Perfil', desc: 'Tu información personal, usada por el sistema.', icon: User, listo: true },
-    { id: 'apariencia', label: 'Apariencia', desc: 'Tema, acento, texto, bordes y animaciones.', icon: Palette, listo: true },
+    { id: 'apariencia', label: 'Apariencia', desc: 'Tema, fondo, colores, texto, contraste y animaciones.', icon: Palette, listo: true },
     { id: 'pantalla-principal', label: 'Pantalla principal', desc: 'Qué ves en "Hoy" y en el menú "Además".', icon: LayoutGrid, listo: true },
     { id: 'preferencias', label: 'Preferencias generales', desc: 'Idioma, zona horaria, país y unidades.', icon: SlidersHorizontal, listo: true, soloInfo: true },
     { id: 'notificaciones', label: 'Notificaciones', desc: 'Permiso, categorías y horario de descanso.', icon: Bell, listo: true },
@@ -2002,11 +2002,21 @@ export default function SettingsView({
 
   const confirmarImportApariencia = () => {
     const { accent: accentImportado, ...resto } = pendingImportApariencia;
-    onUpdateApariencia({ ...DEFAULT_APARIENCIA, ...resto });
+    /* AC F2 — un archivo exportado antes de la FO F1 no trae `fondo`: sin esto, importarlo dejaba
+       el fondo a cero. El del archivo manda si lo trae. */
+    onUpdateApariencia({ ...DEFAULT_APARIENCIA, fondo: apariencia.fondo, ...resto });
     if (accentImportado) onUpdateAccent(accentImportado);
     setPendingImportApariencia(null);
   };
-  const restablecerApariencia = () => { onUpdateApariencia(DEFAULT_APARIENCIA); setConfirmandoResetApariencia(false); };
+  /* 🐛 AC F2 — desde la FO F1 el fondo vive DENTRO de `apariencia`, así que restablecer con
+     `DEFAULT_APARIENCIA` a secas se llevaba también su foto de fondo, su encuadre y las anteriores,
+     y el aviso solo hablaba de tema, texto, densidad, bordes y animaciones. Se queda el fondo, que
+     tiene sus propios controles para quitarlo, y el modo sencillo/avanzado del color, que es cómo se
+     enseña la pantalla y no un aspecto. */
+  const restablecerApariencia = () => {
+    onUpdateApariencia({ ...DEFAULT_APARIENCIA, fondo: apariencia.fondo, modoColorAvanzado: apariencia.modoColorAvanzado });
+    setConfirmandoResetApariencia(false);
+  };
 
   // Fase A4 — Notificaciones reales: estado del permiso del navegador (no es reactivo por sí
   // solo, se re-lee tras pedirlo) + exportar/importar/restablecer, mismo patrón que Apariencia.
@@ -2524,7 +2534,7 @@ export default function SettingsView({
 
             </Seccion>
 
-            <Seccion titulo="Texto y movimiento" sub="Tamaño, densidad, bordes y animaciones" icono={Type} accent={accent}>
+            <Seccion titulo="Texto y movimiento" sub="Tamaño, densidad, bordes, contraste y animaciones" icono={Type} accent={accent}>
             <Card>
               <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Tamaño de texto</p>
               <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Escala todo el texto de la app de golpe (también iconos y botones, al ser proporcional).</p>
@@ -2544,6 +2554,21 @@ export default function SettingsView({
               <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Bordes</p>
               <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Radio de las tarjetas, botones y campos de toda la app.</p>
               <OpcionesFila opciones={RADIOS_BORDE} valor={apariencia.radioBorde} onChange={(v) => onUpdateApariencia({ ...apariencia, radioBorde: v })} accent={accent} />
+            </Card>
+
+            {/* AC F2 — el alto contraste existía en el motor desde la Fase A7 (`aplicarTema`, con
+                sus dos paletas) y se guardaba en `apariencia.altoContraste`, pero NINGUNA pantalla
+                tenía con qué encenderlo: la categoría Accesibilidad decía que estaba aquí y no lo
+                estaba. No es una función nueva: es el interruptor que le faltaba a una que ya existía,
+                al lado del tamaño de texto y del movimiento, que es donde él lo busca. */}
+            <Card>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Alto contraste</p>
+                  <p className="text-xs" style={{ color: COLORS.textMuted }}>Hace más visibles el texto secundario y los bordes, que son lo que menos se distingue. No cambia tu acento. Si has elegido tu propio color de bordes o de texto secundario en el constructor de temas, mandan los tuyos.</p>
+                </div>
+                <Switch checked={!!apariencia.altoContraste} onChange={(v) => onUpdateApariencia({ ...apariencia, altoContraste: v })} accent={accent} label="Alto contraste" />
+              </div>
             </Card>
 
             <Card>
@@ -2578,7 +2603,7 @@ export default function SettingsView({
               {importErrorApariencia && <p className="text-xs mb-2" style={{ color: COLORS.negative }}>{importErrorApariencia}</p>}
               {pendingImportApariencia && (
                 <div className="mb-3 px-3 py-2 rounded-xl" style={{ background: COLORS.surface2 }}>
-                  <p className="text-xs mb-2" style={{ color: COLORS.textMuted }}>Vas a reemplazar tema, tamaño de texto, densidad, bordes, animaciones y acento por los del archivo importado.</p>
+                  <p className="text-xs mb-2" style={{ color: COLORS.textMuted }}>Vas a reemplazar tema, tamaño de texto, densidad, bordes, animaciones, contraste y acento por los del archivo importado, y el fondo si el archivo trae uno.</p>
                   <div className="flex gap-3">
                     <button onClick={() => setPendingImportApariencia(null)} className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>Cancelar</button>
                     <button onClick={confirmarImportApariencia} className="text-xs font-semibold" style={{ color: accent }}>Confirmar importación</button>
@@ -2591,7 +2616,7 @@ export default function SettingsView({
                 </button>
               ) : (
                 <div className="px-3 py-2 rounded-xl" style={{ background: COLORS.surface2 }}>
-                  <p className="text-xs mb-2" style={{ color: COLORS.textMuted }}>Esto vuelve tema, texto, densidad, bordes y animaciones a sus valores por defecto. El color de acento no se toca.</p>
+                  <p className="text-xs mb-2" style={{ color: COLORS.textMuted }}>Esto vuelve tema, texto, densidad, bordes, animaciones y contraste a sus valores por defecto. El color de acento y el fondo no se tocan.</p>
                   <div className="flex gap-3">
                     <button onClick={() => setConfirmandoResetApariencia(false)} className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>Cancelar</button>
                     <button onClick={restablecerApariencia} className="text-xs font-semibold" style={{ color: COLORS.negative }}>Sí, restablecer</button>

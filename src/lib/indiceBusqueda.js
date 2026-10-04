@@ -236,6 +236,13 @@ export const FUNCIONES_AJUSTES = [
     // palabras se MUDAN aquí, donde están el texto y el movimiento de verdad (E3 F23).
     sinonimos: ['legibilidad', 'zoom', 'interfaz', 'accesibilidad', 'mareo'],
   },
+  // AC F2 — el alto contraste por su nombre, como el modo oscuro (apartado 15): vive en Apariencia.
+  {
+    id: 'ajuste:contraste', titulo: 'Alto contraste', ajuste: 'apariencia',
+    descripcion: 'Texto secundario y bordes más visibles.',
+    palabras: ['contraste', 'alto contraste', 'texto gris', 'bordes', 'se ve poco', 'leer mejor'],
+    sinonimos: ['ver mejor', 'legibilidad'],
+  },
   {
     id: 'ajuste:pantalla-principal', titulo: 'Pantalla principal', ajuste: 'pantalla-principal',
     descripcion: 'Qué módulos usas, qué ves en Hoy y en qué orden aparece el menú.',
