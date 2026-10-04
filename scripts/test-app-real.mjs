@@ -11882,4 +11882,24 @@ await page.waitForTimeout(700);
 const desplazado_sf = await page.evaluate(() => window.scrollY);
 ok(desplazado_sf > 300, `…y desplazar la página sigue funcionando igual (bajó ${Math.round(desplazado_sf)} px)`);
 await page.setViewportSize({ width: 1280, height: 900 });
+
+/* ── AC F1 · Ajustes sin la categoría Accesibilidad ──
+   Su pantalla solo decía que sus opciones estaban en Apariencia. Se retira, y lo que
+   se comprueba es que no deja nada roto: no está en la lista, Apariencia abre igual
+   y sus opciones de texto y movimiento siguen ahí. */
+console.log('\n── AC F1 · Ajustes sin Accesibilidad ──');
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+const erroresAntes_ac1 = errores.length;
+ok(await pulsar('Ajustes') && /Apariencia/.test(await esperarTexto(/Apariencia/)), 'AC F1 — Ajustes abre su lista');
+const lista_ac1 = await page.evaluate(() => [...document.querySelectorAll('button')].map((b) => (b.innerText || '').split('\n')[0].trim()).filter(Boolean));
+ok(!lista_ac1.includes('Accesibilidad') && lista_ac1.includes('Apariencia') && lista_ac1.includes('Información'),
+  `🚨 AC F1 — la categoría Accesibilidad ya no está en Ajustes, y el resto sí (${lista_ac1.filter((t) => /Apariencia|Integraciones|Información|Accesib/.test(t)).join(' · ')})`);
+ok(await pulsar('Apariencia') && await pulsar('Texto y movimiento'), '…Apariencia → Texto y movimiento');
+const texto_ac1 = await esperarTexto(/Tamaño de texto/);
+ok(/Tamaño de texto/.test(texto_ac1) && await page.evaluate(() => !!document.querySelector('[aria-label="Reducir movimiento"]')),
+  '🚨 AC F1 — y el tamaño de texto y reducir movimiento siguen donde estaban, en Apariencia');
+ok(errores.length === erroresAntes_ac1, `…sin un error en la consola${errores.length > erroresAntes_ac1 ? `: ${errores.slice(erroresAntes_ac1).join(' | ').slice(0, 200)}` : ''}`);
+await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

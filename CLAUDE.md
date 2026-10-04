@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.127.1**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.128.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -1881,6 +1881,13 @@ ACABADO** —F36 a F42—, y la **FIT F43 (v3.125.0)**, la primera del bloque de
   —«Sueño», «Entrenamiento», «Nutrición»— cuenta para `innerText`. **Buscar por texto en Inicio
   encuentra ese desglose antes que cualquier tarjeta.**
 
+- 🧹 **AJUSTES YA NO TIENE LA CATEGORÍA ACCESIBILIDAD** (AC F1, v3.128.0, pedido por Josué): su
+  pantalla solo decía que sus opciones estaban en Apariencia. **Sus palabras del buscador se mudaron**
+  a *Tamaño de texto y densidad*, y `test-buscador` comprueba que **ninguna entrada lleva a una
+  categoría de Ajustes que no exista**. ⚠️ **No se crea una sección de Accesibilidad hasta que haya
+  funciones propias que la justifiquen** (su criterio). 🐛 Y destapó que **el alto contraste no tiene
+  interruptor en ninguna pantalla**, aunque el motor lo aplica y aquella pantalla decía que estaba en
+  Apariencia: es de la AC F2.
 - 🚨 **LA «PLACA» DETRÁS DE LA BARRA DE ABAJO ERA EL REBOTE DE LA PÁGINA** (v3.127.1, captura de
   Josué). Al tirar de la página, Safari baja todo lo que se desplaza —también la cabecera pegada del
   hub— y deja quieto lo fijo, así que la última tarjeta se metía bajo la barra translúcida y se veía

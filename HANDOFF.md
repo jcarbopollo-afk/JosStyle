@@ -2,6 +2,11 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.128.0 — AC F1: Ajustes sin Accesibilidad):**
+> La categoría Accesibilidad de Ajustes se retira: era una pantalla que decía que sus opciones estaban
+> en Apariencia. Sus palabras del buscador llevan ahora a *Tamaño de texto y densidad*. Apariencia no se
+> ha tocado. Destapó que el alto contraste no tiene interruptor en ninguna pantalla: lo mira la AC F2.
+
 > **📅 ACTUALIZACIÓN (v3.127.1 — la «placa» detrás de la barra de abajo):**
 > Josué vio en el área Vida un rectángulo oscuro detrás de Bienestar, Vida y Gestión. La barra estaba
 > bien —una sola superficie—: era **el rebote de Safari** al tirar de la página, que bajaba todo lo que

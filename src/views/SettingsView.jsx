@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   User, Download, Upload, RotateCcw, Undo2, Lock, LogOut, ArrowLeft, Search, ChevronRight,
   Palette, LayoutGrid, SlidersHorizontal, Bell, ShieldCheck,
-  Database, RefreshCw, Puzzle, Accessibility, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star, ChevronUp, Type, Volume2, Camera,
+  Database, RefreshCw, Puzzle, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star, ChevronUp, Type, Volume2, Camera,
 } from 'lucide-react';
 import pkg from '../../package.json';
 import {
@@ -70,8 +70,9 @@ import GestionTemas from '../components/GestionTemas';
 // resto de la app: nunca simular una función que no existe, y nunca explicar
 // dentro de la propia app en qué fase de construcción está algo). Las
 // categorías puramente informativas (Preferencias, Sincronización,
-// Integraciones, Accesibilidad) redirigen a dónde vive de verdad ese control
-// en vez de duplicarlo. Información lee la versión real de package.json.
+// Integraciones) redirigen a dónde vive de verdad ese control en vez de
+// duplicarlo. Accesibilidad era una más y se retiró (AC F1): su pantalla solo
+// decía que sus opciones estaban en Apariencia, que es donde se usan. Información lee la versión real de package.json.
 // ─────────────────────────────────────────────────────────────────────────
 
 // Orden estable a propósito (apartado 4 de la especificación) — nunca reordenar automáticamente.
@@ -89,7 +90,6 @@ function useCategorias() {
     { id: 'papelera', label: 'Eliminados recientemente', desc: 'Recupera lo que hayas borrado por error.', icon: Trash2, listo: true },
     { id: 'sincronizacion', label: 'Sincronización', desc: 'Tus datos entre dispositivos.', icon: RefreshCw, listo: true, soloInfo: true },
     { id: 'integraciones', label: 'Integraciones', desc: 'Conexiones con otros servicios.', icon: Puzzle, listo: true, soloInfo: true },
-    { id: 'accesibilidad', label: 'Accesibilidad', desc: 'Tamaño de texto y reducir movimiento ya están en Apariencia.', icon: Accessibility, listo: true, soloInfo: true },
     { id: 'informacion', label: 'Información', desc: 'Versión, créditos e información técnica.', icon: Info, listo: true },
   ]), []);
 }
@@ -3113,12 +3113,6 @@ export default function SettingsView({
               </ul>
             </Card>
           </>
-        )}
-
-        {actual.id === 'accesibilidad' && (
-          <InfoOnly>
-            El tamaño de texto, reducir movimiento y el alto contraste se controlan desde Apariencia — no se duplican aquí.
-          </InfoOnly>
         )}
 
         {actual.id === 'informacion' && (

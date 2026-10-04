@@ -11,7 +11,7 @@
 // rota, así que la prueba comprueba lo contrario: que no aparecen.
 // ---------------------------------------------------------------------------
 import { readFileSync } from 'node:fs';
-import { construirIndice, buscar, pareceUnaPregunta, normalizar, normalizarRaiz, sugerenciaDeErrata, sugerenciasIniciales, analizarIntencion, nucleoDeConsulta, resolverConsulta } from '../src/lib/indiceBusqueda.js';
+import { FUNCIONES_AJUSTES, ACCIONES_DIRECTAS, construirIndice, buscar, pareceUnaPregunta, normalizar, normalizarRaiz, sugerenciaDeErrata, sugerenciasIniciales, analizarIntencion, nucleoDeConsulta, resolverConsulta } from '../src/lib/indiceBusqueda.js';
 
 /* Copia de MORE_NAV (App.jsx). Solo id y label: el icono no se usa en el motor.
 
@@ -63,8 +63,10 @@ comprobar(
 
 // --- Índice ---
 {
-  comprobar('El índice cubre los 19 módulos + 15 funciones de Ajustes + 4 acciones',
-    indice.length === MODULOS.length + 15 + 4, String(indice.length));
+  /* ⚠️ Las cuentas salen de los catálogos, no escritas a mano: «15 funciones» saltó al retirar
+     Accesibilidad (AC F1) con todo el derecho — una cuenta exacta es una bomba de relojería. */
+  comprobar(`El índice cubre los ${MODULOS.length} módulos + ${FUNCIONES_AJUSTES.length} funciones de Ajustes + ${ACCIONES_DIRECTAS.length} acciones`,
+    indice.length === MODULOS.length + FUNCIONES_AJUSTES.length + ACCIONES_DIRECTAS.length && FUNCIONES_AJUSTES.length > 10, String(indice.length));
   comprobar('Toda entrada declara su tipo de destino (apartado 11)',
     indice.every((e) => ['pantalla', 'ajuste', 'accion'].includes(e.tipo)));
   comprobar('Toda entrada tiene título, categoría y destino',
@@ -126,6 +128,23 @@ comprobar(
   comprobar('"pin" → Seguridad', primero('pin')?.id === 'ajuste:seguridad');
   comprobar('"exportar" → Copia de seguridad', primero('exportar')?.id === 'ajuste:datos');
   comprobar('"recuperar" → Eliminados recientemente', primero('recuperar')?.id === 'ajuste:papelera');
+}
+
+// --- AC F1 — Accesibilidad deja de ser una categoría de Ajustes ---
+/* Su pantalla solo decía que sus opciones estaban en Apariencia. Se retira, y con ella su
+   entrada del buscador: sus palabras se MUDAN a donde están el texto y el movimiento (E3 F23). */
+{
+  const ajustesSrc = readFileSync(new URL('../src/views/SettingsView.jsx', import.meta.url), 'utf8');
+  const bloque = (ajustesSrc.match(/function useCategorias\(\)[\s\S]*?\]\), \[\]\);/) || [''])[0];
+  const ids = [...bloque.matchAll(/\{ id: '([a-z-]+)', label: /g)].map((m) => m[1]);
+  comprobar('AC F1 — Ajustes ya no tiene la categoría Accesibilidad', ids.length > 5 && !ids.includes('accesibilidad') && ids.includes('apariencia'), ids.join(', '));
+  comprobar('…ni su pantalla', !/actual\.id === 'accesibilidad'/.test(ajustesSrc));
+  const huerfanas = FUNCIONES_AJUSTES.filter((f) => !ids.includes(f.ajuste)).map((f) => f.id);
+  comprobar('…y ninguna entrada del buscador lleva a una categoría de Ajustes que no existe', huerfanas.length === 0, huerfanas.join(', '));
+  comprobar('…ni a la de Accesibilidad en concreto', !indice.some((e) => e.ajuste === 'accesibilidad' || e.id === 'ajuste:accesibilidad'));
+  for (const q of ['accesibilidad', 'reducir movimiento', 'mareo']) {
+    comprobar(`"${q}" → sigue encontrando dónde está: Tamaño de texto y densidad (Apariencia)`, primero(q)?.id === 'ajuste:texto', titulos(q)[0] || 'sin resultados');
+  }
 }
 
 // --- Acentos y mayúsculas ---
@@ -193,7 +212,7 @@ comprobar(
   comprobar('Solo espacios devuelve lista vacía', buscar(indice, '   ').length === 0);
   comprobar('null no revienta', buscar(indice, null).length === 0);
   comprobar('Índice nulo no revienta', buscar(null, 'colores').length === 0);
-  comprobar('construirIndice sin módulos no revienta', construirIndice(null).length === 19, String(construirIndice(null).length));
+  comprobar('construirIndice sin módulos no revienta', construirIndice(null).length === FUNCIONES_AJUSTES.length + ACCIONES_DIRECTAS.length, String(construirIndice(null).length));
 }
 
 // ═══ BI Fase 3 — motor profundo ═══

@@ -1,5 +1,49 @@
 # CHANGELOG.md
 
+## v3.128.0 — AC F1: Ajustes sin la categoría Accesibilidad
+
+Josué, viendo Ajustes: Apariencia está bien, y **Accesibilidad es literalmente una pantalla que explica
+que sus opciones ya están en Apariencia**. No aportaba nada propio, así que se retira como apartado.
+
+### Lo que se ha quitado, y lo que no
+
+- **La línea de Accesibilidad en el catálogo de categorías de Ajustes** (`useCategorias`, en
+  `SettingsView.jsx`) y **su pantalla**, que era un aviso de una frase. También el icono que solo
+  usaba ella y su mención en el comentario de cabecera de las categorías informativas.
+- **Su entrada en el buscador global** (`ajuste:accesibilidad`). ⚠️ **Sus palabras se mudan, no se
+  borran** (E3 F23): «accesibilidad», «reducir movimiento» y «mareo» llevan ahora a *Tamaño de texto y
+  densidad*, que es donde están de verdad. Una búsqueda reciente que apuntara a la entrada vieja se
+  descarta sola al pintarse (`recientesBusqueda` ya resolvía contra el índice).
+- **Ni una opción ha cambiado de sitio ni de forma**: el tamaño de texto, la densidad, los bordes, las
+  animaciones y reducir movimiento siguen en **Apariencia → Texto y movimiento**, como estaban.
+  Apariencia no se ha tocado.
+
+Antes de quitar nada se buscó quién apuntaba a la sección: **nadie la abría** salvo el buscador, y
+Ajustes, si se le pide una categoría que no existe, enseña la lista —no queda una pantalla rota—.
+
+### ⚠️ Lo que destapó, y que es de la Fase 2
+
+La pantalla retirada decía que el **alto contraste** *"se controla desde Apariencia"*. **No es verdad:
+no hay un interruptor de alto contraste en ninguna pantalla.** El motor sí existe —`aplicarTema`
+recibe `apariencia.altoContraste` y tiene sus dos paletas— y el campo se guarda, pero nada lo
+enciende. No se toca aquí, porque esta fase es solo la limpieza: es lo primero que mira la auditoría
+de Apariencia (AC F2).
+
+### Pruebas
+
+`test-buscador.mjs` comprueba que Ajustes ya no tiene la categoría ni su pantalla, que **ninguna entrada
+del buscador lleva a una categoría de Ajustes que no exista** —la ruta huérfana que se quería evitar,
+mirada para todas, no solo para ésta— y que las tres palabras mudadas encuentran su sitio. 🐛 Y dos
+comprobaciones de ese archivo contaban a mano «15 funciones de Ajustes» y «19 entradas»: saltaron con
+la retirada legítima de una. **Ahora cuentan lo que tienen los catálogos** (una cuenta exacta es una
+bomba de relojería, EH F21). El recorrido abre Ajustes en Chromium, comprueba que la lista no tiene
+Accesibilidad y sí el resto, entra en Apariencia → Texto y movimiento y encuentra el tamaño de texto y
+reducir movimiento, sin un error en la consola.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.127.1 — La «placa» detrás de la barra de abajo era el rebote de la página
 
 Josué mandó una captura del área **Vida** en su iPhone: detrás de Bienestar, Vida y Gestión se veía un

@@ -231,8 +231,10 @@ export const FUNCIONES_AJUSTES = [
   {
     id: 'ajuste:texto', titulo: 'Tamaño de texto y densidad', ajuste: 'apariencia',
     descripcion: 'Texto más grande o más pequeño, bordes y espaciado de la interfaz.',
-    palabras: ['texto', 'letra', 'tamano', 'fuente', 'grande', 'pequeno', 'densidad', 'espaciado', 'bordes', 'redondeo', 'animaciones', 'ver mejor'],
-    sinonimos: ['legibilidad', 'zoom', 'interfaz'],
+    palabras: ['texto', 'letra', 'tamano', 'fuente', 'grande', 'pequeno', 'densidad', 'espaciado', 'bordes', 'redondeo', 'animaciones', 'ver mejor', 'reducir movimiento', 'movimiento'],
+    // AC F1 — «accesibilidad» y «mareo» eran de la categoría Accesibilidad, que se retiró: sus
+    // palabras se MUDAN aquí, donde están el texto y el movimiento de verdad (E3 F23).
+    sinonimos: ['legibilidad', 'zoom', 'interfaz', 'accesibilidad', 'mareo'],
   },
   {
     id: 'ajuste:pantalla-principal', titulo: 'Pantalla principal', ajuste: 'pantalla-principal',
@@ -281,12 +283,6 @@ export const FUNCIONES_AJUSTES = [
     descripcion: 'Preferencias generales de la aplicación.',
     palabras: ['idioma', 'lengua', 'zona horaria', 'unidades', 'kilos', 'pais', 'formato'],
     sinonimos: ['español', 'metrico', 'hora'],
-  },
-  {
-    id: 'ajuste:accesibilidad', titulo: 'Accesibilidad', ajuste: 'accesibilidad',
-    descripcion: 'Dónde están el tamaño de texto y reducir movimiento.',
-    palabras: ['accesibilidad', 'contraste', 'alto contraste', 'reducir movimiento', 'lector de pantalla'],
-    sinonimos: ['ver mejor', 'mareo'],
   },
   {
     id: 'ajuste:sincronizacion', titulo: 'Sincronización', ajuste: 'sincronizacion',
