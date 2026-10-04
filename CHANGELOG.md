@@ -54,7 +54,12 @@ queda.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` **en verde** (`═══ TODO CORRECTO ═══`, 0 fallos) a la primera, **una sola
+pasada para la AC F1 y la AC F2** —cada una probada antes por su lado, en Node y en Chromium—: **22 313
+pruebas de Node en 207 suites**, **3760 casos de renderizado**, **11 reglas invariantes** y **3019
+comprobaciones en Chromium** — **29 103** en total. El salto desde la v3.127.1 es exactamente lo de las
+dos fases: **+7 en el buscador** (AC F1), **+24 de la suite nueva** `test-apariencia.mjs` (AC F2) y
+**+14 del recorrido** (5 de la AC F1 y 9 de la AC F2). **Ninguna otra suite cambió de cuenta.**
 
 ## v3.128.0 — AC F1: Ajustes sin la categoría Accesibilidad
 
@@ -98,7 +103,12 @@ reducir movimiento, sin un error en la consola.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` **en verde** (`═══ TODO CORRECTO ═══`, 0 fallos) a la primera, **una sola
+pasada para la AC F1 y la AC F2** —cada una probada antes por su lado, en Node y en Chromium—: **22 313
+pruebas de Node en 207 suites**, **3760 casos de renderizado**, **11 reglas invariantes** y **3019
+comprobaciones en Chromium** — **29 103** en total. El salto desde la v3.127.1 es exactamente lo de las
+dos fases: **+7 en el buscador** (AC F1), **+24 de la suite nueva** `test-apariencia.mjs` (AC F2) y
+**+14 del recorrido** (5 de la AC F1 y 9 de la AC F2). **Ninguna otra suite cambió de cuenta.**
 
 ## v3.127.1 — La «placa» detrás de la barra de abajo era el rebote de la página
 

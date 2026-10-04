@@ -187,13 +187,13 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **22 282 pruebas unitarias** con Node repartidas en **206 suites** (5 de ellas de auditoría),
-**3760 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **3005
-comprobaciones sobre la aplicación de verdad en Chromium** — **29 058 comprobaciones**.
+Vite, **22 313 pruebas unitarias** con Node repartidas en **207 suites** (5 de ellas de auditoría),
+**3760 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **3019
+comprobaciones sobre la aplicación de verdad en Chromium** — **29 103 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.127.1, una a una**, con la suma del
-propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.127.0 es exactamente el arreglo
-del rebote: +6 en la suite de Safari y +7 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.129.0, una a una**, con la suma del
+propio log (`═══ TODO CORRECTO ═══`, 0 fallos). El salto desde la v3.127.1 es exactamente lo de la
+AC F1 y la AC F2: +7 en el buscador, +24 de `test-apariencia.mjs` y +14 del recorrido. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
