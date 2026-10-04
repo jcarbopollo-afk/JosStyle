@@ -1,5 +1,76 @@
 # CHANGELOG.md
 
+## v3.130.0 — Motion System F0/20: auditoría total, arquitectura y plan maestro
+
+Josué pasó el 2026-10-04 el **Motion System**: 17 913 líneas, 21 fases (F0–F20), para construir *"el
+sistema de movimiento de Jos Style"* —no añadir animaciones, sino un lenguaje propio—. Y dijo: *"Están
+desordenadas, pero ordenadlas. Y volverás y ejecutarás todas y no pares hasta acabarlo."*
+
+### El orden
+
+El archivo empieza por la **F16**, sigue con la F17–F20 y solo en la línea 4046 llega la **F0**.
+`docs/13_MOTION_SYSTEM_ORDEN.md` tiene la tabla con la línea de cada fase, y se construye de la F0 a la
+F20. Lo que el documento trae repetido —una **F2** cortada a media palabra, una **F11 alternativa**
+(«navegación global, back, routing») cortada en su apartado 41 y la **F11 de orquestación copiada dos
+veces, idéntica**— está anotado como **C-51** con lo que se hace con cada cosa. La especificación
+literal queda en `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`, intocable.
+
+### La auditoría: lo que había, medido
+
+JosStyle **ya tenía un lenguaje de movimiento** aunque nadie lo llamara así: una sola curva
+(`--ease-premium`, Fase N2) en las 35 reglas animadas de `index.css`, un catálogo de animaciones
+(`ANIMACIONES_HC`, E3 F14), una escalera de escalas al pulsar (EH F50) y dos reglas de movimiento
+reducido. La F0 **se apoya en eso** (apartado 1: *"Respeta lo que ya funciona"*).
+
+`src/lib/motionMapa.js` es la fase entera:
+
+- **El MOTION_MAP** — 59 elementos con los 21 campos del apartado 3, en las 24 categorías del apartado 2,
+  cada uno con su estado (✅ existe, ⚠️ inconsistente, ⬜ sin movimiento, 🚨 fuera de control) y la fase
+  que lo trata. Las 21 animaciones de `ANIMACIONES_HC` están dentro, con la misma duración.
+  `docs/MOTION_MAP.md` **se genera de él** (`scripts/generar-motion-map.mjs`).
+- **La jerarquía** (seis niveles, de Estático a Firma), **el presupuesto** (6 elementos a la vez, 80 ms
+  entre uno y otro, 340/420/700 ms) y **el carácter de cada área**, por los ids de verdad de
+  `AREAS_NAV`.
+- **La auditoría que lee los archivos**: `auditarMotion` cruza `index.css` y las 77 vistas y componentes
+  con el mapa. Una animación nueva sin mapear, un `@keyframes` huérfano, una curva que no sea la común o
+  una duración escrita a mano de más **ponen la suite roja**. Es la regla permanente del apartado 19
+  —*"TODO LO NUEVO HEREDA MOTION"*— hecha prueba, y la deuda medida (`DEUDA_F0`) es un trinquete: no
+  puede crecer.
+
+### Los doce hallazgos (`HALLAZGOS_F0`), cada uno con su fase
+
+- 🐛 **Tres de los cuatro niveles de «Animaciones» de Ajustes no hacen nada** (la F1). La pantalla lo
+  confiesa: *"Hoy la app tiene pocas animaciones propias"*.
+- 🐛 **Las gráficas de Salud, Nutrición y Sueño animan 1,5 s y no obedecen a «Reducir movimiento»**:
+  Recharts anima por JavaScript y las reglas de `index.css` no lo alcanzan (la F4).
+- **Las barras de progreso se mueven a siete ritmos distintos** y el aro de progreso tarda 1 s (la F1 y
+  la F17). **Tres interruptores distintos**, los tres animando `left` (la F3). **Dos curvas**: la común y
+  la de serie de Tailwind en 106 clases (la F14). **Casi ninguna de las ~40 ventanas anima** (la F6).
+  **Las listas saltan** al añadir o borrar y **cinco cadencias** distintas para la misma cascada (la
+  F10). **Las cifras cambian de golpe** (la F17). **El mismo 190 ms escrito en la vista y en el CSS**
+  (la F1). **Ocho animaciones fuera del catálogo**, que el tope de la E3 F14 no medía. Y **movimiento
+  reducido = movimiento cero**, cuando el apartado 13 pide conservar el feedback (la F12).
+
+### La arquitectura (la decide la F0, la construye la F1)
+
+**Sin librería de animación** —ni framer-motion ni ninguna—: el movimiento ya vive en `index.css`, una
+librería sería un segundo sistema al lado del primero y el archivo de la aplicación ya pesa 4,4 MB
+(C-42). Tokens como **variables CSS** con sus valores por nivel en `html[data-animaciones=…]`, lo que
+puede ser CSS sigue siendo CSS, y lo que no (salir antes de desmontar, FLIP, seguir al dedo, una cifra
+que cuenta) va por la **Web Animations API**. Los ajustes se guardan donde ya se guardan
+(`apariencia`, Supabase), y **los cuatro ids que ya existen no se renombran**: lo que cambia es que
+hagan algo. «Premium» y «Ultra» no se ofrecen salvo que la F1 demuestre que se notan (C-51).
+
+### Esta fase no cambia ninguna pantalla
+
+Es el mapa y el plan. `docs/MOTION_SYSTEM.md` es la respuesta a *"¿cómo debe moverse esto?"* para
+cualquier pantalla nueva, y `scripts/test-motion-f0.mjs` comprueba que el índice, el mapa, la auditoría y
+los documentos dicen la verdad.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.129.1 — La franja borrosa de arriba de los hubs, fuera, y el rebote de vuelta
 
 Josué mandó un vídeo de su iPhone: en **Bienestar, Vida y Gestión** —no en Inicio ni en Ajustes—, la

@@ -998,6 +998,31 @@ moverlos: *"a mí me gustaba que podías scrollear y bajar y que se escondieran 
 no puedo ni scrollear en las de en medio"*. Vuelve, y `condicionSF` (casilla `con_rebote`) se pone
 roja si alguien lo corta otra vez.
 
+### C-51 — ✅ RESUELTA AL CONSTRUIR (Motion System F0, v3.130.0) · El documento del Motion System trae fases repetidas, una F11 que son dos, y un plan de 25 fases contra las 20 que vienen escritas
+
+**Josué, 2026-10-04:** *"Están desordenadas, pero ordenadlas. Y volverás y ejecutarás todas y no pares
+hasta acabarlo."* El documento tiene 21 fases (F0–F20) en este orden: F16–F20, F0–F15. Además:
+
+1. **La F2 está dos veces** (líneas 5491 y 6038). La primera se corta a media palabra (*"naveg"*);
+   la segunda está entera. **Se construye la segunda.**
+2. **Hay dos F11 distintas.** Una, *"Navegación global, back, routing y transiciones de sistema"*
+   (12785), se corta en su apartado 41 (*"Si el proyecto"*). La otra, *"Orquestación global,
+   coordinación y motion engine avanzado"* (13290), está entera, **copiada otra vez idéntica** (14128,
+   comprobado con `diff`), y es a la que encadena la F10 y la que encadena con la F12. **Se construye la
+   de orquestación**; lo que pedía el borrador (back, routing, swipe-back, foco al navegar) lo cubren la
+   **F2** y la pila de navegación de **NAVO F1**, y la F11 lo repasa al orquestar. Nada se tira.
+3. **El apartado 22 de la F0 propone 25 fases** «como mínimo» y dice que el orden se puede cambiar si el
+   análisis lo justifica. Las otras veinte fases del mismo documento **son** su plan, escrito por él:
+   se construyen esas, en su orden. La F0 aporta qué significa cada una en JosStyle (`ROADMAP_MOTION`).
+4. **Cinco temas se pisan entre fases** (navegación F2/F7/F11, microinteracciones F3/F9, física F5/F8,
+   listas y datos F4/F10/F17, lenguaje F14/F18). Se reparten por escrito en `SOLAPES_ROADMAP`
+   (`src/lib/motionMapa.js`): cada fase hace su parte y no rehace la de la otra.
+5. **El apartado 14 de la F0 pide «Premium» y «Ultra»** además de Sin movimiento, Reducido y Normal, y en
+   la línea siguiente *"No añadas controles inútiles"*. Se respetan las dos: la arquitectura los admitiría
+   (una escala global), pero **no se ofrecen** salvo que la F1 demuestre una diferencia visible que quepa
+   en el presupuesto. Y **los cuatro ids que ya se guardan** (`completa`, `reducida`, `minima`,
+   `desactivadas`) no se renombran: lo que cambia es que hagan algo de verdad.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

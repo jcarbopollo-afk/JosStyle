@@ -938,6 +938,14 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-apariencia.mjs >/tmp/j
 else
   fallo "Falla la auditoría de Apariencia"; grep '✗' /tmp/jc_apariencia.log
 fi
+# Motion System F0 — el inventario del movimiento contra index.css, ANIMACIONES_HC y las
+# vistas: una animación nueva sin mapear, un @keyframes huérfano o una duración escrita a
+# mano más ponen esto rojo (la regla «todo lo nuevo hereda motion», hecha prueba).
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f0.mjs >/tmp/jc_motion_f0.log 2>&1; then
+  ok "El Motion System, F0: mapa, auditoría y plan — $(grep -c '✓' /tmp/jc_motion_f0.log) comprobaciones"
+else
+  fallo "Falla la auditoría del Motion System (F0)"; grep '✗' /tmp/jc_motion_f0.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

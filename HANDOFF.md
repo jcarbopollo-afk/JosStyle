@@ -2,6 +2,14 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.130.0 — Motion System F0/20: auditoría, mapa y plan):**
+> Josué pasó el **Motion System** (21 fases, desordenadas): el índice ordenado está en
+> `docs/13_MOTION_SYSTEM_ORDEN.md` y se construye de la F0 a la F20. La F0 no cambia ninguna pantalla:
+> es el inventario (`src/lib/motionMapa.js`, `docs/MOTION_MAP.md` generado), las reglas
+> (`docs/MOTION_SYSTEM.md`) y una auditoría que pone la suite roja si aparece movimiento sin mapear.
+> Encontró doce cosas, entre ellas que **tres de los cuatro niveles de animaciones de Ajustes no hacen
+> nada** (la F1) y que **las gráficas no respetan «Reducir movimiento»** (la F4). **La siguiente es la F1.**
+
 > **📅 ACTUALIZACIÓN (v3.129.1 — la franja borrosa de arriba de los hubs, fuera, y el rebote de vuelta):**
 > Con un vídeo de su iPhone: la parte de arriba de Bienestar, Vida y Gestión era **un rectángulo
 > borroso** —la cabecera fija llevaba el color de la barra de abajo con desenfoque— y la quería

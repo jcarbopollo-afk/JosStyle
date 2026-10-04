@@ -29,6 +29,9 @@ Léela en este orden la primera vez. Después, entra directo al documento que ne
 | 10 | [`10_SONIDOS_PARA_FL_STUDIO.md`](10_SONIDOS_PARA_FL_STUDIO.md) | El brief de los 46 archivos de audio (SO F2): qué es cada uno, cuánto dura y cómo debe sonar. 🏁 **Ya producidos** y en `public/sonidos/`; queda como la ficha contra la que se miden. | Si hay que rehacer o añadir un sonido. |
 | 11 | [`11_ENTREGA3_ORDEN.md`](11_ENTREGA3_ORDEN.md) | **Entrega 3** (4 sept 2026): las **46 fases** de pulido y rediseño de Hoy, Calendario, Biblioteca, Productividad, Bienestar, Sueño, Nutrición y Estudios, con su línea en el documento original. | Antes de empezar cualquier fase de la Entrega 3. |
 | 12 | [`12_ENTREGA4_FITNESS_ORDEN.md`](12_ENTREGA4_FITNESS_ORDEN.md) | **Entrega 4** (13 sept 2026): las **45 fases** de Fitness, con la línea de cada una. ⚠️ **El documento original va del revés**: la F45 lo abre y la F1 lo cierra. Aquí está el orden de construcción, y qué encontró el inventario de la F1. | Antes de empezar cualquier fase de la Entrega 4. |
+| 13 | [`13_MOTION_SYSTEM_ORDEN.md`](13_MOTION_SYSTEM_ORDEN.md) | **Motion System** (4 oct 2026): las **21 fases** (F0–F20) del sistema de movimiento, con la línea de cada una. ⚠️ **Vienen desordenadas** (la F16 abre el archivo) y con repetidos: aquí está el orden de construcción. | Antes de empezar cualquier fase del Motion System. |
+| — | [`MOTION_SYSTEM.md`](MOTION_SYSTEM.md) | Cómo se mueve JosStyle: la regla «todo lo nuevo hereda motion», los seis niveles, el presupuesto, el carácter de cada área, los ajustes y la arquitectura. | **Antes de añadir cualquier pantalla, tarjeta o botón.** |
+| — | [`MOTION_MAP.md`](MOTION_MAP.md) | Cada elemento que se mueve (o debería), con su ficha. ⚠️ **Se genera desde `src/lib/motionMapa.js`**, no se edita a mano. | Para saber cómo se mueve algo concreto. |
 
 ---
 

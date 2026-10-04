@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.129.1**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.130.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -28,6 +28,29 @@ conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (hi
 (el sistema de rangos entero). La **F22 (historial y evolución de rangos, v3.104.0)** es de aquí.
 🚨 **Antes de construir nada, `git fetch origin main`**: esta sesión llegó a tener una F9 entera
 escrita **que ya estaba hecha y mejor** —la suya destapó dos fallos reales de mi F7—, y se descartó.
+
+🎬 **Y AHORA, EL MOTION SYSTEM: 21 FASES (F0–F20), EN MARCHA.** Josué lo pasó el 2026-10-04 —17 913
+líneas— para construir *"el sistema de movimiento de Jos Style"*, y dijo: *"Están desordenadas, pero
+ordenadlas. Y volverás y ejecutarás todas y no pares hasta acabarlo. Y cuando se te acabe el límite y
+se te vuelva a restablecer, sigue."* El índice con la línea de cada fase está en
+**`docs/13_MOTION_SYSTEM_ORDEN.md`** (el archivo empieza por la F16 y trae la F2 y la F11 repetidas,
+C-51), y **se construye de la F0 a la F20**. **Hecha la F0 (v3.130.0)**: el mapa, la auditoría y el
+plan. Lo que vale para cualquier cambio a partir de hoy:
+- 🚨 **TODO LO NUEVO HEREDA MOTION, Y ES UNA PRUEBA** (`src/lib/motionMapa.js`, F0 apartado 19): una
+  regla animada de `index.css` que no esté en el `MOTION_MAP` pone la suite roja, igual que un
+  `@keyframes` huérfano, una curva que no sea `--ease-premium` o una duración escrita a mano en una
+  vista (`DEUDA_F0` es un trinquete: no puede crecer, y la fase que la baje baja su número).
+- 🚨 **`docs/MOTION_MAP.md` SE GENERA, NO SE EDITA** (`scripts/generar-motion-map.mjs`), y la prueba lo
+  compara. `docs/MOTION_SYSTEM.md` es el «¿cómo debe moverse esto?» para cualquier pantalla nueva.
+- 🚨 **SIN LIBRERÍA DE ANIMACIÓN** (F0, decisión de arquitectura): ni framer-motion ni ninguna. El
+  movimiento vive en `index.css` con una sola curva; lo que el CSS no pueda hacer va por la Web
+  Animations API. `package.json` lo vigila.
+- ⚠️ **EL MAPA SE APOYA EN `ANIMACIONES_HC`, NO LO SUSTITUYE**: las 21 animaciones del catálogo de la
+  E3 F14 están en el mapa con la misma duración, comprobado.
+- 🐛 **TRES DE LOS CUATRO NIVELES DE «ANIMACIONES» DE AJUSTES NO HACEN NADA** (hallazgo de la F0, lo
+  arregla la F1): la propia pantalla lo confiesa. Y **las gráficas de Recharts no obedecen a «Reducir
+  movimiento»** (animan por JavaScript): lo arregla la F4. Los doce hallazgos están en `HALLAZGOS_F0`,
+  cada uno con la fase que lo trata.
 
 🚨 **Y la lección de la F1, que vale para todas las que quedan: ENTRENAMIENTO YA EXISTÍA, y no era una
 cosa, eran tres.** El módulo es `entreno` + `calistenia` desde la Fase 2; **las fotos de progreso son
@@ -171,6 +194,9 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
   entonces: él lo pidió así en su día. Manda lo último que ha dicho.
   🏁 **Y la cadena terminó en la FIT F45 (v3.127.0).** No hay una fase 46, y el apartado 63 de la
   última pide no inventarla (C-49): lo siguiente lo abre él, como un ciclo nuevo.
+  🎬 **Y LO ABRIÓ EL 2026-10-04: EL MOTION SYSTEM, 21 FASES**, con la misma orden de encadenar sin
+  parar y de seguir cuando se restablezca el límite. Se construye de la F0 a la F20
+  (`docs/13_MOTION_SYSTEM_ORDEN.md`), una a una, cada una con `verificar.sh` en verde y a `main`.
 - **Al terminar, decirle siempre dos cosas:** qué se ha hecho y hasta dónde se ha llegado.
 - **Lo que más le importa es recibir la entrega actualizada cuanto antes.** Priorizarlo sobre
   explicaciones largas; nunca dejar un turno a medias sin entregarla.
@@ -1989,7 +2015,12 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-1. 🏁 **NO HAY UNA FASE SIGUIENTE QUE CONSTRUIR SOLO.** La Entrega 4 está cerrada (45/45) y su
+0. 🎬 **LA SIGUIENTE ES LA F1 DEL MOTION SYSTEM** (*"Motor de movimiento + tokens + primitivas"*,
+   líneas 4900–5490 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F2… hasta la F20,
+   en el orden de `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el
+   `MOTION_MAP` y `HALLAZGOS_F0`: la F1 empieza por hacer reales los niveles de Ajustes, poner los
+   tokens en `index.css` y bajar la deuda de duraciones sueltas.
+1. 🏁 **DE FITNESS NO HAY UNA FASE SIGUIENTE QUE CONSTRUIR SOLO.** La Entrega 4 está cerrada (45/45) y su
    apartado 63 lo dice: *"NO continuar automáticamente con otra fase. No crear una Fase 46. Si
    posteriormente se quieren añadir nuevas funcionalidades: deberán tratarse como un nuevo ciclo de
    desarrollo."* Lo que venga **lo abre Josué**. Hasta entonces, **correcciones**: si reporta un fallo,
