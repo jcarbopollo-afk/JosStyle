@@ -38,7 +38,13 @@ vea bien **en su iPhone** solo lo puede confirmar él (R1).
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` **en verde** (`═══ TODO CORRECTO ═══`, 0 fallos) a la primera: **22 282
+pruebas de Node en 206 suites**, **3760 casos de renderizado**, **11 reglas invariantes** y **3005
+comprobaciones en Chromium** — **29 058** en total. El salto desde la v3.127.0 es exactamente el
+arreglo: **+6 en la suite de Safari** (la regla aplicada solo en vertical, el hallazgo declarado, y la
+casilla que se pone roja sin la regla y con un comentario que la menciona) y **+7 del recorrido** (la
+regla en la raíz, la barra como una sola superficie y el desplazamiento normal). **Ninguna otra suite
+cambió de cuenta.**
 
 ## v3.127.0 — FIT F45/45: pulido final, QA extremo y release de fitness · 🏁 ENTREGA 4 CERRADA
 
