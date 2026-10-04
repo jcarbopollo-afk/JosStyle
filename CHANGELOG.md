@@ -44,7 +44,13 @@ sugerencias, la geometría de la cabecera y las tarjetas. ⚠️ Chromium no reb
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` **en verde** (`═══ TODO CORRECTO ═══`, 0 fallos) a la primera: **22 339
+pruebas de Node en 207 suites**, **3760 casos de renderizado**, **11 reglas invariantes** y **3041
+comprobaciones en Chromium** — **29 151** en total. El salto desde la v3.129.0 es exactamente lo de este
+arreglo: **+6 en el barrido de Safari** (la sección del rebote, dada la vuelta), **+20 en la suite de la
+SC F1** (la banda transparente, la máscara y sus casos rojos) y **+22 del recorrido** (la sección SF2,
+que mide los tres hubs a 414 × 896 y el corte a 375 × 667, y sustituye a la de la v3.127.1). **Ninguna
+otra suite cambió de cuenta.**
 
 ## v3.129.0 — AC F2: auditoría de Apariencia
 
