@@ -88,7 +88,12 @@ toda la aplicación (E3 F22) — lo decide Josué.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos): build de Vite, **22 698
+pruebas unitarias** con Node en **210 suites**, **3792 casos de renderizado real**, **11 reglas invariantes** y
+**3102 comprobaciones en Chromium** — **29 603 comprobaciones**. El salto desde la v3.131.0 son 99 pruebas
+de Node —la suite nueva de la navegación (`test-motion-f2`) y su línea en el resumen— y la sección «MS F2»
+del recorrido (25), que mide en la aplicación de verdad las tres formas de navegar, el scroll que se
+recuerda al volver, el indicador de la barra de abajo y el límite de error de cada pantalla.
 
 ## v3.131.0 — Motion System F1/20: el motor de movimiento, los tokens y las primitivas
 
