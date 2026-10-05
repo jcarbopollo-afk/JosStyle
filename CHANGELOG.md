@@ -85,7 +85,12 @@ y las cifras que cuentan (la F17).
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos): build de Vite, **22 599
+pruebas unitarias** con Node en **209 suites**, **3792 casos de renderizado real**, **11 reglas invariantes** y
+**3077 comprobaciones en Chromium** — **29 479 comprobaciones**. El salto desde la v3.130.0 son 173 pruebas
+de Node —171 de ellas, la suite nueva del motor—, los casos de renderizado nuevos —el
+movimiento de Apariencia en sus seis estados y `Presencia`— (32) y la sección «MS F1» del recorrido (36), que mide el motor en la aplicación
+de verdad: los dos atributos, los cinco modos, las tres velocidades y Reducido sin desplazamientos.
 
 ## v3.130.0 — Motion System F0/20: auditoría total, arquitectura y plan maestro
 
