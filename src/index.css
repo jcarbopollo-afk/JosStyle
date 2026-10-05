@@ -55,6 +55,29 @@ input[type='range']::-webkit-slider-thumb {
   --safe-right: env(safe-area-inset-right, 0px);
 }
 
+/* MS F6 — EL SISTEMA DE PROFUNDIDAD (src/lib/profundidad.js). Una sola jerarquía de capas
+   (`--z-*`, y en Tailwind `z-capa`, `z-flotante`…) y las sombras de elevación con nombre. Los
+   valores viven también en `CAPAS_Z` y `SOMBRAS`, y `auditarTokensProfundidad` compara los dos.
+   Ni un z-index ni una sombra de elevación escritos a mano: `auditarProfundidad` los caza. */
+:root {
+  --z-fondo: -1;
+  --z-base: 0;
+  --z-elevado: 5;
+  --z-pegajoso: 20;
+  --z-flotante: 30;
+  --z-aviso: 40;
+  --z-capa: 50;
+  --z-alerta: 70;
+  --sombra-reposo: 0 1px 2px rgba(0,0,0,0.06);
+  --sombra-pomo: 0 1px 4px rgba(0,0,0,0.5);
+  --sombra-elevada: 0 10px 26px rgba(0,0,0,0.32);
+  --sombra-flotante: 0 12px 28px rgba(0,0,0,0.45);
+  --sombra-maxima: 0 18px 40px rgba(0,0,0,0.4);
+  /* Una hoja sube desde su borde: todo su alto. En Reducido no se desplaza y se funde. */
+  --hoja-recorrido: 100%;
+  --hoja-opacidad-inicial: 1;
+}
+
 /* Las dos acciones fijas de arriba (buscar/preguntar a la IA y sugerencias).
    Empiezan SIEMPRE por debajo de lo que iOS reserva, con los mismos 14 px de
    aire de antes por debajo de esa línea. */
@@ -342,6 +365,8 @@ html[data-motion='reducido'] {
   --motion-pulso-firma: 1;
   --motion-pulso-sobrepaso: 1;
   --motion-velo-desenfoque: 0px;
+  --hoja-recorrido: 0%;
+  --hoja-opacidad-inicial: 0;
 }
 html[data-motion='premium'] {
   --motion-dist-micro: 4px;
@@ -433,6 +458,8 @@ html[data-velocidad='rapida'] {
     --motion-pulso-firma: 1;
     --motion-pulso-sobrepaso: 1;
     --motion-velo-desenfoque: 0px;
+    --hoja-recorrido: 0%;
+    --hoja-opacidad-inicial: 0;
   }
 }
 
@@ -747,7 +774,7 @@ html[data-motion='reducido'] .chevron-gira {
 .hub-sticky {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: var(--z-pegajoso);
   margin-left: -1rem;
   margin-right: -1rem;
   padding-left: 1rem;
@@ -839,7 +866,7 @@ html[data-motion='reducido'] .chevron-gira {
       (`.hub-card-receding`) para que quede claro que el foco está en la que se pulsó. */
 .hub-card {
   transition: transform var(--motion-dur-fast) var(--ease-premium), box-shadow var(--motion-dur-fast) var(--ease-premium), filter var(--motion-dur-fast) var(--ease-premium), opacity var(--motion-dur-fast) var(--ease-premium);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  box-shadow: var(--sombra-reposo);
 }
 /* 🐛 MS F3 — SOLO un botón, y solo si no trae su propio escalón. Mientras la entrada con `both`
    tapaba esta regla daba igual a qué se aplicara; al arreglarla, una tarjeta-contenedor de Salud
@@ -849,15 +876,15 @@ html[data-motion='reducido'] .chevron-gira {
 button.hub-card:not([class*='active:scale']):active:not(:disabled) {
   transform: scale(var(--motion-escala-subtle));
   filter: brightness(1.1);
-  box-shadow: 0 10px 26px rgba(0,0,0,0.32);
+  box-shadow: var(--sombra-elevada);
 }
 @keyframes hubCardExpand {
-  0% { transform: scale(var(--motion-escala-subtle)); filter: brightness(1.1); box-shadow: 0 10px 26px rgba(0,0,0,0.32); }
-  100% { transform: scale(var(--motion-pulso-sobrepaso)); filter: brightness(1.16); box-shadow: 0 18px 40px rgba(0,0,0,0.4); }
+  0% { transform: scale(var(--motion-escala-subtle)); filter: brightness(1.1); box-shadow: var(--sombra-elevada); }
+  100% { transform: scale(var(--motion-pulso-sobrepaso)); filter: brightness(1.16); box-shadow: var(--sombra-maxima); }
 }
 .hub-card-expanding {
   position: relative;
-  z-index: 5;
+  z-index: var(--z-elevado);
   /* MS F1 — dura `fast`, y la navegación de HubView espera ESE token
      (`duracionMs('fast')`), no un número escrito aparte: eran 190 ms en los dos
      sitios y nadie habría notado que uno cambiaba (hallazgo de la F0). */
@@ -940,7 +967,9 @@ html[data-motion='reducido'] .nav-indicador {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .calendar-sheet {
-  animation: calendarSheetIn var(--motion-dur-normal) var(--ease-premium) both;
+  /* MS F6 — `backwards`, no `both`: el último fotograma de `both` dejaba un `transform` puesto en la
+     ventana para siempre (la lección de la F3 con `hubCardIn`). */
+  animation: calendarSheetIn var(--motion-dur-normal) var(--ease-premium) backwards;
 }
 
 /* ===========================================================================
@@ -1206,6 +1235,37 @@ html[data-motion='reducido'] .nav-indicador {
 }
 .hoja-entra {
   animation: calendarSheetIn var(--motion-dur-normal) var(--ease-premium) backwards;
+}
+
+/* MS F6, apartado 11 — *"El sheet debe parecer conectado físicamente al borde inferior. Entrada: desde
+   su posición física… No utilizar una animación genérica de modal."* Cuando la capa es una HOJA —lo
+   decide `capasMotion.js` con el estilo calculado, así que en el iPhone sí y en el escritorio, donde la
+   misma caja va centrada, no—, sube desde su borde: todo su alto, sin fundido ni escala. En Reducido no
+   se desplaza: se funde (`--hoja-recorrido` vale 0 y la opacidad inicial, 0). */
+@keyframes hojaSubeDelBorde {
+  from { opacity: var(--hoja-opacidad-inicial); transform: translateY(var(--hoja-recorrido)); }
+  to { opacity: 1; transform: none; }
+}
+[data-capa='hoja'] > .hoja-entra {
+  animation: hojaSubeDelBorde var(--motion-dur-normal) var(--ease-premium) backwards;
+}
+
+/* MS F6 — la COPIA de una capa que sale (capasMotion.js) no repite ninguna entrada ni transición de
+   dentro: lo único que se mueve es su salida, por la Web Animations API. */
+[data-capa-saliendo],
+[data-capa-saliendo] * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* MS F6, apartados 12 y 14 — un menú que nace de su botón: crece desde la esquina del botón que lo
+   abre (`transform-origin` en su `style`), corto y discreto. Es la profundidad 3 sin velo. */
+@keyframes menuEntra {
+  from { opacity: 0; transform: translateY(calc(-1 * var(--motion-dist-micro))) scale(var(--motion-escala-normal)); }
+  to { opacity: 1; transform: none; }
+}
+.menu-entra {
+  animation: menuEntra var(--motion-dur-fast) var(--motion-curva-entrance) backwards;
 }
 /* MS F1 — la profundidad de Ultra (apartado 14: *"más profundidad"*). El velo de
    una hoja desenfoca lo de detrás. ⚠️ Fijo, como material, NUNCA animado (el

@@ -5,6 +5,7 @@ import { hexToRgba } from '../lib/helpers';
 import { Card } from '../components/ui';
 import { useFundidoBajoCabecera } from '../components/fundidoBajoCabecera';
 import { duracionMs, contextoDelDocumento, escalonado } from '../lib/motion';
+import { desenfoque } from '../lib/profundidad';
 
 // Fase N1 — Nueva navegación por áreas (sustituye la barra inferior de 4 accesos + "Más" plano
 // por 5 pestañas fijas: Inicio, Salud, Vida, Gestión, Más). Al tocar cualquiera que no sea
@@ -121,8 +122,8 @@ export default function HubView({ area, modulos, personalizacion, resumenes, acc
               // N1/N2. WebkitBackdropFilter necesario para que Safari/iOS (donde vive esta PWA)
               // aplique el desenfoque igual que el resto de navegadores.
               background: `linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0) 45%), ${hexToRgba(COLORS.surface, 0.68)}`,
-              backdropFilter: 'blur(18px)',
-              WebkitBackdropFilter: 'blur(18px)',
+              backdropFilter: desenfoque('strong'),
+              WebkitBackdropFilter: desenfoque('strong'),
               border: `1px solid ${hexToRgba(COLORS.border, 0.8)}`,
               // La entrada en cascada (hubCardIn) usa el escalón de cada tarjeta (MS F1:
               // `escalonado`, una variable que apunta al token). ⚠️ Ya no es un `animationDelay`

@@ -933,7 +933,7 @@ export function DetalleLibro({
 
   const contenido = (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto pantalla-segura"
+      className="fixed inset-0 z-capa overflow-y-auto pantalla-segura"
       style={{ background: COLORS.bg }}
       role="dialog"
       aria-label={`Detalle de ${libro.titulo}`}
@@ -1387,7 +1387,7 @@ export function DetalleGuardado({
 
   const contenido = (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto pantalla-segura"
+      className="fixed inset-0 z-capa overflow-y-auto pantalla-segura"
       style={{ background: COLORS.bg }}
       role="dialog"
       aria-label={`Detalle de ${nombreDe(guardado)}`}
@@ -1829,7 +1829,7 @@ export function DetalleIdea({
 
   const contenido = (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto pantalla-segura"
+      className="fixed inset-0 z-capa overflow-y-auto pantalla-segura"
       style={{ background: COLORS.bg }}
       role="dialog"
       aria-label={`Detalle de ${textoDeIdea(idea)}`}
@@ -2364,7 +2364,7 @@ export function LecturaDocumento({
 
   const contenido = (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto pantalla-segura"
+      className="fixed inset-0 z-capa overflow-y-auto pantalla-segura"
       style={{ background: COLORS.bg }}
       role="dialog"
       aria-label={`Documento ${nombreDoc(documento)}`}
@@ -3024,7 +3024,7 @@ export function DetalleColeccion({
 
   const contenido = (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto pantalla-segura"
+      className="fixed inset-0 z-capa overflow-y-auto pantalla-segura"
       style={{ background: COLORS.bg }}
       role="dialog"
       aria-label={`Colección ${coleccion.nombre}`}

@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail, Plus, Trash2, ChevronRight, CornerDownLeft, ChevronDown } from 'lucide-react';
-import { COLORS } from '../tokens';
+import { COLORS, CAPAS } from '../tokens';
 import { hexToRgba, shade, fileToBase64 } from '../lib/helpers';
 import { resolverConsulta, sugerenciasIniciales } from '../lib/indiceBusqueda';
 import { askAI, askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { extractPdfText } from '../lib/pdfText';
 import { verificarPin } from '../lib/pin';
 import { transicion } from '../lib/motion';
+import { desenfoque, sombra } from '../lib/profundidad';
 
 export function Card({ children, style, className = '', id }) {
   return (
@@ -27,11 +28,11 @@ export function Card({ children, style, className = '', id }) {
         // defecto: sin tocar nada, la tarjeta se ve exactamente igual que antes.
         border: `1px solid ${COLORS.borderAlpha || COLORS.border}`,
         boxShadow: COLORS.cardShadow && COLORS.cardShadow !== 'none' ? COLORS.cardShadow : undefined,
-        backdropFilter: COLORS.surfaceAlpha && COLORS.surfaceAlpha !== COLORS.surface ? 'blur(12px)' : undefined,
+        backdropFilter: COLORS.surfaceAlpha && COLORS.surfaceAlpha !== COLORS.surface ? desenfoque('medium') : undefined,
         // 🚨 SF F1 — sin la versión con prefijo, un iPhone con iOS anterior al 18 NO aplica el
         // desenfoque: la tarjeta se queda plana sobre la foto de fondo y el texto pierde
         // legibilidad. `HubView` ya lo llevaba desde la Fase N4; aquí faltaba.
-        WebkitBackdropFilter: COLORS.surfaceAlpha && COLORS.surfaceAlpha !== COLORS.surface ? 'blur(12px)' : undefined,
+        WebkitBackdropFilter: COLORS.surfaceAlpha && COLORS.surfaceAlpha !== COLORS.surface ? desenfoque('medium') : undefined,
         ...style,
       }}
     >
@@ -192,8 +193,8 @@ export function BotonBorrarDefinitivo({
       </button>
       {preguntando && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-6"
-          style={{ background: 'rgba(0,0,0,0.55)' }}
+          className="fixed inset-0 z-capa flex items-center justify-center p-6"
+          style={{ background: CAPAS.veloHoja }}
           onClick={() => setPreguntando(false)}
         >
           <div
@@ -557,7 +558,7 @@ export function VerificacionPinModal({ seguridad, accent, motivo, onSuccess, onC
   // `.module-enter` (transform permanente por su animación de entrada, ver App.jsx/index.css) para
   // que `fixed inset-0` se ancle siempre al viewport real, no a un contenedor de página larga.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCancel}>
+    <div className="fixed inset-0 z-capa flex items-center justify-center px-4" style={{ background: CAPAS.veloHoja }} onClick={onCancel}>
       <div
         className="w-full max-w-sm rounded-3xl p-6 text-center"
         style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
@@ -604,7 +605,7 @@ export function CrearPinModal({ accent, titulo, onGuardar, onCancel, permitirCan
   // Optimización de navegación/scroll — mismo motivo que VerificacionPinModal: portal para anclar
   // siempre al viewport real, no a un `.module-enter` con transform permanente.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
+    <div className="fixed inset-0 z-capa flex items-center justify-center px-4" style={{ background: CAPAS.veloHoja }}>
       <div className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
         <Lock size={22} style={{ color: accent, margin: '0 auto 10px' }} />
         <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>{titulo || 'Crea tu PIN'}</p>
@@ -661,7 +662,7 @@ export function RecuperarPinModal({ accent, emailCuenta, onEnviar, onCancel }) {
 
   // Optimización de navegación/scroll — mismo motivo que el resto de modales de esta fase.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCancel}>
+    <div className="fixed inset-0 z-capa flex items-center justify-center px-4" style={{ background: CAPAS.veloHoja }} onClick={onCancel}>
       <div
         className="w-full max-w-sm rounded-3xl p-6"
         style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
@@ -806,20 +807,22 @@ export function SuggestionsButton({ accent, buildPrompt, lado = 'izquierda' }) {
     /* Entrega 3 · F1, apartado 1 — la altura la pone `accion-superior` (index.css) a partir
        de `env(safe-area-inset-top)`: en un iPhone con isla este botón caía justo encima de la
        batería. Nunca devolver aquí un `top` en línea, que ganaría a la clase. */
-    <div className="accion-superior fixed z-30" style={lado === 'derecha' ? { right: 14 } : { left: 14 }}>
+    <div className="accion-superior fixed z-flotante" style={lado === 'derecha' ? { right: 14 } : { left: 14 }}>
       <button
         onClick={() => setOpen((o) => !o)}
         className="toque-44 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
-        style={{ background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+        style={{ background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: desenfoque('medium'), WebkitBackdropFilter: desenfoque('medium') }}
         aria-expanded={open}
         aria-label="Sugerencias de la IA"
       >
         <Lightbulb size={16} style={{ color: accent }} />
       </button>
       {open && (
+        /* MS F6, apartados 12 y 14 — el panel NACE DE SU BOTÓN: crece desde la esquina en la que está
+           (`menu-entra` con su `transform-origin`), corto y discreto. Profundidad 3, sin velo. */
         <div
-          className="mt-2 rounded-2xl p-3 absolute"
-          style={{ width: 252, background: COLORS.surface, border: `1px solid ${COLORS.border}`, boxShadow: '0 12px 28px rgba(0,0,0,0.45)', ...(lado === 'derecha' ? { right: 0 } : { left: 0 }) }}
+          className="mt-2 rounded-2xl p-3 absolute menu-entra"
+          style={{ width: 252, background: COLORS.surface, border: `1px solid ${COLORS.border}`, boxShadow: sombra('flotante'), transformOrigin: lado === 'derecha' ? 'top right' : 'top left', ...(lado === 'derecha' ? { right: 0 } : { left: 0 }) }}
         >
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold" style={{ color: COLORS.text }}>Sugerencias</p>
@@ -927,6 +930,13 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
   // Apartado 3: el campo recibe el foco al abrirse. En iOS eso además levanta el teclado,
   // que es lo que Josué quiere si ha pulsado la lupa a propósito.
   useEffect(() => { inputRef.current && inputRef.current.focus(); }, []);
+  // MS F6, apartado 33 — con teclado también se cierra: Escape, como el resto de capas (E3 F9,
+  // FIT F39). Era la única ventana grande sin él.
+  useEffect(() => {
+    const alPulsar = (ev) => { if (ev.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', alPulsar);
+    return () => document.removeEventListener('keydown', alPulsar);
+  }, [onClose]);
 
   // Apartado 7: los resultados aparecen mientras escribe. Es una búsqueda local sobre un
   // índice de unas treinta entradas — instantánea, sin red y sin debounce que la retrase
@@ -978,7 +988,7 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
 
   // Optimización de navegación/scroll — portal, mismo motivo que el resto de modales de esta fase.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-capa flex items-start justify-center pt-20 px-4" style={{ background: CAPAS.veloHoja }} onClick={onClose}>
       <div
         className="w-full max-w-md rounded-3xl p-4"
         style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}

@@ -5,7 +5,7 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**73 elementos**: ✅ Existe 60 · ⚠️ Inconsistente 4 · ⬜ Sin movimiento 9 · 🚨 Fuera de control 0.
+**75 elementos**: ✅ Existe 66 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 7 · 🚨 Fuera de control 0.
 
 ## Resumen
 
@@ -37,13 +37,15 @@
 | Marcar un favorito | E | 1 · Micro | 220 ms | ✅ Existe | F3 |
 | «Pensando…» y los botones que esperan | M | 1 · Micro | 1000 ms | ✅ Existe | F16 |
 | Campos de texto al enfocar | F | 0 · Estático | — | ⬜ Sin movimiento | F9 |
-| Una hoja de Fitness entra desde abajo | H | 2 · Suave | 220 ms | ⚠️ Inconsistente | F6 |
+| Una hoja de Fitness entra (en el iPhone, desde su borde) | H | 2 · Suave | 220 ms | ✅ Existe | F6 |
+| Una hoja sube desde su borde | H | 2 · Suave | 220 ms | ✅ Existe | F6 |
 | El fondo de una hoja se oscurece | G | 2 · Suave | 220 ms | ✅ Existe | F6 |
-| Hojas del Calendario | H | 2 · Suave | 220 ms | ⚠️ Inconsistente | F6 |
+| Ventanas del Calendario | G | 2 · Suave | 220 ms | ✅ Existe | F6 |
 | Arrastrar una hoja por su asa | H | 2 · Suave | 220 ms | ✅ Existe | F5 |
-| El resto de ventanas y hojas (unas 40 en 18 archivos) | G | 0 · Estático | — | ⬜ Sin movimiento | F6 |
+| Todas las capas: ventanas, hojas, pantallas por encima y visores (unas 40) | G | 2 · Suave | 220 ms | ✅ Existe | F6 |
 | El aviso de «añadido» (y los de Fitness) | Q | 2 · Suave | 280 ms | ✅ Existe | F9 |
-| Menús «⋯» y desplegables | I | 0 · Estático | — | ⬜ Sin movimiento | F6 |
+| Menús «⋯» y desplegables | I | 1 · Micro | 220 ms | ✅ Existe | F6 |
+| Un panel que nace de su botón (las sugerencias) | I | 2 · Suave | 160 ms | ✅ Existe | F6 |
 | Completar una tarea | J | 2 · Suave | 280 ms | ✅ Existe | F9 |
 | Completar un hábito | J | 2 · Suave | 280 ms | ✅ Existe | F9 |
 | Terminar una rutina | Q | 3 · Protagonista | 420 ms | ✅ Existe | F9 |
@@ -851,41 +853,71 @@
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
-#### El resto de ventanas y hojas (unas 40 en 18 archivos)
+#### Ventanas del Calendario
 
-`modales_resto` · ⬜ Sin movimiento · lo trata la **F6**
+`hoja_calendario` · ✅ Existe · lo trata la **F6**
 
 | Campo | Valor |
 |---|---|
-| Ubicación | App.jsx, ui.jsx, LibraryView, ArmarioView, EstiloHombreView, CalendarView, quickAdd… |
+| Ubicación | src/views/CalendarView.jsx · src/index.css |
 | Componente | — |
-| Clase CSS | — |
-| @keyframes | — |
+| Clase CSS | `.calendar-sheet` |
+| @keyframes | `calendarSheetIn` |
 | En ANIMACIONES_HC | — |
-| Función | Confirmaciones, formularios, buscador, papelera, visor de fotos. |
+| Función | Crear o editar un evento, el detalle de un día. |
 | Estado inicial | — |
 | Estado final | — |
-| Entrada | Ninguna: aparecen de golpe |
-| Salida | Ninguna: desaparecen de golpe |
+| Entrada | Sube un poco y aparece |
+| Salida | La común de las capas (MS F6) |
 | Interacción | — |
 | Transición | — |
-| Duración | — |
+| Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
-| Intensidad | 0 · Estático |
-| Prioridad | alta |
-| Relación | — |
+| Intensidad | 2 · Suave |
+| Prioridad | media |
+| Relación | 🐛 MS F6 — terminaba con `both` y dejaba un `transform` puesto en la ventana; ahora `backwards`. |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
+#### Todas las capas: ventanas, hojas, pantallas por encima y visores (unas 40)
+
+`modales_resto` · ✅ Existe · lo trata la **F6**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/capasMotion.js (useCapasMotion, en App.jsx) · src/lib/profundidad.js |
+| Componente | useCapasMotion |
+| Clase CSS | — |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Confirmaciones, formularios, buscador, papelera, el ＋, el Armario, la Biblioteca, el visor de fotos. |
+| Estado inicial | Velo transparente; la caja fuera (hoja), escalada (ventana) o a la derecha (pantalla) |
+| Estado final | En su sitio |
+| Entrada | El velo se funde y la caja hace lo suyo, a la vez (apartado 8): una hoja sube desde su borde, una ventana aparece desde el centro (`modalEnter`), una pantalla entra como un módulo (`pageEnter`), un visor se funde |
+| Salida | Una copia inerte en su mismo sitio hace el camino de vuelta (`fast`, curva `exit`) y se quita |
+| Interacción | — |
+| Transición | Web Animations API: background-color del velo, transform y opacity de la caja |
+| Duración | 220 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 2 · Suave |
+| Prioridad | alta |
+| Relación | MS F6: antes aparecían y desaparecían de golpe (hallazgo `modales_de_golpe`). Ninguna escribe la suya: lo decide `tipoDeCapa` con el estilo calculado. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | El velo y el fundido; sin escala ni recorrido. |
+
 ### H · Hojas inferiores
 
-#### Una hoja de Fitness entra desde abajo
+#### Una hoja de Fitness entra (en el iPhone, desde su borde)
 
-`hoja_fitness` · ⚠️ Inconsistente · lo trata la **F6**
+`hoja_fitness` · ✅ Existe · lo trata la **F6**
 
 | Campo | Valor |
 |---|---|
@@ -897,8 +929,8 @@
 | Función | Las hojas de Fitness suben y su velo se oscurece. |
 | Estado inicial | Abajo |
 | Estado final | En su sitio |
-| Entrada | Sube |
-| Salida | Ninguna: desaparece de golpe |
+| Entrada | En el iPhone, donde es una HOJA, sube desde su borde con todo su alto (`hojaSubeDelBorde`, MS F6); en una pantalla ancha, donde va centrada, la entrada del Calendario |
+| Salida | La común de las capas (MS F6): baja hacia su borde |
 | Interacción | — |
 | Transición | — |
 | Duración | 220 ms |
@@ -908,29 +940,29 @@
 | Escalonado | — |
 | Intensidad | 2 · Suave |
 | Prioridad | media |
-| Relación | Comparte la animación con las hojas del Calendario. |
+| Relación | Quién es hoja y quién ventana lo decide `capasMotion.js` con el estilo calculado (`data-capa`). |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
-#### Hojas del Calendario
+#### Una hoja sube desde su borde
 
-`hoja_calendario` · ⚠️ Inconsistente · lo trata la **F6**
+`hoja_borde` · ✅ Existe · lo trata la **F6**
 
 | Campo | Valor |
 |---|---|
-| Ubicación | src/views/CalendarView.jsx · src/index.css |
+| Ubicación | src/index.css · src/components/capasMotion.js |
 | Componente | — |
-| Clase CSS | `.calendar-sheet` |
-| @keyframes | `calendarSheetIn` |
+| Clase CSS | `.hoja-entra` |
+| @keyframes | `hojaSubeDelBorde` |
 | En ANIMACIONES_HC | — |
-| Función | Crear o editar un evento. |
-| Estado inicial | — |
-| Estado final | — |
-| Entrada | Sube |
-| Salida | Ninguna |
+| Función | Que una hoja parezca conectada al borde de abajo (apartado 11): entra desde su posición física, no con la animación de una ventana. |
+| Estado inicial | Debajo del borde, con todo su alto |
+| Estado final | En su sitio |
+| Entrada | Sube, sin fundido ni escala |
+| Salida | — |
 | Interacción | — |
-| Transición | — |
+| Transición | transform |
 | Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
@@ -938,10 +970,10 @@
 | Escalonado | — |
 | Intensidad | 2 · Suave |
 | Prioridad | media |
-| Relación | — |
+| Relación | Las hojas sin entrada en CSS (el ＋, el Armario, el editor de color) hacen lo mismo por la Web Animations API (`animacionDeCapa`). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+| Movimiento reducido | No se desplaza: se funde (`--hoja-recorrido: 0%`). |
 
 #### Arrastrar una hoja por su asa
 
@@ -977,33 +1009,63 @@
 
 #### Menús «⋯» y desplegables
 
-`menus` · ⬜ Sin movimiento · lo trata la **F6**
+`menus` · ✅ Existe · lo trata la **F6**
 
 | Campo | Valor |
 |---|---|
-| Ubicación | HoyView, BibliotecaPlanesView, PlantillasView… |
+| Ubicación | PlantillasView (dentro de su tarjeta) · el «⋯» de la Agenda abre una hoja |
 | Componente | — |
-| Clase CSS | — |
+| Clase CSS | `.despliegue-entra` |
 | @keyframes | — |
 | En ANIMACIONES_HC | — |
 | Función | Acciones de un elemento. |
 | Estado inicial | — |
 | Estado final | — |
-| Entrada | Ninguna |
-| Salida | Ninguna |
+| Entrada | Se despliegan dentro de su tarjeta, debajo de quien los abre (F3); el de la Agenda es una hoja (F6) |
+| Salida | Se pliegan |
 | Interacción | — |
 | Transición | — |
-| Duración | — |
+| Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
-| Intensidad | 0 · Estático |
+| Intensidad | 1 · Micro |
 | Prioridad | media |
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+
+#### Un panel que nace de su botón (las sugerencias)
+
+`menu_flotante` · ✅ Existe · lo trata la **F6**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/ui.jsx · src/index.css |
+| Componente | — |
+| Clase CSS | `.menu-entra` |
+| @keyframes | `menuEntra` |
+| En ANIMACIONES_HC | — |
+| Función | Que un panel flotante diga de dónde sale (apartados 12 y 14). |
+| Estado inicial | Un poco más pequeño y 4 px más arriba, desde la esquina de su botón |
+| Estado final | En su sitio |
+| Entrada | Crece desde su origen (`transform-origin`) |
+| Salida | — |
+| Interacción | — |
+| Transición | opacity, transform |
+| Duración | 160 ms |
+| Curva | --motion-curva-entrance |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 2 · Suave |
+| Prioridad | media |
+| Relación | — |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Solo el fundido. |
 
 ### J · Listas
 

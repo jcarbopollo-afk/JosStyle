@@ -45,7 +45,8 @@ export function AsaHoja({ cajaRef, onCerrar, className = '-mt-3 mb-1' }) {
     try {
       const m = new DOMMatrix(getComputedStyle(caja).transform === 'none' ? undefined : getComputedStyle(caja).transform);
       desde = m.m42 || 0;
-      (caja.getAnimations ? caja.getAnimations() : []).forEach((a) => { if (a.id === 'asa-hoja') a.cancel(); });
+      /* La entrada de la capa (F6) también: si el dedo agarra la hoja mientras sube, manda el dedo. */
+      (caja.getAnimations ? caja.getAnimations() : []).forEach((a) => { if (a.id === 'asa-hoja' || a.id === 'capa-entra') a.cancel(); });
     } catch { desde = 0; }
     mover(caja, desde);
     gesto.current = { y0: ev.clientY - desde, x0: ev.clientX, eje: desde ? 'y' : null, muestras: [muestra(ev)], alto: caja.getBoundingClientRect().height || 400, actual: desde };

@@ -5,7 +5,7 @@ import {
   Target, Flame, Repeat, GraduationCap, Dumbbell, Star, Bell, Circle, CalendarOff,
   CheckSquare, Square, MoreHorizontal,
 } from 'lucide-react';
-import { COLORS, TIPOS_EVENTO_CALENDARIO, colorDeTipoEvento, FRECUENCIAS_RECURRENCIA } from '../tokens';
+import { COLORS, TIPOS_EVENTO_CALENDARIO, colorDeTipoEvento, FRECUENCIAS_RECURRENCIA, CAPAS } from '../tokens';
 import { uid, todayISO, addDays, hexToRgba } from '../lib/helpers';
 import { celdasMes, eventosDelDia, resumenDelDia, eventosFuturos, expandirRecurrentes, isoDeFecha, diasDelMes, intervaloDe, describirRecurrencia, saltarOcurrencia } from '../lib/calendario';
 import { NOMBRES_ORIGEN } from '../lib/calendarioIntegracion';
@@ -237,8 +237,8 @@ function EditorEvento({ base, accent, onGuardar, onEliminar, onCerrar, fechaOcur
   // aparezca superpuesto de inmediato, nunca "abajo del todo" de una vista larga del calendario.
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: 'rgba(0,0,0,0.6)' }}
+      className="fixed inset-0 z-capa flex items-center justify-center px-4"
+      style={{ background: CAPAS.veloHoja }}
       onClick={onCerrar}
     >
       <div
@@ -428,8 +428,8 @@ function DetalleEventoDerivado({ evento, accent, onAbrirModulo, onCerrar }) {
   // Optimización de navegación/scroll — mismo motivo que el editor de eventos, arriba.
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: 'rgba(0,0,0,0.6)' }}
+      className="fixed inset-0 z-capa flex items-center justify-center px-4"
+      style={{ background: CAPAS.veloHoja }}
       onClick={onCerrar}
     >
       <div
@@ -482,7 +482,7 @@ function BuscadorEventos({ eventos, accent, onSeleccionar, onCerrar }) {
 
   // Optimización de navegación/scroll — mismo motivo que el editor de eventos, arriba.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCerrar}>
+    <div className="fixed inset-0 z-capa flex items-start justify-center pt-16 px-4" style={{ background: CAPAS.veloHoja }} onClick={onCerrar}>
       <div
         className="calendar-sheet w-full max-w-md rounded-3xl p-4 max-h-[75vh] flex flex-col"
         style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}

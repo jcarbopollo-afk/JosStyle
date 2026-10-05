@@ -1160,6 +1160,33 @@ arrastra** (manipular no es animar) y solo desaparecen el muelle y la inercia al
 mueve píxeles está en reposo a un cuarto de píxel** (`reposoPx`): con el reposo genérico del motor, una
 vuelta de 30 px seguía animando 900 ms y un arrastre nuevo en ese rato se peleaba con ella.
 
+### C-57 — ✅ RESUELTA AL CONSTRUIR (Motion System F6, v3.136.0) · Cuarenta ventanas sin tocar ninguna, una hoja de Fitness que era una ventana y una escala de desenfoques que ya existía
+
+La F6 (*"Profundidad, capas, z-index y contexto visual"*) choca con tres cosas ya decididas, y la lectura de cada
+una:
+
+1. **"Cada capa debe tener su propia animación coordinada" (apartado 8) contra "ningún componente flotante crea su
+   propia lógica" (apartado 40).** Escribir una entrada y una salida en cada una de las cuarenta ventanas cumpliría
+   el 8 y rompería el 40 cuarenta veces. Lectura que respeta las dos: **un solo vigilante** (`useCapasMotion`) sobre
+   los hijos del `body` —toda capa es un portal, regla 3— que decide con el estilo calculado qué tipo de capa es y le
+   da su entrada y su salida. La salida necesita que la capa siga viéndose cuando React ya la ha quitado: se pone una
+   **copia inerte** (sin `role`, fuera de VoiceOver, sin toques) en su mismo sitio y la copia hace el camino de vuelta.
+   No se copia lo que lleva vídeo (el escáner) ni lo enorme (más de 1500 nodos).
+2. **Las hojas de Fitness (FIT F37/F42) entraban con la animación de una ventana** (`calendarSheetIn`: fundido, 14 px
+   y escala), y el apartado 11 dice *"no utilizar una animación genérica de modal"*. Lectura: **donde es una hoja (el
+   iPhone) sube desde su borde** (`hojaSubeDelBorde`), y **donde es una ventana (el escritorio, centrada) conserva la
+   del Calendario**. Misma duración y curva, así que la auditoría de movimiento de la F37 sigue cuadrando; su
+   comprobación de «una sola regla» se da la vuelta, no se borra.
+3. **El apartado 6 pide definir los desenfoques `none/subtle/medium/strong`, y la F1 ya los había definido**
+   (`DESENFOQUES_MOTION`, `--motion-blur-*`). No se crea una segunda escala: la F6 dice **cuándo** se usa cada uno y
+   pasa los siete desenfoques escritos a mano (8, 10, 12, 18 y 20 px) a `medium` o `strong`.
+
+Y dos decisiones que se escriben para que no se reabran: **los z-index conservan sus valores** —la F6 les pone
+nombre, no mueve nada de sitio—, y **el velo es uno** (`CAPAS.veloHoja`, 0,55): las ventanas usaban 0,5, 0,55 y 0,6
+sin motivo. ⚠️ **Imagen personal está congelada (EH F65)**: sus tres avisos cambian `z-[70]` por `z-alerta` y su velo
+literal por el token —el mismo valor—, y reciben la entrada y salida comunes porque viven fuera del módulo, como el
+pulsar de la F3; no se les añade nada propio.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

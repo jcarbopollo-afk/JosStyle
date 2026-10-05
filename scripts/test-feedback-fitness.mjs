@@ -94,8 +94,13 @@ ok(duracionEnCss('/* .x { animation: a 900ms } */ .x { animation: a 120ms ease; 
   '…sin contar lo que dice un comentario');
 ok(duracionEnCss('.fit-entra-otra { animation: a 999ms; }', 'fit-entra') === null,
   '…y sin confundir una clase con otra que empieza igual');
-ok(reglasDeClase(CSS, 'hoja-entra').length === 1 && /calendarSheetIn/.test(reglasDeClase(CSS, 'hoja-entra')[0].cuerpo),
-  '🔓 Las hojas reutilizan los fotogramas del Calendario (`calendarSheetIn`) en vez de escribir otros');
+/* 🔓 MS F6 (apartado 11) — la promesa se da la vuelta a medias: en una pantalla ancha, donde la caja va
+   centrada, sigue usando los fotogramas del Calendario; en el iPhone, donde es una HOJA pegada a su
+   borde, sube desde él (`hojaSubeDelBorde`). Dos reglas, la misma duración y la misma curva. */
+ok(reglasDeClase(CSS, 'hoja-entra').length === 2 && /calendarSheetIn/.test(reglasDeClase(CSS, 'hoja-entra')[0].cuerpo)
+  && /hojaSubeDelBorde var\(--motion-dur-normal\) var\(--ease-premium\) backwards/.test(reglasDeClase(CSS, 'hoja-entra')[1].cuerpo)
+  && /\[data-capa='hoja'\]/.test(reglasDeClase(CSS, 'hoja-entra')[1].selector),
+  '🔓 Las hojas usan los fotogramas del Calendario donde son una ventana, y suben desde su borde donde son una hoja (MS F6)');
 ok(usaLaCurva(CSS, 'fit-entra') && !usaLaCurva('.y { transition: width 200ms linear; }', 'y'), 'Se sabe si una clase usa la curva de la aplicación');
 ok(!dejaRastro(CSS, 'fit-rango-sube') && dejaRastro('.z { animation: q 200ms ease both; }', 'z'),
   '🚨 …y si deja un `transform` puesto al terminar (`both`), que rompería los `fixed` de dentro');

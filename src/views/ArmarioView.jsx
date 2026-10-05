@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, ChevronLeft, ChevronRight, Loader2, Copy, Check, Layers, CalendarDays, History, List, Sparkles, BarChart3, TrendingUp } from 'lucide-react';
-import { COLORS } from '../tokens';
+import { COLORS, CAPAS } from '../tokens';
 import { AsaHoja } from '../components/gestosMotion';
 import { hexToRgba, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedPrendaUrl } from '../lib/supabase';
@@ -274,7 +274,7 @@ function DetallePrenda({ prenda, outfits, usos, hoyISO, accent, onCerrar, onEdit
 
   // Regla 3 del proyecto: todo overlay `fixed inset-0` va con createPortal.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCerrar}>
+    <div className="fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: CAPAS.veloHoja }} onClick={onCerrar}>
       <div
         ref={caja}
         className="w-full max-w-md rounded-3xl overflow-hidden"
@@ -772,7 +772,7 @@ function DetalleOutfit({ outfit, prendas, usos, hoyISO, accent, onCerrar, onEdit
   ].filter(([, v]) => v);
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCerrar}>
+    <div className="fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: CAPAS.veloHoja }} onClick={onCerrar}>
       <div
         ref={caja}
         className="w-full max-w-md rounded-3xl overflow-hidden"
@@ -1990,7 +1990,7 @@ function DetalleDia({ fecha, usos, outfits, prendas, accent, onCerrar, onAnadir,
   const caja = useRef(null);
   const legible = new Date(`${fecha}T00:00:00`).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCerrar}>
+    <div className="fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: CAPAS.veloHoja }} onClick={onCerrar}>
       <div
         ref={caja}
         className="w-full max-w-md rounded-3xl p-4"

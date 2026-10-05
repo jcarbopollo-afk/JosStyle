@@ -17,7 +17,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, Check, Undo2, AlertTriangle } from 'lucide-react';
-import { COLORS } from '../tokens';
+import { COLORS, CAPAS } from '../tokens';
 import {
   contextoDeAdd, horaParaTipo, tipoQuickAdd,
   validarTarea, validarEvento, validarApunte,
@@ -40,8 +40,8 @@ function Hoja({ titulo, sub, onCerrar, children }) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: 'rgba(0,0,0,0.5)' }}
+      className="fixed inset-0 z-capa flex items-end justify-center"
+      style={{ background: CAPAS.veloHoja }}
       onClick={onCerrar}
       role="dialog"
       aria-modal="true"
@@ -257,7 +257,7 @@ export function AvisoAccion({ accion, accent, onDeshacer, onCerrar }) {
   if (!aviso) return null;
   return createPortal(
     <div
-      className="fixed left-0 right-0 z-40 flex justify-center px-4 pointer-events-none"
+      className="fixed left-0 right-0 z-aviso flex justify-center px-4 pointer-events-none"
       style={{ bottom: 'calc(var(--safe-bottom) + 5.5rem)' }}
       role={aviso.error ? 'alert' : 'status'}
       aria-live={aviso.error ? 'assertive' : 'polite'}

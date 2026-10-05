@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, AlertTriangle } from 'lucide-react';
 import { ChevronDespliegue } from './motion';
 import { AsaHoja } from './gestosMotion';
-import { COLORS } from '../tokens';
+import { COLORS, CAPAS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { PASOS_ESCALA } from '../lib/colorEngine';
 import ColorPicker from './ColorPicker';
@@ -138,7 +138,7 @@ export default function TemaBuilder({
   // permanente por su animación de entrada) en vez del viewport real, apareciendo muy por debajo
   // de "Constructor de temas" en vez de superpuesto de inmediato.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-capa flex items-end justify-center" style={{ background: CAPAS.veloHoja }} onClick={onClose}>
       <div
         ref={caja}
         className="w-full max-w-md rounded-t-3xl p-4 max-h-[90vh] overflow-y-auto"

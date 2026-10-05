@@ -1,5 +1,63 @@
 # CHANGELOG.md
 
+## v3.136.0 — Motion System F6/20: profundidad, capas, z-index y contexto visual
+
+La F6 del Motion System (*"Profundidad, capas, z-index y contexto visual"*, líneas 9146–9922 de
+`especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). Su resultado: *"contenido → superficie → elemento elevado →
+interacción → modal → sistema. Todo debe parecer pertenecer al mismo universo físico."* El sistema de profundidad
+vive en `src/lib/profundidad.js`, y el vigilante de capas en `src/components/capasMotion.js`.
+
+### 🔓 Las cuarenta ventanas ya no aparecen de golpe (hallazgo `modales_de_golpe` de la F0)
+
+De unas cuarenta ventanas, hojas, pantallas por encima y visores, solo las de Fitness y las del Calendario
+entraban, y **ninguna salía**. Ahora **ninguna escribe su movimiento** (apartado 40): `useCapasMotion`, montado una
+vez en App.jsx, vigila los hijos del `body` —toda capa es un portal, regla 3— y decide con el estilo calculado qué
+es cada una (`tipoDeCapa`):
+- **una hoja** (pegada abajo) **sube desde su borde** —todo su alto, sin fundido ni escala— y **baja hacia él**
+  (apartado 11);
+- **una ventana** (centrada o arriba) aparece desde el centro con el preset del motor (`modalEnter`: fundido, 8 px y
+  0,98) y sale conservando la dirección (`modalExit`, apartados 9 y 10);
+- **una pantalla por encima** (la Biblioteca) entra como un módulo y se va hacia la derecha, por donde llegó;
+- **un visor** (fotos, escáner) se funde.
+
+El **velo y la caja son dos animaciones con la misma duración** (*"background → backdrop → modal"*, apartado 8). Y
+para salir, como React ya ha quitado la capa, se pone una **copia inerte** en su mismo sitio —sin `role`, fuera de
+VoiceOver, sin recibir toques, con lo escrito en sus campos y su scroll— que hace el camino de vuelta y se quita.
+Lo **responsive** sale solo: la misma hoja del Armario es hoja en el iPhone y ventana en el escritorio (apartado 36).
+
+### La jerarquía de capas, con nombre (apartado 2)
+
+`CAPAS_Z`: `fondo` (-1), `base`, `elevado` (5), `pegajoso` (20), `flotante` (30), `aviso` (40), `capa` (50) y
+`alerta` (70) —**los valores que ya había**: se les pone nombre, no se mueve nada—, en `index.css` como `--z-*` y en
+Tailwind como `z-capa`, `z-flotante`… Los **34 z-index escritos a mano** (`z-50`, `z-30`, `z-[70]`, `zIndex: -1`, los
+dos del CSS) usan ya su capa, y la SC F1 lee los suyos de ahí (`Z_CABECERA`).
+
+### Profundidad, sombras, desenfoques y velo (apartados 3-7 y 35)
+
+Seis **niveles de profundidad**, del contenido al sistema, cada uno con su capa y con qué se separa de lo de debajo
+—superficie, borde, sombra, cristal, velo—, porque en una interfaz oscura una sombra negra aporta poco. **Cinco
+sombras de elevación con nombre** (`sombra('flotante')`); **los desenfoques son los de la F1** (`--motion-blur-*`) y
+la F6 dice cuándo: `medium` para el cristal pequeño, `strong` para lo que tapa una franja ancha; **el velo es uno**
+(`CAPAS.veloHoja`: las ventanas usaban 0,5, 0,55 y 0,6 sin motivo). `auditarProfundidad` caza un z-index, un velo, un
+desenfoque o una sombra escritos a mano en toda la aplicación.
+
+### 🐛 Lo que se encontró al construirla
+
+- **Las ventanas del Calendario terminaban con `both`** y dejaban un `transform` puesto (la lección de la F3).
+- **El buscador no se cerraba con Escape**, la única ventana grande sin él (apartado 33).
+- **El panel de sugerencias aparecía de golpe**: ahora nace de su botón (`menu-entra` con su `transform-origin`).
+- **Si el dedo agarra una hoja mientras sube**, manda el dedo: el asa (F5) cancela también la entrada de la capa.
+
+### Lo que no se construye (`NO_EN_F6`, C-57)
+
+Card → detalle con un elemento que viaja (la F7), las capas de carga y error (F9 y F16), un centro de
+notificaciones (no existe), popovers anclados con posición calculada (no hay ninguno flotante), recalcular la
+cabecera al compactarse (es transparente, SF2) y oscurecer el fondo además del velo.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.135.0 — Motion System F5/20: física, gestos, touch y comportamiento táctil
 
 La F5 del Motion System (*"Física, gestos, touch y comportamiento táctil"*, líneas 8405–9145 de

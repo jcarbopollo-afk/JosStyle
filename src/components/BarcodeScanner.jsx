@@ -46,7 +46,7 @@ export default function BarcodeScanner({ onDetected, onClose, accent }) {
   // entrada, ver App.jsx/index.css) en vez del viewport real: en vez de cubrir toda la pantalla,
   // podía quedar cortado o desplazado según la altura del contenido de esa vista.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#000' }}>
+    <div className="fixed inset-0 z-capa flex flex-col" style={{ background: '#000' }}>
       <div className="flex items-center justify-between p-4" style={{ background: 'rgba(5,6,10,0.85)' }}>
         <p className="text-sm font-semibold text-white">Apunta al código de barras</p>
         <button onClick={onClose} className="p-1.5 rounded-full" style={{ background: COLORS.surface2 }} aria-label="Cerrar escáner">

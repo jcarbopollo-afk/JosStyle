@@ -61,9 +61,10 @@ ok(CAPAS_SUPERIORES.every((c) => c.que && c.comoSeQuedaQuieto && c.z && c.nota),
   '⚠️ cada una con cómo se queda quieta, a qué altura y por qué');
 ok(Z_CABECERA < Z_ACCESOS_FIJOS,
   '🚨 la cabecera va POR DEBAJO de la lupa y del botón de la IA: con z-index mayor los taparía');
-ok(/\.hub-sticky\s*\{[^}]*z-index:\s*20/.test(CSS), '…y el CSS lleva ese mismo número');
-ok(/accion-superior toque-44 fixed z-30/.test(APP),
-  '⚠️ la lupa sigue siendo `fixed` y en z-30: no se le ha cambiado ni la posición ni la función');
+/* 🔓 MS F6 — la promesa se muda con el número: los dos salen de la jerarquía de capas. */
+ok(/\.hub-sticky\s*\{[^}]*z-index:\s*var\(--z-pegajoso\)/.test(CSS), '…y el CSS lleva esa misma capa (`--z-pegajoso`, MS F6)');
+ok(/accion-superior toque-44 fixed z-flotante/.test(APP),
+  '⚠️ la lupa sigue siendo `fixed` y en la capa flotante: no se le ha cambiado ni la posición ni la función');
 
 /* 🚨 EL HALLAZGO GORDO: `.toque-44` le ponía `position: relative` y le GANABA, así que los dos
    accesos de arriba llevaban sin estar fijos desde la E3 F1 — se iban con el scroll, que es

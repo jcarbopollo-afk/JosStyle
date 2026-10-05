@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.136.0 — Motion System F6/20: profundidad, capas y z-index):**
+> Las cuarenta ventanas, hojas y pantallas por encima **entran y salen** —ya no aparecen de golpe— sin que ninguna
+> escriba su movimiento: un vigilante (`useCapasMotion`) decide qué es cada una. Las hojas suben desde su borde y bajan
+> hacia él, las ventanas aparecen desde el centro, y al cerrar una copia inerte hace el camino de vuelta. Los z-index
+> tienen nombre (`z-capa`, `z-flotante`…), el velo es uno y las sombras y desenfoques salen de tokens. **La siguiente
+> es la F7** (continuidad espacial y elementos compartidos).
+
 > **📅 ACTUALIZACIÓN (v3.135.0 — Motion System F5/20: física, gestos y touch):**
 > La tarjeta del ejercicio en el entrenamiento en vivo **sigue al dedo**, resiste en el primero y en el último,
 > cambia con un lanzamiento corto y rápido y vuelve con muelle si no llega. **Las once hojas que salen por abajo

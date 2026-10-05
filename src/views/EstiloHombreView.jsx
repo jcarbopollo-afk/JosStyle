@@ -34,7 +34,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Settings, Check, ArrowLeft, Search, X, ChevronUp, ChevronDown, ArrowUpDown, Plus, SlidersHorizontal, Database, Lock, Pencil } from 'lucide-react';
-import { COLORS } from '../tokens';
+import { COLORS, CAPAS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { Card, PrimaryButton, Switch, TextInput } from '../components/ui';
 import {
@@ -369,8 +369,8 @@ function AvisoDesactivar({ aviso, accent, onConfirmar, onCancelar }) {
   if (!aviso) return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.55)' }}
+      className="fixed inset-0 z-alerta flex items-center justify-center p-4"
+      style={{ background: CAPAS.veloHoja }}
       onClick={onCancelar}
     >
       <div
@@ -411,8 +411,8 @@ export function FichaModuloEH({ ficha, accent, onCerrar }) {
   if (!ficha) return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-end justify-center"
-      style={{ background: 'rgba(0,0,0,0.55)' }}
+      className="fixed inset-0 z-alerta flex items-end justify-center"
+      style={{ background: CAPAS.veloHoja }}
       onClick={onCerrar}
     >
       <div
@@ -9538,8 +9538,8 @@ function AvisoDiseno({ aviso, accent, onConfirmar, onCancelar }) {
   if (!aviso) return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.55)' }}
+      className="fixed inset-0 z-alerta flex items-center justify-center p-4"
+      style={{ background: CAPAS.veloHoja }}
       onClick={onCancelar}
     >
       <div

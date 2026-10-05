@@ -406,7 +406,7 @@ export function DetalleHabito({ habito, hoy, accent, onCerrar, onGuardar, onElim
 
   const contenido = (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto pantalla-segura"
+      className="fixed inset-0 z-capa overflow-y-auto pantalla-segura"
       style={{ background: COLORS.bg }}
       role="dialog"
       aria-label={`Detalle de ${habito.nombre}`}

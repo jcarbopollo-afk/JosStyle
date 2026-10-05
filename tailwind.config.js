@@ -14,6 +14,19 @@ export default {
          sin tocar una sola de las cien clases. */
       transitionDuration: { DEFAULT: 'var(--motion-dur-fast)' },
       transitionTimingFunction: { DEFAULT: 'var(--ease-premium)' },
+      /* MS F6 — la jerarquía de capas con nombre (`z-capa`, `z-flotante`…), desde las variables de
+         `index.css`, que salen de `CAPAS_Z` (src/lib/profundidad.js). Un `z-50` suelto pone la suite
+         roja (`auditarProfundidad`). */
+      zIndex: {
+        fondo: 'var(--z-fondo)',
+        base: 'var(--z-base)',
+        elevado: 'var(--z-elevado)',
+        pegajoso: 'var(--z-pegajoso)',
+        flotante: 'var(--z-flotante)',
+        aviso: 'var(--z-aviso)',
+        capa: 'var(--z-capa)',
+        alerta: 'var(--z-alerta)',
+      },
     },
   },
   plugins: [],

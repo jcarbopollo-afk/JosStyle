@@ -108,7 +108,7 @@ function useAhora(activo, ms = TIC_MS) {
 export function CabeceraSesion({ nombre, tiempo, progreso, accent, onSalir, onTerminar }) {
   return (
     <div
-      className="sticky top-0 z-20 -mx-4 px-4 py-2.5 accion-superior"
+      className="sticky top-0 z-pegajoso -mx-4 px-4 py-2.5 accion-superior"
       style={{ background: COLORS.bg, borderBottom: `1px solid ${COLORS.border}` }}
     >
       <div className="flex items-center gap-2">

@@ -140,6 +140,7 @@ import {
    lo que pasa en la página al llegar (el scroll, las entradas que no se repiten, el foco). */
 import { tipoDeNavegacion, claseDeNavegacion, claveDeScroll, indiceDePestana, estiloDelIndicador } from './lib/transicionNavegacion';
 import { useNavegacionEnLaPagina } from './components/navegacionMotion';
+import { useCapasMotion } from './components/capasMotion';
 import { AreaSegura } from './components/areaSegura';
 import SettingsView from './views/SettingsView';
 import { construirIndice } from './lib/indiceBusqueda';
@@ -198,6 +199,7 @@ import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el 
 // a propósito: si se definiera dentro, sería una función nueva en cada render y el
 // `useEffect` de cada miniatura volvería a dispararse sin parar.
 const firmarFotoFondo = (path) => urlFirmada(path, getSignedFondoUrl);
+import { desenfoque } from './lib/profundidad';
 
 // Con Salud y Nutrición ya son 7 secciones — demasiadas para una sola barra inferior cómoda.
 // A partir de la Fase 4: 4 accesos rápidos + "Más", que lista el resto. Cada módulo nuevo futuro
@@ -444,6 +446,9 @@ export default function App() {
   /* ⚠️ Regla 4: lleva un `useEffect` y un `useLayoutEffect`, así que va aquí arriba, antes de
      cualquier `return` condicional de este componente. */
   useNavegacionEnLaPagina(pantallaRef, { clave: claveDeScroll(pilaNav), tipo: tipoNav });
+  /* MS F6 — toda ventana, hoja o pantalla por encima entra y sale con el sistema de profundidad, sin
+     escribir la suya (`capasMotion.js`). Un `useEffect`: también aquí arriba (regla 4). */
+  useCapasMotion();
   const [loaded, setLoaded] = useState(false);
   const [accent, setAccent] = useState(ACCENTS[0].value);
   // Fase A3 — Apariencia avanzada: tema (claro/oscuro/automático), tamaño de texto, densidad,
@@ -3643,13 +3648,13 @@ export default function App() {
           compartieran capa, subir el desenfoque difuminaría también el velo y dejaría de
           proteger la lectura, que es justo para lo que existe. */}
       {estiloFondo && (
-        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ ...estiloFondo, zIndex: -1 }} />
+        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ ...estiloFondo, zIndex: 'var(--z-fondo)' }} />
       )}
       {estiloLuz && (
-        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ ...estiloLuz, zIndex: -1 }} />
+        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ ...estiloLuz, zIndex: 'var(--z-fondo)' }} />
       )}
       {estiloVelo && (
-        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ ...estiloVelo, zIndex: -1 }} />
+        <div aria-hidden="true" className="fixed inset-0 pointer-events-none" style={{ ...estiloVelo, zIndex: 'var(--z-fondo)' }} />
       )}
 
       {/* Fase 18 + BI Fase 2 — dos accesos fijos, ninguno de los dos se dispara solo.
@@ -3664,8 +3669,8 @@ export default function App() {
           botón debajo de la hora del iPhone. */}
       <button
         onClick={() => setShowSearch(true)}
-        className="accion-superior toque-44 fixed z-30 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
-        style={{ left: 14, background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
+        className="accion-superior toque-44 fixed z-flotante w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
+        style={{ left: 14, background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: desenfoque('medium'), WebkitBackdropFilter: desenfoque('medium') }}
         aria-label="Buscar funciones o preguntar a la IA"
       >
         <Search size={16} style={{ color: accent }} />
@@ -3708,7 +3713,7 @@ export default function App() {
         // FO Fase 4, apartado 10 — la barra sale del sistema de colores en vez de llevar
         // un rgba fijo, que además ignoraba el tema claro: en modo claro la barra era
         // negra igual. `navBgAlpha` respeta el tema y la transparencia elegida.
-        style={{ background: COLORS.navBgAlpha || COLORS.surface, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderTop: `1px solid ${COLORS.border}` }}
+        style={{ background: COLORS.navBgAlpha || COLORS.surface, backdropFilter: desenfoque('strong'), WebkitBackdropFilter: desenfoque('strong'), borderTop: `1px solid ${COLORS.border}` }}
       >
         <div className="max-w-md w-full px-2 py-2">
         {/* 🎬 MS F2 — la fila de pestañas es `relative` para que el indicador viaje por debajo de

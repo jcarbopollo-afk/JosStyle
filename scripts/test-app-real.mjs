@@ -12828,6 +12828,154 @@ ok(errores.length === erroresAntes_ms5, `MS F5 — …sin un error en la consola
 almacen.ajustes = ajustesDeAntes_ms5;
 almacen.fitness = fitnessDeAntes_ms5;
 
+/* ── MS F6 · Profundidad y capas: toda ventana entra y sale, la hoja desde su borde, la jerarquía con nombre ──
+   Lo que solo se ve en la página de verdad: que el vigilante de capas (`useCapasMotion`) le dé a una
+   ventana su entrada —el velo y la caja a la vez— ANTES de pintarse, que al cerrarla quede una copia
+   inerte haciendo el camino de vuelta y que desaparezca, que la misma hoja sea hoja en el iPhone y
+   ventana en el escritorio, y que en Reducido se quede solo el fundido. ⚠️ Sufijo `_ms6`. */
+console.log('\n── MS F6 · Profundidad, capas y z-index ──');
+const ajustesDeAntes_ms6 = almacen.ajustes;
+almacen.ajustes = { ...(ajustesDeAntes_ms6 || {}), apariencia: { ...((ajustesDeAntes_ms6 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms6 = errores.length;
+/* Abre una capa pulsando un botón y la mide en el mismo turno: lo que trae puesto al nacer. */
+const abrirYMedir_ms6 = (etiqueta) => page.evaluate(async (et) => {
+  const b = [...document.querySelectorAll('button')].find((x) => (x.getAttribute('aria-label') || '').trim() === et || x.innerText.trim() === et);
+  if (!b) return null;
+  b.click();
+  await new Promise((ok) => setTimeout(ok, 0));
+  const capa = [...document.body.children].reverse().find((n) => n.dataset && n.dataset.capa);
+  if (!capa) return { sinCapa: true };
+  const caja = capa.firstElementChild;
+  const anim = (el) => (el ? el.getAnimations().filter((a) => /^capa-/.test(a.id || '')).map((a) => ({ id: a.id, dura: Math.round(a.effect.getComputedTiming().duration), desde: a.effect.getKeyframes()[0] })) : []);
+  return { tipo: capa.dataset.capa, z: getComputedStyle(capa).zIndex, velo: anim(capa), caja: anim(caja), fondo: capa.style.background || capa.style.backgroundColor };
+}, etiqueta);
+const cerrarYMedir_ms6 = () => page.evaluate(async () => {
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await new Promise((ok) => setTimeout(ok, 0));
+  await new Promise((ok) => setTimeout(ok, 0));
+  const c = document.querySelector('[data-capa-saliendo]');
+  const ahora = c ? {
+    role: c.getAttribute('role'), oculta: c.getAttribute('aria-hidden'), inerte: c.inert, toques: getComputedStyle(c).pointerEvents,
+    anims: [...c.getAnimations(), ...(c.firstElementChild ? c.firstElementChild.getAnimations() : [])].map((a) => ({ id: a.id, dura: Math.round(a.effect.getComputedTiming().duration), hasta: a.effect.getKeyframes().at(-1) })),
+    dialogos: document.querySelectorAll('[role="dialog"]').length,
+  } : null;
+  await new Promise((ok) => setTimeout(ok, 600));
+  return { ahora, despues: document.querySelectorAll('[data-capa-saliendo]').length };
+});
+
+/* 1 · El ＋ de Hoy es una HOJA: el velo se funde y la caja sube desde su borde, a la vez. */
+const h_ms6 = await abrirYMedir_ms6('Añadir');
+ok(h_ms6 && h_ms6.tipo === 'hoja' && h_ms6.z === '50',
+  `🚨 MS F6 — el ＋ de Hoy es una capa de tipo hoja, en la capa \`capa\` (${JSON.stringify(h_ms6 && { tipo: h_ms6.tipo, z: h_ms6.z })}; apartados 2 y 11)`);
+const hojaSube_ms6 = h_ms6 && h_ms6.caja.find((a) => a.id === 'capa-entra');
+ok(!!hojaSube_ms6 && /translateY\((\d+)px\)/.test(hojaSube_ms6.desde.transform || '') && Number(/translateY\((\d+)px\)/.exec(hojaSube_ms6.desde.transform)[1]) > 150 && hojaSube_ms6.desde.opacity === undefined && hojaSube_ms6.dura === 280,
+  `🚨 MS F6 — …que SUBE DESDE SU BORDE —todo su alto, sin fundido ni escala— en \`medium\` (${JSON.stringify(hojaSube_ms6)}; apartado 11)`);
+const velo_ms6 = h_ms6 && h_ms6.velo.find((a) => a.id === 'capa-velo');
+ok(!!velo_ms6 && /rgba\(0, 0, 0, 0\)/.test(velo_ms6.desde.backgroundColor || '') && velo_ms6.dura === hojaSube_ms6?.dura,
+  `🚨 MS F6 — …y su velo se funde a la vez, con la misma duración: fondo → velo → hoja (${JSON.stringify(velo_ms6)}; apartados 7 y 8)`);
+ok(h_ms6 && /0\.55/.test(h_ms6.fondo), `MS F6 — el velo es el común (\`CAPAS.veloHoja\`, 0,55): eran 0,5, 0,55 y 0,6 según la ventana (${h_ms6?.fondo})`);
+await page.waitForTimeout(400);
+const s_ms6 = await cerrarYMedir_ms6();
+ok(s_ms6.ahora && s_ms6.ahora.role === null && s_ms6.ahora.oculta === 'true' && s_ms6.ahora.inerte === true && s_ms6.ahora.toques === 'none' && s_ms6.ahora.dialogos === 0,
+  `🚨 MS F6 — al cerrarla queda una COPIA en su sitio: sin \`role\`, fuera de VoiceOver, inerte y sin recibir toques (${JSON.stringify(s_ms6.ahora && { role: s_ms6.ahora.role, oculta: s_ms6.ahora.oculta, inerte: s_ms6.ahora.inerte, toques: s_ms6.ahora.toques, dialogos: s_ms6.ahora.dialogos })})`);
+const baja_ms6 = s_ms6.ahora && s_ms6.ahora.anims.find((a) => a.id === 'capa-sale');
+ok(!!baja_ms6 && /translateY\(\d+px\)/.test(baja_ms6.hasta.transform || '') && baja_ms6.dura === 160,
+  `🚨 MS F6 — …que BAJA hacia su borde en \`fast\`: la salida no es solo apagarse (${JSON.stringify(baja_ms6)}; apartados 10 y 11)`);
+ok(s_ms6.despues === 0, '…y que desaparece del todo cuando acaba');
+
+/* 2 · El buscador es una VENTANA: aparece desde el centro con el preset del motor. */
+const m_ms6 = await abrirYMedir_ms6('Buscar funciones o preguntar a la IA');
+const modalEntra_ms6 = m_ms6 && m_ms6.caja.find((a) => a.id === 'capa-entra');
+ok(m_ms6 && m_ms6.tipo === 'modal' && !!modalEntra_ms6 && Number(modalEntra_ms6.desde.opacity) === 0 && /scale\(0\.98\)/.test(modalEntra_ms6.desde.transform || '') && modalEntra_ms6.dura === 220,
+  `🚨 MS F6 — el buscador es una ventana: aparece desde el centro con \`modalEnter\` —fundido, 8 px y una escala de 0,98, nunca excesiva— (${JSON.stringify(m_ms6 && { tipo: m_ms6.tipo, entra: modalEntra_ms6 })}; apartado 9)`);
+await page.waitForTimeout(400);
+const ms_ms6 = await cerrarYMedir_ms6();
+const modalSale_ms6 = ms_ms6.ahora && ms_ms6.ahora.anims.find((a) => a.id === 'capa-sale');
+ok(!!modalSale_ms6 && Number(modalSale_ms6.hasta.opacity) === 0 && /scale|translate/.test(modalSale_ms6.hasta.transform || ''),
+  `MS F6 — …y al cerrarse conserva la dirección (\`modalExit\`), no solo se apaga (${JSON.stringify(modalSale_ms6)}; apartado 10)`);
+ok(ms_ms6.despues === 0, '…y su copia también desaparece');
+
+/* 3 · La misma caja de Fitness: hoja en el iPhone, ventana en el escritorio (apartado 36). */
+const falsaHoja_ms6 = () => page.evaluate(async () => {
+  const v = document.createElement('div');
+  v.className = 'fixed inset-0 z-capa flex items-end sm:items-center justify-center fondo-entra';
+  v.style.background = 'rgba(0, 0, 0, 0.55)';
+  const c = document.createElement('div');
+  c.className = 'w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 hoja-entra hoja-movil dialogo-caja';
+  c.style.height = '300px';
+  v.appendChild(c);
+  document.body.appendChild(v);
+  await new Promise((ok) => setTimeout(ok, 0));
+  const r = { tipo: v.dataset.capa, animacion: getComputedStyle(c).animationName, dura: getComputedStyle(c).animationDuration, propias: c.getAnimations().filter((a) => /^capa-/.test(a.id || '')).length };
+  v.remove();
+  await new Promise((ok) => setTimeout(ok, 400));
+  return r;
+});
+const fh390_ms6 = await falsaHoja_ms6();
+ok(fh390_ms6.tipo === 'hoja' && fh390_ms6.animacion === 'hojaSubeDelBorde' && fh390_ms6.propias === 0,
+  `🚨 MS F6 — una hoja de Fitness en el iPhone sube desde su borde con SU entrada de CSS, sin una segunda encima (${JSON.stringify(fh390_ms6)}; apartado 11)`);
+await page.setViewportSize({ width: 1280, height: 900 });
+await page.waitForTimeout(200);
+const fh1280_ms6 = await falsaHoja_ms6();
+ok(fh1280_ms6.tipo === 'modal' && fh1280_ms6.animacion === 'calendarSheetIn',
+  `🚨 MS F6 — …y en el escritorio, donde la misma caja va centrada, es una ventana (${JSON.stringify(fh1280_ms6)}; apartado 36)`);
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(200);
+
+/* 4 · Lo desplazado dentro de una capa no salta arriba al salir. */
+const scroll_ms6 = await page.evaluate(async () => {
+  const v = document.createElement('div');
+  v.className = 'fixed inset-0 z-capa flex items-center justify-center';
+  v.style.background = 'rgba(0, 0, 0, 0.55)';
+  const c = document.createElement('div');
+  c.style.cssText = 'width: 300px; height: 200px; overflow-y: auto; background: #222';
+  const largo = document.createElement('div');
+  largo.style.height = '1200px';
+  c.appendChild(largo);
+  v.appendChild(c);
+  document.body.appendChild(v);
+  await new Promise((ok) => setTimeout(ok, 50));
+  c.scrollTop = 420;
+  await new Promise((ok) => setTimeout(ok, 50));
+  v.remove();
+  await new Promise((ok) => setTimeout(ok, 0));
+  const copia = document.querySelector('[data-capa-saliendo]');
+  const y = copia && copia.firstElementChild ? copia.firstElementChild.scrollTop : null;
+  await new Promise((ok) => setTimeout(ok, 500));
+  return y;
+});
+ok(scroll_ms6 === 420, `MS F6 — la copia que sale conserva el scroll de dentro: no salta arriba al cerrarse (${scroll_ms6})`);
+
+/* 5 · La jerarquía con nombre, medida: la cabecera fija bajo la lupa, la lupa bajo cualquier capa. */
+const zs_ms6 = await page.evaluate(() => {
+  const lupa = document.querySelector('button[aria-label="Buscar funciones o preguntar a la IA"]');
+  return { lupa: lupa ? getComputedStyle(lupa).zIndex : null, vars: ['fondo', 'pegajoso', 'flotante', 'aviso', 'capa', 'alerta'].map((k) => getComputedStyle(document.documentElement).getPropertyValue(`--z-${k}`).trim()) };
+});
+ok(zs_ms6.lupa === '30' && JSON.stringify(zs_ms6.vars) === JSON.stringify(['-1', '20', '30', '40', '50', '70']),
+  `MS F6 — la jerarquía de capas está en el documento, en orden, y la lupa en la flotante (${JSON.stringify(zs_ms6)}; apartado 2)`);
+
+/* 6 · Con «Reducir movimiento»: la profundidad se queda —el velo y el fundido—, el recorrido se va. */
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const r_ms6 = await abrirYMedir_ms6('Añadir');
+const rCaja_ms6 = r_ms6 && r_ms6.caja.find((a) => a.id === 'capa-entra');
+ok(!!rCaja_ms6 && Number(rCaja_ms6.desde.opacity) === 0 && !rCaja_ms6.desde.transform && r_ms6.velo.length === 1,
+  `🚨 MS F6 — en Reducido la hoja no se desplaza: se funde, y el velo sigue ahí (${JSON.stringify(r_ms6 && { caja: rCaja_ms6, velo: r_ms6.velo.length })}; apartado 34)`);
+await page.waitForTimeout(400);
+const rs_ms6 = await cerrarYMedir_ms6();
+const rSale_ms6 = rs_ms6.ahora && rs_ms6.ahora.anims.find((a) => a.id === 'capa-sale');
+ok(!!rSale_ms6 && Number(rSale_ms6.hasta.opacity) === 0 && !rSale_ms6.hasta.transform && rs_ms6.despues === 0,
+  `…y al salir, también solo se funde (${JSON.stringify(rSale_ms6)})`);
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+ok(errores.length === erroresAntes_ms6, `MS F6 — …sin un error en la consola${errores.length > erroresAntes_ms6 ? `: ${errores.slice(erroresAntes_ms6).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms6;
+
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

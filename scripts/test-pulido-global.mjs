@@ -67,8 +67,10 @@ ok(/\.nav-segura\s*\{[^}]*padding-bottom:\s*var\(--safe-bottom\)/.test(CSS),
   '`.nav-segura` deja sitio al indicador de inicio del iPhone');
 
 // Los dos botones fijos de arriba.
-const botonBuscar = (APP.match(/<button[\s\S]{0,400}?aria-label="Buscar funciones o preguntar a la IA"/) || [''])[0];
-const cajaSugerencias = (UI.match(/<div className="[^"]*fixed z-30"[\s\S]{0,200}/) || [''])[0];
+/* 🔓 MS F6 — la capa ya no es `z-30` sino `z-flotante` (la jerarquía con nombre), y el desenfoque
+   sale de `desenfoque()`, así que el botón ocupa algo más de texto: la ventana pasa de 400 a 600. */
+const botonBuscar = (APP.match(/<button[\s\S]{0,600}?aria-label="Buscar funciones o preguntar a la IA"/) || [''])[0];
+const cajaSugerencias = (UI.match(/<div className="[^"]*fixed z-flotante"[\s\S]{0,200}/) || [''])[0];
 
 ok(/accion-superior/.test(botonBuscar), 'el botón de buscar/preguntar usa `accion-superior`');
 ok(/toque-44/.test(botonBuscar), 'y llega a 44 px de área táctil (`toque-44`)');

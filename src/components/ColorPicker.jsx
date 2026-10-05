@@ -3,11 +3,12 @@ import { createPortal } from 'react-dom';
 import { X, Star } from 'lucide-react';
 import { LatidoAlMarcar } from './motion';
 import { AsaHoja } from './gestosMotion';
-import { COLORS } from '../tokens';
+import { COLORS, CAPAS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import {
   hexToHsv, hsvToHex, hexToRgb, rgbToHex, hexToHsl, hslToHex, isValidHex, normalizeHex,
 } from '../lib/colorEngine';
+import { sombra } from '../lib/profundidad';
 
 // Fase 2 del Sistema de Personalización Visual Extrema — Editor de color avanzado.
 //
@@ -153,7 +154,7 @@ export default function ColorPicker({
   // en vez del propio viewport — apareciendo mucho más abajo de lo esperado. `createPortal` lo saca
   // fuera de ese árbol, directo a `document.body`, donde `fixed` sí se ancla siempre a la pantalla.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
+    <div className="fixed inset-0 z-capa flex items-end justify-center" style={{ background: CAPAS.veloHoja }} onClick={onClose}>
       <div
         ref={caja}
         className="w-full max-w-md rounded-t-3xl p-4 max-h-[90vh] overflow-y-auto"
@@ -183,7 +184,7 @@ export default function ColorPicker({
             className="absolute w-5 h-5 rounded-full pointer-events-none"
             style={{
               left: `calc(${s}% - 10px)`, top: `calc(${100 - v}% - 10px)`,
-              background: hex, border: '2.5px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.5)',
+              background: hex, border: '2.5px solid white', boxShadow: sombra('pomo'),
             }}
           />
         </div>
@@ -203,7 +204,7 @@ export default function ColorPicker({
             className="absolute rounded-full pointer-events-none"
             style={{
               left: `calc(${(h / 360) * 100}% - 10px)`, top: -2, width: 20, height: 20,
-              background: `hsl(${h},100%,50%)`, border: '2.5px solid white', boxShadow: '0 1px 4px rgba(0,0,0,0.5)',
+              background: `hsl(${h},100%,50%)`, border: '2.5px solid white', boxShadow: sombra('pomo'),
             }}
           />
         </div>

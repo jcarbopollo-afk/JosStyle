@@ -146,11 +146,11 @@ export function acentoLegible(accent) {
    su asa (`AsaHoja`, src/components/gestosMotion.jsx); el resto sigue igual. */
 
 export const HOJA = {
-  velo: 'fixed inset-0 z-50 flex items-end sm:items-center justify-center fondo-entra',
-  veloConfirmacion: 'fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0 fondo-entra',
+  velo: 'fixed inset-0 z-capa flex items-end sm:items-center justify-center fondo-entra',
+  veloConfirmacion: 'fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0 fondo-entra',
   caja: 'w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 hoja-entra hoja-movil dialogo-caja',
   confirmacion: 'w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra hoja-movil dialogo-caja',
-  visor: 'fixed inset-0 z-50 flex flex-col fondo-entra dialogo-caja',
+  visor: 'fixed inset-0 z-capa flex flex-col fondo-entra dialogo-caja',
   /* Sitio para la barra de inicio del iPhone (F38, apartado 47). */
   abajo: 'calc(var(--safe-bottom) + 1.25rem)',
   fondoVelo: CAPAS.veloHoja,
@@ -387,7 +387,7 @@ export const REGLAS_ACABADO = [
     que: 'Una hoja con su propio velo o su propia caja: son `HOJA.velo` / `HOJA.caja` (o la confirmación, o el visor).',
     mira: (src) => [...src.matchAll(/className="(fixed inset-0[^"]*)"/g)]
       .map((m) => ({ linea: lineaDe(src, m.index), trozo: m[1].slice(0, 60) })),
-    ejemploMalo: '<div className="fixed inset-0 z-50 flex items-end">',
+    ejemploMalo: '<div className="fixed inset-0 z-capa flex items-end">',
   },
 ];
 

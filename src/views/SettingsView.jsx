@@ -58,6 +58,7 @@ import {
 import ColorPicker from '../components/ColorPicker';
 import TemaBuilder from '../components/TemaBuilder';
 import GestionTemas from '../components/GestionTemas';
+import { desenfoque } from '../lib/profundidad';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Fase A1 — Ajustes: arquitectura general (Entrega 1 de la especificación
@@ -1204,8 +1205,8 @@ export function VistaPreviaGlobal({ fondo, urlFoto, accent }) {
             background: COLORS.surfaceAlpha || COLORS.surface,
             border: `1px solid ${COLORS.borderAlpha || COLORS.border}`,
             boxShadow: COLORS.cardShadow !== 'none' ? COLORS.cardShadow : undefined,
-            backdropFilter: COLORS.surfaceAlpha !== COLORS.surface ? 'blur(12px)' : undefined,
-            WebkitBackdropFilter: COLORS.surfaceAlpha !== COLORS.surface ? 'blur(12px)' : undefined,
+            backdropFilter: COLORS.surfaceAlpha !== COLORS.surface ? desenfoque('medium') : undefined,
+            WebkitBackdropFilter: COLORS.surfaceAlpha !== COLORS.surface ? desenfoque('medium') : undefined,
           }}
         >
           <p className="text-xs font-semibold" style={{ color: COLORS.text }}>Una tarjeta</p>
@@ -1224,8 +1225,8 @@ export function VistaPreviaGlobal({ fondo, urlFoto, accent }) {
           style={{
             background: COLORS.navBgAlpha || COLORS.surface,
             border: `1px solid ${COLORS.borderAlpha || COLORS.border}`,
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
+            backdropFilter: desenfoque('medium'),
+            WebkitBackdropFilter: desenfoque('medium'),
           }}
         >
           <Palette size={13} style={{ color: COLORS.iconActive || accent }} />

@@ -257,6 +257,38 @@ arrastra** —eso es manipular, no animar—, pero al soltar no hay muelle ni in
 ⚠️ **Un gesto nunca es la única forma**: el asa no tiene nombre ni foco porque la hoja tiene su botón de
 cerrar, Escape y tocar fuera; y la tarjeta del ejercicio tiene Anterior y Siguiente.
 
+## 8.5 · Profundidad, capas y z-index (F6)
+
+*"Contenido → superficie → elemento elevado → interacción → modal → sistema. Todo debe parecer pertenecer al
+mismo universo físico."* El sistema vive en `src/lib/profundidad.js`.
+
+**La jerarquía de capas** (`CAPAS_Z`, en `index.css` como `--z-*` y en Tailwind como `z-capa`…):
+
+| Capa | z | Qué vive ahí |
+|---|---|---|
+| `fondo` | -1 | El fondo de pantalla, su luz y su velo |
+| `base` | 0 | La página (y la barra de abajo, que va después en el documento) |
+| `elevado` | 5 | Una tarjeta que se levanta al abrirse |
+| `pegajoso` | 20 | La cabecera fija de un área y la del entrenamiento en vivo |
+| `flotante` | 30 | La lupa y las sugerencias |
+| `aviso` | 40 | Un aviso pequeño (añadido, deshacer) |
+| `capa` | 50 | Hojas, ventanas, pantallas por encima y visores. Entre ellas manda el orden de apertura |
+| `alerta` | 70 | Lo que tiene que quedar encima aunque se haya montado antes |
+
+| Si es… | Usa | Cómo se ve y se mueve |
+|---|---|---|
+| Cualquier ventana, hoja, pantalla por encima o visor | Un portal sobre el `body` con `fixed inset-0 z-capa` y `background: CAPAS.veloHoja` (si tiene velo) | **No escribe su movimiento**: `useCapasMotion` (montado una vez en App.jsx) le da entrada y salida según lo que es (`tipoDeCapa`, con el estilo calculado): una **hoja** sube desde su borde y baja hacia él; una **ventana** aparece desde el centro (`modalEnter`/`modalExit`); una **pantalla** entra como un módulo y se va hacia la derecha; un **visor** se funde. El velo se funde a la vez. Al cerrar, una copia inerte hace el camino de vuelta |
+| Una sombra de elevación | `sombra('flotante')` (o `var(--sombra-…)` en CSS) | `reposo`, `pomo`, `elevada`, `flotante`, `maxima`. Un anillo de selección no es elevación |
+| Un desenfoque | `desenfoque('medium')` | Los de la F1 (`--motion-blur-*`): `medium` para el cristal pequeño, `strong` para lo que tapa una franja ancha |
+| Un panel que nace de un botón | `menu-entra` y su `transform-origin` | Crece desde la esquina de su botón, en `fast` |
+| Un z-index | `z-capa`, `z-flotante`… (o `var(--z-…)`) | **Nunca un número**: `auditarProfundidad` lo caza |
+
+🚨 **Lo responsive se decide solo**: la misma caja es hoja en el iPhone (`items-end`) y ventana en el escritorio
+(`sm:items-center`), y la capa lo lee del estilo calculado (`data-capa`). 🚨 **En Reducido se queda la profundidad
+estática** —el velo y el fundido— y se van la escala y el recorrido. ⚠️ **La profundidad nunca depende solo de la
+sombra** (en oscuro aporta poco): se separa con superficie, borde, velo y cristal, y siempre hay estructura
+(`role="dialog"`, foco, Escape).
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en

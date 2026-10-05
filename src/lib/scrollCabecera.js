@@ -26,6 +26,7 @@
    normalizador, ni nada que migrar: es disposición de pantalla. Lo único que
    existe aquí son las constantes que describen las decisiones y la auditoría.
    =========================================================================== */
+import { valorZ } from './profundidad';
 
 /* ---------------------------------------------------------------------------
    1 · DÓNDE OCURRE EL SCROLL DE VERDAD.
@@ -67,16 +68,17 @@ export const CAPAS_SUPERIORES = [
   },
 ];
 
-/** El z-index de la banda pegada. Nunca igual o mayor que el de los dos botones. */
-export const Z_CABECERA = 20;
-export const Z_ACCESOS_FIJOS = 30;
+/** El z-index de la banda pegada. Nunca igual o mayor que el de los dos botones.
+ *  🔓 MS F6 — salen de la jerarquía de capas (`CAPAS_Z`): ya no hay un número escrito aquí. */
+export const Z_CABECERA = valorZ('pegajoso');
+export const Z_ACCESOS_FIJOS = valorZ('flotante');
 
 /* ---------------------------------------------------------------------------
    🚨 EL HALLAZGO GORDO DE ESTA FASE, Y NO ESTABA EN EL ENUNCIADO.
 
    Josué escribió *"el icono de Buscar… no desaparezca al hacer scroll"*, y al
    leerlo di por hecho que ya estaba fijo: lo pone su `className`
-   (`accion-superior toque-44 fixed z-30`). **No lo estaba.**
+   (`accion-superior toque-44 fixed z-flotante`). **No lo estaba.**
 
    `.toque-44` —la clase que amplía el área táctil a 44 px, de la E3 F1— declaraba
    `position: relative`. Las dos reglas tienen la misma especificidad (una clase),
@@ -285,7 +287,7 @@ export function condicionSC({ css = '', hub = '', dashboard = '' } = {}) {
     {
       id: 'por_debajo_de_los_botones',
       texto: 'La cabecera va por debajo de la lupa y del botón de sugerencias, no por encima',
-      ok: new RegExp(`\\.hub-sticky\\s*\\{[^}]*z-index:\\s*${Z_CABECERA}\\b`).test(css) && Z_CABECERA < Z_ACCESOS_FIJOS,
+      ok: /\.hub-sticky\s*\{[^}]*z-index:\s*var\(--z-pegajoso\)/.test(css) && Z_CABECERA < Z_ACCESOS_FIJOS,
     },
     {
       id: 'filas_compactas',
