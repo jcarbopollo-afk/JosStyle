@@ -518,6 +518,14 @@ export function transicion(propiedades, duracion = 'normal', curva = 'standard',
 export const PRESETS_MOTION = {
   pageEnter: { que: 'Una pantalla entra', clase: 'module-enter', duracion: 'slow', curva: 'standard', desde: { opacidad: 'hidden', x: 'large', escala: 'micro' } },
   pageExit: { que: 'Una pantalla se va', duracion: 'normal', curva: 'exit', hasta: { opacidad: 'hidden', x: '-small' } },
+  /* MS F2 — volver no es entrar otra vez (apartado 6): llega del lado del que salió, más corto y
+     sin escala. Y cambiar de sección no es ni lo uno ni lo otro: las secciones son hermanas. Los dos
+     arrancan medio visibles para que entre una pantalla y otra no haya un instante vacío. */
+  pageBack: { que: 'Volver a una pantalla', clase: 'nav-vuelve', duracion: 'normal', curva: 'standard', desde: { opacidad: 'secondary', x: '-small' } },
+  sectionSwitch: { que: 'Cambiar de sección con la barra de abajo', clase: 'nav-seccion', duracion: 'normal', curva: 'standard', desde: { opacidad: 'secondary', y: 'small' } },
+  /* MS F2, apartado 15 — una transición de CONTENIDO, no de página: otra pestaña dentro de la misma
+     pantalla. Más corta y sin moverse: lo que cambia es lo de dentro, no el sitio. */
+  contentChange: { que: 'Cambia lo de dentro de una pantalla (otra pestaña)', clase: 'contenido-cambia', duracion: 'fast', curva: 'standard', desde: { opacidad: 'secondary' } },
   cardEnter: { que: 'Una tarjeta entra', clase: 'hub-card', duracion: 'cinematic', curva: 'standard', desde: { opacidad: 'hidden', y: 'medium', escala: 'subtle' } },
   cardExit: { que: 'Una tarjeta se va', duracion: 'normal', curva: 'exit', hasta: { opacidad: 'hidden', escala: 'subtle' } },
   modalEnter: { que: 'Una ventana aparece', duracion: 'normal', curva: 'entrance', desde: { opacidad: 'hidden', y: 'small', escala: 'micro' } },

@@ -3,6 +3,7 @@ import { Church, Trash2, ChevronDown, ChevronUp, CheckCircle2, Circle, Plus } fr
 import { COLORS, TIPOS_SERVICIO_FE, TIPOS_EVENTO_FE, PLAZOS_OBJETIVO } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
+import { CambioDeContenido } from '../components/motion';
 
 // Instrucción de seguridad para cualquier AIPanel de este módulo: AIPanel usa el mismo
 // AI_SYSTEM general de la app (ui.jsx), así que la restricción doctrinal va dentro del propio
@@ -288,10 +289,13 @@ export default function FaithView({ fe, onAddServicio, onDeleteServicio, onAddEv
         <ToggleTab active={sub === 'objetivos'} onClick={() => setSub('objetivos')} accent={accent}>Objetivos</ToggleTab>
       </div>
 
+      {/* MS F2 — otra pestaña es una transición de CONTENIDO, no de página (apartado 15). */}
+      <CambioDeContenido clave={sub}>
       {sub === 'servicio' && <ServicioTab servicio={fe.servicio} onAdd={onAddServicio} onDelete={onDeleteServicio} accent={accent} />}
       {sub === 'calendario' && <CalendarioTab eventos={fe.eventos} onAdd={onAddEvento} onDelete={onDeleteEvento} accent={accent} />}
       {sub === 'diario' && <DiarioEspiritualTab diario={fe.diario} onAdd={onAddDiarioFe} onDelete={onDeleteDiarioFe} accent={accent} />}
       {sub === 'objetivos' && <ObjetivosFeTab objetivos={fe.objetivos} onAdd={onAddObjetivoFe} onUpdate={onUpdateObjetivoFe} onDelete={onDeleteObjetivoFe} accent={accent} />}
+      </CambioDeContenido>
     </div>
   );
 }

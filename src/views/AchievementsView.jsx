@@ -4,6 +4,7 @@ import { COLORS, PLAZOS_OBJETIVO } from '../tokens';
 import { hexToRgba, formatFecha } from '../lib/helpers';
 import { calcularLogros } from '../lib/logros';
 import { Card, SectionTitle, ToggleTab, EmptyHint } from '../components/ui';
+import { CambioDeContenido } from '../components/motion';
 
 // Fase 20 — Logros: igual que Estadísticas/Predicciones, sin datos propios ni exportación —
 // insignias binarias calculadas al vuelo, sin puntos/niveles/monedas (mismo criterio "no
@@ -109,7 +110,10 @@ export default function AchievementsView({ productividad, diario, objetivos, bie
         </ToggleTab>
       </div>
 
+      {/* MS F2 — otra pestaña es una transición de CONTENIDO, no de página (apartado 15). */}
+      <CambioDeContenido clave={tab}>
       {tab === 'logros' ? <LogrosTab logros={logros} accent={accent} /> : <MapaVidaTab objetivos={objetivos} accent={accent} />}
+      </CambioDeContenido>
     </div>
   );
 }

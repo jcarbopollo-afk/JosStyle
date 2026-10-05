@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.131.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.132.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -35,7 +35,8 @@ ordenadlas. Y volverás y ejecutarás todas y no pares hasta acabarlo. Y cuando 
 se te vuelva a restablecer, sigue."* El índice con la línea de cada fase está en
 **`docs/13_MOTION_SYSTEM_ORDEN.md`** (el archivo empieza por la F16 y trae la F2 y la F11 repetidas,
 C-51), y **se construye de la F0 a la F20**. **Hechas la F0 (v3.130.0)** —el mapa, la auditoría y el
-plan— y la **F1 (v3.131.0)** —el motor—. Lo que vale para cualquier cambio a partir de hoy:
+plan—, la **F1 (v3.131.0)** —el motor— y la **F2 (v3.132.0)** —la navegación—. Lo que vale para
+cualquier cambio a partir de hoy:
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
   `animar(el, 'modalEnter')`; para montar y desmontar, `Presencia`, y para una lista que se reordena,
@@ -70,6 +71,27 @@ plan— y la **F1 (v3.131.0)** —el motor—. Lo que vale para cualquier cambio
   sueltas, el mismo número en dos sitios, lo de fuera del catálogo, reducido = cero, las cadencias y las
   dos curvas—. Siguen abiertos, entre otros, **las gráficas de Recharts que no obedecen a «Reducir
   movimiento»** (la F4), los tres interruptores (la F3) y las ventanas que aparecen de golpe (la F6).
+- 🚨 **LA NAVEGACIÓN SE MUEVE SOLA, Y NINGUNA VISTA LO DECIDE** (F2): `App.jsx` pinta **todas** las
+  pantallas dentro de un contenedor común (`key={tab}`), y su clase sale de `tipoDeNavegacion(antes,
+  después)` (`src/lib/transicionNavegacion.js`): **entrar** desde la derecha (`module-enter`), **volver**
+  desde la izquierda (`nav-vuelve`) y **cambiar de sección** con un fundido (`nav-seccion`). Una pantalla
+  nueva no tiene que hacer nada para navegar bien.
+- 🐛 **EL SCROLL SE RECUERDA POR PANTALLA, Y VOLVER NO REPITE LAS ENTRADAS** (F2,
+  `useNavegacionEnLaPagina` en `src/components/navegacionMotion.js`): entrar empieza arriba, volver deja
+  la pantalla donde estaba, y las entradas de montaje de `ENTRADAS_QUE_NO_SE_REPITEN` (la cascada de un
+  hub, su cabecera, la barra de volver, el mes) se terminan al volver. **Una entrada de montaje nueva que
+  no deba repetirse al volver va a esa lista.** Lo recordado es un `ref`, nunca `app_data`.
+- 🚨 **UNA PESTAÑA DE DENTRO DE UNA PANTALLA ES `<CambioDeContenido clave={…}>`** (F2, apartado 15): un
+  fundido de lo de dentro, sin rehacer la página. La primera vez no anima (serían dos fundidos).
+- 🚨 **CADA PANTALLA TIENE SU LÍMITE DE ERROR** (F2, apartado 18): todas van dentro de `AreaSegura`
+  (FIT F36). Antes, un fallo al pintar fuera de Fitness dejaba la aplicación en blanco.
+- ⚠️ **TAILWIND SOLO GENERA `hover:` CON PUNTERO DE VERDAD** (F2, `hoverOnlyWhenSupported`), para que no
+  se quede pegado en el iPhone. ⏸ **Y el gesto de atrás del sistema sigue declarado (C-53)**: sin
+  `history.pushState`, lo decide Josué (E3 F22).
+- 🐛 **EN EL RECORRIDO, LO QUE PROVOCA UN TOQUE SE MIDE DESPUÉS DE UN `setTimeout(0)`** (F2): React lo
+  aplica en una microtarea, y medir justo después de `click()` mide la pantalla de antes. ⚠️ **Y la barra de
+  abajo la mide también la sección SF2** (que sea UNA superficie): el indicador de la F2 es la única pieza
+  con fondo que admite, sin desenfoque ni sombra. Lo que se meta en la barra, se barre allí.
 
 🚨 **Y la lección de la F1, que vale para todas las que quedan: ENTRENAMIENTO YA EXISTÍA, y no era una
 cosa, eran tres.** El módulo es `entreno` + `calistenia` desde la Fase 2; **las fotos de progreso son
@@ -2045,9 +2067,9 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F2 DEL MOTION SYSTEM** (*"Navegación, transiciones y continuidad
-   espacial"*, líneas 6038–6770 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt` —la de la 5491 es un
-   borrador cortado, C-51—), y después la F3… hasta la F20, en el orden de
+0. 🎬 **LA SIGUIENTE ES LA F3 DEL MOTION SYSTEM** (*"Microinteracciones, componentes y feedback"*,
+   líneas 6771–7586 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F4… hasta la F20, en
+   el orden de
    `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
    `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**
    (`motion.js`): un token o un preset que falte se añade allí, no en la vista.

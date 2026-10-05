@@ -83,6 +83,28 @@ export function Presencia({ visible, entrada = 'modalEnter', salida = 'modalExit
   );
 }
 
+/**
+ * MS F2, apartado 15 — UNA TRANSICIÓN DE CONTENIDO, NO DE PÁGINA. Envuelve lo
+ * que cambia con una pestaña de dentro de una pantalla (Comidas · Agua ·
+ * Favoritos…): al cambiar `clave`, lo nuevo entra con un fundido corto y sin
+ * moverse (`contenido-cambia`, preset `contentChange`), y la pantalla se queda
+ * donde está —ni barra de volver que entre otra vez, ni scroll que salte—.
+ *
+ * ⚠️ La primera vez no anima: la pantalla ya está entrando con su transición de
+ * página, y las dos a la vez serían un doble fundido (apartado 28). Solo cuando
+ * la clave cambia.
+ */
+export function CambioDeContenido({ clave, className = '', children, ...resto }) {
+  const inicial = useRef(clave);
+  const cambiado = useRef(false);
+  if (clave !== inicial.current) cambiado.current = true;
+  return (
+    <div key={clave} className={`${cambiado.current ? 'contenido-cambia ' : ''}${className}`.trim() || undefined} data-contenido={String(clave)} {...resto}>
+      {children}
+    </div>
+  );
+}
+
 /* La caja de un elemento relativa a su contenedor: así un desplazamiento de la
    página entre dos pintados no se confunde con un cambio de sitio. */
 function cajaRelativa(el, base) {

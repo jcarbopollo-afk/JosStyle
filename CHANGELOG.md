@@ -1,5 +1,95 @@
 # CHANGELOG.md
 
+## v3.132.0 — Motion System F2/20: navegación, transiciones y continuidad espacial
+
+La F2 del Motion System (*"Navegación, transiciones y continuidad espacial"*, líneas 6038–6770 de
+`especificaciones/ORIGINAL_MOTION_SYSTEM.txt`; la de la 5491 es un borrador cortado, C-51). Hasta hoy
+**toda navegación se movía igual**: abrir un módulo, volver de él y cambiar de pestaña hacían la misma
+entrada desde la derecha, y la portada de un área no se movía en absoluto. Ahora cada cambio dice qué es.
+
+### Tres movimientos, uno por clase de navegación (apartados 5-8)
+
+- **`tipoDeNavegacion(pilaAntes, pilaDespues)`** (`src/lib/transicionNavegacion.js`) clasifica cada cambio
+  de la pila de NAVO F1 —**entrar**, **volver**, **cambiar de sección** o quedarse— y `App.jsx` pinta
+  **todas** las pantallas dentro de un contenedor común con la clase de ese movimiento. Ninguna vista lo
+  decide: una pantalla nueva navega bien sin hacer nada.
+- **Entrar**: desde la derecha, como siempre (`module-enter`, que pasa a `backwards` para no dejar un
+  `transform` puesto). **Volver**: 8 px desde la **izquierda**, ya medio visible, en 220 ms
+  (`nav-vuelve`, preset `pageBack`) — antes volver era *otra entrada desde la derecha*, que es la
+  dirección equivocada (apartado 6). **Cambiar de sección**: un fundido con un leve ascenso
+  (`nav-seccion`, `sectionSwitch`), porque las secciones son hermanas y ninguna está a un lado de otra.
+
+### Lo que pasa en la página al navegar (`src/components/navegacionMotion.js`)
+
+- 🐛 **El scroll, que nadie tocaba**: abrir un módulo con Inicio bajado lo abría **a media altura**, y
+  volver dejaba Inicio **arriba del todo**. Ahora se recuerda por pantalla de la pila: entrar y cambiar de
+  sección empiezan arriba, volver la deja donde estaba (570 → 570 px en el recorrido). Lo recordado vive en
+  un `ref` de la sesión, nunca en `app_data` (NAVO F1).
+- **Volver no repite las entradas**: la cascada de las tarjetas de un hub, su cabecera, la barra de volver
+  y el mes del calendario se terminan en el acto al volver (`ENTRADAS_QUE_NO_SE_REPITEN`, con la Web
+  Animations API) — aparecen como las dejaste. Al llegar por la barra, sí entran: es lo suyo.
+- **El foco** que se pierde con la tarjeta que se tocó pasa a la pantalla nueva sin moverla (teclado y
+  VoiceOver, apartado 20).
+- **Un solo escuchador de scroll** para toda la navegación, y doce pestañas tocadas seguidas dejan una
+  sola pantalla y ninguna animación colgada (apartado 23, medido).
+
+### La barra de abajo (apartados 2-4)
+
+Una **pastilla que viaja** de pestaña a pestaña (`nav-indicador`, `estiloDelIndicador`), el icono que se
+encoge un poco al pulsar, y la pestaña activa con `aria-current`. En Reducido el indicador aparece en su
+sitio en vez de viajar.
+
+### Las pestañas de dentro de una pantalla (apartado 15)
+
+**`<CambioDeContenido clave={pestana}>`** (`src/components/motion.jsx`): lo que cambia se funde en 160 ms
+(`contenido-cambia`, `contentChange`) sin rehacer la página, sin volver a sacar la barra de volver y sin
+mover el scroll. La primera vez no anima —ya está entrando la pantalla, y serían dos fundidos a la vez
+(apartado 28)—. Está en Nutrición, Bienestar digital, Fe, Logros, Relación, Armario y Calendario.
+
+### Error durante la transición (apartado 18)
+
+🐛 **Fuera de Fitness, un fallo al pintar una pantalla dejaba la aplicación en blanco**, barra de abajo
+incluida. Ahora **cada pantalla** va dentro del límite de error de la FIT F36 (`AreaSegura`), con su aviso,
+«Reintentar» y la barra funcionando para salir. El texto de Fitness se queda en Fitness.
+
+### Hover (apartado 21)
+
+Ni una clase `hover:` en las pantallas, y desde la F2 Tailwind **solo genera `hover:` donde hay un puntero
+de verdad** (`hoverOnlyWhenSupported`): un `hover:` futuro no se quedará pegado en el iPhone después de
+tocar. La suite barre las vistas y lo comprueba.
+
+### Lo que no hace esta fase (`NO_EN_F2`, C-53)
+
+Las ~40 ventanas y su fondo (la F6), arrastrar una hoja (F5 y F8), tarjeta → detalle con el elemento
+compartido (F7) y los filtros que recolocan una lista (F10): son, palabra por palabra, el tema de esas
+fases. Y **el gesto de atrás del sistema** sigue declarado (C-53): JosStyle navega con una pila de React,
+instalada en el iPhone no tiene botón de atrás, y meter `history.pushState` es cambiar la navegación de
+toda la aplicación (E3 F22) — lo decide Josué.
+
+### Cómo se comprueba
+
+- `scripts/test-motion-f2.mjs` (99 comprobaciones): la clasificación en todos sus casos, el scroll por
+  pantalla y su poda, el indicador, los presets en el motor, las clases y sus `@keyframes` en el
+  `MOTION_MAP`, Reducido sin desplazamientos, las vistas con `CambioDeContenido`, el límite de error de
+  cada pantalla y el barrido de `hover:`.
+- La sección **«MS F2»** del recorrido de Chromium (28) mide la navegación en la aplicación de verdad:
+  entrar desde la derecha y arriba, volver desde la izquierda al scroll de antes y sin repetir entradas
+  (0 en marcha frente a 6 al llegar por la barra), cambiar de sección, el indicador, la transición de
+  contenido, doce pestañas seguidas y «Reducir movimiento».
+- 🐛 **Y una lección del propio recorrido**: React aplica lo que provoca un toque en una **microtarea**,
+  así que medir justo después de `click()` medía la pantalla **anterior**. Las medidas esperan a que
+  termine el turno (`setTimeout(0)`).
+- 🐛 **Y la primera pasada entera salió roja en una comprobación de SF2**, no de la F2: exigía que la barra
+  de abajo no tuviera **ninguna** pieza con fondo propio (para que no volviera la franja borrosa de la
+  v3.127.1), y el indicador que viaja es una. Lo que protege sigue en pie —ni una segunda capa con
+  desenfoque, sombra o filtro—, y el indicador se admite **solo** como una pastilla bajo una pestaña, sin
+  desenfoque ni sombra. ⚠️ **Al meter algo en la barra de abajo, barrer las comprobaciones viejas que la
+  miden** (es la FIT F43 con otro elemento).
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.131.0 — Motion System F1/20: el motor de movimiento, los tokens y las primitivas
 
 La F1 del Motion System (*"Motor de movimiento + tokens + primitivas"*, líneas 4900–5490 de

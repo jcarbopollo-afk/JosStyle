@@ -161,6 +161,42 @@ De más sencillo a menos. Lo primero que sirva, eso:
 Todo lo anterior respeta solo el modo, la velocidad y «Reducir movimiento». Una animación de
 JavaScript lee el contexto antes de empezar; una de CSS lo hereda de los tokens.
 
+## 8.1 · Cómo se mueve la navegación (F2)
+
+**No hay que hacer nada para que una pantalla nueva navegue bien**: cualquier cosa que `App.jsx` pinte
+va dentro de **un contenedor común** (`key={tab}`), y la clase de ese contenedor la decide
+`tipoDeNavegacion(pilaAntes, pilaDespues)` (`src/lib/transicionNavegacion.js`) a partir de cómo cambió
+la pila de NAVO F1. Tres movimientos, cada uno con su sentido (apartados 5-8):
+
+| Qué pasa | Tipo | Clase | Cómo se ve |
+|---|---|---|---|
+| Se abre algo (un módulo, un submódulo) | `entrar` | `module-enter` | Llega desde la derecha, 24 px, en 340 ms |
+| Se vuelve («← …», o la pestaña del área estando en uno de sus módulos) | `volver` | `nav-vuelve` | Llega 8 px desde la **izquierda**, ya medio visible, en 220 ms: lo de antes vuelve, no se estrena |
+| Se cambia de sección en la barra de abajo | `seccion` | `nav-seccion` | Un fundido con un leve ascenso: las secciones son hermanas, ninguna está a un lado de otra |
+
+Y lo que pasa en la página, **antes de pintar** (`useNavegacionEnLaPagina`, `src/components/navegacionMotion.js`):
+
+- **El scroll se recuerda por pantalla de la pila**: entrar y cambiar de sección empiezan arriba; volver
+  deja la pantalla donde estaba. Lo recordado vive en un `ref`, nunca en `app_data`.
+- **Volver no repite las entradas** de la pantalla de antes (la cascada de un hub, su cabecera, la barra de
+  volver, el mes del calendario): las que están en `ENTRADAS_QUE_NO_SE_REPITEN` se terminan en el acto. Si
+  una pantalla nueva tiene una entrada de montaje que no debería repetirse al volver, **va a esa lista**.
+- **El foco**, si se perdió con la tarjeta que se tocó, pasa a la pantalla nueva sin moverla.
+- **La barra de abajo** tiene un indicador que viaja de pestaña a pestaña (`nav-indicador`,
+  `estiloDelIndicador`); en Reducido aparece en su sitio en vez de viajar.
+
+**Las pestañas DE DENTRO de una pantalla** (Comidas · Agua · Favoritos…) no son navegación: son un cambio
+de contenido. Lo que cambia va en `<CambioDeContenido clave={pestana}>` (`src/components/motion.jsx`):
+un fundido corto de lo de dentro (`contenido-cambia`, 160 ms), sin rehacer la página ni mover el scroll.
+La primera vez no anima, porque ya está entrando la pantalla y serían dos fundidos a la vez.
+
+**Y cada pantalla va dentro de un límite de error** (`AreaSegura`): si algo falla al pintarla, sale su
+aviso con «Reintentar» y la barra de abajo sigue funcionando — nunca una pantalla en blanco a mitad de una
+transición (apartado 18).
+
+Lo que **no** es de la F2 —las ventanas (F6), arrastrar una hoja (F5 y F8), tarjeta → detalle (F7), los
+filtros que recolocan una lista (F10) y el gesto de atrás del sistema (C-53)— está en `NO_EN_F2`.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en
@@ -171,7 +207,9 @@ JavaScript lee el contexto antes de empezar; una de CSS lo hereda de los tokens.
 - **El motor (`src/lib/motion.js`) no importa nada** y no guarda nada: lo puede leer cualquier capa sin
   un ciclo, y se prueba en Node con elementos de mentira y en Chromium con los de verdad.
 - **Las piezas de React (`src/components/motion.jsx`)** solo hacen lo que necesita React: `useMotion`,
-  `Presencia` y `useFlip`.
+  `Presencia`, `useFlip` y `CambioDeContenido`. La navegación tiene su par: la decisión en
+  `src/lib/transicionNavegacion.js` (se prueba en Node) y lo que pasa en la página en
+  `src/components/navegacionMotion.js`.
 - **Tailwind**: las clases `transition-*` usan por defecto el token `fast` y `--ease-premium`
   (`tailwind.config.js`), así que también respetan los modos.
 
@@ -185,4 +223,8 @@ JavaScript lee el contexto antes de empezar; una de CSS lo hereda de los tokens.
 - La sección «MS F1» del recorrido de Chromium mide en la pantalla de verdad que cada modo, cada velocidad
   y el «Reducir movimiento» del sistema cambian lo que se ve, y prueba la interrupción, el FLIP y el
   elemento compartido con la Web Animations API real.
+- La sección «MS F2» del recorrido mide la navegación de verdad: entrar desde la derecha y arriba, volver
+  desde la izquierda al scroll de antes y sin repetir entradas, cambiar de sección con un fundido, el
+  indicador de la barra, la transición de contenido de una pestaña, doce pestañas seguidas sin dejar nada
+  colgado y Reducido sin desplazamientos.
 - `docs/MOTION_MAP.md` se genera del mapa y la prueba lo compara con el archivo.

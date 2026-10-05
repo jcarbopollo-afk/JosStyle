@@ -1056,6 +1056,35 @@ Y uno que no es choque, pero se escribe para que no se reabra: **la intensidad n
 la duración**. Los dos los decide la velocidad (y en Reducido el escalonado desaparece). Así un modo nunca
 alarga lo que tarda la aplicación en responder.
 
+### C-53 — ⏸ DECLARADA AL CONSTRUIR (Motion System F2, v3.132.0) · El «back» del sistema contra una aplicación sin rutas, y cinco apartados de la F2 que son de otras fases
+
+La F2 (*"Navegación, transiciones y continuidad espacial"*) pide en su apartado 7 que **el gesto de
+volver del sistema y el botón de atrás del navegador** hagan la transición de volver, y en sus apartados
+10, 11, 12, 14 y 16 que se animen las ventanas, las hojas, su arrastre, el paso de una tarjeta a su
+detalle y los filtros. Choca con dos cosas, y la lectura de cada una:
+
+1. **JosStyle no tiene rutas: navega con una pila de React** (NAVO F1). Sin `history.pushState` no hay
+   entradas de historial que retroceder, así que el gesto del sistema **sale de la aplicación** — es el
+   mismo hueco que dejó declarado la E3 F22, y lo decide Josué. ⚠️ **Y en su iPhone no existe**: la
+   aplicación se instala como `display: standalone`, sin barra de Safari ni botón de atrás. Meterlo
+   ahora sería cambiar la navegación de **toda** la aplicación por la puerta de una fase de movimiento,
+   y a medias sería peor que no tenerlo. **Lo que sí hace la F2** es que **la barra «← …» de la
+   aplicación vuelva de verdad**: desde la izquierda, sin repetir las entradas de la pantalla de antes y
+   al scroll donde la dejó.
+2. **Cinco apartados son, palabra por palabra, el tema de otra fase del mismo documento**: las ventanas
+   y su fondo (10) son la **F6** (capas); las hojas y su arrastre (11 y 12), la **F5** y la **F8**
+   (gestos y física); tarjeta → detalle con el elemento compartido (14), la **F7**; los filtros que
+   recolocan una lista (16), la **F10**. Construirlos aquí los haría dos veces. Están en `NO_EN_F2`
+   (`src/lib/transicionNavegacion.js`) con la fase de cada uno, y **la F2 garantiza lo suyo**: navegar
+   con una ventana abierta no la deja atrapada: se monta en `document.body` (regla 3) y se desmonta
+   con la pantalla que la abrió, porque cada pantalla es un contenedor con su propia `key`. Lo que sí es de la F2 en el 16 —**las pestañas de dentro de una pantalla**— lo hace
+   `CambioDeContenido`.
+
+Y uno que no es choque, pero se escribe para que no se reabra: **el apartado 18 (error durante la
+transición) se resolvió con un límite de error por pantalla**. Hasta la F2 solo Fitness tenía uno
+(`AreaSegura`, FIT F36); un fallo al pintar cualquier otra pantalla dejaba la aplicación **en blanco**.
+Ahora todas van dentro del mismo, con su aviso, «Reintentar» y la barra de abajo funcionando para salir.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

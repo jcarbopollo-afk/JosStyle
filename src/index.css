@@ -513,19 +513,57 @@ html[data-velocidad='rapida'] {
   to { opacity: 1; transform: translateX(0) scale(1); }
 }
 .module-enter {
-  animation: moduleSlideIn var(--motion-dur-slow) var(--ease-premium) both;
+  animation: moduleSlideIn var(--motion-dur-slow) var(--ease-premium) backwards;
 }
-/* Nota para quien toque esto — Optimización de navegación/scroll: `animation-fill-mode: both`
-   deja aplicado el `transform` del último fotograma (scale(1) translateX(0)) para siempre después
-   de que la animación termine, y CUALQUIER `transform` distinto de `none` (aunque sea "visualmente
-   igual a nada") convierte a este `<div>` en el "containing block" de sus descendientes con
-   `position: fixed` — es decir, un modal `fixed inset-0` anidado aquí dentro ya NO se ancla al
-   viewport real, sino al tamaño de ESTE contenedor (que puede ser mucho más alto que la pantalla
-   si la vista tiene scroll). Por eso todos los overlays `fixed inset-0` de la app (ColorPicker,
-   TemaBuilder, los modales de Seguridad, el editor del Calendario, el escáner de código de barras)
-   se montan con `createPortal(..., document.body)` — evita este problema por construcción, sin
-   tocar esta animación. Si en el futuro se añade un nuevo overlay `fixed`, debe montarse igual,
-   con portal, o reaparecerá el mismo bug. */
+/* Nota para quien toque esto — Optimización de navegación/scroll: con `animation-fill-mode: both`
+   se quedaba aplicado el `transform` del último fotograma (scale(1) translateX(0)) para siempre
+   después de que la animación terminara, y CUALQUIER `transform` distinto de `none` (aunque sea
+   "visualmente igual a nada") convierte a este `<div>` en el "containing block" de sus
+   descendientes con `position: fixed` — es decir, un modal `fixed inset-0` anidado aquí dentro ya
+   NO se ancla al viewport real, sino al tamaño de ESTE contenedor. Por eso todos los overlays
+   `fixed inset-0` de la app se montan con `createPortal(..., document.body)` (regla 3), y se
+   siguen montando así: **durante** los 340 ms de la entrada sí hay un transform.
+   🔓 MS F2 — desde la F2 termina con `backwards`, como las de Fitness (FIT F37): fuera de la
+   entrada no queda ningún transform puesto. Y este contenedor envuelve ya TODAS las pantallas
+   (Inicio y los hubs también), así que la regla vale para todas. */
+
+/* MS F2 — VOLVER NO ES ENTRAR OTRA VEZ, Y CAMBIAR DE SECCIÓN NO ES NI LO UNO NI LO OTRO.
+   Josué pasó el Motion System con *"la aplicación debe sentirse como un único espacio continuo"*,
+   y su apartado 6 lo dice con un ejemplo: *"Si vuelve: C → B. La transición debe comunicar «estás
+   volviendo». No: «estás entrando otra vez»"*. Hasta la F2 volver repetía la entrada de la
+   derecha y la cascada de la pantalla a la que se volvía.
+   · `nav-vuelve` — llega desde la IZQUIERDA (el lado del que salió), más corto (`normal`) y sin
+     escala. Lo que ya habías visto no repite su entrada: lo termina `navegacionMotion.js`.
+   · `nav-seccion` — la barra de abajo: las secciones son hermanas, así que ni derecha ni
+     izquierda: un fundido con un leve ascenso (apartado 5: *"NO utilices siempre slide"*).
+   Las dos arrancan MEDIO VISIBLES (`--motion-opac-secondary`): la pantalla anterior desaparece de
+   golpe al desmontarse, y empezar desde 0 dejaría un instante vacío entre una y otra (apartado 28:
+   flashes). Y terminan con `backwards`: no dejan un transform puesto (la nota de arriba). */
+@keyframes navVuelve {
+  from { opacity: var(--motion-opac-secondary); transform: translateX(calc(-1 * var(--motion-dist-small))); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.nav-vuelve {
+  animation: navVuelve var(--motion-dur-normal) var(--ease-premium) backwards;
+}
+@keyframes navSeccion {
+  from { opacity: var(--motion-opac-secondary); transform: translateY(var(--motion-dist-small)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.nav-seccion {
+  animation: navSeccion var(--motion-dur-normal) var(--ease-premium) backwards;
+}
+
+/* MS F2, apartado 15 — UNA TRANSICIÓN DE CONTENIDO NO ES UNA DE PÁGINA. Otra pestaña dentro de la
+   misma pantalla (Nutrición, Calendario, Armario…) cambia lo de dentro, no el sitio: un fundido
+   más corto y sin moverse. Lo pone `CambioDeContenido` (src/components/motion.jsx). */
+@keyframes contenidoCambia {
+  from { opacity: var(--motion-opac-secondary); }
+  to { opacity: 1; }
+}
+.contenido-cambia {
+  animation: contenidoCambia var(--motion-dur-fast) var(--ease-premium) backwards;
+}
 
 /* Fase N2 — la barra "← {Área}" entra con un fundido lateral corto y más rápido que el contenido
    de debajo, para que se sienta como una capa fija que ya estaba ahí, no como si arrastrara con
@@ -594,6 +632,38 @@ html[data-velocidad='rapida'] {
 }
 .nav-tab-icon, .nav-tab-label {
   transition: color var(--motion-dur-normal) var(--ease-premium);
+}
+
+/* MS F2 — LA BARRA DE ABAJO (apartados 2-4). *"Rápido, suave, preciso, discreto. NO quiero que la
+   bottom bar haga una animación exagerada cada vez que se pulsa."*
+   · Al pulsar, el icono se encoge un poco (`escala-normal`): la respuesta al dedo, y nada más. En
+     Reducido la escala vale 1, así que no se mueve.
+   · 🔓 Y UN INDICADOR QUE VIAJA (apartado 3: *"indicador → se desplaza hacia la nueva posición"*):
+     una sola pastilla bajo la pestaña activa que se desliza hasta la nueva, en vez de un resaltado
+     que se apaga en una y se enciende en otra. Su sitio lo pone App.jsx con `estiloDelIndicador`
+     (transicionNavegacion.js) y aquí solo vive cómo se mueve. En Reducido no viaja: aparece. */
+.nav-tab .nav-tab-icon {
+  transition: color var(--motion-dur-normal) var(--ease-premium), transform var(--motion-dur-fast) var(--ease-premium);
+}
+.nav-tab:active .nav-tab-icon {
+  transform: scale(var(--motion-escala-normal));
+}
+.nav-indicador {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 0.75rem;
+  pointer-events: none;
+  transition: transform var(--motion-dur-medium) var(--motion-curva-emphasized), opacity var(--motion-dur-fast) var(--ease-premium);
+}
+html[data-motion='reducido'] .nav-indicador {
+  transition-property: opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='off']) .nav-indicador {
+    transition-property: opacity;
+  }
 }
 
 /* Fase 1 del Calendario Universal — dos animaciones discretas y funcionales (spec apartado 16:

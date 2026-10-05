@@ -953,6 +953,14 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f1.mjs >/tmp/jc
 else
   fallo "Falla el motor del Motion System (F1)"; grep '✗' /tmp/jc_motion_f1.log
 fi
+# Motion System F2 — la navegación: qué clase de movimiento es cada cambio de la pila (entrar,
+# volver, cambiar de sección), el scroll por pantalla, lo que no se repite al volver, el indicador
+# de la barra, la transición de contenido y el límite de error de cada pantalla.
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f2.mjs >/tmp/jc_motion_f2.log 2>&1; then
+  ok "El Motion System, F2: navegación y continuidad espacial — $(grep -c '✓' /tmp/jc_motion_f2.log) comprobaciones"
+else
+  fallo "Falla la navegación del Motion System (F2)"; grep '✗' /tmp/jc_motion_f2.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

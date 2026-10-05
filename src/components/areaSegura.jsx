@@ -29,6 +29,8 @@ import { Card } from './ui';
    área se limpia solo (`clave`): el error de Rangos no se queda pegado a
    Progreso. */
 
+const TEXTO_FITNESS = 'El resto de Fitness sigue funcionando, y tus datos no se han tocado.';
+
 export class AreaSegura extends React.Component {
   constructor(props) {
     super(props);
@@ -54,7 +56,9 @@ export class AreaSegura extends React.Component {
 
   render() {
     const { error } = this.state;
-    const { nombre = 'Esta parte', children, accent } = this.props;
+    /* MS F2 — `texto`: el mismo límite envuelve desde la F2 cada pantalla de la aplicación
+       (App.jsx), y fuera de Fitness «el resto de Fitness» no sería verdad. */
+    const { nombre = 'Esta parte', children, accent, texto = TEXTO_FITNESS } = this.props;
     if (!error) return children;
     return (
       <Card>
@@ -65,7 +69,7 @@ export class AreaSegura extends React.Component {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold" style={{ color: COLORS.text }}>No se ha podido cargar {nombre}</p>
             <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
-              El resto de Fitness sigue funcionando, y tus datos no se han tocado.
+              {texto}
             </p>
             <button
               type="button"
@@ -85,6 +89,6 @@ export class AreaSegura extends React.Component {
 /** Lo que la F36 pinta cuando una parte falla, para probarlo sin romper nada. */
 export const TEXTOS_AREA_SEGURA = {
   titulo: (nombre) => `No se ha podido cargar ${nombre}`,
-  texto: 'El resto de Fitness sigue funcionando, y tus datos no se han tocado.',
+  texto: TEXTO_FITNESS,
   reintentar: 'Reintentar',
 };

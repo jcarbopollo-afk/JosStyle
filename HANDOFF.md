@@ -2,6 +2,14 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.132.0 — Motion System F2/20: navegación y continuidad espacial):**
+> Cada cambio de pantalla dice qué es: **entrar** llega desde la derecha y arriba del todo, **volver**
+> llega desde la izquierda al scroll donde lo dejaste y sin repetir las entradas, y **cambiar de sección**
+> en la barra es un fundido. La barra tiene un indicador que viaja, las pestañas de dentro de una pantalla
+> se funden (`CambioDeContenido`) y **cada pantalla tiene su límite de error**: un fallo ya no deja la
+> aplicación en blanco. El gesto de atrás del sistema sigue declarado (C-53). **La siguiente es la F3**
+> (microinteracciones, componentes y feedback).
+
 > **📅 ACTUALIZACIÓN (v3.131.0 — Motion System F1/20: el motor de movimiento):**
 > Todo el movimiento sale ahora de **`src/lib/motion.js`** (tokens, escalonado, modos, velocidad,
 > presets y primitivas por la Web Animations API) y de sus variables en `index.css`. En *Ajustes →

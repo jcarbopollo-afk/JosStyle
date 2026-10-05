@@ -3,6 +3,7 @@ import { Heart, Trash2, CalendarHeart, Repeat, Pencil, X, ImagePlus, Loader2 } f
 import { COLORS, TIPOS_FECHA_RELACION } from '../tokens';
 import { uid, formatFecha, diasHasta } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, ToggleTab, EmptyHint, BotonBorrarDefinitivo } from '../components/ui';
+import { CambioDeContenido } from '../components/motion';
 import { fotosDelAlbum, validarFotoAlbum, TIPOS_FOTO_ALBUM, MAX_NOTA_ALBUM, BORRADO_ALBUM } from '../lib/albumRelacion';
 import { transicion } from '../lib/motion';
 
@@ -420,6 +421,8 @@ export default function RelationView({ relacion, onUpdateNombre, onAddFecha, onU
         <ToggleTab active={sub === 'album'} onClick={() => setSub('album')} accent={accent}>Álbum</ToggleTab>
       </div>
 
+      {/* MS F2 — otra pestaña es una transición de CONTENIDO, no de página (apartado 15). */}
+      <CambioDeContenido clave={sub}>
       {sub === 'fechas' && (
         <FechasTab fechas={relacion.fechas} onAdd={onAddFecha} onUpdate={onUpdateFecha} onDelete={onDeleteFecha} accent={accent} />
       )}
@@ -433,6 +436,7 @@ export default function RelationView({ relacion, onUpdateNombre, onAddFecha, onU
           onBorrar={onBorrarFotoAlbum}
         />
       )}
+      </CambioDeContenido>
     </div>
   );
 }

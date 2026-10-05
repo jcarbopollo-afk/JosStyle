@@ -1,6 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
+  /* MS F2, apartado 21 — *"Hover debe existir únicamente donde tenga sentido. En móvil: NO depender de
+     hover."* Hoy ninguna pantalla usa `hover:`; con esto, una que lo use mañana solo lo tendrá donde hay
+     un puntero de verdad, y en el iPhone no se quedará «pegado» después de tocar. */
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       /* MS F1 — las clases `transition`, `transition-transform`, `transition-colors`… de Tailwind

@@ -58,6 +58,7 @@ import { buscarProductoPorCodigoBarras, buscarAlimentosPorNombre } from '../lib/
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
 import BarcodeScanner from '../components/BarcodeScanner';
+import { CambioDeContenido } from '../components/motion';
 import { escalonado } from '../lib/motion';
 
 const emptyForm = () => ({ nombre: '', calorias: '', proteinas: '', carbohidratos: '', grasas: '', fibra: '' });
@@ -1793,6 +1794,8 @@ export default function NutritionView({ nutricion, perfil, onAddComida, onDelete
         </ToggleTab>
       </div>
 
+      {/* MS F2 — otra pestaña es una transición de CONTENIDO, no de página (apartado 15). */}
+      <CambioDeContenido clave={sub}>
       {sub === 'comidas' && (
         <ComidasTab
           comidas={nutricion.comidas} nutricion={nutricion} perfil={perfil}
@@ -1809,6 +1812,7 @@ export default function NutritionView({ nutricion, perfil, onAddComida, onDelete
         <FavoritosTab favoritos={nutricion.favoritos} onRegistrar={onRegistrarFavorito} onEliminar={onEliminarFavorito} accent={accent} />
       )}
       {sub === 'stats' && <EstadisticasNutricion nutricion={nutricion} accent={accent} />}
+      </CambioDeContenido>
 
       {/* 🚨 Entrega 3 · F39 (NU F7), apartados 13 y 14 — la IA sigue siendo **de
           un toque** (regla 7), y ahora se le manda **el análisis**, no las

@@ -11928,11 +11928,24 @@ await page.waitForTimeout(400);
 const barra_sf = await page.evaluate(() => {
   const nav = document.querySelector('nav.nav-segura');
   if (!nav) return null;
+  /* 🔓 MS F2 — el indicador que viaja de pestaña a pestaña (`nav-indicador`, apartado 3 de la F2) es
+     la ÚNICA pieza con fondo que se admite, y con condiciones: una pastilla bajo UNA pestaña, sin
+     desenfoque, sin sombra y sin filtro. Lo que protege esta medida —que no vuelva una segunda capa
+     borrosa dentro de la barra, el diagnóstico equivocado de la v3.127.1— sigue en pie para todo lo
+     demás. ⚠️ La F2 salió roja aquí en su primera pasada: al meter algo en la barra, barrer las
+     comprobaciones viejas que la miden. */
+  const indicador = nav.querySelector('.nav-indicador');
   const propios = [...nav.querySelectorAll('*')].filter((e) => {
+    if (e === indicador) return false;
     const c = getComputedStyle(e);
     return c.backgroundColor !== 'rgba(0, 0, 0, 0)' || (c.backdropFilter && c.backdropFilter !== 'none')
       || c.boxShadow !== 'none' || c.filter !== 'none' || c.backgroundImage !== 'none';
   }).length;
+  const ci = indicador ? getComputedStyle(indicador) : null;
+  const pestana = nav.querySelector('button');
+  const indicadorLimpio = !indicador || (
+    (!ci.backdropFilter || ci.backdropFilter === 'none') && ci.boxShadow === 'none' && ci.filter === 'none'
+    && ci.backgroundImage === 'none' && indicador.getBoundingClientRect().width <= pestana.getBoundingClientRect().width + 1);
   const r = nav.getBoundingClientRect();
   const botones = [...nav.querySelectorAll('button')];
   const encima = botones.filter((bt) => {
@@ -11941,10 +11954,10 @@ const barra_sf = await page.evaluate(() => {
     return !(el && nav.contains(el));
   }).length;
   const cs = getComputedStyle(nav);
-  return { propios, ancho: Math.round(r.width), pantalla: window.innerWidth, botones: botones.length, encima, desenfoque: cs.backdropFilter || cs.webkitBackdropFilter };
+  return { propios, indicadorLimpio, ancho: Math.round(r.width), pantalla: window.innerWidth, botones: botones.length, encima, desenfoque: cs.backdropFilter || cs.webkitBackdropFilter };
 });
-ok(!!barra_sf && barra_sf.propios === 0 && /blur/.test(barra_sf.desenfoque || ''),
-  `SF2 — la barra de abajo sigue siendo UNA superficie, con su desenfoque y sin piezas propias (${barra_sf && barra_sf.propios})`);
+ok(!!barra_sf && barra_sf.propios === 0 && barra_sf.indicadorLimpio && /blur/.test(barra_sf.desenfoque || ''),
+  `SF2 — la barra de abajo sigue siendo UNA superficie, con su desenfoque y sin piezas propias; el indicador de la MS F2 es una pastilla bajo una pestaña, sin desenfoque ni sombra (${barra_sf && barra_sf.propios}, ${barra_sf && barra_sf.indicadorLimpio})`);
 ok(!!barra_sf && barra_sf.ancho === barra_sf.pantalla && barra_sf.botones === 5 && barra_sf.encima === 0,
   `…de lado a lado, con las cinco pestañas y nada pintado encima (${barra_sf && `${barra_sf.ancho}/${barra_sf.pantalla}, ${barra_sf.botones}, ${barra_sf.encima}`})`);
 ok(await pulsar('Ajustes'), 'SF2 — a Ajustes, que es una pantalla larga');
@@ -12167,6 +12180,152 @@ ok(prim_ms1.flipsR === 0, `…y en Reducido el orden cambia sin desplazar nada (
 ok(/scale\(0\.2, 0\.2\)/.test(prim_ms1.compT), `MS F1 — elemento compartido: el destino nace donde estaba el origen (${prim_ms1.compT})`);
 ok(errores.length === erroresAntes_ms1, `…sin un error en la consola${errores.length > erroresAntes_ms1 ? `: ${errores.slice(erroresAntes_ms1).join(' | ').slice(0, 200)}` : ''}`);
 almacen.ajustes = ajustesDeAntes_ms1;
+await page.emulateMedia({ reducedMotion: null });
+await page.setViewportSize({ width: 1280, height: 900 });
+
+/* ── MS F2 · La navegación: entrar, volver, cambiar de sección, el scroll y el indicador ──
+   Lo que solo se ve en una pantalla de verdad: que volver NO repita la entrada de lo que ya habías
+   visto, que la página vuelva a donde estaba, que cambiar de sección no deslice de lado, que el
+   indicador de la barra viaje, que otra pestaña de dentro sea una transición de contenido y que
+   navegar deprisa no deje dos pantallas ni un error. Se mide con la Web Animations API nada más
+   pintarse el toque, rebobinando la animación a su principio. ⚠️ React 18 no pinta dentro de
+   `click()`: lo hace en una microtarea justo después, así que medir en la línea siguiente leía la
+   pantalla de ANTES (y cada comprobación salía con un paso de retraso). */
+console.log('\n── MS F2 · Navegación y continuidad espacial ──');
+const ajustesDeAntes_ms2 = almacen.ajustes;
+almacen.ajustes = { ...(almacen.ajustes || {}), apariencia: { ...((almacen.ajustes || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+const erroresAntes_ms2 = errores.length;
+/* Toca algo (una pestaña de la barra, la barra de volver o la primera línea de una tarjeta) y, nada
+   más pintarse, mide el contenedor de la pantalla: su tipo, su clase, cómo arranca su animación,
+   cuántas entradas de tarjetas siguen corriendo, el scroll, el foco y el indicador. */
+const tocar_ms2 = (accion) => page.evaluate(async (acc) => {
+  let b = null;
+  if (acc.tipo === 'barra') b = [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === acc.t);
+  else if (acc.tipo === 'volver') b = document.querySelector('.back-bar');
+  else if (acc.tipo === 'nada') b = { click() {} };
+  else b = [...document.querySelectorAll('button')].find((x) => (x.innerText || '').split('\n')[0].trim() === acc.t);
+  if (!b) return null;
+  b.click();
+  /* React 18 aplica un toque en una microtarea, justo después de `click()`: se le deja terminar. */
+  await new Promise((r) => setTimeout(r, 0));
+  const w = document.querySelector('.pantalla-segura > [data-navegacion]');
+  const a = w ? w.getAnimations().find((x) => x.animationName) : null;
+  let arranque = null;
+  if (a) {
+    a.pause(); a.currentTime = 0;
+    const cs = getComputedStyle(w);
+    const m = new DOMMatrix(cs.transform === 'none' ? undefined : cs.transform);
+    arranque = { anim: a.animationName, x: Math.round(m.m41 * 10) / 10, y: Math.round(m.m42 * 10) / 10, escala: Math.round(m.a * 1000) / 1000, opacidad: Number(cs.opacity), dura: Math.round(a.effect.getComputedTiming().duration) };
+    a.play();
+  }
+  const entrando = document.getAnimations().filter((x) => ['hubCardIn', 'hubHeaderIn', 'backBarIn'].includes(x.animationName) && x.playState === 'running').length;
+  const ind = document.querySelector('.nav-indicador');
+  const actual = document.querySelector('nav [aria-current="page"]');
+  return {
+    tipo: w ? w.dataset.navegacion : null, clase: w ? w.className : null, arranque, entrando,
+    contenedores: document.querySelectorAll('.pantalla-segura > [data-navegacion]').length,
+    y: Math.round(window.scrollY), foco: document.activeElement === w,
+    indicador: ind ? ind.style.transform : null, indicadorVisible: ind ? ind.style.opacity : null,
+    pestana: actual ? actual.innerText.trim() : null,
+  };
+}, accion);
+/* Una tarjeta de hub navega cuando termina de crecer (`fast`): se espera a que cambie el contenedor. */
+const esperarPantalla_ms2 = async (tipo) => {
+  try { await page.waitForFunction((t) => document.querySelector('.pantalla-segura > [data-navegacion]')?.dataset.navegacion === t, tipo, { timeout: 4000, polling: 'raf' }); return true; } catch { return false; }
+};
+const e0_ms2 = await tocar_ms2({ tipo: 'nada' });
+ok(e0_ms2 && e0_ms2.contenedores === 1 && e0_ms2.pestana === 'Inicio' && e0_ms2.indicador === 'translateX(0%)' && e0_ms2.indicadorVisible === '1',
+  `MS F2 — Inicio va en el contenedor común, con su pestaña marcada y el indicador debajo (${JSON.stringify(e0_ms2)})`);
+/* 1 · Entrar con Inicio bajado, y volver: el scroll y la dirección. */
+await page.evaluate(() => window.scrollTo(0, 700));
+await page.waitForTimeout(300);
+const yInicio_ms2 = await page.evaluate(() => Math.round(window.scrollY));
+ok(yInicio_ms2 > 150, `MS F2 — Inicio se puede bajar (${yInicio_ms2} px)`);
+const e1_ms2 = await tocar_ms2({ tipo: 'tarjeta', t: 'Nutrición' });
+ok(e1_ms2 && e1_ms2.tipo === 'entrar' && /module-enter/.test(e1_ms2.clase) && e1_ms2.arranque?.anim === 'moduleSlideIn' && e1_ms2.arranque?.x === 24 && e1_ms2.arranque?.dura === 340,
+  `🚨 MS F2 — abrir algo es ENTRAR: llega 24 px desde la derecha en 340 ms (${JSON.stringify(e1_ms2 && { tipo: e1_ms2.tipo, arranque: e1_ms2.arranque })})`);
+ok(e1_ms2 && e1_ms2.y === 0, `🐛 MS F2 — …y empieza ARRIBA, no a la altura a la que estaba Inicio (${e1_ms2?.y} px; apartado 13)`);
+ok(e1_ms2 && e1_ms2.pestana === 'Bienestar' && e1_ms2.indicador === 'translateX(100%)', `…la barra marca su área y el indicador viaja hasta ella (${e1_ms2?.pestana}, ${e1_ms2?.indicador})`);
+ok(e1_ms2 && e1_ms2.foco, '…y el foco, que se había perdido con la tarjeta, pasa a la pantalla nueva (teclado y VoiceOver, apartado 20)');
+await page.waitForTimeout(500);
+const e2_ms2 = await tocar_ms2({ tipo: 'volver' });
+ok(e2_ms2 && e2_ms2.tipo === 'volver' && /nav-vuelve/.test(e2_ms2.clase) && !/module-enter/.test(e2_ms2.clase) && e2_ms2.arranque?.anim === 'navVuelve' && e2_ms2.arranque?.x === -8 && e2_ms2.arranque?.opacidad === 0.65 && e2_ms2.arranque?.dura === 220,
+  `🚨 MS F2 — volver es VOLVER: llega 8 px desde la IZQUIERDA, medio visible, en 220 ms; no entra otra vez desde la derecha (${JSON.stringify(e2_ms2 && { tipo: e2_ms2.tipo, arranque: e2_ms2.arranque })}; apartado 6)`);
+ok(e2_ms2 && Math.abs(e2_ms2.y - yInicio_ms2) <= 2, `🐛 MS F2 — e Inicio aparece donde lo dejaste (${yInicio_ms2} → ${e2_ms2?.y} px)`);
+ok(e2_ms2 && e2_ms2.pestana === 'Inicio' && e2_ms2.indicador === 'translateX(0%)', `…y el indicador vuelve con él (${e2_ms2?.indicador})`);
+await page.waitForTimeout(500);
+/* 2 · Cambiar de sección con la barra: hermanas, sin deslizar de lado, y la cascada del hub sí entra. */
+const e3_ms2 = await tocar_ms2({ tipo: 'barra', t: 'Gestión' });
+ok(e3_ms2 && e3_ms2.tipo === 'seccion' && /nav-seccion/.test(e3_ms2.clase) && e3_ms2.arranque?.anim === 'navSeccion' && e3_ms2.arranque?.x === 0 && e3_ms2.arranque?.y === 8 && e3_ms2.arranque?.opacidad === 0.65 && e3_ms2.arranque?.dura === 220,
+  `🚨 MS F2 — cambiar de sección no desliza de lado: un fundido con un leve ascenso (${JSON.stringify(e3_ms2 && { tipo: e3_ms2.tipo, arranque: e3_ms2.arranque })}; apartado 5)`);
+ok(e3_ms2 && e3_ms2.entrando > 0, `…y la portada del área entra con su cascada, que es lo suyo al llegar (${e3_ms2?.entrando} entradas en marcha)`);
+ok(e3_ms2 && e3_ms2.y === 0 && e3_ms2.pestana === 'Gestión' && e3_ms2.indicador === 'translateX(300%)', `…arriba, con la pestaña y el indicador en Gestión (${e3_ms2?.indicador})`);
+await page.waitForTimeout(900);
+ok(await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => (x.innerText || '').split('\n')[0].trim() === 'Economía'); if (!b) return false; b.click(); return true; }), 'MS F2 — se toca Economía en la portada de Gestión');
+ok(await esperarPantalla_ms2('entrar'), '…y se entra (después de que la tarjeta crezca)');
+await page.waitForTimeout(600);
+const e4_ms2 = await tocar_ms2({ tipo: 'volver' });
+ok(e4_ms2 && e4_ms2.tipo === 'volver' && e4_ms2.entrando === 0,
+  `🚨 MS F2 — al volver a la portada, sus tarjetas y su cabecera NO repiten la entrada: aparecen como las dejaste (${e4_ms2?.entrando} en marcha; con «cambiar de sección» eran ${e3_ms2?.entrando})`);
+await page.waitForTimeout(500);
+ok(await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => (x.innerText || '').split('\n')[0].trim() === 'Economía'); if (!b) return false; b.click(); return true; }) && await esperarPantalla_ms2('entrar'), 'MS F2 — se vuelve a entrar en Economía');
+await page.waitForTimeout(500);
+const e5_ms2 = await tocar_ms2({ tipo: 'barra', t: 'Gestión' });
+ok(e5_ms2?.tipo === 'volver', `MS F2 — desde un módulo de Gestión, tocar Gestión en la barra es volver a su portada (${e5_ms2?.tipo})`);
+await page.waitForTimeout(500);
+/* 3 · Una pestaña de dentro: transición de contenido, no de página. */
+ok(await tocar_ms2({ tipo: 'barra', t: 'Bienestar' }) && await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => (x.innerText || '').split('\n')[0].trim() === 'Nutrición'); if (!b) return false; b.click(); return true; }) && await esperarPantalla_ms2('entrar'), 'MS F2 — Bienestar → Nutrición');
+await page.waitForTimeout(600);
+const c0_ms2 = await page.evaluate(() => { const c = document.querySelector('[data-contenido]'); return c ? { clave: c.dataset.contenido, anima: c.classList.contains('contenido-cambia') } : null; });
+ok(c0_ms2 && c0_ms2.clave === 'comidas' && !c0_ms2.anima, `MS F2 — la primera pestaña no anima su contenido: ya entra la pantalla, y dos fundidos a la vez serían uno de más (${JSON.stringify(c0_ms2)})`);
+const c1_ms2 = await page.evaluate(async () => {
+  const b = [...document.querySelectorAll('button')].find((x) => x.innerText.trim() === 'Agua');
+  if (!b) return null;
+  const tipoAntes = document.querySelector('.pantalla-segura > [data-navegacion]')?.dataset.navegacion;
+  b.click();
+  await new Promise((r) => setTimeout(r, 0));
+  const c = document.querySelector('[data-contenido]');
+  const a = c ? c.getAnimations().find((x) => x.animationName === 'contenidoCambia') : null;
+  return { clave: c?.dataset.contenido, anima: !!a, dura: a ? Math.round(a.effect.getComputedTiming().duration) : null,
+    pagina: document.querySelector('.pantalla-segura > [data-navegacion]')?.dataset.navegacion === tipoAntes,
+    barraOtraVez: document.getAnimations().some((x) => x.animationName === 'backBarIn' && x.playState === 'running') };
+});
+ok(c1_ms2 && c1_ms2.clave === 'agua' && c1_ms2.anima && c1_ms2.dura === 160 && c1_ms2.pagina && !c1_ms2.barraOtraVez,
+  `🚨 MS F2 — otra pestaña es una transición de CONTENIDO: un fundido de 160 ms de lo de dentro, sin rehacer la página ni la barra de volver (${JSON.stringify(c1_ms2)}; apartado 15)`);
+/* 4 · Navegar muy deprisa (apartados 23 y 27). */
+const rapido_ms2 = await page.evaluate(async () => {
+  const orden = ['Inicio', 'Vida', 'Gestión', 'Bienestar', 'Ajustes', 'Vida', 'Inicio', 'Gestión', 'Ajustes', 'Bienestar', 'Vida', 'Gestión'];
+  for (const t of orden) {
+    const b = [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === t);
+    if (b) b.click();
+    await new Promise((r) => setTimeout(r, 15));
+  }
+  await new Promise((r) => setTimeout(r, 700));
+  return {
+    contenedores: document.querySelectorAll('.pantalla-segura > [data-navegacion]').length,
+    actual: document.querySelector('nav [aria-current="page"]')?.innerText.trim(),
+    indicador: document.querySelector('.nav-indicador')?.style.transform,
+    animaciones: document.getAnimations().filter((x) => x.playState === 'running' && x.effect?.getComputedTiming().iterations !== Infinity).length,
+  };
+});
+ok(rapido_ms2.contenedores === 1 && rapido_ms2.actual === 'Gestión' && rapido_ms2.indicador === 'translateX(300%)' && rapido_ms2.animaciones === 0,
+  `🚨 MS F2 — doce pestañas seguidas: una sola pantalla, la última, el indicador en su sitio y ni una animación colgada (${JSON.stringify(rapido_ms2)})`);
+/* 5 · Con «Reducir movimiento» en el iPhone: se funde sin desplazarse, y el indicador no viaja. */
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.waitForTimeout(300);
+const r1_ms2 = await tocar_ms2({ tipo: 'barra', t: 'Vida' });
+ok(r1_ms2 && r1_ms2.tipo === 'seccion' && r1_ms2.arranque?.x === 0 && r1_ms2.arranque?.y === 0 && r1_ms2.arranque?.opacidad === 0.65 && r1_ms2.arranque?.dura === 220,
+  `🚨 MS F2 — con «Reducir movimiento», cambiar de sección se funde en su sitio: reducir no es apagar (${JSON.stringify(r1_ms2?.arranque)})`);
+ok(await page.evaluate(() => getComputedStyle(document.querySelector('.nav-indicador')).transitionProperty) === 'opacity', '…y el indicador aparece en la pestaña nueva en vez de viajar');
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.waitForTimeout(300);
+ok(await page.evaluate(() => getComputedStyle(document.querySelector('.nav-indicador')).transitionProperty) !== 'opacity', '…y sin él, vuelve a viajar');
+ok(errores.length === erroresAntes_ms2, `MS F2 — …sin un error en la consola${errores.length > erroresAntes_ms2 ? `: ${errores.slice(erroresAntes_ms2).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms2;
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

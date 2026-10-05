@@ -20,6 +20,7 @@ import {
   resumenDeDia, cargaDelDia, marcaDeHoy, VACIO_MES, mesVacio, accesosDelDia,
 } from '../lib/calendarioMes';
 import { Card, SectionTitle, Field, TextInput, Select, Textarea, PrimaryButton, GhostBtn, ToggleTab, EmptyHint } from '../components/ui';
+import { CambioDeContenido } from '../components/motion';
 // Entrega 3 · F9 (HC F4) — el ＋ y sus formularios, compartidos con Hoy y la Agenda.
 import { QuickAdd, FormularioTarea, FormularioEvento, MenuElemento, CambiarFecha, CambiarHora, BotonAnadir, AvisoAccion } from '../components/quickAdd';
 import { tareaEnFecha, tareaEnHora } from '../lib/accionesHoyAgenda';
@@ -1248,6 +1249,10 @@ export default function CalendarView({
           debe abrir el 29 de agosto. No abrir siempre el día actual."* Por eso el día
           es `seleccionado`, el mismo que marca la rejilla del mes: cambiar de vista
           no pierde el contexto (apartado 21). */}
+      {/* MS F2 — cambiar de vista (Mes · Semana · Día · Agenda) es una transición de CONTENIDO, no
+          de página (apartado 15). Lleva el `space-y-4` de la pantalla porque la del mes son varias
+          piezas sueltas. */}
+      <CambioDeContenido clave={vista} className="space-y-4">
       {vista === 'dia' && (
         <AgendaDeUnDia
           dia={agendaDelDia(horarioTop || {}, seleccionado, {
@@ -1499,6 +1504,7 @@ export default function CalendarView({
           )}
         </div>
       )}
+      </CambioDeContenido>
 
       {editor && (
         <EditorEvento

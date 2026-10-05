@@ -22,7 +22,7 @@ se ordena es **el trabajo**.
 |---|---|---|---|
 | **F0** ✅ **v3.130.0** | Auditoría total, arquitectura y plan maestro | 4046–4899 | 854 |
 | **F1** ✅ **v3.131.0** | Motor de movimiento + tokens + primitivas | 4900–5490 | 591 |
-| **F2** | Navegación, transiciones y continuidad espacial | 6038–6770 | 733 |
+| **F2** ✅ **v3.132.0** | Navegación, transiciones y continuidad espacial | 6038–6770 | 733 |
 | **F3** | Microinteracciones, componentes y feedback | 6771–7586 | 816 |
 | **F4** | Datos dinámicos, listas, gráficas y estados | 7587–8404 | 818 |
 | **F5** | Física, gestos, touch y comportamiento táctil | 8405–9145 | 741 |
@@ -65,3 +65,5 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | El mapa elemento a elemento (**generado**, no se edita a mano) | `docs/MOTION_MAP.md` ← `scripts/generar-motion-map.mjs` |
 | La prueba de la F0 | `scripts/test-motion-f0.mjs` |
 | La prueba de la F1 | `scripts/test-motion-f1.mjs`, y la sección «MS F1» del recorrido de Chromium |
+| La navegación: qué movimiento es cada cambio de la pila, el scroll por pantalla y el indicador | `src/lib/transicionNavegacion.js` (F2), y lo que pasa en la página en `src/components/navegacionMotion.js` |
+| La prueba de la F2 | `scripts/test-motion-f2.mjs`, y la sección «MS F2» del recorrido de Chromium |

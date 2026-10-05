@@ -5,15 +5,19 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**60 elementos**: ✅ Existe 43 · ⚠️ Inconsistente 7 · ⬜ Sin movimiento 9 · 🚨 Fuera de control 1.
+**64 elementos**: ✅ Existe 48 · ⚠️ Inconsistente 6 · ⬜ Sin movimiento 9 · 🚨 Fuera de control 1.
 
 ## Resumen
 
 | Elemento | Cat. | Nivel | Duración | Estado | Fase |
 |---|---|---|---|---|---|
 | Pestaña activa de la barra de abajo | A | 1 · Micro | 220 ms | ✅ Existe | F2 |
+| Indicador de la pestaña activa | A | 2 · Suave | 280 ms | ✅ Existe | F2 |
 | Barra de «Volver» | A | 2 · Suave | 220 ms | ✅ Existe | F2 |
-| Entrar en un módulo | B | 2 · Suave | 340 ms | ⚠️ Inconsistente | F2 |
+| Entrar en un módulo | B | 2 · Suave | 340 ms | ✅ Existe | F2 |
+| Volver a una pantalla | B | 2 · Suave | 220 ms | ✅ Existe | F2 |
+| Cambiar de sección con la barra de abajo | B | 2 · Suave | 220 ms | ✅ Existe | F2 |
+| Otra pestaña dentro de una pantalla | C | 1 · Micro | 160 ms | ✅ Existe | F2 |
 | Portada de un área: la cascada de tarjetas | B | 3 · Protagonista | 420 ms | ✅ Existe | F10 |
 | Cabecera de un área (ÁREA / Vida) | B | 2 · Suave | 280 ms | ✅ Existe | F2 |
 | Tocar un módulo de la portada | D | 2 · Suave | 160 ms | ✅ Existe | F7 |
@@ -92,8 +96,8 @@
 | Estado final | Color de acento |
 | Entrada | — |
 | Salida | — |
-| Interacción | Tocar una pestaña |
-| Transición | color |
+| Interacción | Tocar una pestaña: el icono se encoge un poco mientras se pulsa (MS F2) |
+| Transición | color, transform |
 | Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
@@ -101,10 +105,40 @@
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | alta |
-| Relación | Cambia a la vez que entra la pantalla del área (module-enter). |
+| Relación | Cambia a la vez que la pastilla viaja (nav-indicador) y entra la sección (nav-seccion). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | El color cambia igual; el icono no se encoge. |
+
+#### Indicador de la pestaña activa
+
+`indicador_barra` · ✅ Existe · lo trata la **F2**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/App.jsx · src/index.css |
+| Componente | nav.nav-segura |
+| Clase CSS | `.nav-indicador` |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Una sola pastilla que viaja hasta la pestaña nueva, en vez de apagarse en una y encenderse en otra (apartado 3). |
+| Estado inicial | Bajo la pestaña de antes |
+| Estado final | Bajo la pestaña nueva |
+| Entrada | — |
+| Salida | — |
+| Interacción | Tocar una pestaña, o entrar en un módulo de otra área |
+| Transición | transform `medium` con la curva `emphasized`; opacity `fast` |
+| Duración | 280 ms |
+| Curva | --motion-curva-emphasized |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 2 · Suave |
+| Prioridad | alta |
+| Relación | Su sitio sale de `indiceDePestana` (transicionNavegacion.js), el mismo criterio que el color de la pestaña. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | No viaja: aparece en la pestaña nueva. |
 
 #### Barra de «Volver»
 
@@ -134,13 +168,13 @@
 | Relación | Acompaña a module-enter. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### B · Pantallas
 
 #### Entrar en un módulo
 
-`entrada_modulo` · ⚠️ Inconsistente · lo trata la **F2**
+`entrada_modulo` · ✅ Existe · lo trata la **F2**
 
 | Campo | Valor |
 |---|---|
@@ -149,7 +183,7 @@
 | Clase CSS | `.module-enter` |
 | @keyframes | `moduleSlideIn` |
 | En ANIMACIONES_HC | `entrada_pantalla` |
-| Función | Que la pantalla nueva llegue desde la derecha en vez de aparecer. |
+| Función | Que la pantalla nueva llegue desde la derecha en vez de aparecer: un nivel más hondo. |
 | Estado inicial | Opacidad 0, desplazada a la derecha y al 0,98 |
 | Estado final | En su sitio |
 | Entrada | Desliza + fundido + escala |
@@ -163,10 +197,70 @@
 | Escalonado | — |
 | Intensidad | 2 · Suave |
 | Prioridad | alta |
-| Relación | La pila de navegación (NAVO F1) decide a dónde vuelve; la dirección no cambia al volver. |
+| Relación | 🔓 MS F2 — solo al ENTRAR (`tipoDeNavegacion`): volver y cambiar de sección tienen su propio movimiento. Y termina con `backwards`: no deja un transform puesto. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+
+#### Volver a una pantalla
+
+`volver_pantalla` · ✅ Existe · lo trata la **F2**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/index.css · src/App.jsx · src/components/navegacionMotion.js |
+| Componente | — |
+| Clase CSS | `.nav-vuelve` |
+| @keyframes | `navVuelve` |
+| En ANIMACIONES_HC | — |
+| Función | Que volver se lea como volver, no como entrar otra vez (apartado 6). |
+| Estado inicial | Medio visible, 8 px a la izquierda |
+| Estado final | En su sitio, al scroll de antes |
+| Entrada | Desde el lado del que salió, más corto y sin escala; lo ya visto no repite su entrada |
+| Salida | — |
+| Interacción | — |
+| Transición | opacity, transform |
+| Duración | 220 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 2 · Suave |
+| Prioridad | alta |
+| Relación | Las entradas de `ENTRADAS_QUE_NO_SE_REPITEN` se terminan en el acto (Web Animations API). |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+
+#### Cambiar de sección con la barra de abajo
+
+`cambio_seccion` · ✅ Existe · lo trata la **F2**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/index.css · src/App.jsx |
+| Componente | — |
+| Clase CSS | `.nav-seccion` |
+| @keyframes | `navSeccion` |
+| En ANIMACIONES_HC | — |
+| Función | Las secciones son hermanas: un fundido con un leve ascenso, sin desplazamiento lateral (apartado 5). |
+| Estado inicial | Medio visible, 8 px abajo |
+| Estado final | En su sitio, arriba |
+| Entrada | Fundido corto |
+| Salida | — |
+| Interacción | — |
+| Transición | opacity, transform |
+| Duración | 220 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 2 · Suave |
+| Prioridad | alta |
+| Relación | Empieza medio visible para que no haya un instante vacío entre una sección y otra (apartado 28). |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Portada de un área: la cascada de tarjetas
 
@@ -196,7 +290,7 @@
 | Relación | Después de la cabecera (hub-header). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Cabecera de un área (ÁREA / Vida)
 
@@ -226,7 +320,7 @@
 | Relación | Se queda fija al desplazar (SC F1) y sin fondo desde la v3.129.1. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Una pantalla de Fitness aparece
 
@@ -256,9 +350,39 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### C · Secciones
+
+#### Otra pestaña dentro de una pantalla
+
+`cambio_contenido` · ✅ Existe · lo trata la **F2**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/index.css · src/components/motion.jsx (CambioDeContenido) |
+| Componente | — |
+| Clase CSS | `.contenido-cambia` |
+| @keyframes | `contenidoCambia` |
+| En ANIMACIONES_HC | — |
+| Función | Una transición de CONTENIDO, no de página (apartado 15): cambia lo de dentro, no el sitio. |
+| Estado inicial | Medio visible |
+| Estado final | Visible |
+| Entrada | Fundido corto, sin moverse |
+| Salida | — |
+| Interacción | — |
+| Transición | opacity |
+| Duración | 160 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | media |
+| Relación | La F10 añade lo que recoloca una lista (filtros, orden, periodo). |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Igual: ya es solo un fundido. |
 
 #### Acordeones de Inicio (situación actual y puntuación)
 
@@ -288,7 +412,7 @@
 | Relación | Sin hueco en Safari desde la SC F1 (minHeight: 0). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Chevron que gira al desplegar
 
@@ -318,7 +442,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### D · Tarjetas
 
@@ -350,7 +474,7 @@
 | Relación | La navegación espera el mismo token (`duracionMs('fast')`, MS F1), no un número escrito aparte. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Pulsar un módulo de la portada (y las demás retroceden)
 
@@ -380,7 +504,7 @@
 | Relación | Anima `filter` y `box-shadow`, que no son baratos en un iPhone (la F13 lo mide). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### El icono de un módulo de la portada al pulsarlo
 
@@ -410,7 +534,7 @@
 | Relación | Va con «Pulsar un módulo de la portada». |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Pulsar una tarjeta o un botón (la escalera de escalas)
 
@@ -440,7 +564,7 @@
 | Relación | Fitness usa su propio escalón (fit-pulsable, también `fast`). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Pulsar una tarjeta de Fitness
 
@@ -470,7 +594,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Tarjeta destacada al llegar por un enlace (objetivo, tarea)
 
@@ -500,7 +624,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### E · Botones
 
@@ -532,7 +656,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Marcar un favorito
 
@@ -562,7 +686,7 @@
 | Relación | Era 240 ms, 20 por encima del tope de su nivel: con el token `normal` vuelve a su nivel (MS F1). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### F · Campos
 
@@ -594,7 +718,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### G · Modales
 
@@ -626,7 +750,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### El resto de ventanas y hojas (unas 40 en 18 archivos)
 
@@ -656,7 +780,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### H · Hojas inferiores
 
@@ -688,7 +812,7 @@
 | Relación | Comparte la animación con las hojas del Calendario. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Hojas del Calendario
 
@@ -718,7 +842,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### I · Menús
 
@@ -750,7 +874,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### J · Listas
 
@@ -782,7 +906,7 @@
 | Relación | Una sola cadencia y como mucho seis escalones: `escalonado(i)` del motor (MS F1). Antes eran 60, 70 y 80 ms y dos funciones. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Completar una tarea
 
@@ -812,7 +936,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Completar un hábito
 
@@ -842,7 +966,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Marcar una serie
 
@@ -872,7 +996,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Borrar o añadir un elemento de una lista
 
@@ -902,7 +1026,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### K · Gráficas
 
@@ -964,7 +1088,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### L · Estadísticas
 
@@ -996,7 +1120,7 @@
 | Relación | Cuatro clases con tres tokens: barra-progreso `slow`, nu-progreso y progreso-libro `cinematic`, fit-barra `medium`. Ya son tokens (MS F1); que digan uno solo es de la F17. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Barras de progreso escritas en la vista (Objetivos, Productividad, Rachas, Bienestar digital)
 
@@ -1026,7 +1150,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### El aro de progreso de `ui.jsx`
 
@@ -1056,7 +1180,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### El aro del temporizador
 
@@ -1086,7 +1210,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Cifras que cambian (rachas, kcal, puntuación, saldo)
 
@@ -1116,7 +1240,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### M · Carga
 
@@ -1148,7 +1272,7 @@
 | Relación | Es de los pocos bucles infinitos permitidos (presupuesto). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### N · Esqueletos
 
@@ -1180,7 +1304,7 @@
 | Relación | Bucle permitido: solo mientras carga. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### O · Estados vacíos
 
@@ -1212,7 +1336,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### P · Errores
 
@@ -1244,7 +1368,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### Q · Éxito
 
@@ -1276,7 +1400,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Terminar una rutina
 
@@ -1306,7 +1430,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### El entrenamiento guardado
 
@@ -1336,7 +1460,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Terminar un libro
 
@@ -1366,7 +1490,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Termina el descanso
 
@@ -1396,7 +1520,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Subir de rango
 
@@ -1426,7 +1550,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### La llama de una racha que sube
 
@@ -1456,7 +1580,7 @@
 | Relación | No está en ANIMACIONES_HC, pero desde la MS F1 su duración es el token `momento` y el mapa la mide. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### El «+1» de una racha
 
@@ -1486,7 +1610,7 @@
 | Relación | La única animación de nivel firma; su duración es el token `firma` (MS F1). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### R · Interruptores
 
@@ -1518,7 +1642,7 @@
 | Relación | Anima `left`, que obliga a recalcular el diseño, en vez de `transform`. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Interruptores escritos a mano (Calendario, Relación, Ajustes, Gestión de temas)
 
@@ -1548,7 +1672,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### La muestra de «Ver cómo se mueve» en Ajustes
 
@@ -1578,7 +1702,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### S · Deslizadores
 
@@ -1610,7 +1734,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### T · Gestos
 
@@ -1642,7 +1766,7 @@
 | Relación | Sin seguir al dedo: el cambio ocurre al soltar. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### El divisor del comparador de fotos
 
@@ -1672,7 +1796,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### U · Scroll
 
@@ -1766,7 +1890,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### W · Elementos dinámicos
 
@@ -1798,7 +1922,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### El progreso de un libro
 
@@ -1828,7 +1952,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### El progreso de un macro
 
@@ -1858,7 +1982,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 #### Una barra de progreso de Fitness
 
@@ -1888,7 +2012,7 @@
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### X · Elementos futuros
 

@@ -136,6 +136,11 @@ import {
   RAIZ as RAIZ_NAV, tabDe, origen as origenNav, abrir as abrirNav,
   irAPrincipal as irAPrincipalNav, atras as atrasNav, puedeVolver as puedeVolverNav,
 } from './lib/navegacion';
+/* MS F2 — qué clase de movimiento es cada cambio de la pila (entrar, volver, cambiar de sección) y
+   lo que pasa en la página al llegar (el scroll, las entradas que no se repiten, el foco). */
+import { tipoDeNavegacion, claseDeNavegacion, claveDeScroll, indiceDePestana, estiloDelIndicador } from './lib/transicionNavegacion';
+import { useNavegacionEnLaPagina } from './components/navegacionMotion';
+import { AreaSegura } from './components/areaSegura';
 import SettingsView from './views/SettingsView';
 import { construirIndice } from './lib/indiceBusqueda';
 import { DEFAULT_ARMARIO, crearPrenda, actualizarPrenda, crearOutfit, actualizarOutfit, duplicarOutfit, crearUso, actualizarUso } from './lib/armario';
@@ -313,6 +318,11 @@ const AREAS_NAV = [
   { id: 'area-gestion', label: 'Gestión', icon: Briefcase, modulos: ['organizacion', 'economia', 'negocio', 'armario', 'numeros'] },
 ];
 
+/* MS F2 — las cinco pestañas de la barra de abajo, en su orden: de aquí salen el sitio del
+   indicador que viaja (`indiceDePestana`) y qué cambios de la pila son «cambiar de sección». Se
+   deriva de `AREAS_NAV`: un área nueva entra sola (regla 10: siguen siendo cinco). */
+const PESTANAS_PRINCIPALES = ['hoy', ...AREAS_NAV.map((a) => a.id), 'ajustes'];
+
 // Fase de Seguridad Centralizada — catálogo de "áreas protegibles" (apartado 1 de la
 // especificación: "no debe limitarse a los módulos actuales, cualquier módulo futuro debe poder
 // declararse protegible"). Se construye a partir de MORE_NAV, el mismo catálogo plano que ya usa
@@ -413,9 +423,27 @@ export default function App() {
   /* ⚠️ `setTab` se queda con el mismo nombre y la misma firma a propósito: es *entrar* en algo desde
      donde estás, que es lo que significaba en todas partes. Lo único que cambia es que ahora apila.
      Quien quiera cambiar de sección sin apilar usa `irAPestana` (la barra de abajo). */
-  const setTab = (destino, foco) => setPilaNav((p) => abrirNav(p, destino, foco));
-  const irAPestana = (destino) => setPilaNav((p) => irAPrincipalNav(p, destino));
-  const volverAtras = () => setPilaNav((p) => atrasNav(p));
+  /* 🎬 MS F2 — cada cambio de la pila dice QUÉ CLASE de movimiento es (`tipoDeNavegacion`): entrar
+     (un nivel más hondo), volver (al sitio de antes, sin repetir su entrada) o cambiar de sección (la
+     barra de abajo: hermanas, no una dentro de otra). Se calcula aquí, en las tres puertas, porque
+     solo aquí se sabe si lo ha pedido la barra. ⚠️ Sobre `pilaNavRef` y no sobre el estado: dos
+     navegaciones en el mismo toque (apartado 23, navegar muy rápido) parten de la pila buena. */
+  const [tipoNav, setTipoNav] = useState('seccion');
+  const pilaNavRef = useRef(pilaNav);
+  const pantallaRef = useRef(null);
+  const navegarA = (calcular, principal) => {
+    const antes = pilaNavRef.current;
+    const despues = calcular(antes);
+    pilaNavRef.current = despues;
+    setTipoNav(tipoDeNavegacion(antes, despues, { principal, principales: PESTANAS_PRINCIPALES }));
+    setPilaNav(despues);
+  };
+  const setTab = (destino, foco) => navegarA((p) => abrirNav(p, destino, foco), false);
+  const irAPestana = (destino) => navegarA((p) => irAPrincipalNav(p, destino), true);
+  const volverAtras = () => navegarA((p) => atrasNav(p), false);
+  /* ⚠️ Regla 4: lleva un `useEffect` y un `useLayoutEffect`, así que va aquí arriba, antes de
+     cualquier `return` condicional de este componente. */
+  useNavegacionEnLaPagina(pantallaRef, { clave: claveDeScroll(pilaNav), tipo: tipoNav });
   const [loaded, setLoaded] = useState(false);
   const [accent, setAccent] = useState(ACCENTS[0].value);
   // Fase A3 — Apariencia avanzada: tema (claro/oscuro/automático), tamaño de texto, densidad,
@@ -2643,6 +2671,10 @@ export default function App() {
     return padre ? AREAS_NAV.find((a) => a.modulos.includes(padre)) : undefined;
   };
   const areaActual = tab.startsWith('area-') ? AREAS_NAV.find((a) => a.id === tab) : areaDeModulo(tab);
+  /* MS F2 — qué pestaña de abajo está encendida, con el mismo criterio que su color: Inicio y
+     Ajustes por su id, y un área también mientras se está dentro de uno de sus módulos. */
+  const pestanaActivaIndice = indiceDePestana(PESTANAS_PRINCIPALES,
+    tab === 'hoy' || tab === 'ajustes' ? tab : (areaActual ? areaActual.id : null));
   // Resúmenes de todas las tarjetas, recalculados en cada render — son cálculos baratos (sumas,
   // últimas fechas) sobre datos que ya están en memoria, mismo criterio que calcularMetricas().
   // RA Fase 4 — el resumen de Rachas SÍ es caro (recorre historiales día a día), así que a
@@ -3457,7 +3489,29 @@ export default function App() {
         {renderContent()}
       </PinGate>
     ) : renderContent();
-    if (!enModulo || !puedeVolverNav(pilaNav)) return contenido;
+    /* 🎬 MS F2 — TODAS LAS PANTALLAS VAN EN EL MISMO CONTENEDOR, NO SOLO LOS MÓDULOS. Hasta la F2
+       solo un módulo con a dónde volver llevaba `module-enter`; Inicio y los hubs aparecían de golpe,
+       y volver deslizaba desde la derecha como si se entrara otra vez. Ahora el contenedor lleva la
+       clase de SU tipo de navegación (`claseDeNavegacion`), `key={tab}` para que cada pantalla
+       nueva sea un nodo nuevo (si no, React reutiliza el mismo y la animación solo se vería la
+       primera vez), y el `ref` con el que `useNavegacionEnLaPagina` le pone el scroll y el foco.
+       `tabIndex={-1}` es solo para poder recibir el foco al navegar, nunca con el tabulador.
+       🐛 Y un LÍMITE DE ERROR por pantalla (apartado 18): fuera de Fitness, un fallo al pintar
+       dejaba la aplicación en blanco y sin barra de abajo para salir. `AreaSegura` (FIT F36) es
+       el mismo, con su «Reintentar», y se limpia al cambiar de pantalla (`clave`). */
+    const nombrePantalla = tab === RAIZ_NAV ? 'Inicio'
+      : (AREAS_NAV.find((a) => a.id === tab)?.label || MORE_NAV.find((m) => m.id === tab)?.label || 'esta pantalla');
+    const protegido = (
+      <AreaSegura clave={tab} nombre={nombrePantalla} accent={accent} texto="Las demás pantallas y la barra de abajo siguen funcionando, y tus datos no se han tocado.">
+        {contenido}
+      </AreaSegura>
+    );
+    const contenedor = (hijos) => (
+      <div key={tab} ref={pantallaRef} tabIndex={-1} data-navegacion={tipoNav} className={`outline-none ${claseDeNavegacion(tipoNav)}`.trim()}>
+        {hijos}
+      </div>
+    );
+    if (!enModulo || !puedeVolverNav(pilaNav)) return contenedor(protegido);
     /* 🚨 NAVO F1 — AQUÍ ESTABA EL FALLO QUE REPORTÓ JOSUÉ, Y ERA UNA LÍNEA:
 
            const destinoVuelta = vueltaValida ? vueltaValida.desde : areaActual.id;
@@ -3483,8 +3537,8 @@ export default function App() {
       : (AREAS_NAV.find((a) => a.id === desde.id)?.label
         || MORE_NAV.find((m) => m.id === desde.id)?.label
         || 'Atrás');
-    return (
-      <div key={tab} className="module-enter">
+    return contenedor(
+      <>
         {/* Fase N4 — pasa de texto suelto a una píldora "glass" (fondo tenue + borde apenas
             visible), coherente con el resto del lenguaje visual del hub del que viene. */}
         <button
@@ -3494,8 +3548,8 @@ export default function App() {
         >
           <ArrowLeft size={16} /> {etiquetaVuelta}
         </button>
-        {contenido}
-      </div>
+        {protegido}
+      </>
     );
   };
 
@@ -3656,8 +3710,18 @@ export default function App() {
         // negra igual. `navBgAlpha` respeta el tema y la transparencia elegida.
         style={{ background: COLORS.navBgAlpha || COLORS.surface, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderTop: `1px solid ${COLORS.border}` }}
       >
-        <div className="max-w-md w-full flex px-2 py-2">
-          <button onClick={() => irAPestana('hoy')} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
+        <div className="max-w-md w-full px-2 py-2">
+        {/* 🎬 MS F2 — la fila de pestañas es `relative` para que el indicador viaje por debajo de
+            ellas: una sola pastilla que se desliza hasta la activa (apartado 3), con su sitio
+            calculado por `indiceDePestana` con el MISMO criterio que el color de cada pestaña. Sin
+            pestaña activa se apaga en su sitio. `aria-current` dice a VoiceOver cuál es. */}
+        <div className="relative flex">
+          <span
+            aria-hidden="true"
+            className="nav-indicador"
+            style={{ ...estiloDelIndicador(pestanaActivaIndice, PESTANAS_PRINCIPALES.length), background: hexToRgba(accent, 0.12) }}
+          />
+          <button onClick={() => irAPestana('hoy')} aria-current={tab === 'hoy' ? 'page' : undefined} className="nav-tab relative flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
             <Home size={20} strokeWidth={tab === 'hoy' ? 2.4 : 1.8} className="nav-tab-icon" style={{ color: tab === 'hoy' ? accent : COLORS.textMuted }} />
             <span className="nav-tab-label" style={{ fontSize: 10, fontWeight: 500, color: tab === 'hoy' ? accent : COLORS.textMuted }}>Inicio</span>
           </button>
@@ -3665,7 +3729,7 @@ export default function App() {
             const Icon = area.icon;
             const active = areaActual?.id === area.id;
             return (
-              <button key={area.id} onClick={() => irAPestana(area.id)} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
+              <button key={area.id} onClick={() => irAPestana(area.id)} aria-current={active ? 'page' : undefined} className="nav-tab relative flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
                 <Icon size={20} strokeWidth={active ? 2.4 : 1.8} className="nav-tab-icon" style={{ color: active ? accent : COLORS.textMuted }} />
                 <span className="nav-tab-label" style={{ fontSize: 10, fontWeight: 500, color: active ? accent : COLORS.textMuted }}>{area.label}</span>
               </button>
@@ -3678,10 +3742,11 @@ export default function App() {
               que él espera de ese botón. Por eso se pinta aquí y no dentro del
               `map` de `AREAS_NAV` — un área agrupa módulos, y Ajustes es uno.
               ⚠️ Siguen siendo cinco pestañas exactas (regla 10). */}
-          <button onClick={() => irAPestana('ajustes')} className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
+          <button onClick={() => irAPestana('ajustes')} aria-current={tab === 'ajustes' ? 'page' : undefined} className="nav-tab relative flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl">
             <Settings size={20} strokeWidth={tab === 'ajustes' ? 2.4 : 1.8} className="nav-tab-icon" style={{ color: tab === 'ajustes' ? accent : COLORS.textMuted }} />
             <span className="nav-tab-label" style={{ fontSize: 10, fontWeight: 500, color: tab === 'ajustes' ? accent : COLORS.textMuted }}>Ajustes</span>
           </button>
+        </div>
         </div>
       </nav>
     </div>

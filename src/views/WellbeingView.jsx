@@ -3,6 +3,7 @@ import { Smartphone, Plus, Trash2, ChevronDown, ChevronUp, Play, Pause, RotateCc
 import { COLORS, CATEGORIAS_TIEMPO_USO, DURACIONES_CONCENTRACION } from '../tokens';
 import { uid, todayISO, addDays, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, ToggleTab, EmptyHint } from '../components/ui';
+import { CambioDeContenido } from '../components/motion';
 import { transicion } from '../lib/motion';
 
 /* ---------- Resumen: tres índices puramente descriptivos sobre el propio registro ----------
@@ -285,10 +286,13 @@ export default function WellbeingView({ bienestar, onAddRegistro, onDeleteRegist
         <ToggleTab active={sub === 'reflexion'} onClick={() => setSub('reflexion')} accent={accent}>Reflexión</ToggleTab>
       </div>
 
+      {/* MS F2 — otra pestaña es una transición de CONTENIDO, no de página (apartado 15). */}
+      <CambioDeContenido clave={sub}>
       {sub === 'resumen' && <ResumenTab registros={bienestar.registros} sesiones={bienestar.sesiones} accent={accent} />}
       {sub === 'tiempo' && <TiempoUsoTab registros={bienestar.registros} onAdd={onAddRegistro} onDelete={onDeleteRegistro} accent={accent} />}
       {sub === 'concentracion' && <ConcentracionTab sesiones={bienestar.sesiones} onCompletar={onCompletarSesion} accent={accent} />}
       {sub === 'reflexion' && <ReflexionTab reflexiones={bienestar.reflexiones} onAdd={onAddReflexion} onDelete={onDeleteReflexion} accent={accent} />}
+      </CambioDeContenido>
     </div>
   );
 }

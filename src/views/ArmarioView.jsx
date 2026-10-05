@@ -30,6 +30,7 @@ import { celdasMes, isoDeFecha } from '../lib/calendario';
 import {
   Card, SectionTitle, Field, TextInput, Textarea, PrimaryButton, GhostBtn, EmptyHint, SelectInput, ToggleTab, BotonBorrar,
 } from '../components/ui';
+import { CambioDeContenido } from '../components/motion';
 
 /* ---------- Miniatura ----------
    Apartado 6: "nunca dejar un enorme espacio vacío por no tener imagen". Sin foto se
@@ -1646,6 +1647,8 @@ export default function ArmarioView({
         </ToggleTab>
       </div>
 
+      {/* MS F2 — otra pestaña es una transición de CONTENIDO, no de página (apartado 15). */}
+      <CambioDeContenido clave={pestana}>
       {pestana === 'prendas' && (
         <PanelPrendas
           prendas={prendas} outfits={outfits} usos={usos} hoyISO={hoyISO}
@@ -1679,6 +1682,7 @@ export default function ArmarioView({
           onAbrirOutfit={abrirOutfit} onAbrirPrenda={abrirPrenda} onRegistrarUso={registrarHoy}
         />
       )}
+      </CambioDeContenido>
     </div>
   );
 }
