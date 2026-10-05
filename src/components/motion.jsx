@@ -5,6 +5,7 @@ import {
   deltaFlip, duracionMs, CURVAS_MOTION,
 } from '../lib/motion';
 import { giroDeChevron, siguienteLatido } from '../lib/microinteraccionesMotion';
+import { animacionDeGrafica, animacionDeTooltip, planDeCifra, interpolarCifra, curvaDeCuenta, reservarCuenta, liberarCuenta } from '../lib/datosMotion';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MOTION SYSTEM · F1 — LAS PIEZAS DE REACT DEL MOTOR
@@ -143,6 +144,80 @@ export function LatidoAlMarcar({ activo, children, className = '' }) {
   return (
     <span key={veces} className={`inline-flex ${late ? 'favorito-guardado ' : ''}${className}`.trim()} data-latido={veces}>
       {children}
+    </span>
+  );
+}
+
+/**
+ * MS F4, apartados 21-27 — LAS PROPS DE MOVIMIENTO DE UNA GRÁFICA DE RECHARTS. Recharts anima
+ * con JavaScript y no se enteraba de los modos ni de «Reducir movimiento»: se le pasan a la
+ * serie (`linea`) y al tooltip (`tooltip`), y se vuelven a leer si él cambia un ajuste.
+ */
+export function useAnimacionDeGrafica() {
+  const ctx = useMotion();
+  return { linea: animacionDeGrafica(ctx), tooltip: animacionDeTooltip(ctx) };
+}
+
+/**
+ * MS F4, apartados 2-6 — UNA CIFRA QUE CAMBIA. `valor` es el número; lo que se pinta es
+ * `children` (el texto ya formateado, con su símbolo y sus separadores) o `formato(valor)`.
+ *   · `modo="relevo"` (por defecto): el valor nuevo ya está escrito, y entra con un fundido
+ *     corto desde abajo si sube o desde arriba si baja;
+ *   · `modo="cuenta"`: recorre los valores intermedios con la precisión de la cifra, y
+ *     `formato` es lo que la escribe en cada paso (si no hay, con sus decimales). Al acabar
+ *     se pinta exactamente `children`, así que el formato final no depende de la cuenta.
+ * Nunca al aparecer, nunca desde un hueco (`null`), y como mucho `CUENTAS_A_LA_VEZ` a la vez.
+ */
+export function CifraQueCambia({ valor, children, formato, modo = 'relevo', duracion = 'normal', className = '' }) {
+  const previo = useRef(valor);
+  const [paso, setPaso] = useState(null);
+  const [relevo, setRelevo] = useState({ n: 0, clase: '' });
+  useEffect(() => {
+    const desde = previo.current;
+    previo.current = valor;
+    const quiereContar = modo === 'cuenta';
+    const turno = quiereContar ? reservarCuenta() : false;
+    const plan = planDeCifra(desde, valor, { modo, ctx: contextoDelDocumento(), duracion, hayTurno: turno });
+    if (!plan || plan.tipo !== 'cuenta') {
+      if (turno) liberarCuenta();
+      setPaso(null);
+      if (plan) setRelevo((r) => ({ n: r.n + 1, clase: plan.clase }));
+      return undefined;
+    }
+    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function' || plan.duracion <= 0) {
+      liberarCuenta();
+      return undefined;
+    }
+    /* Un relevo de antes se quita: si su clase volviera a ponerse al acabar la cuenta, el
+       navegador repetiría su animación. */
+    setRelevo((r) => (r.clase ? { n: r.n, clase: '' } : r));
+    let vivo = true;
+    let inicio = null;
+    let id = 0;
+    const escribir = formato || ((v) => v.toFixed(plan.decimales));
+    const avanzar = (ahora) => {
+      if (!vivo) return;
+      if (inicio === null) inicio = ahora;
+      const t = (ahora - inicio) / plan.duracion;
+      if (t >= 1) { setPaso(null); liberarCuenta(); vivo = false; return; }
+      setPaso(escribir(interpolarCifra(plan.desde, plan.hasta, curvaDeCuenta(t), plan.decimales)));
+      id = window.requestAnimationFrame(avanzar);
+    };
+    id = window.requestAnimationFrame(avanzar);
+    return () => {
+      if (vivo) { vivo = false; liberarCuenta(); }
+      window.cancelAnimationFrame(id);
+      setPaso(null);
+    };
+  }, [valor]);
+  const texto = paso !== null ? paso : (children !== undefined ? children : (formato ? formato(valor) : valor));
+  return (
+    <span
+      key={relevo.n}
+      className={`cifra ${paso === null ? relevo.clase : ''} ${className}`.replace(/\s+/g, ' ').trim()}
+      data-cifra={paso !== null ? 'cuenta' : (relevo.clase || 'quieta')}
+    >
+      {texto}
     </span>
   );
 }

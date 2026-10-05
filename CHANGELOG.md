@@ -1,5 +1,70 @@
 # CHANGELOG.md
 
+## v3.134.0 — Motion System F4/20: datos dinámicos, cifras, gráficas y estados
+
+La F4 del Motion System (*"Datos dinámicos, listas, gráficas y estados"*, líneas 7587–8404 de
+`especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). Su regla principal: *"El movimiento debe ayudar al usuario a
+entender QUÉ ha cambiado. No animar por decorar."* La decisión vive en `src/lib/datosMotion.js` y lo que pinta,
+en `src/components/motion.jsx`.
+
+### 🐛 Las gráficas de Recharts, por fin gobernadas (hallazgo `graficas_sin_control` de la F0)
+
+El peso de Salud, el sueño de 7 días y la evolución de Nutrición se dibujaban **durante 1,5 s, con la curva de
+Recharts y sin obedecer a «Reducir movimiento»**: Recharts anima con JavaScript y las reglas de `index.css` no
+le llegaban. Ahora piden su movimiento al motor (`useAnimacionDeGrafica`): se dibujan en `cinematic` (420 ms,
+×1,3 en Pausada) con la curva de JosStyle; al cambiar de semana **interpolan** en vez de rehacerse
+(apartado 22), y **en Reducido aparecen quietas**. El tooltip, en `fast`. Medido en Chromium: la línea de Sueño
+se mueve 490 ms, y en Reducido 0. La deuda `series_sin_gobierno` de la F0 **baja de 3 a 0**.
+
+### Una cifra que cambia (apartados 2-6, 38-39)
+
+**`CifraQueCambia`**, el sistema reutilizable del apartado 3, con dos maneras:
+
+- **cuenta**: recorre los valores intermedios con la precisión de la cifra (enteros, decimales, negativos,
+  grandes) y **acaba pintando EXACTAMENTE el texto de siempre**, con su símbolo y sus separadores;
+- **relevo**: el valor nuevo ya está escrito desde el primer fotograma y llega con un fundido corto **desde
+  abajo si sube y desde arriba si baja** (apartado 6: bajar no es un error, y no se pinta de rojo).
+
+🚨 **Nunca al aparecer** (apartado 4: *"no hacer 0 → 100 cada vez que aparece una pantalla"*), nunca desde un
+hueco (`null`), **como mucho cuatro cuentas a la vez** (las demás se relevan: apartados 38-39), y en Reducido
+una cuenta se vuelve relevo. Está en las cifras principales: la **puntuación del día** (que cuenta al ritmo de
+su aro), el **porcentaje de Hoy**, las **calorías y macros** de Nutrición y el **saldo** de Economía. Las
+cifras son **tabulares** mientras cuentan, para que el ancho no baile en el iPhone (FIT F42).
+
+### Vacíos y periodos (apartados 14, 22 y 28)
+
+`EmptyHint` entra con un fundido corto (`vacio-entra`), sin ser protagonista. Y en Fitness, cambiar el periodo o
+la métrica de la gráfica de un ejercicio —o el periodo del progreso muscular— **funde lo que cambia en su sitio**
+(`CambioDeContenido`, F2): es un cambio de datos, no de página.
+
+### Lo que ya estaba bien, y se dice (`AUDITORIA_F4`)
+
+Las barras ya iban del valor anterior al nuevo sin un 0 → 100 al montarse (MS F1); los cambios de estado ya
+distinguen lo cotidiano (`tarea-hecha`, `habito-hecho`) de lo importante (`fit-rango-sube`, la racha), que es el
+apartado 33; la carga es una sola, con un esqueleto con la forma de Hoy; y la búsqueda se queda sin entrada,
+porque *"la prioridad es respuesta inmediata"* (apartado 13).
+
+### Lo que no hace esta fase (`NO_EN_F4`, C-55)
+
+Las listas que no saltan al añadir, quitar o filtrar (la F10), todas las cifras de los paneles (la F17: la F4
+deja el sistema; el hallazgo `cifras_de_golpe` sigue a su nombre), y el rollback de una acción optimista que
+falla —hoy un guardado fallido no se deshace en la pantalla, así que no hay nada que animar: la F16—.
+
+### Cómo se comprueba
+
+- `scripts/test-motion-f4.mjs` (74 comprobaciones): la animación de una gráfica en cada modo y velocidad, las
+  tres gráficas cableadas con el gancho antes de cualquier `return`, el plan de una cifra (primera vez, hueco,
+  sin cambio, apagado, Reducido, subir, bajar, negativos, decimales), el presupuesto, el CSS, dónde está cada
+  cifra, el vacío, los periodos de Fitness y la auditoría de la F0 limpia.
+- La sección **«MS F4»** del recorrido: el saldo no cuenta al abrir Economía (88.00, quieto), cuenta al borrar
+  el gasto (98.00 a medio camino) y acaba en `100.00`; el vacío entra en 160 ms; la línea de Sueño se mueve
+  ~420 ms; y en Reducido, la línea aparece quieta y el saldo se releva desde abajo.
+- 16 casos nuevos en el banco de renderizado.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.133.0 — Motion System F3/20: microinteracciones, componentes y feedback
 
 La F3 del Motion System (*"Microinteracciones, componentes y feedback"*, líneas 6771–7586 de

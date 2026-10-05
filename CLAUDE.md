@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.133.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.134.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -35,8 +35,9 @@ ordenadlas. Y volverás y ejecutarás todas y no pares hasta acabarlo. Y cuando 
 se te vuelva a restablecer, sigue."* El índice con la línea de cada fase está en
 **`docs/13_MOTION_SYSTEM_ORDEN.md`** (el archivo empieza por la F16 y trae la F2 y la F11 repetidas,
 C-51), y **se construye de la F0 a la F20**. **Hechas la F0 (v3.130.0)** —el mapa, la auditoría y el
-plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegación— y la **F3 (v3.133.0)**
-—las microinteracciones—. Lo que vale para cualquier cambio a partir de hoy:
+plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegación—, la **F3 (v3.133.0)**
+—las microinteracciones— y la **F4 (v3.134.0)** —los datos que cambian—. Lo que vale para cualquier cambio
+a partir de hoy:
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
   `animar(el, 'modalEnter')`; para montar y desmontar, `Presencia`, y para una lista que se reordena,
@@ -103,6 +104,13 @@ plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegac
 - 🐛 **UNA ENTRADA NUEVA TERMINA CON `backwards`, NUNCA CON `both`** (F3, y la F2 con `module-enter`): el
   último fotograma de `both` se queda puesto y gana a `:active` para siempre. Las tarjetas de las portadas
   llevaban desde la Fase N3 sin encoger al pulsarlas.
+- 🚨 **UNA GRÁFICA DE RECHARTS PIDE SU MOVIMIENTO AL MOTOR** (F4): `const animGrafica =
+  useAnimacionDeGrafica()` arriba del componente —antes de cualquier `return`— y sus props en la serie y el
+  tooltip. Sin eso se dibuja 1,5 s y no obedece a «Reducir movimiento», y `graficasSinGobierno` pone la suite
+  roja. **Y no se le cambia la `key` con los datos**: interpola.
+- 🚨 **UNA CIFRA QUE CAMBIA ES `CifraQueCambia`** (F4, `motion.jsx`): `modo="cuenta"` para la principal de una
+  pantalla, relevo para el resto. **Nunca cuenta al aparecer**, acaba pintando EXACTAMENTE su `children` (lo lee
+  VoiceOver y lo lee el recorrido) y como mucho cuatro cuentan a la vez. La F17 la lleva a todos los paneles.
 - 🐛 **`microinteracciones.js` ES DE LA EH F50; LA DEL MOTION SYSTEM ES `microinteraccionesMotion.js`** (F3):
   la fase lo pisó al estrenarse y lo cantaron seis suites. **Antes de crear un archivo, buscar el nombre.**
   Y un `{` seguido de un comentario de bloque rompe el limpiador de comentarios de varias pruebas (E3 F5):
@@ -2081,8 +2089,8 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F4 DEL MOTION SYSTEM** (*"Datos dinámicos, listas, gráficas y estados"*,
-   líneas 7587–8404 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F5… hasta la F20, en
+0. 🎬 **LA SIGUIENTE ES LA F5 DEL MOTION SYSTEM** (*"Física, gestos, touch y comportamiento táctil"*,
+   líneas 8405–9145 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F6… hasta la F20, en
    el orden de
    `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
    `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**

@@ -457,9 +457,10 @@ export function ToggleTab({ children, active, onClick, accent }) {
   );
 }
 
+// MS F4, apartado 14 — un vacío entra con un fundido corto (`vacio-entra`), sin ser protagonista.
 export function EmptyHint({ text }) {
   return (
-    <div className="text-center py-6 rounded-2xl" style={{ border: `1px dashed ${COLORS.border}` }}>
+    <div className="vacio-entra text-center py-6 rounded-2xl" style={{ border: `1px dashed ${COLORS.border}` }}>
       <p className="text-sm" style={{ color: COLORS.textMuted }}>{text}</p>
     </div>
   );

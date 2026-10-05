@@ -58,7 +58,7 @@ import { buscarProductoPorCodigoBarras, buscarAlimentosPorNombre } from '../lib/
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
 import BarcodeScanner from '../components/BarcodeScanner';
-import { CambioDeContenido, LatidoAlMarcar } from '../components/motion';
+import { CambioDeContenido, LatidoAlMarcar, useAnimacionDeGrafica, CifraQueCambia } from '../components/motion';
 import { escalonado } from '../lib/motion';
 
 const emptyForm = () => ({ nombre: '', calorias: '', proteinas: '', carbohidratos: '', grasas: '', fibra: '' });
@@ -272,7 +272,8 @@ function Indicador({ dato, accent, principal = false, indice = 0 }) {
         className={`${principal ? 'text-3xl' : 'text-xl'} font-extrabold mt-1 leading-none`}
         style={{ color: principal ? accent : COLORS.text, fontFamily: "'Manrope', sans-serif" }}
       >
-        {dato.consumido}
+        {/* MS F4 — al añadir una comida, la cifra cuenta hasta la nueva (nunca al abrir la pantalla). */}
+        <CifraQueCambia valor={dato.consumido} modo="cuenta">{dato.consumido}</CifraQueCambia>
         <span className={`${principal ? 'text-sm' : 'text-xs'} font-bold ml-1`} style={{ color: COLORS.textMuted }}>{dato.unidad}</span>
       </p>
       {/* Solo cuando de verdad hay un objetivo (apartados 3 y 4). */}
@@ -1540,6 +1541,9 @@ function AnalisisNutricional({ nutricion, periodoId, accent }) {
    ⚠️ El apartado 17 pide no recalcular en cada pintado, así que los siete
    cálculos salen de **un solo `useMemo`** por periodo. */
 function EstadisticasNutricion({ nutricion, accent }) {
+  // MS F4 — la gráfica obedece al modo, a la velocidad y a «Reducir movimiento» (antes animaba
+  // 1,5 s por su cuenta): `useAnimacionDeGrafica`. Arriba del todo, antes de cualquier `return`.
+  const animGrafica = useAnimacionDeGrafica();
   const [periodoId, setPeriodoId] = useState(PERIODO_NUT_POR_DEFECTO);
   const [macro, setMacro] = useState(MACROS_EVOLUCION[0]);
 
@@ -1598,6 +1602,9 @@ function EstadisticasNutricion({ nutricion, accent }) {
             contentStyle={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 12, fontSize: 12 }}
             labelStyle={{ color: COLORS.textMuted }}
             formatter={(v) => [`${v} ${evo.indicador.unidad}`, evo.indicador.nombre]}
+            isAnimationActive={animGrafica.tooltip.isAnimationActive}
+            animationDuration={animGrafica.tooltip.animationDuration}
+            animationEasing={animGrafica.tooltip.animationEasing}
           />
           {/* El objetivo como línea de referencia (apartado 4): se ve de un
               vistazo si el día quedó por encima o por debajo. */}
@@ -1606,7 +1613,7 @@ function EstadisticasNutricion({ nutricion, accent }) {
           )}
           {/* 🚨 `connectNulls` en falso: un día sin registrar es un HUECO, y la
               línea no lo cruza — cruzarlo inventaría un dato (E3 F32). */}
-          <Line type="monotone" dataKey="valor" stroke={color} strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
+          <Line type="monotone" dataKey="valor" stroke={color} strokeWidth={2} dot={{ r: 3 }} connectNulls={false} isAnimationActive={animGrafica.linea.isAnimationActive} animationBegin={animGrafica.linea.animationBegin} animationDuration={animGrafica.linea.animationDuration} animationEasing={animGrafica.linea.animationEasing} />
         </LineChart>
       </ResponsiveContainer>
     </div>

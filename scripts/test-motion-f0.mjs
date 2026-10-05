@@ -118,8 +118,8 @@ ok(MOTION_MAP.find((e) => e.id === 'favorito').estado === 'existe' && MOTION_MAP
 const enMapa = new Set(MOTION_MAP.map((e) => e.catalogo).filter(Boolean));
 const fueraDelMapa = ANIMACIONES_HC.filter((a) => !enMapa.has(a.id)).map((a) => a.id);
 ok(fueraDelMapa.length === 0, `🚨 las ${ANIMACIONES_HC.length} animaciones de ANIMACIONES_HC están en el mapa${fueraDelMapa.length ? ` (faltan: ${fueraDelMapa.join(', ')})` : ''}`);
-ok(MOTION_MAP.some((e) => e.estado === 'fuera_de_control' && e.id === 'graficas_recharts'),
-  'las gráficas de Recharts constan como fuera de control (no obedecen a reducir movimiento)');
+ok(MOTION_MAP.some((e) => e.id === 'graficas_recharts' && e.estado === 'existe' && e.fase === 4) && !MOTION_MAP.some((e) => e.estado === 'fuera_de_control'),
+  '🔓 las gráficas de Recharts ya no están fuera de control: obedecen al modo y a «Reducir movimiento» (MS F4)');
 
 console.log('\n── 6. La auditoría, sobre los archivos de verdad ──');
 const a = auditarMotion({ css: CSS, vistas: VISTAS });
@@ -162,7 +162,8 @@ ok(HALLAZGOS_F0.length >= 10 && HALLAZGOS_F0.every((h) => h.fase >= 1 && h.fase 
 /* Estas se dan la vuelta cuando llega su fase: son promesas, no adornos. */
 ok(!/pocas animaciones propias/.test(AJUSTES) && NIVELES_ANIMACION.length === 5 && HALLAZGOS_F0.find((h) => h.id === 'niveles_decorativos').resuelto === 1,
   '🔓 niveles decorativos: la pantalla ya no lo confiesa, porque cada modo hace algo (MS F1)');
-ok(a.cuentas.series_sin_gobierno > 0, `gráficas sin gobernar: ${a.cuentas.series_sin_gobierno} series de Recharts sin isAnimationActive (la F4)`);
+ok(a.cuentas.series_sin_gobierno === 0 && HALLAZGOS_F0.find((h) => h.id === 'graficas_sin_control').resuelto === 4,
+  `🔓 gráficas gobernadas: ni una serie de Recharts sin \`isAnimationActive\` (MS F4; eran 3)`);
 const togglesAMano = (AJUSTES.match(/rounded-full transition-all/g) || []).length;
 ok(togglesAMano === 0 && !/transicion\('left'/.test(leer('src/views/CalendarView.jsx')) && HALLAZGOS_F0.find((h) => h.id === 'tres_interruptores').resuelto === 3,
   '🔓 tres interruptores: ni uno a mano en Ajustes ni en el Calendario, y ninguno mueve la bola con `left` (MS F3)');

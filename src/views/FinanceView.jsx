@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, PiggyBank, Target } from 'lucide-react';
+import { CifraQueCambia } from '../components/motion';
 import { COLORS } from '../tokens';
 import { uid, formatFecha, todayISO } from '../lib/helpers';
 import { Card, ListCard, ListRow, BotonBorrar, SectionTitle, Field, TextInput, Select, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
@@ -197,7 +198,7 @@ export default function FinanceView({ economia, onAddMovimiento, onDeleteMovimie
           la misma Card de "Cuenta principal": mismo contenido, una tarjeta menos apilada. */}
       <Card>
         <p className="text-xs" style={{ color: COLORS.textMuted }}>Cuenta principal</p>
-        <p className="text-3xl font-extrabold mt-1" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{saldo.toFixed(2)} €</p>
+        <p className="text-3xl font-extrabold mt-1" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}><CifraQueCambia valor={saldo} modo="cuenta" formato={(v) => v.toFixed(2)}>{saldo.toFixed(2)}</CifraQueCambia> €</p>
         <div className="flex gap-4 mt-3 text-xs">
           <span style={{ color: COLORS.positive }} className="flex items-center gap-1"><TrendingUp size={13} /> +{ingresosMes.toFixed(2)} € este mes</span>
           <span style={{ color: COLORS.negative }} className="flex items-center gap-1"><TrendingDown size={13} /> -{gastosMes.toFixed(2)} € este mes</span>

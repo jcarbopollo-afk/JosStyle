@@ -223,6 +223,22 @@ que se gira a mano, y una papelera que encoge.
 regla normal: las tarjetas de las portadas (`hub-card`) llevaban desde la Fase N3 sin encoger al pulsarlas
 y sin que las demás retrocedieran, con todo escrito y nada visible.
 
+## 8.3 · Cómo se mueve un dato que cambia (F4)
+
+*"El movimiento debe ayudar al usuario a entender QUÉ ha cambiado."*
+
+| Si es… | Usa | Cómo se mueve |
+|---|---|---|
+| La cifra principal de una pantalla (una puntuación, un saldo, unas calorías) | `<CifraQueCambia valor={n} modo="cuenta">{texto}</CifraQueCambia>` (y `formato` si los pasos intermedios necesitan decimales o símbolo) | Recorre los valores intermedios con su precisión y acaba en EXACTAMENTE `texto`. Como mucho cuatro a la vez (`CUENTAS_A_LA_VEZ`); las demás se relevan |
+| Cualquier otra cifra que cambia («2/3 hechos», un contador) | `<CifraQueCambia valor={n}>{texto}</CifraQueCambia>` | El valor nuevo ya está escrito y llega con un fundido corto: desde abajo si sube, desde arriba si baja |
+| Una gráfica de Recharts | `const animGrafica = useAnimacionDeGrafica()` arriba del componente, y sus props en la serie (`animGrafica.linea`) y en el tooltip (`animGrafica.tooltip`) | Se dibuja una vez en `cinematic`; al cambiar los datos interpola (sin cambiarle la `key`); en Reducido aparece quieta |
+| Una gráfica propia al cambiar de periodo o de métrica | `<CambioDeContenido clave={periodo}>` (F2) alrededor de la gráfica | Se funde en su sitio: es un cambio de datos, no de página |
+| Un estado vacío | `EmptyHint` (lleva `vacio-entra`) | Un fundido corto, sin protagonismo |
+| Una barra de progreso | Su transición de anchura (`transicion('width', …)`, F1) | Del valor de antes al nuevo, en las dos direcciones; al montarse no se dispara |
+
+🚨 **Nunca al aparecer**: abrir una pantalla no cuenta de 0 al valor. Sin valor anterior, o sin dato (`null`),
+no hay nada que animar. Y en Reducido una cuenta se vuelve relevo (el fundido, sin moverse).
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en
@@ -233,7 +249,8 @@ y sin que las demás retrocedieran, con todo escrito y nada visible.
 - **El motor (`src/lib/motion.js`) no importa nada** y no guarda nada: lo puede leer cualquier capa sin
   un ciclo, y se prueba en Node con elementos de mentira y en Chromium con los de verdad.
 - **Las piezas de React (`src/components/motion.jsx`)** solo hacen lo que necesita React: `useMotion`,
-  `Presencia`, `useFlip`, `CambioDeContenido`, `ChevronDespliegue` y `LatidoAlMarcar`. La navegación tiene su par: la decisión en
+  `Presencia`, `useFlip`, `CambioDeContenido`, `ChevronDespliegue`, `LatidoAlMarcar`, `CifraQueCambia` y
+  `useAnimacionDeGrafica`. La navegación tiene su par: la decisión en
   `src/lib/transicionNavegacion.js` (se prueba en Node) y lo que pasa en la página en
   `src/components/navegacionMotion.js`.
 - **Tailwind**: las clases `transition-*` usan por defecto el token `fast` y `--ease-premium`
@@ -257,4 +274,7 @@ y sin que las demás retrocedieran, con todo escrito y nada visible.
   de una portada que encoge (y las demás que retroceden), Reducido sin escala, la bola del interruptor con
   `transform`, el chevron que gira por el camino corto, el anillo de foco con el acento y la estrella que
   late al marcarla y no al quitarla.
+- La sección «MS F4» mide los datos: el saldo que no cuenta al abrir y cuenta de 88 a 100 al borrar un
+  gasto, el vacío que entra, la línea de Sueño que se mueve ~420 ms (antes 1,5 s) y, en Reducido, una
+  línea quieta y una cifra que se releva.
 - `docs/MOTION_MAP.md` se genera del mapa y la prueba lo compara con el archivo.

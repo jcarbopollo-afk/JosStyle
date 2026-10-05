@@ -1112,6 +1112,28 @@ era de la EH F50**, y la pisó. Lo cantaron seis suites al no encontrar sus expo
 git y la de la F3 es `microinteraccionesMotion.js`. Es la E3 F9 (`accionesRapidas.js`) otra vez: **antes
 de crear un archivo, mirar si ese nombre ya es de alguien.**
 
+### C-55 — ✅ RESUELTA AL CONSTRUIR (Motion System F4, v3.134.0) · Las cifras que el plan de la F0 dio a la F17, las listas que dio a la F10, y un rollback que no existe
+
+La F4 (*"Datos dinámicos, listas, gráficas y estados"*) pide en su apartado 3 *"crear un sistema
+reutilizable"* de transiciones numéricas, y el plan de la F0 (`SOLAPES_ROADMAP`, hallazgo
+`cifras_de_golpe`) había dado las cifras a la **F17**. Tres choques, y la lectura de cada uno:
+
+1. **Las cifras: la F4 hace el sistema; la F17, la capa entera.** `CifraQueCambia` nace aquí —con sus
+   dos maneras (contar y relevarse), su presupuesto y su regla de no contar nunca al aparecer— y se pone
+   en las cifras principales: la puntuación y el progreso de Hoy, las calorías y macros de Nutrición y el
+   saldo de Economía. Llevarla a todos los paneles y estadísticas es la F17, y el hallazgo
+   `cifras_de_golpe` **sigue abierto a su nombre**.
+2. **Las listas (apartados 7-12) son la F10**, palabra por palabra (*"el diseño que cambia: FLIP, listas
+   que no saltan"*). La F4 comprueba lo que sí es suyo —que cada fila tenga su `id` como `key`, así que
+   completar una tarea es el mismo objeto cambiando— y deja el resto donde el plan lo puso.
+3. **El rollback animado de una acción optimista (apartados 36-37) no tiene qué animar**: hoy un guardado
+   que falla no se deshace en la pantalla (solo Fitness lo avisa, FIT F37). Animar un rollback que no existe
+   sería la regla 8; es la F16 (sincronización y errores).
+
+Y una decisión que se escribe para que no se reabra: **una cifra que se releva ya tiene escrito el valor
+nuevo** desde el primer fotograma (lo que se mueve es su llegada), y **una que cuenta acaba pintando
+EXACTAMENTE el texto de siempre**. Así VoiceOver y las pruebas leen el dato, no un número a medias.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

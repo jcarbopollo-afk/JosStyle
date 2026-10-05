@@ -969,6 +969,14 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f3.mjs >/tmp/jc
 else
   fallo "Fallan las microinteracciones del Motion System (F3)"; grep '✗' /tmp/jc_motion_f3.log
 fi
+# Motion System F4 — los datos que cambian: las gráficas de Recharts gobernadas por el motor, la cifra
+# que cuenta o se releva (nunca al aparecer, con su presupuesto), el vacío que entra y el cambio de
+# periodo como transición de contenido.
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f4.mjs >/tmp/jc_motion_f4.log 2>&1; then
+  ok "El Motion System, F4: datos dinámicos, cifras y gráficas — $(grep -c '✓' /tmp/jc_motion_f4.log) comprobaciones"
+else
+  fallo "Fallan los datos dinámicos del Motion System (F4)"; grep '✗' /tmp/jc_motion_f4.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

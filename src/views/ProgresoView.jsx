@@ -19,7 +19,7 @@ import { useScrollAlVolver } from '../components/scrollAlVolver';
 import {
   ChevronLeft, ChevronRight, Search, Dumbbell, Camera, Play, X,
 } from 'lucide-react';
-import { ChevronDespliegue } from '../components/motion';
+import { ChevronDespliegue, CambioDeContenido } from '../components/motion';
 import { COLORS } from '../tokens';
 import { OpcionSegmentada } from '../components/piezasFitness';
 import { acentoLegible } from '../lib/acabadoFitness';
@@ -431,9 +431,11 @@ export function DetalleProgreso({
                   <ExerciseMetricSelector metricas={d.metricas} valor={metrica || d.metrica} accent={accent} onElegir={onMetrica} />
                 </div>
               )}
-              <div className="mt-3">
+              {/* MS F4, apartados 22 y 28 — otro periodo u otra métrica es un cambio de DATOS, no de
+                  página: la gráfica se funde en su sitio (`CambioDeContenido`), sin rehacer la ficha. */}
+              <CambioDeContenido clave={`${rango}·${metrica || d.metrica}`} className="mt-3">
                 <GraficaProgreso grafica={d.grafica} accent={accent} onVerSesion={onVerSesion} />
-              </div>
+              </CambioDeContenido>
               {/* 🚨 Apartado 35 — la alternativa textual: no depender del gráfico. */}
               {d.alternativa && (
                 <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>{d.alternativa}</p>
@@ -610,9 +612,10 @@ export function MusculosProgreso({ resumen, periodo, onPeriodo, accent, onAbrir,
               </p>
             </Card>
           )}
-          <div className="space-y-2">
+          {/* MS F4 — cambiar de periodo funde la lista en su sitio: los datos cambian, la pantalla no. */}
+          <CambioDeContenido clave={periodo} className="space-y-2">
             {resumen.grupos.map((g) => <TarjetaMusculo key={g.id} musculo={g} accent={accent} onAbrir={onAbrir} />)}
-          </div>
+          </CambioDeContenido>
         </>
       )}
     </div>

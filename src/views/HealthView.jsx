@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianG
 import {
   Camera, AlertCircle, HeartPulse, Ruler, ClipboardList, Plus, Stethoscope,
 } from 'lucide-react';
-import { ChevronDespliegue } from '../components/motion';
+import { ChevronDespliegue, useAnimacionDeGrafica } from '../components/motion';
 import { COLORS, TIPOS_HISTORIAL_MEDICO } from '../tokens';
 import { uid, formatFecha, todayISO, hexToRgba } from '../lib/helpers';
 import { getSignedPhotoUrl } from '../lib/supabase';
@@ -141,6 +141,9 @@ function EstadoBN({ estado, aviso, accent, onRegistrar }) {
    Las mismas que había: mismos campos, mismo guardado, misma gráfica y el mismo
    botón de borrar (que va a la papelera, así que no pregunta). */
 function BloqueMedidas({ medidas, onAdd, onDeleteMedida, accent, abrirFormulario, onFormularioAbierto }) {
+  // MS F4 — la gráfica obedece al modo, a la velocidad y a «Reducir movimiento» (antes animaba
+  // 1,5 s por su cuenta): `useAnimacionDeGrafica`. Arriba del todo, antes de cualquier `return`.
+  const animGrafica = useAnimacionDeGrafica();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ peso: '', grasaCorporal: '', frecuenciaCardiaca: '', tensionSistolica: '', tensionDiastolica: '', notas: '' });
 
@@ -201,8 +204,8 @@ function BloqueMedidas({ medidas, onAdd, onDeleteMedida, accent, abrirFormulario
               <CartesianGrid stroke={COLORS.border} vertical={false} />
               <XAxis dataKey="fecha" stroke={COLORS.textMuted} fontSize={11} />
               <YAxis stroke={COLORS.textMuted} fontSize={11} width={30} domain={['auto', 'auto']} />
-              <Tooltip contentStyle={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text }} />
-              <Line type="monotone" dataKey="peso" stroke={accent} strokeWidth={2.5} dot={{ r: 3 }} />
+              <Tooltip contentStyle={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text }} isAnimationActive={animGrafica.tooltip.isAnimationActive} animationDuration={animGrafica.tooltip.animationDuration} animationEasing={animGrafica.tooltip.animationEasing} />
+              <Line type="monotone" dataKey="peso" stroke={accent} strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={animGrafica.linea.isAnimationActive} animationBegin={animGrafica.linea.animationBegin} animationDuration={animGrafica.linea.animationDuration} animationEasing={animGrafica.linea.animationEasing} />
             </LineChart>
           </ResponsiveContainer>
         </Card>

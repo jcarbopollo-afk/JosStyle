@@ -438,7 +438,7 @@ import { ESTADOS_IDEA, crearIdea } from '../src/lib/ideas.js';
 import { crearDocumento } from '../src/lib/documentos.js';
 import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
 import { AvatarPerfil, BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal, AjusteMovimiento } from '../src/views/SettingsView.jsx';
-import { Presencia, ChevronDespliegue, LatidoAlMarcar } from '../src/components/motion.jsx';
+import { Presencia, ChevronDespliegue, LatidoAlMarcar, CifraQueCambia } from '../src/components/motion.jsx';
 import { Switch, PistaInterruptor, ToggleTab, BotonBorrar } from '../src/components/ui.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
@@ -3189,6 +3189,11 @@ const CASOS = [
   ['LatidoAlMarcar (sin marcar)', LatidoAlMarcar, () => ({ activo: false, children: '☆' })],
   ['ToggleTab (elegida)', ToggleTab, () => ({ active: true, onClick: noop, accent, children: 'Comidas' })],
   ['BotonBorrar', BotonBorrar, () => ({ onClick: noop, label: 'Eliminar la comida' })],
+  /* MS F4 — una cifra que cambia: con su texto, sin él (lo escribe `formato`), sin dato y con decimales. */
+  ['CifraQueCambia (cuenta, con su texto)', CifraQueCambia, () => ({ valor: 88, modo: 'cuenta', formato: (v) => v.toFixed(2), children: '88.00' })],
+  ['CifraQueCambia (relevo, sin texto)', CifraQueCambia, () => ({ valor: 4 })],
+  ['CifraQueCambia (decimales, por formato)', CifraQueCambia, () => ({ valor: 12.5, modo: 'cuenta', formato: (v) => `${v.toFixed(1)} g` })],
+  ['CifraQueCambia (sin dato)', CifraQueCambia, () => ({ valor: null, children: '—' })],
   ['SettingsView · Avatar con foto', AvatarPerfil, () => ({
     perfil: { ...DEFAULT_PERFIL, foto: `data:image/jpeg;base64,${'A'.repeat(400)}` },
     accent, onCambiar: noop, onQuitar: noop,

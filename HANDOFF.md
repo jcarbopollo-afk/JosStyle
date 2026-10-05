@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.134.0 — Motion System F4/20: datos dinámicos, cifras y gráficas):**
+> Las gráficas de Recharts ya obedecen a los modos y a «Reducir movimiento» (se dibujaban 1,5 s por su cuenta) y
+> al cambiar de semana interpolan. Hay un sistema de cifras que cambian (`CifraQueCambia`): la puntuación, el
+> progreso de Hoy, las calorías y el saldo CUENTAN al cambiar —nunca al abrir la pantalla— y lo demás se releva
+> subiendo o bajando. Los vacíos entran suaves. Las listas que no saltan son la F10. **La siguiente es la F5**
+> (física, gestos y comportamiento táctil).
+
 > **📅 ACTUALIZACIÓN (v3.133.0 — Motion System F3/20: microinteracciones y feedback):**
 > Pulsar responde al momento y soltar vuelve con calma, en toda la aplicación (57 botones saltaban); las
 > tarjetas de las portadas por fin encogen al tocarlas y las demás retroceden; hay **un solo interruptor**

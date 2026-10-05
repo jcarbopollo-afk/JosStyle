@@ -600,6 +600,45 @@ html[data-motion='reducido'] .chevron-gira {
   animation: despliegueEntra var(--motion-dur-fast) var(--ease-premium) backwards;
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM · F4 — UNA CIFRA QUE CAMBIA (`CifraQueCambia`, src/components/motion.jsx)
+
+   El valor nuevo ya está escrito; lo que se mueve es su llegada: un fundido corto
+   desde ABAJO si sube y desde ARRIBA si baja (apartado 6: *"comunicar incremento vs
+   reducción, sin colores o movimientos agresivos"*). Es el preset `dataChange` del
+   motor. En Reducido el token de distancia vale 0: solo el fundido.
+   `inline-block` para que el desplazamiento exista, y cifras TABULARES: mientras una
+   cuenta recorre 1.850 → 2.100, las proporcionales del iPhone harían bailar el ancho
+   (FIT F42). */
+.cifra {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+@keyframes cifraSube {
+  from { opacity: var(--motion-opac-secondary); transform: translateY(var(--motion-dist-micro)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes cifraBaja {
+  from { opacity: var(--motion-opac-secondary); transform: translateY(calc(-1 * var(--motion-dist-micro))); }
+  to { opacity: 1; transform: none; }
+}
+.cifra-sube {
+  animation: cifraSube var(--motion-dur-normal) var(--ease-premium) backwards;
+}
+.cifra-baja {
+  animation: cifraBaja var(--motion-dur-normal) var(--ease-premium) backwards;
+}
+
+/* MS F4, apartado 14 — un estado vacío entra, sin ser protagonista: un fundido corto
+   y un leve ascenso (en Reducido, solo el fundido). Lo lleva `EmptyHint` (ui.jsx). */
+@keyframes vacioEntra {
+  from { opacity: 0; transform: translateY(var(--motion-dist-micro)); }
+  to { opacity: 1; transform: none; }
+}
+.vacio-entra {
+  animation: vacioEntra var(--motion-dur-fast) var(--ease-premium) backwards;
+}
+
 /* MS F3, apartados 24 y 27 — una pestaña elegida y su contenido son UNA acción:
    el color de la pestaña cambia con el mismo token que el fundido del contenido
    (`contenido-cambia`, F2), en vez de saltar mientras lo de debajo se funde. */

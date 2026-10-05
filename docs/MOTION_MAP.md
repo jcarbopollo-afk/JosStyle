@@ -5,7 +5,7 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**67 elementos**: ✅ Existe 53 · ⚠️ Inconsistente 4 · ⬜ Sin movimiento 9 · 🚨 Fuera de control 1.
+**70 elementos**: ✅ Existe 57 · ⚠️ Inconsistente 4 · ⬜ Sin movimiento 9 · 🚨 Fuera de control 0.
 
 ## Resumen
 
@@ -48,7 +48,10 @@
 | Terminar una rutina | Q | 3 · Protagonista | 420 ms | ✅ Existe | F9 |
 | Marcar una serie | J | 1 · Micro | 160 ms | ✅ Existe | F9 |
 | Borrar o añadir un elemento de una lista | J | 0 · Estático | — | ⬜ Sin movimiento | F10 |
-| Gráficas de Recharts (Salud, Nutrición, Sueño) | K | 3 · Protagonista | 1500 ms | 🚨 Fuera de control | F4 |
+| Gráficas de Recharts (Salud, Nutrición, Sueño) | K | 3 · Protagonista | 420 ms | ✅ Existe | F4 |
+| Una cifra que sube | K | 1 · Micro | 220 ms | ✅ Existe | F4 |
+| Una cifra que baja | K | 1 · Micro | 220 ms | ✅ Existe | F4 |
+| Un estado vacío | K | 1 · Micro | 160 ms | ✅ Existe | F4 |
 | Gráficas propias en SVG (Fitness, Sueño) | K | 0 · Estático | — | ⬜ Sin movimiento | F17 |
 | Barras de progreso con su clase (Hoy, Biblioteca, Nutrición, Fitness) | L | 3 · Protagonista | 340 ms | ⚠️ Inconsistente | F17 |
 | Barras de progreso escritas en la vista (Objetivos, Productividad, Rachas, Bienestar digital) | L | 3 · Protagonista | 340 ms | ⚠️ Inconsistente | F17 |
@@ -1125,11 +1128,11 @@
 
 #### Gráficas de Recharts (Salud, Nutrición, Sueño)
 
-`graficas_recharts` · 🚨 Fuera de control · lo trata la **F4**
+`graficas_recharts` · ✅ Existe · lo trata la **F4**
 
 | Campo | Valor |
 |---|---|
-| Ubicación | HealthView · NutritionView · SleepView |
+| Ubicación | HealthView · NutritionView · SleepView · src/lib/datosMotion.js |
 | Componente | LineChart |
 | Clase CSS | — |
 | @keyframes | — |
@@ -1137,21 +1140,111 @@
 | Función | Dibujar los datos. |
 | Estado inicial | — |
 | Estado final | — |
-| Entrada | La de Recharts por defecto: 1,5 s |
+| Entrada | La línea se dibuja una vez, en `cinematic`, con la curva de JosStyle |
 | Salida | — |
-| Interacción | — |
-| Transición | JavaScript de la librería, no CSS |
-| Duración | 1500 ms |
-| Curva | ease (de la librería) |
+| Interacción | Cambiar de periodo o de semana: la misma gráfica interpola a los datos nuevos, no se rehace |
+| Transición | JavaScript de la librería, gobernado por el motor (`animacionDeGrafica`, `useAnimacionDeGrafica`) |
+| Duración | 420 ms |
+| Curva | --ease-premium (la `standard` del motor) |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
 | Intensidad | 3 · Protagonista |
 | Prioridad | alta |
+| Relación | MS F4: antes 1,5 s con su curva y sin obedecer a «Reducir movimiento» (hallazgo `graficas_sin_control`). El tooltip, en `fast`. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | No se dibuja: la línea aparece en su sitio. |
+
+#### Una cifra que sube
+
+`cifra_sube` · ✅ Existe · lo trata la **F4**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/motion.jsx (CifraQueCambia) · src/index.css |
+| Componente | CifraQueCambia |
+| Clase CSS | `.cifra-sube` |
+| @keyframes | `cifraSube` |
+| En ANIMACIONES_HC | — |
+| Función | Que se vea QUÉ ha cambiado y hacia dónde (apartados 2 y 6). |
+| Estado inicial | Medio visible, 4 px más abajo |
+| Estado final | En su sitio |
+| Entrada | — |
+| Salida | — |
+| Interacción | El dato cambia (un registro, un toque, una carga) |
+| Transición | opacity, transform |
+| Duración | 220 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | media |
+| Relación | El preset `dataChange`. Las cifras principales CUENTAN en vez de relevarse (puntuación, progreso, calorías, saldo); nunca al aparecer. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Solo el fundido; una cuenta pasa a relevo. |
+
+#### Una cifra que baja
+
+`cifra_baja` · ✅ Existe · lo trata la **F4**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/motion.jsx (CifraQueCambia) · src/index.css |
+| Componente | CifraQueCambia |
+| Clase CSS | `.cifra-baja` |
+| @keyframes | `cifraBaja` |
+| En ANIMACIONES_HC | — |
+| Función | Lo mismo, desde arriba: bajar no es un error, y no se pinta de rojo (apartado 6). |
+| Estado inicial | Medio visible, 4 px más arriba |
+| Estado final | En su sitio |
+| Entrada | — |
+| Salida | — |
+| Interacción | El dato cambia |
+| Transición | opacity, transform |
+| Duración | 220 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | media |
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | ❌ NO se respeta: Recharts anima por JavaScript y las reglas globales de index.css no lo alcanzan. |
+| Movimiento reducido | Solo el fundido. |
+
+#### Un estado vacío
+
+`vacio` · ✅ Existe · lo trata la **F4**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/ui.jsx (EmptyHint) · src/index.css |
+| Componente | EmptyHint |
+| Clase CSS | `.vacio-entra` |
+| @keyframes | `vacioEntra` |
+| En ANIMACIONES_HC | — |
+| Función | Entrar sin ser protagonista (apartado 14). |
+| Estado inicial | Invisible, 4 px más abajo |
+| Estado final | En su sitio |
+| Entrada | — |
+| Salida | — |
+| Interacción | — |
+| Transición | opacity, transform |
+| Duración | 160 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | media |
+| Relación | — |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Solo el fundido. |
 
 #### Gráficas propias en SVG (Fitness, Sueño)
 

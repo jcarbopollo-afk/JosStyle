@@ -12530,4 +12530,110 @@ almacen.ajustes = ajustesDeAntes_ms3;
 almacen.biblioteca = bibliotecaDeAntes_ms3;
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
+
+/* ── MS F4 · Datos que cambian: la cifra que cuenta, el vacío que entra y la gráfica gobernada ──
+   Lo que solo se ve en la pantalla de verdad: que una cifra NO cuente al aparecer y SÍ al cambiar,
+   que el texto final sea exactamente el de siempre, que el vacío que sustituye a una lista entre sin
+   ser protagonista, y cuánto tarda de verdad Recharts en dibujar una línea (antes, 1,5 s). */
+console.log('\n── MS F4 · Datos dinámicos, cifras y gráficas ──');
+const ajustesDeAntes_ms4 = almacen.ajustes;
+const economiaDeAntes_ms4 = almacen.economia;
+const suenoDeAntes_ms4 = almacen.sueno;
+const dia_ms4 = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('sv-SE'); };
+const sembrar_ms4 = () => {
+  almacen.ajustes = { ...(ajustesDeAntes_ms4 || {}), apariencia: { ...((ajustesDeAntes_ms4 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+  almacen.economia = { saldoInicial: 100, hucha: 0, movimientos: [{ id: 'mv_ms4', fecha: dia_ms4(1), tipo: 'gasto', concepto: 'Cuaderno', cantidad: 12 }], aportaciones: [] };
+  almacen.sueno = [0, 1, 3, 5].map((n, i) => ({ id: `su_ms4_${i}`, fecha: dia_ms4(n), horaDormir: '23:00', horaDespertar: i % 2 ? '07:30' : '06:45', calidad: 4, interrupciones: 0, siestaAyer: false, siestaMinutos: 0 }));
+};
+sembrar_ms4();
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+const erroresAntes_ms4 = errores.length;
+/* El saldo de Economía y el vacío de su lista, leídos a la vez. */
+const saldo_ms4 = () => {
+  const c = [...document.querySelectorAll('.cifra')].find((x) => /^-?\d+\.\d\d$/.test(x.textContent.trim()) && x.closest('p')?.textContent.includes('€'));
+  const v = document.querySelector('.vacio-entra');
+  const a = v ? v.getAnimations().find((x) => x.animationName === 'vacioEntra') : null;
+  return c ? { texto: c.textContent.trim(), modo: c.dataset.cifra, vacio: !!v, vacioAnima: !!a, vacioDura: a ? Math.round(a.effect.getComputedTiming().duration) : null } : null;
+};
+ok(await pulsar('Gestión') && await pulsar('Economía'), 'MS F4 — Gestión → Economía');
+await esperarTexto(/Cuaderno/);
+const s0_ms4 = await page.evaluate(saldo_ms4);
+ok(s0_ms4 && s0_ms4.texto === '88.00' && s0_ms4.modo === 'quieta',
+  `🚨 MS F4 — al abrir la pantalla el saldo NO cuenta desde cero: aparece en su valor (${JSON.stringify(s0_ms4)}; apartado 4)`);
+/* Se borra el movimiento y se mide en el mismo turno, y otra vez cuando haya terminado. */
+const s1_ms4 = await page.evaluate(async (f) => {
+  const b = document.querySelector('button[aria-label="Eliminar movimiento"]');
+  if (!b) return null;
+  b.click();
+  await new Promise((r) => setTimeout(r, 0));
+  /* A medio camino: la cuenta dura `normal` (220 ms). */
+  await new Promise((r) => setTimeout(r, 90));
+  return (new Function(`return (${f})()`))();
+}, saldo_ms4.toString());
+ok(s1_ms4 && s1_ms4.modo === 'cuenta' && Number(s1_ms4.texto) > 88 && Number(s1_ms4.texto) <= 100 && /^\d+\.\d\d$/.test(s1_ms4.texto),
+  `🚨 MS F4 — al borrar el gasto, el saldo CUENTA de 88 a 100 con sus dos decimales (${JSON.stringify(s1_ms4)}; apartados 2 y 3)`);
+await page.waitForTimeout(600);
+const s2_ms4 = await page.evaluate(saldo_ms4);
+ok(s2_ms4 && s2_ms4.texto === '100.00' && s2_ms4.modo !== 'cuenta',
+  `…y acaba EXACTAMENTE en el texto de siempre (${s2_ms4?.texto})`);
+ok(s1_ms4 && s1_ms4.vacio && s1_ms4.vacioAnima && s1_ms4.vacioDura === 160,
+  `MS F4 — la lista vacía entra con un fundido corto, sin ser protagonista (${s1_ms4?.vacioDura} ms; apartado 14)`);
+
+/* La gráfica de Sueño: cuánto tarda en dibujarse de verdad (Recharts va con JavaScript). */
+/* Cuánto tiempo se MUEVE la línea desde que aparece: su `d` (los puntos que interpolan) y su
+   `stroke-dasharray` (el trazo que se dibuja). Se apunta cada cambio, fotograma a fotograma. ⚠️ La
+   gráfica va en un `ResponsiveContainer`, que pinta primero sin ancho: lo que se ve es la línea
+   interpolando hasta su sitio, y eso es lo que gobierna el motor. */
+const dibujo_ms4 = async () => page.evaluate(async () => {
+  const t0 = performance.now();
+  const serie = [];
+  let ultimo;
+  while (performance.now() - t0 < 2400) {
+    const p = document.querySelector('.recharts-line-curve');
+    const d = p ? `${p.getAttribute('stroke-dasharray')}|${(p.getAttribute('d') || '').length}` : 'sin';
+    if (d !== ultimo) { serie.push([Math.round(performance.now() - t0), d]); ultimo = d; }
+    await new Promise((r) => requestAnimationFrame(() => r()));
+  }
+  const vistos = serie.filter(([, d]) => d !== 'sin');
+  return vistos.length === 0 ? null : { dibujaMs: vistos.at(-1)[0] - vistos[0][0], cambios: vistos.length };
+});
+ok(await pulsar('Bienestar'), 'MS F4 — Bienestar');
+await page.waitForTimeout(700);
+const abrirSueno_ms4 = page.evaluate(() => document.querySelector('button[aria-label="Abrir Sueño"]')?.click());
+await abrirSueno_ms4;
+const g1_ms4 = await dibujo_ms4();
+ok(g1_ms4 && g1_ms4.dibujaMs > 250 && g1_ms4.dibujaMs < 800,
+  `🐛 MS F4 — la línea de Sueño se mueve unos 420 ms con la curva de JosStyle, no 1,5 s (${JSON.stringify(g1_ms4)}; hallazgo \`graficas_sin_control\`)`);
+
+/* Con «Reducir movimiento», ni la cifra cuenta ni la línea se dibuja: aparecen en su sitio. */
+await page.emulateMedia({ reducedMotion: 'reduce' });
+sembrar_ms4();
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+ok(await pulsar('Bienestar'), 'MS F4 — con «Reducir movimiento», Bienestar');
+await page.waitForTimeout(700);
+await page.evaluate(() => document.querySelector('button[aria-label="Abrir Sueño"]')?.click());
+const g2_ms4 = await dibujo_ms4();
+ok(g2_ms4 && g2_ms4.dibujaMs === 0 && g2_ms4.cambios === 1,
+  `🚨 MS F4 — en Reducido la línea aparece entera y en su sitio, sin moverse (${JSON.stringify(g2_ms4)})`);
+ok(await pulsar('Gestión') && await pulsar('Economía'), 'MS F4 — Gestión → Economía');
+await esperarTexto(/Cuaderno/);
+const r1_ms4 = await page.evaluate(async (f) => {
+  document.querySelector('button[aria-label="Eliminar movimiento"]')?.click();
+  await new Promise((r) => setTimeout(r, 0));
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+  return (new Function(`return (${f})()`))();
+}, saldo_ms4.toString());
+ok(r1_ms4 && r1_ms4.texto === '100.00' && r1_ms4.modo === 'cifra-sube',
+  `🚨 MS F4 — y la cifra no cuenta: el valor nuevo ya está, y llega con un fundido desde abajo porque SUBE (${JSON.stringify(r1_ms4)})`);
+
+ok(errores.length === erroresAntes_ms4, `MS F4 — …sin un error en la consola${errores.length > erroresAntes_ms4 ? `: ${errores.slice(erroresAntes_ms4).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms4;
+almacen.economia = economiaDeAntes_ms4;
+almacen.sueno = suenoDeAntes_ms4;
+await page.emulateMedia({ reducedMotion: null });
+await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

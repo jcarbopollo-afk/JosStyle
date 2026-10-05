@@ -5,7 +5,7 @@ import {
   BookOpen, Briefcase, Library, Church, Smartphone,
   Plane, Sun, Home, ClipboardList,
 } from 'lucide-react';
-import { ChevronDespliegue } from '../components/motion';
+import { ChevronDespliegue, CifraQueCambia } from '../components/motion';
 import { COLORS, MODOS_APP } from '../tokens';
 import { calcularDuracion, formatHoras, hexToRgba, diasHasta, formatFecha, todayISO, addDays } from '../lib/helpers';
 import { resumenHabito } from '../lib/rachas';
@@ -77,10 +77,10 @@ function ResumenDelDia({ resumen, progreso, accent, onVerTodas }) {
         {progreso?.porcentaje !== null && progreso?.porcentaje !== undefined && (
           <div className="text-right flex-shrink-0">
             <p className="text-lg font-extrabold leading-none" style={{ color: progreso.completo ? COLORS.positive : accent, fontFamily: "'Manrope', sans-serif" }}>
-              {progreso.porcentaje} %
+              <CifraQueCambia valor={progreso.porcentaje} modo="cuenta">{progreso.porcentaje}</CifraQueCambia> %
             </p>
             <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
-              {progreso.hechos}/{progreso.total} hechos
+              <CifraQueCambia valor={progreso.hechos}>{progreso.hechos}</CifraQueCambia>/{progreso.total} hechos
             </p>
           </div>
         )}
@@ -486,11 +486,12 @@ function TarjetaPuntuacion({ puntuacion, mensaje, accent }) {
           <ScoreGauge value={puntuacion.valor} accent={accent} />
           <div className="min-w-0 flex-1">
             <p className="text-3xl font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-              {puntuacion.valor}<span className="text-base font-medium" style={{ color: COLORS.textMuted }}>/100</span>
+              {/* MS F4 — la cifra cuenta al ritmo del aro (`cinematic`): 72 → 73 se ve llegar. */}
+              <CifraQueCambia valor={puntuacion.valor} modo="cuenta" duracion="cinematic">{puntuacion.valor}</CifraQueCambia><span className="text-base font-medium" style={{ color: COLORS.textMuted }}>/100</span>
             </p>
             <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{mensaje}</p>
             <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: COLORS.textMuted, opacity: 0.75 }}>
-              {puntuacion.hechos} de {puntuacion.total} hoy
+              <CifraQueCambia valor={puntuacion.hechos}>{puntuacion.hechos}</CifraQueCambia> de {puntuacion.total} hoy
               <ChevronDespliegue abierto={expandido} size={13} />
             </p>
           </div>

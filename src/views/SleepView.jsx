@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
+import { useAnimacionDeGrafica } from '../components/motion';
 import { Moon, Sun, ChevronLeft, ChevronRight } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { formatHoras, formatFecha, hexToRgba } from '../lib/helpers';
@@ -193,6 +194,9 @@ function FormularioNoche({ accent, onGuardar, onCancelar }) {
 }
 
 export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFocoConsumido }) {
+  // MS F4 — la gráfica obedece al modo, a la velocidad y a «Reducir movimiento» (antes animaba
+  // 1,5 s por su cuenta): `useAnimacionDeGrafica`. Arriba del todo, antes de cualquier `return`.
+  const animGrafica = useAnimacionDeGrafica();
   const [showForm, setShowForm] = useState(false);
 
   // Ampliación del Dashboard — Centro de Control: la acción rápida "+ Sueño" llega aquí como
@@ -277,11 +281,11 @@ export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFoco
               {/* ⚠️ Apartado 9 — fechas de verdad («L 24 · M 25»), nunca «1 2 3». */}
               <XAxis dataKey="fecha" stroke={COLORS.textMuted} fontSize={11} interval={0} />
               <YAxis stroke={COLORS.textMuted} fontSize={11} width={26} />
-              <Tooltip contentStyle={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text }} />
+              <Tooltip contentStyle={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text }} isAnimationActive={animGrafica.tooltip.isAnimationActive} animationDuration={animGrafica.tooltip.animationDuration} animationEasing={animGrafica.tooltip.animationEasing} />
               {/* 🚨 `connectNulls` NO se activa: un día sin registrar tiene que
                   verse como un hueco, no como una línea recta que lo cruza — sería
                   el dato inventado que prohíben los apartados 3 y 18. */}
-              <Line type="monotone" dataKey="horas" stroke={accent} strokeWidth={2.5} dot={{ r: 3 }} connectNulls={false} />
+              <Line type="monotone" dataKey="horas" stroke={accent} strokeWidth={2.5} dot={{ r: 3 }} connectNulls={false} isAnimationActive={animGrafica.linea.isAnimationActive} animationBegin={animGrafica.linea.animationBegin} animationDuration={animGrafica.linea.animationDuration} animationEasing={animGrafica.linea.animationEasing} />
             </LineChart>
           </ResponsiveContainer>
 
