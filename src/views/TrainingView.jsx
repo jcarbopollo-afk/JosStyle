@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, ChevronDown, Sparkles, Loader2, Video, Trash2, AlertTriangle, CheckCircle2, Circle, Plus } from 'lucide-react';
+import { Trophy, Sparkles, Loader2, Video, Trash2, AlertTriangle, CheckCircle2, Circle, Plus } from 'lucide-react';
+import { ChevronDespliegue } from '../components/motion';
 import { COLORS, SKILLS } from '../tokens';
 import { uid, formatFecha, todayISO, fechaLocalISO } from '../lib/helpers';
 import { askAI, askAIWithImages, AI_SYSTEM } from '../lib/ai';
 import { extractFramesFromSrc } from '../lib/videoFrames';
 import { getSignedVideoUrl } from '../lib/supabase';
 import { BotonBorrar, BotonBorrarDefinitivo, Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
-import { transicion } from '../lib/motion';
 
 // Cuántos días seguidos (incluyendo hoy) hay que llevar entrenando la misma habilidad
 // para que aparezca el aviso de "descanso recomendado".
@@ -352,7 +352,7 @@ function SkillCard({ skill, data, onUpdate, videos, onAddVideo, onDeleteVideo, o
           </p>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className="text-xs font-bold" style={{ color: accent }}>{full.nivel}%</span>
-            <ChevronDown size={15} style={{ color: COLORS.textMuted, transform: expanded ? 'rotate(180deg)' : 'none', transition: transicion('transform', 'normal') }} />
+            <ChevronDespliegue abierto={expanded} size={15} style={{ color: COLORS.textMuted }} />
           </div>
         </div>
       </button>
@@ -365,7 +365,7 @@ function SkillCard({ skill, data, onUpdate, videos, onAddVideo, onDeleteVideo, o
       />
 
       {expanded && (
-        <div className="mt-4 pt-4 space-y-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+        <div className="despliegue-entra mt-4 pt-4 space-y-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           <div className="flex gap-1.5">
             <ToggleTab active={sub === 'progresion'} onClick={() => setSub('progresion')} accent={accent}>Progresión</ToggleTab>
             <ToggleTab active={sub === 'prs'} onClick={() => setSub('prs')} accent={accent}>PRs</ToggleTab>

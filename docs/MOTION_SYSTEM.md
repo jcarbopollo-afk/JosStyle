@@ -197,6 +197,32 @@ transición (apartado 18).
 Lo que **no** es de la F2 —las ventanas (F6), arrastrar una hoja (F5 y F8), tarjeta → detalle (F7), los
 filtros que recolocan una lista (F10) y el gesto de atrás del sistema (C-53)— está en `NO_EN_F2`.
 
+## 8.2 · Cómo responde un componente al tocarlo (F3)
+
+*"No quiero «más animaciones». Quiero: MEJOR FEEDBACK."* Lo primero que sirva, eso — y la última fila de
+la tabla también es una respuesta:
+
+| Si es… | Usa | Cómo se mueve |
+|---|---|---|
+| Algo que se toca y no es destructivo | La escalera `active:scale-*` (`ESCALAS_AL_TOCAR`, EH F50): 0,96 una tarjeta grande, 0,98 una fila, 0,95 un botón, 0,90 un icono | Encoge en `ultrafast` al pulsar y vuelve en `normal` con la curva `entrance` al soltar (llega y se posa, sin rebote). **No hace falta escribir ninguna transición**: la pone `index.css` a todo lo que lleva la clase. En Reducido no encoge: baja la opacidad |
+| Algo que borra o descarta | `toque-destructivo` (o `BotonBorrar` / `BotonBorrarDefinitivo`, que ya la llevan) | No encoge: baja la opacidad. Un borrado no es un juego (apartado 28) |
+| Encender o apagar algo | `<Switch checked onChange accent label />` | La bola viaja con `transform` y se estira un poco al pulsar; en Reducido salta y solo se funde el color |
+| …cuando la fila entera es lo que se toca | La fila con `role="switch"` y `aria-checked`, y dentro `<PistaInterruptor encendido accent />` | El mismo movimiento, en pequeño |
+| Algo que se abre y se cierra en su sitio | `<ChevronDespliegue abierto cerrado alAbrir />` (cerrado: `abajo` o `derecha`; al abrir: `arriba` o `abajo`), y `despliegue-entra` en lo que aparece | El mismo icono gira (nunca dos que se cambian) y el contenido llega con un fundido corto. Cerrar recolocando el resto es la F10 |
+| Una marca que él pone y quita (favorito, estrella, corazón) | `<LatidoAlMarcar activo={…}>` alrededor del icono | Late una vez al ponerla; nunca al quitarla ni al abrir la pantalla |
+| Pestañas dentro de una pantalla | `ToggleTab` (lleva `pestana-cambia` y `aria-pressed`) + `CambioDeContenido` (F2) | El color de la pestaña y el contenido cambian al mismo ritmo: una sola acción |
+| El foco de teclado | Nada: el anillo con el acento sale solo en cualquier botón, enlace o interruptor | Aparece en su sitio, sin animar. Los campos de texto no cambian (C-32) |
+| Lo que se repite cien veces al día y ya se entiende, lo decorativo y lo informativo | **Nada** | *"La ausencia de movimiento también forma parte del Motion System"* (apartado 35) |
+
+**Lo que no puede volver**, y lo vigila `auditarComponentesMotion` (`src/lib/microinteraccionesMotion.js`)
+con la línea de cada caso: una bola de interruptor movida con `left`, un chevron que se cambia por otro o
+que se gira a mano, y una papelera que encoge.
+
+🐛 **Y una lección de la F3 para cualquier animación de entrada nueva: termina con `backwards`, no con
+`both`.** El último fotograma de una animación con `both` se queda puesto para siempre y gana a cualquier
+regla normal: las tarjetas de las portadas (`hub-card`) llevaban desde la Fase N3 sin encoger al pulsarlas
+y sin que las demás retrocedieran, con todo escrito y nada visible.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en
@@ -207,7 +233,7 @@ filtros que recolocan una lista (F10) y el gesto de atrás del sistema (C-53)—
 - **El motor (`src/lib/motion.js`) no importa nada** y no guarda nada: lo puede leer cualquier capa sin
   un ciclo, y se prueba en Node con elementos de mentira y en Chromium con los de verdad.
 - **Las piezas de React (`src/components/motion.jsx`)** solo hacen lo que necesita React: `useMotion`,
-  `Presencia`, `useFlip` y `CambioDeContenido`. La navegación tiene su par: la decisión en
+  `Presencia`, `useFlip`, `CambioDeContenido`, `ChevronDespliegue` y `LatidoAlMarcar`. La navegación tiene su par: la decisión en
   `src/lib/transicionNavegacion.js` (se prueba en Node) y lo que pasa en la página en
   `src/components/navegacionMotion.js`.
 - **Tailwind**: las clases `transition-*` usan por defecto el token `fast` y `--ease-premium`
@@ -227,4 +253,8 @@ filtros que recolocan una lista (F10) y el gesto de atrás del sistema (C-53)—
   desde la izquierda al scroll de antes y sin repetir entradas, cambiar de sección con un fundido, el
   indicador de la barra, la transición de contenido de una pestaña, doce pestañas seguidas sin dejar nada
   colgado y Reducido sin desplazamientos.
+- La sección «MS F3» mide los componentes de verdad: pulsar con transición y soltar con su curva, la tarjeta
+  de una portada que encoge (y las demás que retroceden), Reducido sin escala, la bola del interruptor con
+  `transform`, el chevron que gira por el camino corto, el anillo de foco con el acento y la estrella que
+  late al marcarla y no al quitarla.
 - `docs/MOTION_MAP.md` se genera del mapa y la prueba lo compara con el archivo.

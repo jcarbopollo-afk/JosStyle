@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
+import { ChevronDespliegue } from './motion';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { PASOS_ESCALA } from '../lib/colorEngine';
@@ -175,10 +176,10 @@ export default function TemaBuilder({
             resuelve ambas cosas: existe y funciona, pero no está a la vista por defecto. */}
         <button onClick={() => setEstadosAbiertos((v) => !v)} className="w-full flex items-center justify-between py-3 mt-1">
           <span className="text-sm font-semibold" style={{ color: COLORS.text }}>Estados avanzados</span>
-          {estadosAbiertos ? <ChevronUp size={16} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={16} style={{ color: COLORS.textMuted }} />}
+          <ChevronDespliegue abierto={estadosAbiertos} size={16} style={{ color: COLORS.textMuted }} />
         </button>
         {estadosAbiertos && (
-          <>
+          <div className="despliegue-entra">
             <div
               className="flex items-start gap-2 mb-2 p-2.5 rounded-xl"
               style={{ background: hexToRgba(COLORS.warning, 0.12), border: `1px solid ${hexToRgba(COLORS.warning, 0.3)}` }}
@@ -191,7 +192,7 @@ export default function TemaBuilder({
               </p>
             </div>
             {FILAS_ESTADOS.map((campo) => <Fila key={campo.key} tipo="estado" campo={campo} />)}
-          </>
+          </div>
         )}
 
         {filaEditando && (

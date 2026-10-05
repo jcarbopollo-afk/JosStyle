@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Briefcase, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Briefcase, Plus, Trash2 } from 'lucide-react';
+import { ChevronDespliegue } from '../components/motion';
 import { COLORS, ESTADOS_NEGOCIO } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
@@ -19,11 +20,11 @@ function ProyectoCard({ proyecto, onUpdate, onDelete, accent }) {
           <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{proyecto.nombre}</p>
           <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{proyecto.estado} · {formatFecha(proyecto.fecha)}</p>
         </div>
-        {abierto ? <ChevronUp size={16} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={16} style={{ color: COLORS.textMuted }} />}
+        <ChevronDespliegue abierto={abierto} size={16} style={{ color: COLORS.textMuted }} />
       </button>
 
       {abierto && (
-        <div className="mt-3 space-y-3">
+        <div className="despliegue-entra mt-3 space-y-3">
           <Field label="Estado">
             <Select value={proyecto.estado} onChange={(e) => onUpdate({ ...proyecto, estado: e.target.value })}>
               {ESTADOS_NEGOCIO.map((s) => <option key={s} value={s}>{s}</option>)}

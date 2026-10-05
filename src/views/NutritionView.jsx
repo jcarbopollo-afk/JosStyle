@@ -58,7 +58,7 @@ import { buscarProductoPorCodigoBarras, buscarAlimentosPorNombre } from '../lib/
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
 import BarcodeScanner from '../components/BarcodeScanner';
-import { CambioDeContenido } from '../components/motion';
+import { CambioDeContenido, LatidoAlMarcar } from '../components/motion';
 import { escalonado } from '../lib/motion';
 
 const emptyForm = () => ({ nombre: '', calorias: '', proteinas: '', carbohidratos: '', grasas: '', fibra: '' });
@@ -606,7 +606,7 @@ function FilaAlimento({ alimento, accent, favorito, onElegir, onFavorito, onEdit
           aria-label={favorito ? `Quitar ${alimento.nombre} de favoritos` : `Marcar ${alimento.nombre} como favorito`}
           className="toque-44 p-1.5 -m-1.5 flex-shrink-0"
         >
-          <Star size={16} style={{ color: favorito ? accent : COLORS.textMuted }} fill={favorito ? accent : 'none'} />
+          <LatidoAlMarcar activo={!!favorito}><Star size={16} style={{ color: favorito ? accent : COLORS.textMuted }} fill={favorito ? accent : 'none'} /></LatidoAlMarcar>
         </button>
       )}
       {onEditar && (

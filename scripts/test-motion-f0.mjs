@@ -164,7 +164,8 @@ ok(!/pocas animaciones propias/.test(AJUSTES) && NIVELES_ANIMACION.length === 5 
   '🔓 niveles decorativos: la pantalla ya no lo confiesa, porque cada modo hace algo (MS F1)');
 ok(a.cuentas.series_sin_gobierno > 0, `gráficas sin gobernar: ${a.cuentas.series_sin_gobierno} series de Recharts sin isAnimationActive (la F4)`);
 const togglesAMano = (AJUSTES.match(/rounded-full transition-all/g) || []).length;
-ok(togglesAMano > 0 && /transicion\('left', 'fast'\)/.test(leer('src/views/CalendarView.jsx')), `tres interruptores: ${togglesAMano} a mano en Ajustes y los del Calendario, que animan \`left\` (la F3)`);
+ok(togglesAMano === 0 && !/transicion\('left'/.test(leer('src/views/CalendarView.jsx')) && HALLAZGOS_F0.find((h) => h.id === 'tres_interruptores').resuelto === 3,
+  '🔓 tres interruptores: ni uno a mano en Ajustes ni en el Calendario, y ninguno mueve la bola con `left` (MS F3)');
 ok(!/EXPAND_MS|190/.test(leer('src/views/HubView.jsx').replace(/\/\/.*$/gm, '')) && /duracionMs\('fast'/.test(leer('src/views/HubView.jsx')) && /hubCardExpand var\(--motion-dur-fast\)/.test(CSS),
   '🔓 el mismo 190 ms en la vista y en el CSS es ya UN token: `fast`, leído por los dos (MS F1)');
 

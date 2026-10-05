@@ -6,6 +6,7 @@ import {
   BookMarked, Bookmark, Lightbulb, FolderOpen,
   GraduationCap, Code, Briefcase, Heart, Rocket, Dumbbell, Paperclip, Check, Minus, X,
 } from 'lucide-react';
+import { ChevronDespliegue, LatidoAlMarcar } from '../components/motion';
 import { COLORS, TIPOS_ARCHIVO_BIBLIOTECA, PERIODOS_META, PLAZOS_OBJETIVO } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedBibliotecaUrl } from '../lib/supabase';
@@ -1256,14 +1257,16 @@ export function TarjetaGuardado({ guardado, accent, indice = 0, onAbrir, onFavor
         </button>
         <button
           onClick={onFavorito}
-          className="p-1.5 -m-1.5 flex-shrink-0 transition-transform active:scale-90 favorito-guardado"
+          className="p-1.5 -m-1.5 flex-shrink-0 transition-transform active:scale-90"
           aria-label={guardado.favorito ? `Quitar ${nombreDe(guardado)} de favoritos` : `Marcar ${nombreDe(guardado)} como favorito`}
         >
-          <Star
-            size={16}
-            style={{ color: guardado.favorito ? accent : COLORS.textMuted }}
-            fill={guardado.favorito ? accent : 'none'}
-          />
+          <LatidoAlMarcar activo={!!guardado.favorito}>
+            <Star
+              size={16}
+              style={{ color: guardado.favorito ? accent : COLORS.textMuted }}
+              fill={guardado.favorito ? accent : 'none'}
+            />
+          </LatidoAlMarcar>
         </button>
       </div>
     </Card>
@@ -2383,10 +2386,10 @@ export function LecturaDocumento({
               <p className="text-base font-bold flex-1 truncate" style={{ color: COLORS.text }}>{nombreDoc(documento)}</p>
               <button
                 onClick={() => onGuardar(alternarFavoritoDoc(documento))}
-                className="p-1.5 -m-1.5 flex-shrink-0 transition-transform active:scale-90 favorito-guardado"
+                className="p-1.5 -m-1.5 flex-shrink-0 transition-transform active:scale-90"
                 aria-label={documento.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}
               >
-                <Star size={16} style={{ color: documento.favorito ? accent : COLORS.textMuted }} fill={documento.favorito ? accent : 'none'} />
+                <LatidoAlMarcar activo={!!documento.favorito}><Star size={16} style={{ color: documento.favorito ? accent : COLORS.textMuted }} fill={documento.favorito ? accent : 'none'} /></LatidoAlMarcar>
               </button>
             </div>
 
@@ -2570,10 +2573,10 @@ export function PantallaDocumentos({
               <p className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>
                 Archivos subidos{archivos.length ? ` · ${archivos.length}` : ''}
               </p>
-              {verArchivos ? <ChevronUp size={15} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={15} style={{ color: COLORS.textMuted }} />}
+              <ChevronDespliegue abierto={verArchivos} size={15} style={{ color: COLORS.textMuted }} />
             </button>
             {verArchivos && (
-              <div className="mt-2 space-y-2">
+              <div className="despliegue-entra mt-2 space-y-2">
                 <Field label="Qué vas a subir">
                   <Select aria-label="Tipo de archivo" value={tipoArchivo} onChange={(e) => setTipoArchivo(e.target.value)}>
                     <option value="pdf">PDF</option>
@@ -2693,11 +2696,11 @@ export function AnadirAColeccion({ colecciones, tipo, id, accent, onAlternar }) 
         {dentro.length === 0
           ? 'Añadir a colección'
           : `En ${dentro.length === 1 ? dentro[0].nombre : `${dentro.length} colecciones`}`}
-        {abierto ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+        <ChevronDespliegue abierto={abierto} size={12} />
       </button>
 
       {abierto && (
-        <div className="mt-2 space-y-1">
+        <div className="despliegue-entra mt-2 space-y-1">
           {ordenadas.map((c) => {
             const marcada = contieneElemento(c, tipo, id);
             const Icono = iconoDeColeccion(c.icono);

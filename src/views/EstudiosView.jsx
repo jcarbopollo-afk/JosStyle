@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GraduationCap, Clock, Plus, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, HelpCircle, TrendingUp, Loader2, Sparkles, X, Eye, EyeOff, Pencil } from 'lucide-react';
+import { ChevronDespliegue } from '../components/motion';
 import { COLORS } from '../tokens';
 import { uid, formatFecha, todayISO, hexToRgba } from '../lib/helpers';
 import { askAI, AI_SYSTEM } from '../lib/ai';
@@ -203,11 +204,11 @@ function ExamenItem({ examen, onUpdate, onDelete, accent, forzarAbierta, onFocoC
             {examen.notaObtenida && ` · obtenida: ${examen.notaObtenida}`}
           </p>
         </div>
-        {abierto ? <ChevronUp size={16} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={16} style={{ color: COLORS.textMuted }} />}
+        <ChevronDespliegue abierto={abierto} size={16} style={{ color: COLORS.textMuted }} />
       </button>
 
       {abierto && (
-        <>
+        <div className="despliegue-entra">
           {dias < 0 && !examen.notaObtenida && (
             <div className="mt-3">
               <Field label="Nota obtenida (opcional, ya pasó el examen)">
@@ -217,7 +218,7 @@ function ExamenItem({ examen, onUpdate, onDelete, accent, forzarAbierta, onFocoC
           )}
           <PlanRepaso examen={examen} onUpdatePlan={(plan) => onUpdate({ ...examen, planRepaso: plan })} accent={accent} />
           <button onClick={() => onDelete(examen.id)} className="text-xs mt-3" style={{ color: COLORS.negative }}>Borrar examen</button>
-        </>
+        </div>
       )}
     </Card>
   );

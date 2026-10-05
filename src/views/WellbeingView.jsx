@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Smartphone, Plus, Trash2, ChevronDown, ChevronUp, Play, Pause, RotateCcw, Sparkles } from 'lucide-react';
+import { Smartphone, Plus, Trash2, Play, Pause, RotateCcw, Sparkles } from 'lucide-react';
 import { COLORS, CATEGORIAS_TIEMPO_USO, DURACIONES_CONCENTRACION } from '../tokens';
 import { uid, todayISO, addDays, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, ToggleTab, EmptyHint } from '../components/ui';
-import { CambioDeContenido } from '../components/motion';
+import { CambioDeContenido, ChevronDespliegue } from '../components/motion';
 import { transicion } from '../lib/motion';
 
 /* ---------- Resumen: tres índices puramente descriptivos sobre el propio registro ----------
@@ -224,10 +224,10 @@ function ReflexionCard({ reflexion, onDelete }) {
           <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{formatFecha(reflexion.fecha)}</p>
           {!abierta && <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{reflexion.texto.slice(0, 50)}{reflexion.texto.length > 50 ? '…' : ''}</p>}
         </div>
-        {abierta ? <ChevronUp size={16} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={16} style={{ color: COLORS.textMuted }} />}
+        <ChevronDespliegue abierto={abierta} size={16} style={{ color: COLORS.textMuted }} />
       </button>
       {abierta && (
-        <div className="mt-3 pt-3 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+        <div className="despliegue-entra mt-3 pt-3 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: COLORS.text }}>{reflexion.texto}</p>
           <button onClick={() => onDelete(reflexion.id)} className="flex items-center gap-1.5 text-xs font-medium pt-1" style={{ color: COLORS.textMuted }}>
             <Trash2 size={13} /> Eliminar

@@ -12057,10 +12057,15 @@ const elegir_ms1 = (grupo, texto) => page.evaluate(({ g, t }) => {
   b.click();
   return true;
 }, { g: grupo, t: texto });
-const medir_ms1 = async () => {
-  await pulsar('Ver cómo se mueve');
-  await page.waitForTimeout(60);
-  return page.evaluate(() => {
+/* 🐛 MS F3 — se pulsa y se mide EN EL MISMO TURNO. Antes se medía 660 ms después del toque, con la
+   entrada ya terminada, y solo se encontraba porque `hubCardIn` acababa con `both` y se quedaba
+   puesta para siempre —que es justo el fallo que arregló la F3 (`backwards`)—. Es la lección de la
+   F2: lo que provoca un toque se mide en cuanto React lo aplica. */
+const medir_ms1 = async () => page.evaluate(async () => {
+    const boton = [...document.querySelectorAll('button')].find((x) => x.innerText.trim() === 'Ver cómo se mueve');
+    if (!boton) return { primera: null, segunda: null };
+    boton.click();
+    await new Promise((ok) => setTimeout(ok, 0));
     const els = [...document.querySelectorAll('[data-muestra-movimiento] .hub-card')];
     const medir = (el) => {
       const a = el && el.getAnimations()[0];
@@ -12076,7 +12081,6 @@ const medir_ms1 = async () => {
     };
     return { primera: medir(els[0]), segunda: medir(els[1]) };
   });
-};
 const pasos_ms1 = [
   ['Normal', 14, 0.97], ['Premium', 18, 0.965], ['Ultra', 20, 0.961],
 ];
@@ -12310,6 +12314,9 @@ const rapido_ms2 = await page.evaluate(async () => {
     actual: document.querySelector('nav [aria-current="page"]')?.innerText.trim(),
     indicador: document.querySelector('.nav-indicador')?.style.transform,
     animaciones: document.getAnimations().filter((x) => x.playState === 'running' && x.effect?.getComputedTiming().iterations !== Infinity).length,
+    /* Cuál, si queda alguna: un número suelto no se puede diagnosticar (GE F2). */
+    cuales: document.getAnimations().filter((x) => x.playState === 'running' && x.effect?.getComputedTiming().iterations !== Infinity)
+      .map((x) => `${x.animationName || x.transitionProperty || x.id || '?'}@${(x.effect?.target?.className || '').toString().slice(0, 40)}`),
   };
 });
 ok(rapido_ms2.contenedores === 1 && rapido_ms2.actual === 'Gestión' && rapido_ms2.indicador === 'translateX(300%)' && rapido_ms2.animaciones === 0,
@@ -12326,6 +12333,201 @@ await page.waitForTimeout(300);
 ok(await page.evaluate(() => getComputedStyle(document.querySelector('.nav-indicador')).transitionProperty) !== 'opacity', '…y sin él, vuelve a viajar');
 ok(errores.length === erroresAntes_ms2, `MS F2 — …sin un error en la consola${errores.length > erroresAntes_ms2 ? `: ${errores.slice(erroresAntes_ms2).join(' | ').slice(0, 200)}` : ''}`);
 almacen.ajustes = ajustesDeAntes_ms2;
+await page.emulateMedia({ reducedMotion: null });
+await page.setViewportSize({ width: 1280, height: 900 });
+
+/* ── MS F3 · Microinteracciones: pulsar y soltar, el interruptor, el chevron, el favorito y el foco ──
+   Lo que se mide aquí solo existe en un navegador: `:active` (se mantiene el botón pulsado con el
+   ratón y se suelta FUERA, para que no haga clic), la animación que gana o no a una regla, el foco
+   de teclado. Y cada medida se hace en la pantalla de verdad, nunca en una copia del componente. */
+console.log('\n── MS F3 · Microinteracciones y feedback ──');
+const ajustesDeAntes_ms3 = almacen.ajustes;
+const bibliotecaDeAntes_ms3 = almacen.biblioteca;
+almacen.ajustes = { ...(almacen.ajustes || {}), apariencia: { ...((almacen.ajustes || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal', altoContraste: false } };
+almacen.biblioteca = { apuntes: [], libros: [], ideas: [], colecciones: [], enlaces: [{ id: 'g_ms3', url: 'https://ejemplo.es/ms3', tipo: 'link', favorito: false, fecha: '2026-10-01' }] };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+const erroresAntes_ms3 = errores.length;
+/* Mantiene pulsado `selector` (el primero visible), mide, lo suelta FUERA y vuelve a medir. */
+const pulsarYSoltar_ms3 = async (selector, medir) => {
+  const caja = await page.evaluate((sel) => {
+    const el = [...document.querySelectorAll(sel)].find((x) => { const r = x.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+    if (!el) return null;
+    el.scrollIntoView({ block: 'center' });
+    el.setAttribute('data-ms3', 'si');
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }, selector);
+  if (!caja) return null;
+  await page.mouse.move(caja.x, caja.y);
+  await page.mouse.down();
+  await page.waitForTimeout(260);
+  const pulsado = await page.evaluate(medir);
+  await page.mouse.move(2, 2);
+  await page.mouse.up();
+  await page.waitForTimeout(20);
+  const soltando = await page.evaluate(medir);
+  await page.waitForTimeout(450);
+  const suelto = await page.evaluate(medir);
+  await page.evaluate(() => document.querySelector('[data-ms3]')?.removeAttribute('data-ms3'));
+  return { pulsado, soltando, suelto };
+};
+const medirPulsado_ms3 = () => {
+  const el = document.querySelector('[data-ms3]');
+  const cs = getComputedStyle(el);
+  const m = new DOMMatrix(cs.transform === 'none' ? undefined : cs.transform);
+  return { escala: Math.round(m.a * 1000) / 1000, opacidad: Number(cs.opacity), dura: cs.transitionDuration, curva: cs.transitionTimingFunction, prop: cs.transitionProperty };
+};
+
+/* 1 · La escalera de pulsar: las pestañas de Fitness encogían SIN transición —la suya era solo de
+   color (`transition-colors`), así que la escala saltaba—, como los 57 que no tenían ninguna. */
+const PESTANA_FIT_MS3 = 'button[class*="transition-colors"][class*="active:scale"]';
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && /Tu Plan/.test(await esperarTexto(/Tu Plan/)), 'MS F3 — Bienestar → Fitness');
+const p1_ms3 = await pulsarYSoltar_ms3(PESTANA_FIT_MS3, medirPulsado_ms3);
+ok(p1_ms3 && p1_ms3.pulsado.escala === 0.98 && p1_ms3.pulsado.dura === '0.12s' && /transform/.test(p1_ms3.pulsado.prop),
+  `🐛 MS F3 — una pestaña de Fitness, que solo animaba el color, encoge CON transición, en 120 ms (${JSON.stringify(p1_ms3?.pulsado)})`);
+ok(p1_ms3 && p1_ms3.soltando.dura === '0.22s' && p1_ms3.soltando.curva === 'cubic-bezier(0.16, 1, 0.3, 1)',
+  `🚨 MS F3 — …y al soltarlo vuelve más despacio, con la curva que se posa sin rebotar (${JSON.stringify(p1_ms3?.soltando)}; apartado 5)`);
+ok(p1_ms3 && p1_ms3.suelto.escala === 1, '…y acaba en su tamaño');
+
+/* 2 · Las tarjetas que entran en cascada ya encogen al pulsarlas (antes la entrada ganaba). */
+ok(await pulsar('Bienestar'), 'MS F3 — se abre la portada de Bienestar');
+await page.waitForTimeout(1200);
+const p2_ms3 = await pulsarYSoltar_ms3('.pantalla-segura .hub-card', medirPulsado_ms3);
+ok(p2_ms3 && p2_ms3.pulsado.escala < 0.99 && p2_ms3.suelto.escala === 1,
+  `🐛 MS F3 — una tarjeta de la portada ENCOGE al pulsarla: la entrada con \`both\` ganaba a \`:active\` desde la Fase N3 (${p2_ms3?.pulsado.escala} → ${p2_ms3?.suelto.escala})`);
+const receden_ms3 = await page.evaluate(async () => {
+  const tarjetas = [...document.querySelectorAll('.pantalla-segura .hub-card')].filter((x) => x.getBoundingClientRect().height > 0);
+  if (tarjetas.length < 2) return null;
+  tarjetas[0].click();
+  await new Promise((r) => setTimeout(r, 90));
+  const otra = tarjetas[1];
+  return { clase: otra.className.includes('hub-card-receding'), opacidad: Number(getComputedStyle(otra).opacity) };
+});
+ok(receden_ms3 && receden_ms3.clase && receden_ms3.opacidad < 0.95,
+  `🐛 MS F3 — …y al tocar una, las demás retroceden de verdad, como escribió la Fase N3 y no se veía (${JSON.stringify(receden_ms3)})`);
+await page.waitForTimeout(700);
+/* …y una tarjeta-CONTENEDOR (las secciones de Salud física son `div.hub-card`) no encoge entera al
+   tocar algo de dentro: `:active` sube por los antepasados, y con la entrada arreglada se habría visto. */
+const contenedor_ms3 = await pulsarYSoltar_ms3('div.hub-card > button[aria-expanded]', () => {
+  const c = document.querySelector('[data-ms3]')?.closest('.hub-card');
+  const m = new DOMMatrix(getComputedStyle(c).transform === 'none' ? undefined : getComputedStyle(c).transform);
+  return { escala: Math.round(m.a * 1000) / 1000, sombra: getComputedStyle(c).boxShadow };
+});
+ok(contenedor_ms3 && contenedor_ms3.pulsado.escala === 1 && !/26px/.test(contenedor_ms3.pulsado.sombra),
+  `🐛 MS F3 — en Salud física, tocar la cabecera de una sección NO encoge la tarjeta entera (${JSON.stringify(contenedor_ms3?.pulsado)})`);
+
+/* 3 · En Reducido, pulsar no encoge: baja la opacidad (C-52). */
+await page.emulateMedia({ reducedMotion: 'reduce' });
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && /Tu Plan/.test(await esperarTexto(/Tu Plan/)), 'MS F3 — con «Reducir movimiento», otra vez Fitness');
+const p3_ms3 = await pulsarYSoltar_ms3(PESTANA_FIT_MS3, medirPulsado_ms3);
+ok(p3_ms3 && p3_ms3.pulsado.escala === 1 && p3_ms3.pulsado.opacidad < 0.8,
+  `🚨 MS F3 — con «Reducir movimiento», pulsar no encoge: baja la opacidad (${JSON.stringify(p3_ms3?.pulsado)})`);
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+/* 4 · El interruptor: la bola viaja con transform, se estira al pulsar y en Reducido salta. */
+ok(await pulsar('Inicio') && await pulsar('Ajustes') && await pulsar('Apariencia') && await pulsar('Texto y movimiento'), 'MS F3 — Ajustes → Apariencia → Texto y movimiento');
+await page.waitForTimeout(400);
+const bola_ms3 = () => {
+  const s = document.querySelector('button[role="switch"][aria-label="Alto contraste"]');
+  const b = s && s.querySelector('.interruptor-bola');
+  if (!b) return null;
+  const cs = getComputedStyle(b);
+  const m = new DOMMatrix(cs.transform === 'none' ? undefined : cs.transform);
+  return { x: Math.round(m.m41), estira: Math.round(m.a * 100) / 100, prop: cs.transitionProperty, dura: cs.transitionDuration, curva: cs.transitionTimingFunction, left: cs.left, encendido: s.dataset.encendido, checked: s.getAttribute('aria-checked') };
+};
+const i0_ms3 = await page.evaluate(bola_ms3);
+ok(i0_ms3 && i0_ms3.x === 0 && i0_ms3.encendido === 'false' && i0_ms3.checked === 'false' && /transform/.test(i0_ms3.prop) && !/\bleft\b/.test(i0_ms3.prop),
+  `🚨 MS F3 — el interruptor mueve la bola con \`transform\`, no con \`left\` (${JSON.stringify(i0_ms3)}; apartado 38)`);
+const i1_ms3 = await pulsarYSoltar_ms3('button[role="switch"][aria-label="Alto contraste"]', bola_ms3);
+ok(i1_ms3 && i1_ms3.pulsado.estira > 1 && i1_ms3.suelto.estira === 1 && i1_ms3.suelto.x === 0,
+  `MS F3 — al pulsarlo, la bola se estira hacia donde va (y soltarlo fuera no lo enciende) (${i1_ms3?.pulsado.estira})`);
+await page.evaluate(() => document.querySelector('button[role="switch"][aria-label="Alto contraste"]').click());
+await page.waitForTimeout(400);
+const i2_ms3 = await page.evaluate(bola_ms3);
+ok(i2_ms3 && i2_ms3.x === 19 && i2_ms3.encendido === 'true' && i2_ms3.checked === 'true' && i2_ms3.curva.startsWith('cubic-bezier(0.16, 1, 0.3, 1)'),
+  `🚨 MS F3 — encendido: la bola viaja 19 px con la curva que se posa, y \`aria-checked\` lo dice (${JSON.stringify(i2_ms3)})`);
+await page.evaluate(() => document.querySelector('button[role="switch"][aria-label="Alto contraste"]').click());
+await page.waitForTimeout(400);
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.waitForTimeout(100);
+const i3_ms3 = await page.evaluate(bola_ms3);
+ok(i3_ms3 && i3_ms3.prop === 'background-color' && i3_ms3.x === 0,
+  `MS F3 — en Reducido la bola salta a su sitio y solo se funde el color (${i3_ms3?.prop})`);
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+/* 5 · Un desplegable: el chevron gira (no se cambia por otro) y el contenido aparece. */
+ok(await pulsar('Apariencia'), 'MS F3 — se vuelve a Apariencia');
+await page.waitForTimeout(500);
+const d0_ms3 = await page.evaluate(async () => {
+  const b = [...document.querySelectorAll('button[aria-expanded]')].find((x) => /^Colores/.test((x.innerText || '').trim()));
+  if (!b) return null;
+  const chev = () => b.querySelector('.chevron-gira');
+  const antes = { giro: chev()?.style.getPropertyValue('--giro'), iconos: b.querySelectorAll('svg').length };
+  b.click();
+  await new Promise((r) => setTimeout(r, 0));
+  await new Promise((r) => requestAnimationFrame(() => r()));
+  const c = chev();
+  const desp = b.parentElement.querySelector('.despliegue-entra');
+  const a = desp ? desp.getAnimations().find((x) => x.animationName === 'despliegueEntra') : null;
+  return { antes, despues: c?.style.getPropertyValue('--giro'), mismoIcono: c === chev(), dura: getComputedStyle(c).transitionDuration, contenido: !!desp, animaContenido: !!a, duraContenido: a ? Math.round(a.effect.getComputedTiming().duration) : null };
+});
+ok(d0_ms3 && d0_ms3.antes.giro === '-90deg' && d0_ms3.despues === '-180deg' && d0_ms3.dura === '0.22s',
+  `🚨 MS F3 — el chevron de «Colores» GIRA de la derecha hacia arriba, por el camino corto, en 220 ms (${JSON.stringify(d0_ms3)}; apartado 14)`);
+ok(d0_ms3 && d0_ms3.contenido && d0_ms3.animaContenido && d0_ms3.duraContenido === 160,
+  `MS F3 — …y lo de dentro aparece con un fundido de 160 ms, no plantado (${d0_ms3?.duraContenido} ms)`);
+
+/* 6 · El foco de teclado se ve, con el acento, en cualquier pantalla. */
+await page.keyboard.press('Tab');
+await page.keyboard.press('Tab');
+const f0_ms3 = await page.evaluate(() => {
+  const a = document.activeElement;
+  if (!a || a === document.body) return null;
+  const cs = getComputedStyle(a);
+  /* El acento vive en `--accent` del contenedor de la aplicación (`App.jsx`), no en <html>: se
+     resuelve con un elemento de prueba dentro de él para compararlo con el color del anillo. */
+  const raiz = document.querySelector('.alto-visible');
+  const prueba = document.createElement('span');
+  prueba.style.color = 'var(--accent)';
+  raiz.appendChild(prueba);
+  const acento = getComputedStyle(prueba).color;
+  prueba.remove();
+  return { etiqueta: a.tagName, estilo: cs.outlineStyle, ancho: cs.outlineWidth, color: cs.outlineColor, acento };
+});
+ok(f0_ms3 && f0_ms3.estilo === 'solid' && f0_ms3.ancho === '2px' && f0_ms3.color === f0_ms3.acento,
+  `🚨 MS F3 — con el teclado, el foco se ve: un anillo de 2 px con el acento, fuera de Fitness también (${JSON.stringify(f0_ms3)}; apartado 7)`);
+
+/* 7 · Un favorito late al marcarlo; nunca al quitarlo ni al abrir la pantalla. */
+ok(await pulsar('Vida') && await pulsar('Biblioteca') && await pulsar('Guardados'), 'MS F3 — Vida → Biblioteca → Guardados');
+await esperarTexto(/ejemplo\.es/);
+const latido_ms3 = () => {
+  const b = document.querySelector('button[aria-label$="ejemplo.es como favorito"], button[aria-label^="Quitar ejemplo.es"]');
+  const s = b && b.querySelector('[data-latido]');
+  const a = s ? s.getAnimations().find((x) => x.animationName === 'favoritoPulso') : null;
+  return s ? { late: s.classList.contains('favorito-guardado'), anima: !!a, dura: a ? Math.round(a.effect.getComputedTiming().duration) : null, etiqueta: b.getAttribute('aria-label') } : null;
+};
+const l0_ms3 = await page.evaluate(latido_ms3);
+ok(l0_ms3 && !l0_ms3.late && !l0_ms3.anima, `MS F3 — al abrir la pantalla, la estrella no late (${JSON.stringify(l0_ms3)})`);
+/* Se pulsa y se mide en el mismo turno: el latido dura 220 ms, y `pulsar()` espera más que eso. */
+const tocarYMedir_ms3 = (etiqueta) => page.evaluate(async ({ etiqueta: e, f }) => {
+  const b = document.querySelector(`button[aria-label="${e}"]`);
+  if (!b) return null;
+  b.click();
+  await new Promise((r) => setTimeout(r, 0));
+  return (new Function(`return (${f})()`))();
+}, { etiqueta, f: latido_ms3.toString() });
+const l1_ms3 = await tocarYMedir_ms3('Marcar ejemplo.es como favorito');
+ok(l1_ms3 && l1_ms3.late && l1_ms3.anima && l1_ms3.dura === 220,
+  `🚨 MS F3 — …y la estrella LATE una vez al marcarla, 220 ms (${JSON.stringify(l1_ms3)}; apartado 29)`);
+await page.waitForTimeout(500);
+const l2_ms3 = await tocarYMedir_ms3('Quitar ejemplo.es de favoritos');
+ok(l2_ms3 && !l2_ms3.late && !l2_ms3.anima, `MS F3 — …y al quitarlo NO late: el color ya lo dice (${JSON.stringify(l2_ms3)})`);
+
+ok(errores.length === erroresAntes_ms3, `MS F3 — …sin un error en la consola${errores.length > erroresAntes_ms3 ? `: ${errores.slice(erroresAntes_ms3).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms3;
+almacen.biblioteca = bibliotecaDeAntes_ms3;
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

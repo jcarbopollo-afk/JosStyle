@@ -35,6 +35,7 @@ import {
   Calendar, Plus, ChevronLeft, ChevronRight, ArrowLeft, Trash2, Copy,
   Pencil, Eye, EyeOff, AlertTriangle, Check, MoveRight, X, GripVertical, Star,
 } from 'lucide-react';
+import { LatidoAlMarcar } from '../components/motion';
 import { COLORS } from '../tokens';
 import { hexToRgba, todayISO, addDays } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, GhostBtn, ListRow } from '../components/ui';
@@ -1421,7 +1422,7 @@ export function FichaActividad({ ficha, accent, onEditar, onFavorita, onArchivar
         </div>
         <div className="flex items-center gap-1">
           <button onClick={onFavorita} className="p-1" aria-label={ficha.favorita ? 'Quitar de favoritas' : 'Marcar como favorita'}>
-            <Star size={14} style={{ color: ficha.favorita ? accent : COLORS.textMuted }} fill={ficha.favorita ? accent : 'none'} />
+            <LatidoAlMarcar activo={!!ficha.favorita}><Star size={14} style={{ color: ficha.favorita ? accent : COLORS.textMuted }} fill={ficha.favorita ? accent : 'none'} /></LatidoAlMarcar>
           </button>
           <button onClick={onCerrar} className="p-1" aria-label="Cerrar"><X size={14} style={{ color: COLORS.textMuted }} /></button>
         </div>

@@ -5,6 +5,7 @@ import {
   ChevronDown, ChevronUp, ArrowLeft, Timer, Compass, Repeat, Pencil, ArrowUpRight,
   Droplet, BookOpen, Dumbbell, Moon, Apple, Brain, Heart, Archive,
 } from 'lucide-react';
+import { ChevronDespliegue } from '../components/motion';
 import { COLORS, PERIODOS_META } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { resumenHabito, alternarHabito } from '../lib/rachas';
@@ -1591,9 +1592,7 @@ function SeccionTareas({ seccion, tareas, hoy, accent, abierta, onAlternar, ...r
         <span className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>
           {seccion.nombre} · {tareas.length}
         </span>
-        {abierta
-          ? <ChevronUp size={14} style={{ color: COLORS.textMuted }} />
-          : <ChevronDown size={14} style={{ color: COLORS.textMuted }} />}
+        <ChevronDespliegue abierto={abierta} size={14} style={{ color: COLORS.textMuted }} />
       </button>
       {abierta && tareas.map((t) => (
         <TarjetaTarea key={t.id} tarea={t} hoy={hoy} accent={accent} {...resto} />

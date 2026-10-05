@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { BookOpen, Trash2 } from 'lucide-react';
+import { ChevronDespliegue } from '../components/motion';
 import { COLORS, ESTADOS_ANIMO } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, Textarea, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
@@ -38,10 +39,10 @@ function EntradaCard({ entrada, accent, onDelete }) {
             <p className="text-xs" style={{ color: COLORS.textMuted }}>{entrada.comoMeSiento ? entrada.comoMeSiento.slice(0, 40) + (entrada.comoMeSiento.length > 40 ? '…' : '') : estado.label}</p>
           </div>
         </div>
-        {abierta ? <ChevronUp size={16} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={16} style={{ color: COLORS.textMuted }} />}
+        <ChevronDespliegue abierto={abierta} size={16} style={{ color: COLORS.textMuted }} />
       </button>
       {abierta && (
-        <div className="mt-3 pt-3 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+        <div className="despliegue-entra mt-3 pt-3 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           {entrada.comoMeSiento && (
             <div>
               <p className="text-[11px] font-semibold mb-0.5" style={{ color: COLORS.textMuted }}>CÓMO ME HE SENTIDO</p>

@@ -2,8 +2,9 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   User, Download, Upload, RotateCcw, Undo2, Lock, LogOut, ArrowLeft, Search, ChevronRight,
   Palette, LayoutGrid, SlidersHorizontal, Bell, ShieldCheck,
-  Database, RefreshCw, Puzzle, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star, ChevronUp, Type, Volume2, Camera, Play,
+  Database, RefreshCw, Puzzle, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star, Type, Volume2, Camera, Play,
 } from 'lucide-react';
+import { ChevronDespliegue, LatidoAlMarcar } from '../components/motion';
 import pkg from '../../package.json';
 import {
   COLORS, ACCENTS, ACTIVIDAD_FACTORES, DEFAULT_PERFIL,
@@ -26,7 +27,7 @@ import { CAPACIDADES } from '../lib/avisosPlanificacion';
    archivo `.ics`, que es lo que el apartado 4 pide para Apple. */
 import { PROVEEDORES, LO_QUE_NECESITA_JOSUE, leerICS, planDeImportacion } from '../lib/calendariosExternos';
 import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
-import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton, BotonBorrar, Switch } from '../components/ui';
+import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton, BotonBorrar, Switch, PistaInterruptor } from '../components/ui';
 /* SO Fase 5 — la pantalla de «Sonido y respuesta». Los interruptores son los de
    `audio.js` (SO F1): aquí no se inventa ninguna preferencia nueva. */
 import { CONTROLES, MARCAS_VOLUMEN, ejemploDe, normalizarAudio } from '../lib/sonidoProduccion';
@@ -1029,7 +1030,7 @@ export function BloquePresets({ presets, apariencia, accent, temaPersonalizado, 
                       Actualizar
                     </button>
                     <button onClick={() => sustituir(p.id, alternarFavorito(p))} className="p-1.5 rounded-lg" aria-pressed={!!p.favorito} aria-label={p.favorito ? 'Quitar de favoritas' : 'Marcar favorita'}>
-                      <Star size={13} style={p.favorito ? { color: accent, fill: accent } : { color: COLORS.textMuted }} />
+                      <LatidoAlMarcar activo={!!p.favorito}><Star size={13} style={p.favorito ? { color: accent, fill: accent } : { color: COLORS.textMuted }} /></LatidoAlMarcar>
                     </button>
                     <div className="ml-auto">
                       {/* FO Fase 12 — va por la papelera, así que se puede recuperar
@@ -1149,11 +1150,15 @@ export function BloqueLegibilidadAuto({ colors, fondo, analisis, tema, accent, a
       )}
 
       {/* Apartado 8 — el modo automático, opcional y apagado de fábrica. */}
+      {/* MS F3 — una fila que se toca entera es un interruptor (`role="switch"`), y su pista
+          es la de todos (`PistaInterruptor`): antes esta bola saltaba de lado sin transición. */}
       <button
+        type="button"
         onClick={() => onSetAuto(!auto)}
         className="w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2"
         style={{ background: COLORS.surface2, border: `1px solid ${auto ? accent : COLORS.border}` }}
-        aria-pressed={auto}
+        role="switch"
+        aria-checked={!!auto}
       >
         <span className="text-xs font-semibold text-left" style={{ color: COLORS.text }}>
           Arreglar la legibilidad sola
@@ -1161,12 +1166,7 @@ export function BloqueLegibilidadAuto({ colors, fondo, analisis, tema, accent, a
             {auto ? 'Activado: se corrige sin preguntar.' : 'Desactivado: solo te aviso, decides tú.'}
           </span>
         </span>
-        <span
-          className="rounded-full flex-shrink-0"
-          style={{ width: 34, height: 20, background: auto ? accent : COLORS.border, position: 'relative' }}
-        >
-          <span className="rounded-full absolute" style={{ width: 16, height: 16, top: 2, left: auto ? 16 : 2, background: COLORS.surface }} />
-        </span>
+        <PistaInterruptor encendido={auto} accent={accent} />
       </button>
     </Card>
   );
@@ -1443,11 +1443,9 @@ function Seccion({ titulo, sub, icono: Icono, accent, defecto = false, children 
             {sub && <span className="text-[11px] block truncate" style={{ color: COLORS.textMuted }}>{sub}</span>}
           </span>
         </span>
-        {abierta
-          ? <ChevronUp size={15} style={{ color: COLORS.textMuted }} className="flex-shrink-0" />
-          : <ChevronRight size={15} style={{ color: COLORS.textMuted }} className="flex-shrink-0" />}
+        <ChevronDespliegue abierto={abierta} cerrado="derecha" alAbrir="arriba" size={15} style={{ color: COLORS.textMuted }} />
       </button>
-      {abierta && <div className="mt-3 space-y-4">{children}</div>}
+      {abierta && <div className="despliegue-entra mt-3 space-y-4">{children}</div>}
     </Card>
   );
 }
@@ -2767,16 +2765,18 @@ export default function SettingsView({
                         <span className="text-sm flex items-center gap-2" style={{ color: COLORS.text }}>
                           {Icono && <Icono size={14} style={{ color: COLORS.textMuted }} />} {a.label}
                         </span>
-                        <button
-                          onClick={() => (esRelacion ? null : onToggleAreaProtegida(a.id))}
+                        {/* MS F3 — el interruptor de siempre (`Switch`). Antes era uno
+                            dibujado a mano, sin `role="switch"` ni `aria-checked`:
+                            VoiceOver leía «Proteger Salud con PIN» sin decir si ya
+                            lo estaba. El estado lo dice ahora el propio control. */}
+                        <Switch
+                          checked={activo}
+                          onChange={() => (esRelacion ? null : onToggleAreaProtegida(a.id))}
                           disabled={esRelacion}
-                          aria-label={activo ? `Quitar protección de ${a.label}` : `Proteger ${a.label} con PIN`}
+                          accent={accent}
+                          label={`Proteger ${a.label} con PIN`}
                           title={esRelacion ? 'Relación siempre está protegida' : undefined}
-                          className="w-11 h-6 rounded-full relative flex-shrink-0 disabled:opacity-60"
-                          style={{ background: activo ? accent : COLORS.surface2, border: `1px solid ${COLORS.border}` }}
-                        >
-                          <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all" style={{ background: '#fff', left: activo ? 22 : 2 }} />
-                        </button>
+                        />
                       </div>
                     );
                   })}
@@ -2802,14 +2802,12 @@ export default function SettingsView({
                     return (
                       <div key={a.id} className="flex items-center justify-between py-2" style={{ borderBottom: `1px solid ${COLORS.border}` }}>
                         <span className="text-sm" style={{ color: COLORS.text }}>{a.label}</span>
-                        <button
-                          onClick={() => onToggleAccionProtegida(a.id)}
-                          aria-label={activo ? `Quitar protección de ${a.label}` : `Proteger ${a.label} con PIN`}
-                          className="w-11 h-6 rounded-full relative flex-shrink-0"
-                          style={{ background: activo ? accent : COLORS.surface2, border: `1px solid ${COLORS.border}` }}
-                        >
-                          <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all" style={{ background: '#fff', left: activo ? 22 : 2 }} />
-                        </button>
+                        <Switch
+                          checked={activo}
+                          onChange={() => onToggleAccionProtegida(a.id)}
+                          accent={accent}
+                          label={`Proteger ${a.label} con PIN`}
+                        />
                       </div>
                     );
                   })}
@@ -3032,14 +3030,12 @@ export default function SettingsView({
                   <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Activación global</p>
                   <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>Apaga esto y no se envía ninguna notificación, sin tocar las categorías de abajo.</p>
                 </div>
-                <button
-                  onClick={() => onUpdateNotificaciones({ ...notificaciones, activadas: !notificaciones.activadas })}
-                  aria-label="Activación global de notificaciones"
-                  className="w-11 h-6 rounded-full relative flex-shrink-0"
-                  style={{ background: notificaciones.activadas ? accent : COLORS.surface2, border: `1px solid ${COLORS.border}` }}
-                >
-                  <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all" style={{ background: '#fff', left: notificaciones.activadas ? 22 : 2 }} />
-                </button>
+                <Switch
+                  checked={!!notificaciones.activadas}
+                  onChange={() => onUpdateNotificaciones({ ...notificaciones, activadas: !notificaciones.activadas })}
+                  accent={accent}
+                  label="Activación global de notificaciones"
+                />
               </div>
             </Card>
 
@@ -3049,14 +3045,12 @@ export default function SettingsView({
                 {CATEGORIAS_NOTIFICACION.map((c) => (
                   <div key={c.value} className="flex items-center justify-between">
                     <p className="text-sm" style={{ color: COLORS.text }}>{c.label}</p>
-                    <button
-                      onClick={() => onUpdateNotificaciones({ ...notificaciones, categorias: { ...notificaciones.categorias, [c.value]: !notificaciones.categorias[c.value] } })}
-                      aria-label={`Notificaciones de ${c.label}`}
-                      className="w-11 h-6 rounded-full relative flex-shrink-0"
-                      style={{ background: notificaciones.categorias[c.value] ? accent : COLORS.surface2, border: `1px solid ${COLORS.border}` }}
-                    >
-                      <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all" style={{ background: '#fff', left: notificaciones.categorias[c.value] ? 22 : 2 }} />
-                    </button>
+                    <Switch
+                      checked={!!notificaciones.categorias[c.value]}
+                      onChange={() => onUpdateNotificaciones({ ...notificaciones, categorias: { ...notificaciones.categorias, [c.value]: !notificaciones.categorias[c.value] } })}
+                      accent={accent}
+                      label={`Notificaciones de ${c.label}`}
+                    />
                   </div>
                 ))}
               </div>
@@ -3065,14 +3059,12 @@ export default function SettingsView({
             <Card>
               <div className="flex items-center justify-between gap-3 mb-1">
                 <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Horario de descanso</p>
-                <button
-                  onClick={() => onUpdateNotificaciones({ ...notificaciones, horarioDescansoActivo: !notificaciones.horarioDescansoActivo })}
-                  aria-label="Horario de descanso"
-                  className="w-11 h-6 rounded-full relative flex-shrink-0"
-                  style={{ background: notificaciones.horarioDescansoActivo ? accent : COLORS.surface2, border: `1px solid ${COLORS.border}` }}
-                >
-                  <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all" style={{ background: '#fff', left: notificaciones.horarioDescansoActivo ? 22 : 2 }} />
-                </button>
+                <Switch
+                  checked={!!notificaciones.horarioDescansoActivo}
+                  onChange={() => onUpdateNotificaciones({ ...notificaciones, horarioDescansoActivo: !notificaciones.horarioDescansoActivo })}
+                  accent={accent}
+                  label="Horario de descanso"
+                />
               </div>
               <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Fuera de este horario no se envía ninguna notificación de esta app.</p>
               {notificaciones.horarioDescansoActivo && (

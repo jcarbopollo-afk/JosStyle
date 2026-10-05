@@ -17,6 +17,7 @@ import React, { useState } from 'react';
 import {
   SlidersHorizontal, X, Check, Heart, Plus, ChevronRight, ArrowDown, Dumbbell, Target,
 } from 'lucide-react';
+import { LatidoAlMarcar } from './motion';
 import { COLORS } from '../tokens';
 import { PastillaFiltro } from './piezasFitness';
 import { acentoLegible } from '../lib/acabadoFitness';
@@ -637,7 +638,7 @@ export function ExerciseFavoriteButton({ favorito = false, accent, onAlternar })
         border: `1px solid ${favorito ? accent : COLORS.border}`,
       }}
     >
-      <Heart size={15} fill={favorito ? acentoLegible(accent) : 'none'} aria-hidden="true" />
+      <LatidoAlMarcar activo={!!favorito}><Heart size={15} fill={favorito ? acentoLegible(accent) : 'none'} aria-hidden="true" /></LatidoAlMarcar>
       {favorito ? 'En favoritos' : 'Añadir a favoritos'}
     </button>
   );

@@ -1085,6 +1085,33 @@ transición) se resolvió con un límite de error por pantalla**. Hasta la F2 so
 (`AreaSegura`, FIT F36); un fallo al pintar cualquier otra pantalla dejaba la aplicación **en blanco**.
 Ahora todas van dentro del mismo, con su aviso, «Reintentar» y la barra de abajo funcionando para salir.
 
+### C-54 — ✅ RESUELTA AL CONSTRUIR (Motion System F3, v3.133.0) · «Reducir» contra la escala de Tailwind, el hover de escritorio en una aplicación de iPhone, y cuatro apartados de la F3 que son de otras fases
+
+La F3 (*"Microinteracciones, componentes y feedback"*) pide que cada interacción tenga *"exactamente el
+movimiento que necesita"*. Tres choques, y la lectura de cada uno:
+
+1. **La escalera de pulsar (EH F50) es de Tailwind, no del motor**: `active:scale-95` escribe 0,95 a
+   pelo, así que **el modo Reducido no la apagaba** —y la C-52 dice *"Reducido: sin desplazamientos ni
+   escalas"*—. No se reescriben las 138 clases (la escalera sigue siendo `ESCALAS_AL_TOCAR`, y cuánto
+   encoge cada cosa lo decidió su fase): una regla de `index.css` deja la escala en 1 en Reducido y
+   **baja la opacidad**, que es lo que ya hacía lo destructivo de Fitness (FIT F37). Pulsar sigue teniendo
+   respuesta, sin moverse.
+2. **El hover de escritorio** (apartados 6 y 13: *"la card puede elevarse ligeramente"*). JosStyle se usa
+   en un iPhone; Tailwind ya solo genera un `hover:` con puntero de verdad (F2), y una tarjeta que se
+   eleva al pasar el ratón es, en el único sitio donde habría ratón, una cosa más que se mueve sin decir
+   nada (apartado 35). **No se añade**, y el foco de teclado —que sí sirve en un escritorio— se ve ahora
+   en toda la aplicación.
+3. **Cuatro apartados son, palabra por palabra, el tema de otra fase**: el botón que pasa a «cargando» y
+   a «Guardado» (8-10) son **estados**, y `SOLAPES_ROADMAP` los da a la **F9**; añadir, quitar y deshacer
+   en una lista sin que salte (17-19), y cerrar un desplegable recolocando el resto (15), son la **F10**
+   (el diseño que cambia); arrastrar y reordenar (30-31) son la **F5** y la **F8**, y hoy no hay nada
+   arrastrable. Están en `NO_EN_F3` con la fase de cada uno.
+
+Y un error de esta fase que se deja escrito: **la librería se estrenó como `microinteracciones.js`, que ya
+era de la EH F50**, y la pisó. Lo cantaron seis suites al no encontrar sus exportaciones; se recuperó de
+git y la de la F3 es `microinteraccionesMotion.js`. Es la E3 F9 (`accionesRapidas.js`) otra vez: **antes
+de crear un archivo, mirar si ese nombre ya es de alguien.**
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Heart, Trash2, CalendarHeart, Repeat, Pencil, X, ImagePlus, Loader2 } from 'lucide-react';
 import { COLORS, TIPOS_FECHA_RELACION } from '../tokens';
 import { uid, formatFecha, diasHasta } from '../lib/helpers';
-import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, ToggleTab, EmptyHint, BotonBorrarDefinitivo } from '../components/ui';
+import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, ToggleTab, EmptyHint, BotonBorrarDefinitivo, PistaInterruptor } from '../components/ui';
 import { CambioDeContenido } from '../components/motion';
 import { fotosDelAlbum, validarFotoAlbum, TIPOS_FOTO_ALBUM, MAX_NOTA_ALBUM, BORRADO_ALBUM } from '../lib/albumRelacion';
-import { transicion } from '../lib/motion';
 
 // Fase 13 — solo la lista de nombres del Prompt Maestro. Tocar uno abre el formulario de fecha
 // para que Josué la escriba él mismo.
@@ -42,20 +41,16 @@ function diasLabel(dias) {
 function RepeticionToggle({ valor, onChange, accent }) {
   return (
     <button
+      type="button"
       onClick={() => onChange(!valor)}
       className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 mb-3 text-sm"
       style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
+      role="switch"
+      aria-checked={!!valor}
     >
       <span className="flex items-center gap-1.5"><Repeat size={13} /> Repetir cada año</span>
-      <span
-        className="rounded-full flex-shrink-0"
-        style={{ width: 36, height: 20, background: valor ? accent : COLORS.border, position: 'relative', transition: transicion('background', 'fast') }}
-      >
-        <span
-          className="rounded-full absolute"
-          style={{ width: 16, height: 16, top: 2, left: valor ? 18 : 2, background: COLORS.textOnAccent, transition: transicion('left', 'fast') }}
-        />
-      </span>
+      {/* MS F3 — la pista de toda la aplicación, la misma que en el Calendario. */}
+      <PistaInterruptor encendido={!!valor} accent={accent} />
     </button>
   );
 }

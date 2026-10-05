@@ -5,7 +5,7 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**64 elementos**: ✅ Existe 48 · ⚠️ Inconsistente 6 · ⬜ Sin movimiento 9 · 🚨 Fuera de control 1.
+**67 elementos**: ✅ Existe 53 · ⚠️ Inconsistente 4 · ⬜ Sin movimiento 9 · 🚨 Fuera de control 1.
 
 ## Resumen
 
@@ -26,7 +26,10 @@
 | Una pantalla de Fitness aparece | B | 2 · Suave | 220 ms | ✅ Existe | F2 |
 | Acordeones de Inicio (situación actual y puntuación) | C | 2 · Suave | 280 ms | ✅ Existe | F9 |
 | Chevron que gira al desplegar | C | 1 · Micro | 220 ms | ✅ Existe | F3 |
-| Pulsar una tarjeta o un botón (la escalera de escalas) | D | 1 · Micro | 160 ms | ✅ Existe | F3 |
+| Lo que aparece al abrir un desplegable o un menú | C | 1 · Micro | 160 ms | ✅ Existe | F3 |
+| El color de una pestaña al elegirla | C | 1 · Micro | 160 ms | ✅ Existe | F3 |
+| Pulsar una tarjeta o un botón (la escalera de escalas) | D | 1 · Micro | 220 ms | ✅ Existe | F3 |
+| Pulsar una papelera | E | 1 · Micro | 160 ms | ✅ Existe | F3 |
 | Pulsar una tarjeta de Fitness | D | 1 · Micro | 160 ms | ✅ Existe | F3 |
 | Pulsar algo destructivo en Fitness | E | 1 · Micro | 160 ms | ✅ Existe | F3 |
 | Tarjeta destacada al llegar por un enlace (objetivo, tarea) | D | 2 · Suave | 280 ms | ✅ Existe | F7 |
@@ -61,8 +64,8 @@
 | Subir de rango | Q | 4 · Momento | 280 ms | ✅ Existe | F17 |
 | La llama de una racha que sube | Q | 4 · Momento | 620 ms | ✅ Existe | F17 |
 | El «+1» de una racha | Q | 5 · Firma | 900 ms | ✅ Existe | F18 |
-| El interruptor de `ui.jsx` | R | 1 · Micro | 220 ms | ⚠️ Inconsistente | F3 |
-| Interruptores escritos a mano (Calendario, Relación, Ajustes, Gestión de temas) | R | 1 · Micro | 160 ms | ⚠️ Inconsistente | F3 |
+| El interruptor (la bola) | R | 1 · Micro | 220 ms | ✅ Existe | F3 |
+| El interruptor (la pista), suelto o dentro de una fila | R | 1 · Micro | 220 ms | ✅ Existe | F3 |
 | Deslizadores (`input type=range`) | S | 0 · Estático | — | ✅ Existe | F5 |
 | Deslizar para cambiar de ejercicio | T | 1 · Micro | 220 ms | ✅ Existe | F8 |
 | El divisor del comparador de fotos | T | 1 · Micro | — | ✅ Existe | F8 |
@@ -420,18 +423,18 @@
 
 | Campo | Valor |
 |---|---|
-| Ubicación | DashboardView · TrainingView |
-| Componente | — |
-| Clase CSS | — |
+| Ubicación | src/components/motion.jsx (ChevronDespliegue) · src/index.css |
+| Componente | ChevronDespliegue |
+| Clase CSS | `.chevron-gira` |
 | @keyframes | — |
 | En ANIMACIONES_HC | — |
 | Función | Decir si una sección está abierta. |
-| Estado inicial | 0° |
-| Estado final | 180° |
+| Estado inicial | Hacia abajo (o a la derecha) |
+| Estado final | Hacia arriba (o abajo) |
 | Entrada | — |
 | Salida | — |
 | Interacción | Tocar |
-| Transición | transform `normal` con la curva de JosStyle en Inicio y en Entrenamiento (MS F1: `transicion()`) |
+| Transición | transform `normal` con la curva de JosStyle |
 | Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
@@ -439,10 +442,70 @@
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | media |
-| Relación | — |
+| Relación | MS F3: los veintitrés desplegables usan el mismo icono que gira; veinte cambiaban un icono por otro de golpe. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+| Movimiento reducido | Llega a su sitio sin girar. |
+
+#### Lo que aparece al abrir un desplegable o un menú
+
+`despliegue` · ✅ Existe · lo trata la **F3**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/index.css · los desplegables con ChevronDespliegue y el ⋯ de las plantillas |
+| Componente | — |
+| Clase CSS | `.despliegue-entra` |
+| @keyframes | `despliegueEntra` |
+| En ANIMACIONES_HC | — |
+| Función | Que el contenido aparezca desde el borde que lo abrió, no plantado (apartado 14). |
+| Estado inicial | Invisible, 4 px más arriba |
+| Estado final | En su sitio |
+| Entrada | Fundido corto y un leve descenso |
+| Salida | — |
+| Interacción | — |
+| Transición | opacity, transform |
+| Duración | 160 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | media |
+| Relación | Cerrar recolocando el resto es la F10 (C-54). |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Solo el fundido. |
+
+#### El color de una pestaña al elegirla
+
+`pestana_elegida` · ✅ Existe · lo trata la **F3**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/ui.jsx (ToggleTab) · src/index.css |
+| Componente | ToggleTab |
+| Clase CSS | `.pestana-cambia` |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Que la pestaña y su contenido cambien como una sola acción (apartado 24). |
+| Estado inicial | Gris |
+| Estado final | Acento |
+| Entrada | — |
+| Salida | — |
+| Interacción | Tocar una pestaña |
+| Transición | background-color, color, border-color |
+| Duración | 160 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | media |
+| Relación | Al mismo ritmo que `contenido-cambia` (F2). |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Igual: ya es solo color. |
 
 ### D · Tarjetas
 
@@ -501,7 +564,7 @@
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | alta |
-| Relación | Anima `filter` y `box-shadow`, que no son baratos en un iPhone (la F13 lo mide). |
+| Relación | Anima `filter` y `box-shadow`, que no son baratos en un iPhone (la F13 lo mide). 🐛 Hasta la MS F3 la entrada (`hubCardIn`) terminaba con `both` y su último fotograma ganaba a `:active` y a `.hub-card-receding`: ni encogía ni las demás retrocedían. |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
@@ -542,7 +605,7 @@
 
 | Campo | Valor |
 |---|---|
-| Ubicación | src/components/ui.jsx |
+| Ubicación | src/components/ui.jsx · src/index.css (`[class*=active:scale]`) |
 | Componente | Card, PrimaryBtn, GhostBtn, chips… |
 | Clase CSS | — |
 | @keyframes | — |
@@ -553,18 +616,18 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | Mantener pulsado |
-| Transición | transform con `transition-transform` de Tailwind, que desde la MS F1 usa el token `fast` y la curva de JosStyle (tailwind.config.js) |
-| Duración | 160 ms |
+| Transición | transform: al pulsar `ultrafast` con la curva de JosStyle; al soltar `normal` con la curva `entrance`, que llega y se posa sin rebotar (MS F3) |
+| Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | alta |
-| Relación | Fitness usa su propio escalón (fit-pulsable, también `fast`). |
+| Relación | MS F3: 57 de los 138 no tenían transición y saltaban. Fitness usa su propio escalón (fit-pulsable). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+| Movimiento reducido | No encoge: baja la opacidad al 0,72. |
 
 #### Pulsar una tarjeta de Fitness
 
@@ -628,6 +691,36 @@
 
 ### E · Botones
 
+#### Pulsar una papelera
+
+`pulsar_borrar` · ✅ Existe · lo trata la **F3**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/ui.jsx (BotonBorrar, BotonBorrarDefinitivo) · src/index.css |
+| Componente | BotonBorrar |
+| Clase CSS | `.toque-destructivo` |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Lo destructivo responde sin encoger (apartado 28). |
+| Estado inicial | Opacidad 1 |
+| Estado final | 0,72 |
+| Entrada | — |
+| Salida | — |
+| Interacción | Pulsar |
+| Transición | opacity |
+| Duración | 160 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | media |
+| Relación | La misma regla que `fit-contenido` (FIT F37), para toda la aplicación. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Igual: ya es solo opacidad. |
+
 #### Pulsar algo destructivo en Fitness
 
 `pulsar_destructivo` · ✅ Existe · lo trata la **F3**
@@ -665,16 +758,16 @@
 | Campo | Valor |
 |---|---|
 | Ubicación | src/index.css |
-| Componente | — |
+| Componente | LatidoAlMarcar |
 | Clase CSS | `.favorito-guardado` |
 | @keyframes | `favoritoPulso` |
 | En ANIMACIONES_HC | — |
-| Función | La estrella late una vez al pulsarla. |
+| Función | La marca late una vez al ponerla (nunca al quitarla ni al abrir la pantalla). |
 | Estado inicial | — |
 | Estado final | — |
 | Entrada | — |
 | Salida | — |
-| Interacción | Pulsar |
+| Interacción | Marcar como favorito |
 | Transición | transform |
 | Duración | 220 ms |
 | Curva | --ease-premium |
@@ -683,10 +776,10 @@
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | media |
-| Relación | Era 240 ms, 20 por encima del tope de su nivel: con el token `normal` vuelve a su nivel (MS F1). |
+| Relación | MS F3: en las trece marcas de la aplicación; antes solo en dos de la Biblioteca, y latía también al quitarla. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+| Movimiento reducido | No late: el pulso vale 1, y el color ya lo dice. |
 
 ### F · Campos
 
@@ -1614,24 +1707,54 @@
 
 ### R · Interruptores
 
-#### El interruptor de `ui.jsx`
+#### El interruptor (la bola)
 
-`interruptor_ui` · ⚠️ Inconsistente · lo trata la **F3**
+`interruptor_ui` · ✅ Existe · lo trata la **F3**
 
 | Campo | Valor |
 |---|---|
-| Ubicación | src/components/ui.jsx |
+| Ubicación | src/components/ui.jsx (Switch, PistaInterruptor) · src/index.css |
 | Componente | Switch |
-| Clase CSS | — |
+| Clase CSS | `.interruptor-bola` |
 | @keyframes | — |
 | En ANIMACIONES_HC | — |
 | Función | Encender o apagar algo. |
-| Estado inicial | — |
-| Estado final | — |
+| Estado inicial | A la izquierda |
+| Estado final | A la derecha |
 | Entrada | — |
 | Salida | — |
-| Interacción | — |
-| Transición | left y fondo `normal` con la curva común (MS F1: `transicion()`) |
+| Interacción | Tocar: al pulsar se estira hacia donde va |
+| Transición | transform `normal` con la curva `entrance`; color `normal` |
+| Duración | 220 ms |
+| Curva | --motion-curva-entrance |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | media |
+| Relación | MS F3: uno solo para toda la aplicación. Eran tres —el de `ui.jsx`, seis dibujados a mano y cuatro filas— y movían la bola con `left`. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Salta a su sitio; solo se funde el color. |
+
+#### El interruptor (la pista), suelto o dentro de una fila
+
+`interruptor_pista` · ✅ Existe · lo trata la **F3**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/ui.jsx (Switch, PistaInterruptor) · src/index.css |
+| Componente | PistaInterruptor |
+| Clase CSS | `.interruptor` |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Lo mismo que el Switch, cuando la fila entera es lo que se toca (Todo el día, Avisarme, Repetir cada año, la legibilidad). |
+| Estado inicial | Gris |
+| Estado final | Acento |
+| Entrada | — |
+| Salida | — |
+| Interacción | Tocar la fila |
+| Transición | background-color, border-color `normal` |
 | Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
@@ -1639,40 +1762,10 @@
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | media |
-| Relación | Anima `left`, que obliga a recalcular el diseño, en vez de `transform`. |
+| Relación | La fila lleva `role="switch"` y `aria-checked`. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
-
-#### Interruptores escritos a mano (Calendario, Relación, Ajustes, Gestión de temas)
-
-`interruptores_a_mano` · ⚠️ Inconsistente · lo trata la **F3**
-
-| Campo | Valor |
-|---|---|
-| Ubicación | CalendarView · RelationView · SettingsView (6) · GestionTemas |
-| Componente | — |
-| Clase CSS | — |
-| @keyframes | — |
-| En ANIMACIONES_HC | — |
-| Función | Lo mismo que el Switch. |
-| Estado inicial | — |
-| Estado final | — |
-| Entrada | — |
-| Salida | — |
-| Interacción | — |
-| Transición | `left` `fast` con `transicion()` en Calendario y Relación (MS F1), y `transition-all` en Ajustes |
-| Duración | 160 ms |
-| Curva | --ease-premium |
-| Spring | — |
-| Retraso | — |
-| Escalonado | — |
-| Intensidad | 1 · Micro |
-| Prioridad | media |
-| Relación | — |
-| Móvil | Igual |
-| Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+| Movimiento reducido | Igual: ya es solo color. |
 
 #### La muestra de «Ver cómo se mueve» en Ajustes
 

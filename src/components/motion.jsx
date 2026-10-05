@@ -1,8 +1,10 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import {
   contextoDelDocumento, EVENTO_MOTION, animar, siguientePresencia, estaMontado,
   deltaFlip, duracionMs, CURVAS_MOTION,
 } from '../lib/motion';
+import { giroDeChevron, siguienteLatido } from '../lib/microinteraccionesMotion';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MOTION SYSTEM · F1 — LAS PIEZAS DE REACT DEL MOTOR
@@ -102,6 +104,46 @@ export function CambioDeContenido({ clave, className = '', children, ...resto })
     <div key={clave} className={`${cambiado.current ? 'contenido-cambia ' : ''}${className}`.trim() || undefined} data-contenido={String(clave)} {...resto}>
       {children}
     </div>
+  );
+}
+
+/**
+ * MS F3, apartados 14 y 27 — EL CHEVRON DE UN DESPLEGABLE GIRA; NO SE CAMBIA POR OTRO.
+ * Veinte desplegables cambiaban `ChevronDown` por `ChevronUp` (o por `ChevronRight`)
+ * de golpe. Éste es siempre el mismo icono, y su giro (`giroDeChevron`) lo anima la clase
+ * `chevron-gira` de `index.css`: en Reducido llega a su sitio sin girar.
+ *   · `cerrado`: hacia dónde apunta cerrado (`abajo` o `derecha`);
+ *   · `alAbrir`: hacia dónde apunta abierto (`arriba` o `abajo`).
+ */
+export function ChevronDespliegue({ abierto, cerrado = 'abajo', alAbrir = 'arriba', size = 16, style, className = '', ...resto }) {
+  const giro = giroDeChevron({ abierto, cerrado, alAbrir });
+  return (
+    <ChevronDown
+      size={size}
+      aria-hidden="true"
+      data-abierto={abierto ? 'true' : 'false'}
+      className={`chevron-gira ${className}`.trim()}
+      style={{ ...style, '--giro': `${giro}deg` }}
+      {...resto}
+    />
+  );
+}
+
+/**
+ * MS F3, apartado 29 — UNA MARCA LATE AL PONERLA. Envuelve el icono de un favorito (una
+ * estrella, un corazón): cuando `activo` pasa de no a sí, late una vez (`favorito-guardado`,
+ * `favoritoPulso`). Al quitarla no late —el color ya lo dice— y al pintarse por primera vez
+ * tampoco: una lista de favoritos que latiera entera al abrirse no diría nada. En Reducido el
+ * pulso es 1 (el token), así que solo cambia el color.
+ */
+export function LatidoAlMarcar({ activo, children, className = '' }) {
+  const estado = useRef(null);
+  estado.current = siguienteLatido(estado.current, activo);
+  const { veces, late } = estado.current;
+  return (
+    <span key={veces} className={`inline-flex ${late ? 'favorito-guardado ' : ''}${className}`.trim()} data-latido={veces}>
+      {children}
+    </span>
   );
 }
 

@@ -194,8 +194,10 @@ const CON_PESTANAS = {
 };
 for (const [f, clave] of Object.entries(CON_PESTANAS)) {
   const src = leer(f);
-  ok(new RegExp(`<CambioDeContenido clave=\\{${clave}\\}`).test(src) && /import \{ CambioDeContenido \} from '\.\.\/components\/motion';/.test(src)
-    && (src.match(/import \{ CambioDeContenido \}/g) || []).length === 1,
+  /* ⚠️ Lo que se protege es que la importación esté UNA vez (la ArmarioView llegó a tener una
+     por línea), no su forma exacta: desde la MS F3 la misma línea trae también otras piezas. */
+  const deMotion = src.match(/import \{[^}]*\} from '\.\.\/components\/motion';/g) || [];
+  ok(new RegExp(`<CambioDeContenido clave=\\{${clave}\\}`).test(src) && deMotion.length === 1 && /\bCambioDeContenido\b/.test(deMotion[0]),
     `${f.replace('src/views/', '')}: cambiar de pestaña es una transición de contenido (importada una vez)`);
 }
 ok(/<CambioDeContenido clave=\{vista\} className="space-y-4">/.test(leer('src/views/CalendarView.jsx')), 'el Calendario conserva su espaciado (la vista del mes son varias piezas sueltas)');

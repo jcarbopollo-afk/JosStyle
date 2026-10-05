@@ -136,7 +136,7 @@ export function BotonBorrar({ onClick, label = 'Eliminar' }) {
   return (
     <button
       onClick={onClick}
-      className="p-1.5 rounded-lg flex-shrink-0 transition-transform active:scale-90"
+      className="p-1.5 rounded-lg flex-shrink-0 toque-destructivo"
       style={{ background: COLORS.surface2 }}
       aria-label={label}
       title={label}
@@ -173,7 +173,7 @@ export function BotonBorrarDefinitivo({
   label = 'Eliminar',
   titulo = '¿Eliminar?',
   detalle = 'No se puede deshacer.',
-  className = 'p-1.5 rounded-lg flex-shrink-0 transition-transform active:scale-90',
+  className = 'p-1.5 rounded-lg flex-shrink-0 toque-destructivo',
   style,
   colorIcono,
   children,
@@ -388,41 +388,66 @@ export function GhostBtn({ children, onClick, icon: Icon, disabled }) {
 //
 // Accesible por teclado y para lectores de pantalla: es un <button> real con role="switch" y
 // aria-checked, no un div con onClick.
-export function Switch({ checked, onChange, accent, disabled = false, label }) {
+//
+// MS F3 — el interruptor de TODA la aplicación (hallazgo `tres_interruptores` de la F0).
+// La pista y la bola son las clases `interruptor` e `interruptor-bola` de `index.css`: la
+// bola viaja con `transform` (antes con `left`, que recalcula el diseño en cada fotograma),
+// se estira un poco al pulsar y en Reducido salta a su sitio. El estado lo lee el CSS de
+// `data-encendido`. `title` es para el interruptor que no se puede tocar y tiene que decir
+// por qué (la protección de Relación).
+// ⚠️ Los comentarios de esta función van FUERA de su cuerpo: un `{` seguido de un comentario
+// de bloque lo confunde el limpiador de varias pruebas con un comentario JSX (E3 F5).
+export function Switch({ checked, onChange, accent, disabled = false, label, title }) {
   return (
     <button
       type="button"
       role="switch"
-      aria-checked={checked}
+      aria-checked={!!checked}
       aria-label={label}
+      title={title}
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
-      className="relative flex-shrink-0 rounded-full disabled:opacity-40"
+      data-encendido={checked ? 'true' : 'false'}
+      className="interruptor disabled:opacity-40"
       style={{
-        width: 44, height: 26,
         background: checked ? accent : COLORS.surface2,
         border: `1px solid ${checked ? accent : COLORS.border}`,
-        transition: transicion(['background', 'border-color'], 'normal'),
       }}
     >
-      <span
-        className="absolute rounded-full"
-        style={{
-          width: 18, height: 18, top: 3,
-          left: checked ? 22 : 3,
-          background: checked ? COLORS.textOnAccent : COLORS.textMuted,
-          transition: transicion(['left', 'background'], 'normal'),
-        }}
-      />
+      <span className="interruptor-bola" style={{ background: checked ? COLORS.textOnAccent : COLORS.textMuted }} />
     </button>
   );
 }
 
+/**
+ * MS F3 — la pista de un interruptor que vive DENTRO de una fila que se toca entera
+ * («Todo el día», «🔔 Avisarme», «Repetir cada año», «Arreglar la legibilidad sola»). Es solo
+ * el dibujo: la fila es el control, con `role="switch"` y `aria-checked`, y esta pista tiene el
+ * mismo movimiento que `Switch` en pequeño. Su pista apagada es el borde, no `surface2`: la
+ * fila ya es `surface2`, y encima de sí misma no se vería.
+ */
+export function PistaInterruptor({ encendido, accent }) {
+  return (
+    <span
+      aria-hidden="true"
+      data-encendido={encendido ? 'true' : 'false'}
+      className="interruptor interruptor-pequeno"
+      style={{ background: encendido ? accent : COLORS.border }}
+    >
+      <span className="interruptor-bola" style={{ background: COLORS.textOnAccent }} />
+    </span>
+  );
+}
+
+// MS F3, apartado 24 — `pestana-cambia`: el color de la pestaña elegida cambia al ritmo del
+// fundido de su contenido (`CambioDeContenido`, F2), como una sola acción. Y `aria-pressed`
+// dice a VoiceOver cuál está elegida, que hasta ahora solo lo decía el color.
 export function ToggleTab({ children, active, onClick, accent }) {
   return (
     <button
       onClick={onClick}
-      className="flex-1 rounded-xl px-3 py-2 text-sm font-semibold"
+      aria-pressed={!!active}
+      className="pestana-cambia flex-1 rounded-xl px-3 py-2 text-sm font-semibold"
       style={active
         ? { background: accent, color: COLORS.textOnAccent }
         : { background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}

@@ -438,7 +438,8 @@ import { ESTADOS_IDEA, crearIdea } from '../src/lib/ideas.js';
 import { crearDocumento } from '../src/lib/documentos.js';
 import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
 import { AvatarPerfil, BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal, AjusteMovimiento } from '../src/views/SettingsView.jsx';
-import { Presencia } from '../src/components/motion.jsx';
+import { Presencia, ChevronDespliegue, LatidoAlMarcar } from '../src/components/motion.jsx';
+import { Switch, PistaInterruptor, ToggleTab, BotonBorrar } from '../src/components/ui.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
@@ -3174,6 +3175,20 @@ const CASOS = [
   ['SettingsView · Movimiento (apariencia de antes, sin velocidad)', AjusteMovimiento, () => ({ apariencia: { tema: 'oscuro', animaciones: 'completa' }, onUpdateApariencia: noop, accent })],
   ['Presencia (visible)', Presencia, () => ({ visible: true, children: 'Contenido' })],
   ['Presencia (visible, sin animar al montar)', Presencia, () => ({ visible: true, animarAlMontar: false, children: 'Contenido' })],
+  /* MS F3 — las piezas de la pulsación y del feedback: el interruptor único (suelto, encendido,
+     apagado, sin poder tocarse), su pista dentro de una fila, el chevron que gira en sus tres
+     posiciones, la marca que late y la pestaña que dice cuál está elegida. */
+  ['Switch (apagado)', Switch, () => ({ checked: false, onChange: noop, accent, label: 'Alto contraste' })],
+  ['Switch (encendido)', Switch, () => ({ checked: true, onChange: noop, accent, label: 'Alto contraste' })],
+  ['Switch (sin poder tocarse, con su porqué)', Switch, () => ({ checked: true, onChange: noop, accent, disabled: true, label: 'Proteger Relación con PIN', title: 'Relación siempre está protegida' })],
+  ['PistaInterruptor (apagada)', PistaInterruptor, () => ({ encendido: false, accent })],
+  ['PistaInterruptor (encendida)', PistaInterruptor, () => ({ encendido: true, accent })],
+  ['ChevronDespliegue (cerrado)', ChevronDespliegue, () => ({ abierto: false })],
+  ['ChevronDespliegue (de la derecha hacia arriba, abierto)', ChevronDespliegue, () => ({ abierto: true, cerrado: 'derecha', alAbrir: 'arriba', size: 15 })],
+  ['LatidoAlMarcar (marcada al pintarse)', LatidoAlMarcar, () => ({ activo: true, children: '★' })],
+  ['LatidoAlMarcar (sin marcar)', LatidoAlMarcar, () => ({ activo: false, children: '☆' })],
+  ['ToggleTab (elegida)', ToggleTab, () => ({ active: true, onClick: noop, accent, children: 'Comidas' })],
+  ['BotonBorrar', BotonBorrar, () => ({ onClick: noop, label: 'Eliminar la comida' })],
   ['SettingsView · Avatar con foto', AvatarPerfil, () => ({
     perfil: { ...DEFAULT_PERFIL, foto: `data:image/jpeg;base64,${'A'.repeat(400)}` },
     accent, onCambiar: noop, onQuitar: noop,

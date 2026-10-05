@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Church, Trash2, ChevronDown, ChevronUp, CheckCircle2, Circle, Plus } from 'lucide-react';
+import { Church, Trash2, CheckCircle2, Circle, Plus } from 'lucide-react';
 import { COLORS, TIPOS_SERVICIO_FE, TIPOS_EVENTO_FE, PLAZOS_OBJETIVO } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
-import { CambioDeContenido } from '../components/motion';
+import { CambioDeContenido, ChevronDespliegue } from '../components/motion';
 
 // Instrucción de seguridad para cualquier AIPanel de este módulo: AIPanel usa el mismo
 // AI_SYSTEM general de la app (ui.jsx), así que la restricción doctrinal va dentro del propio
@@ -152,10 +152,10 @@ function DiarioFeCard({ entrada, accent, onDelete }) {
           <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{formatFecha(entrada.fecha)}</p>
           {!abierta && <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{entrada.texto.slice(0, 50)}{entrada.texto.length > 50 ? '…' : ''}</p>}
         </div>
-        {abierta ? <ChevronUp size={16} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={16} style={{ color: COLORS.textMuted }} />}
+        <ChevronDespliegue abierto={abierta} size={16} style={{ color: COLORS.textMuted }} />
       </button>
       {abierta && (
-        <div className="mt-3 pt-3 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+        <div className="despliegue-entra mt-3 pt-3 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           <p className="text-sm leading-relaxed" style={{ color: COLORS.text }}>{entrada.texto}</p>
           <button onClick={() => onDelete(entrada.id)} className="flex items-center gap-1.5 text-xs font-medium pt-1" style={{ color: COLORS.textMuted }}>
             <Trash2 size={13} /> Eliminar entrada

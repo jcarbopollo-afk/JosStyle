@@ -231,6 +231,12 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
        `rendimiento.js` de la EH F44. **Novena** exclusión a mano, y la cabecera
        de ese archivo no la necesitaba: la regla funciona así, y así se queda. */
     && f !== 'rendimientoFitness'
+    /* ⚠️ Y `microinteraccionesMotion` es del **Motion System** (MS F3), no de
+       Imagen personal: lo caza `microinteracciones`, por el `microinteracciones.js`
+       de la EH F50 —que esta fase llegó a pisar al estrenarse con ese nombre, y lo
+       cantaron seis suites—. **Décima** exclusión a mano, por el mismo motivo de
+       siempre. */
+    && f !== 'microinteraccionesMotion'
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],

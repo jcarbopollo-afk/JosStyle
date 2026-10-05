@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Plus, Trash2, Download, Upload, RotateCcw } from 'lucide-react';
 import { COLORS, PALETAS_PREDEFINIDAS, MAX_TEMAS_GUARDADOS } from '../tokens';
 import { shade, hexToRgba } from '../lib/helpers';
-import { Card, GhostBtn } from './ui';
+import { Card, GhostBtn, Switch } from './ui';
 
 // Fase 4 del Sistema de Personalización Visual Extrema — Presets + gestión de temas.
 //
@@ -126,17 +126,14 @@ export default function GestionTemas({
               Constructor de temas completo. Desactivado, solo ves esta galería.
             </p>
           </div>
-          <button
-            onClick={() => onUpdateApariencia({ ...apariencia, modoColorAvanzado: !modoAvanzado })}
-            className="w-12 h-7 rounded-full flex-shrink-0 relative transition-colors"
-            style={{ background: modoAvanzado ? accent : COLORS.surface2, border: `1px solid ${COLORS.border}` }}
-            aria-label="Alternar modo avanzado de color"
-          >
-            <span
-              className="absolute top-0.5 w-5 h-5 rounded-full transition-all"
-              style={{ left: modoAvanzado ? 22 : 2, background: COLORS.text }}
-            />
-          </button>
+          {/* MS F3 — el interruptor de toda la aplicación, no uno dibujado a mano con
+              que lo animaba todo (hallazgo `tres_interruptores` de la F0). */}
+          <Switch
+            checked={!!modoAvanzado}
+            onChange={() => onUpdateApariencia({ ...apariencia, modoColorAvanzado: !modoAvanzado })}
+            accent={accent}
+            label="Modo avanzado de color"
+          />
         </div>
       </Card>
 

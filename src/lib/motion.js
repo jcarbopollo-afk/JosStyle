@@ -535,7 +535,9 @@ export const PRESETS_MOTION = {
   listReveal: { que: 'Una lista entra en cascada', clase: 'hub-card', duracion: 'cinematic', curva: 'standard', escalonado: true, desde: { opacidad: 'hidden', y: 'medium', escala: 'subtle' } },
   success: { que: 'Algo ha salido bien', clase: 'exito-entra', duracion: 'medium', curva: 'standard', desde: { opacidad: 'hidden', escala: 'hero' } },
   error: { que: 'Algo ha fallado: un vaivén corto, sin agresividad', duracion: 'medium', curva: 'smooth', vaiven: 'micro' },
-  selection: { que: 'Se ha elegido algo', clase: 'favorito-guardado', duracion: 'normal', curva: 'standard', pulso: 'suave' },
+  /* MS F3 — `fuerte`, como el fotograma de `favoritoPulso` en index.css: el preset decía `suave` y el
+     CSS latía a `fuerte`, así que la misma marca latía distinto por JavaScript que por CSS. */
+  selection: { que: 'Se ha elegido algo', clase: 'favorito-guardado', duracion: 'normal', curva: 'standard', pulso: 'fuerte' },
   press: { que: 'Pulsar', clase: 'fit-pulsable', duracion: 'fast', curva: 'standard', hasta: { escala: 'micro' } },
   hover: { que: 'Pasar el puntero (solo con ratón)', duracion: 'fast', curva: 'standard', hasta: { y: '-micro' } },
   expand: { que: 'Abrir un desplegable', duracion: 'medium', curva: 'smooth', acordeon: true },

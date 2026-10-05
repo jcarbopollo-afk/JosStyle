@@ -436,6 +436,190 @@ html[data-velocidad='rapida'] {
   }
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM · F3 — LA PULSACIÓN: ENTRA DEPRISA Y VUELVE CON CALMA
+
+   La escalera de `ui.jsx` (EH F50) pulsa con las clases `active:scale-*` de
+   Tailwind, y hasta la F3 tenía dos fallos que no veía nadie:
+
+   🐛 **57 de los 138 botones que encogen no tenían transición**: saltaban a
+      0,95 y volvían de golpe (apartado 41, *"controles que saltan"*). Esta
+      regla les da la suya, sin tocar a los que ya animaban colores.
+   🐛 **Y pulsar y soltar iban al mismo ritmo.** El apartado 5 pide que soltar
+      *"no vuelva simplemente al estado original"*: al pulsar responde en
+      `ultrafast` (el dedo no espera), y al soltar vuelve en `normal` con la
+      curva `entrance`, que llega deprisa y se posa sin rebotar — el muelle
+      crítico que la F0 reserva para lo que suelta el dedo.
+
+   ⚠️ **En Reducido no encoge**: la escala de Tailwind no es un token, así que
+   no la apagaba el modo (C-52). Responde bajando la opacidad, como lo
+   destructivo de Fitness (FIT F37): el dedo sigue teniendo respuesta.
+   ⚠️ Y estas reglas van ANTES de `.hub-card`: sus tarjetas de portada tienen
+   su propia pulsación (Fase N3) y la conservan al soltar. */
+[class*='active:scale']:not([class*='transition']) {
+  transition-property: transform, opacity;
+}
+[class*='active:scale'][class*='transition-colors'] {
+  transition-property: color, background-color, border-color, fill, stroke, transform, opacity;
+}
+[class*='active:scale'] {
+  transition-duration: var(--motion-dur-normal);
+  transition-timing-function: var(--motion-curva-entrance);
+}
+[class*='active:scale']:active {
+  transition-duration: var(--motion-dur-ultrafast);
+  transition-timing-function: var(--ease-premium);
+}
+html[data-motion='reducido'] [class*='active:scale']:active:not(:disabled) {
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  opacity: 0.72;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='off']) [class*='active:scale']:active:not(:disabled) {
+    --tw-scale-x: 1;
+    --tw-scale-y: 1;
+    opacity: 0.72;
+  }
+}
+
+/* MS F3, apartado 28 — LO DESTRUCTIVO NO ENCOGE, EN TODA LA APLICACIÓN. Lo
+   decidió la FIT F37 para Fitness (`fit-contenido`): un borrado no es un juego,
+   y responde bajando la opacidad. La papelera de `ui.jsx` (`BotonBorrar` y
+   `BotonBorrarDefinitivo`, unas 130 en total) encogía al 0,90 como cualquier
+   icono; desde la F3 lleva esta clase. */
+.toque-destructivo {
+  transition: opacity var(--motion-dur-fast) var(--ease-premium);
+}
+.toque-destructivo:active:not(:disabled) {
+  opacity: 0.72;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM · F3 — UN SOLO INTERRUPTOR (hallazgo `tres_interruptores` de la F0)
+
+   Había tres: el `Switch` de `ui.jsx`, cinco escritos a mano en Ajustes y uno en
+   Gestión de temas con `transition-all`, y cuatro filas con su pista dibujada
+   aparte (Calendario ×2, Relación y la legibilidad de Ajustes). Los tres movían
+   la bola con `left`, que recalcula el diseño en cada fotograma (apartado 38).
+   Ahora son estas clases, con dos tamaños y un solo comportamiento:
+
+     · la bola viaja con `transform` y vuelve con la curva `entrance` (apartado 20:
+       *"el thumb debe desplazarse con continuidad"*), y la pista funde su color
+       al mismo ritmo;
+     · al pulsar, la bola se estira un poco hacia donde va a ir (`pulso-micro`),
+       que es lo que hace un interruptor físico;
+     · en Reducido la bola **salta** a su sitio y solo se funde el color: viajar
+       es un desplazamiento (C-52). Con «Sin movimiento», todo instantáneo.
+
+   El estado lo lee de `data-encendido`, que pone `Switch` o `PistaInterruptor`. */
+.interruptor {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  width: 44px;
+  height: 26px;
+  --bola: 18px;
+  --hueco: 3px;
+  --recorrido: 19px;
+  transition: background-color var(--motion-dur-normal) var(--ease-premium), border-color var(--motion-dur-normal) var(--ease-premium);
+}
+.interruptor-pequeno {
+  width: 36px;
+  height: 20px;
+  --bola: 14px;
+  --hueco: 2px;
+  --recorrido: 16px;
+}
+.interruptor-bola {
+  position: absolute;
+  top: var(--hueco);
+  left: var(--hueco);
+  width: var(--bola);
+  height: var(--bola);
+  border-radius: 9999px;
+  transform-origin: left center;
+  transform: translateX(0) scaleX(1);
+  transition: transform var(--motion-dur-normal) var(--motion-curva-entrance), background-color var(--motion-dur-normal) var(--ease-premium);
+}
+.interruptor[data-encendido='true'] .interruptor-bola {
+  transform-origin: right center;
+  transform: translateX(var(--recorrido)) scaleX(1);
+}
+/* Pulsar: el interruptor es el propio `Switch` o la fila entera que lo lleva
+   dentro (las dos tienen `role="switch"`). */
+[role='switch']:active .interruptor-bola {
+  transform: translateX(0) scaleX(var(--motion-pulso-micro));
+}
+[role='switch']:active .interruptor[data-encendido='true'] .interruptor-bola,
+.interruptor[role='switch'][data-encendido='true']:active .interruptor-bola {
+  transform: translateX(var(--recorrido)) scaleX(var(--motion-pulso-micro));
+}
+html[data-motion='reducido'] .interruptor-bola {
+  transition-property: background-color;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='off']) .interruptor-bola {
+    transition-property: background-color;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM · F3 — UN CHEVRON QUE GIRA, NO UNO QUE SE CAMBIA POR OTRO
+
+   Veinte desplegables cambiaban `ChevronDown` por `ChevronUp` (o por
+   `ChevronRight`) al abrirse: el icono se sustituía de golpe. Tres giraban.
+   Ahora todos son `ChevronDespliegue` (src/components/motion.jsx), que gira el
+   mismo icono —el giro lo pone él en `--giro`— y en Reducido llega a su sitio
+   sin girar. */
+.chevron-gira {
+  flex-shrink: 0;
+  transform: rotate(var(--giro, 0deg));
+  transition: transform var(--motion-dur-normal) var(--ease-premium);
+}
+html[data-motion='reducido'] .chevron-gira {
+  transition-property: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='off']) .chevron-gira {
+    transition-property: none;
+  }
+}
+
+/* MS F3, apartado 14 — lo que se despliega aparece, no se planta. Un fundido
+   corto y un leve descenso desde el borde que lo abrió; en Reducido, solo el
+   fundido (el token de distancia vale 0). Lo lleva el contenido de los
+   desplegables que abren con `ChevronDespliegue`. Cerrar se queda instantáneo:
+   que el resto de la pantalla se recoloque con suavidad es la F10 (el diseño
+   que cambia, C-54). */
+@keyframes despliegueEntra {
+  from { opacity: 0; transform: translateY(calc(-1 * var(--motion-dist-micro))); }
+  to { opacity: 1; transform: none; }
+}
+.despliegue-entra {
+  animation: despliegueEntra var(--motion-dur-fast) var(--ease-premium) backwards;
+}
+
+/* MS F3, apartados 24 y 27 — una pestaña elegida y su contenido son UNA acción:
+   el color de la pestaña cambia con el mismo token que el fundido del contenido
+   (`contenido-cambia`, F2), en vez de saltar mientras lo de debajo se funde. */
+.pestana-cambia {
+  transition: background-color var(--motion-dur-fast) var(--ease-premium), color var(--motion-dur-fast) var(--ease-premium), border-color var(--motion-dur-fast) var(--ease-premium);
+}
+
+/* MS F3, apartado 7 — EL FOCO SE VE EN TODA LA APLICACIÓN, Y CON EL ACENTO. Fuera
+   de Fitness (`.fit-foco`, FIT F39) un botón enfocado con el teclado llevaba el
+   anillo azul del navegador —o ninguno, según el navegador—. Este es el mismo
+   anillo, solo con `:focus-visible` (el teclado, nunca el dedo) y solo en
+   controles que no son campos de texto: un campo enfocado ya enseña el cursor,
+   y cambiar su aspecto en el iPhone es la C-32, que es de Josué. Sin animar:
+   aparecer en su sitio ya se entiende (*"animarlo solo si mejora la
+   comprensión"*). */
+:where(button, a, [role='switch'], [role='tab'], summary, [tabindex]:not([tabindex='-1'])):focus-visible {
+  outline: 2px solid var(--accent, currentColor);
+  outline-offset: 2px;
+}
+
 /* Entrada en cascada de las tarjetas de un hub (Salud, Vida, Gestión, Más), 80ms de retraso entre
    cada una (aplicado inline por índice en HubView.jsx, sin tocar en N2). Fase N2 añade un ligerísimo
    escalado (0.97→1) junto al desplazamiento vertical — hace que cada tarjeta se sienta como si
@@ -446,7 +630,13 @@ html[data-velocidad='rapida'] {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .hub-card {
-  animation: hubCardIn var(--motion-dur-cinematic) var(--ease-premium) both;
+  /* 🐛 MS F3 — `backwards`, no `both`. Con `both` el último fotograma
+     (`scale(1)`, opacidad 1) se quedaba puesto PARA SIEMPRE, y una animación gana
+     a cualquier regla normal: **pulsar una tarjeta no la encogía** (ni la de la
+     portada ni las quince de las listas) y `.hub-card-receding` —las demás
+     retroceden al tocar una (Fase N3)— no se ha visto nunca. Es la `module-enter`
+     de la F2 otra vez. */
+  animation: hubCardIn var(--motion-dur-cinematic) var(--ease-premium) backwards;
   /* MS F1 — el escalonado: la vista pone `escalonado(i)` (motion.js), que es una
      variable que apunta al token de su escalón. Un solo paso para toda la
      aplicación, seis escalones como mucho, y respeta el modo y la velocidad. */
@@ -589,7 +779,12 @@ html[data-velocidad='rapida'] {
   transition: transform var(--motion-dur-fast) var(--ease-premium), box-shadow var(--motion-dur-fast) var(--ease-premium), filter var(--motion-dur-fast) var(--ease-premium), opacity var(--motion-dur-fast) var(--ease-premium);
   box-shadow: 0 1px 2px rgba(0,0,0,0.06);
 }
-.hub-card:active:not(:disabled) {
+/* 🐛 MS F3 — SOLO un botón, y solo si no trae su propio escalón. Mientras la entrada con `both`
+   tapaba esta regla daba igual a qué se aplicara; al arreglarla, una tarjeta-contenedor de Salud
+   (`div.hub-card`) habría encogido entera con su brillo y su sombra al tocar CUALQUIER cosa de
+   dentro —`:active` sube por los antepasados—, y una fila con `active:scale-[0.99]` habría bajado a
+   0,97. La pulsación de la Fase N3 es la de las portadas, que son botones sin escalón propio. */
+button.hub-card:not([class*='active:scale']):active:not(:disabled) {
   transform: scale(var(--motion-escala-subtle));
   filter: brightness(1.1);
   box-shadow: 0 10px 26px rgba(0,0,0,0.32);
@@ -618,7 +813,7 @@ html[data-velocidad='rapida'] {
 .hub-card-icon {
   transition: transform var(--motion-dur-fast) var(--ease-premium);
 }
-.hub-card:active:not(:disabled) .hub-card-icon,
+button.hub-card:not([class*='active:scale']):active:not(:disabled) .hub-card-icon,
 .hub-card-expanding .hub-card-icon {
   transform: scale(var(--motion-pulso-micro));
 }
@@ -757,8 +952,14 @@ html[data-motion='reducido'] .nav-indicador {
   50% { transform: scale(var(--motion-pulso-fuerte)); }
   100% { transform: scale(1); }
 }
-.favorito-guardado:active svg {
-  animation: favoritoPulso var(--motion-dur-normal) var(--ease-premium);
+/* 🔓 MS F3 (apartado 29) — late AL MARCAR, no al pulsar. Hasta la F3 era
+   `.favorito-guardado:active svg`: latía mientras el dedo estaba encima, también al
+   QUITAR el favorito, y solo en dos estrellas de la Biblioteca. Ahora la clase la pone
+   `LatidoAlMarcar` (src/components/motion.jsx) en el envoltorio del icono cuando la
+   marca se enciende, en las trece marcas de la aplicación. `backwards`: al terminar no
+   deja ningún `transform` puesto. */
+.favorito-guardado {
+  animation: favoritoPulso var(--motion-dur-normal) var(--ease-premium) backwards;
 }
 
 /* Entrega 3 · F24 (PR F2) — Hábitos.

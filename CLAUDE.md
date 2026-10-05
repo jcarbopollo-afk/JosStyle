@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.132.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.133.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -35,8 +35,8 @@ ordenadlas. Y volverás y ejecutarás todas y no pares hasta acabarlo. Y cuando 
 se te vuelva a restablecer, sigue."* El índice con la línea de cada fase está en
 **`docs/13_MOTION_SYSTEM_ORDEN.md`** (el archivo empieza por la F16 y trae la F2 y la F11 repetidas,
 C-51), y **se construye de la F0 a la F20**. **Hechas la F0 (v3.130.0)** —el mapa, la auditoría y el
-plan—, la **F1 (v3.131.0)** —el motor— y la **F2 (v3.132.0)** —la navegación—. Lo que vale para
-cualquier cambio a partir de hoy:
+plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegación— y la **F3 (v3.133.0)**
+—las microinteracciones—. Lo que vale para cualquier cambio a partir de hoy:
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
   `animar(el, 'modalEnter')`; para montar y desmontar, `Presencia`, y para una lista que se reordena,
@@ -92,6 +92,21 @@ cualquier cambio a partir de hoy:
   aplica en una microtarea, y medir justo después de `click()` mide la pantalla de antes. ⚠️ **Y la barra de
   abajo la mide también la sección SF2** (que sea UNA superficie): el indicador de la F2 es la única pieza
   con fondo que admite, sin desenfoque ni sombra. Lo que se meta en la barra, se barre allí.
+- 🚨 **PULSAR NO SE ESCRIBE: LO PONE `index.css`** (F3). Todo lo que lleva la escalera `active:scale-*`
+  (`ESCALAS_AL_TOCAR`, EH F50) pulsa en `ultrafast` y vuelve en `normal` con la curva `entrance`, y en
+  Reducido no encoge (baja la opacidad). Lo destructivo lleva `toque-destructivo`: no encoge nunca.
+- 🚨 **UN INTERRUPTOR ES `Switch`; DENTRO DE UNA FILA, `PistaInterruptor`** (F3, `ui.jsx`), y la fila lleva
+  `role="switch"` y `aria-checked`. **Un desplegable es `ChevronDespliegue`** (el mismo icono gira, nunca
+  dos que se cambian) con `despliegue-entra` en lo que aparece, y **una marca de favorito va en
+  `LatidoAlMarcar`** (`motion.jsx`). `auditarComponentesMotion` (`microinteraccionesMotion.js`) pone la
+  suite roja con una bola en `left`, un chevron que se cambia o una papelera que encoge.
+- 🐛 **UNA ENTRADA NUEVA TERMINA CON `backwards`, NUNCA CON `both`** (F3, y la F2 con `module-enter`): el
+  último fotograma de `both` se queda puesto y gana a `:active` para siempre. Las tarjetas de las portadas
+  llevaban desde la Fase N3 sin encoger al pulsarlas.
+- 🐛 **`microinteracciones.js` ES DE LA EH F50; LA DEL MOTION SYSTEM ES `microinteraccionesMotion.js`** (F3):
+  la fase lo pisó al estrenarse y lo cantaron seis suites. **Antes de crear un archivo, buscar el nombre.**
+  Y un `{` seguido de un comentario de bloque rompe el limpiador de comentarios de varias pruebas (E3 F5):
+  el comentario de una función va encima de ella, no dentro.
 
 🚨 **Y la lección de la F1, que vale para todas las que quedan: ENTRENAMIENTO YA EXISTÍA, y no era una
 cosa, eran tres.** El módulo es `entreno` + `calistenia` desde la Fase 2; **las fotos de progreso son
@@ -2066,8 +2081,8 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F3 DEL MOTION SYSTEM** (*"Microinteracciones, componentes y feedback"*,
-   líneas 6771–7586 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F4… hasta la F20, en
+0. 🎬 **LA SIGUIENTE ES LA F4 DEL MOTION SYSTEM** (*"Datos dinámicos, listas, gráficas y estados"*,
+   líneas 7587–8404 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F5… hasta la F20, en
    el orden de
    `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
    `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**

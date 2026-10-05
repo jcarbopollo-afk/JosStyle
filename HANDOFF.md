@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.133.0 — Motion System F3/20: microinteracciones y feedback):**
+> Pulsar responde al momento y soltar vuelve con calma, en toda la aplicación (57 botones saltaban); las
+> tarjetas de las portadas por fin encogen al tocarlas y las demás retroceden; hay **un solo interruptor**
+> (`Switch` y `PistaInterruptor`), los desplegables giran su chevron en vez de cambiarlo, las trece marcas
+> de favorito laten al ponerlas y el foco de teclado se ve en todas partes. Lo destructivo no encoge. **La
+> siguiente es la F4** (datos dinámicos, listas, gráficas y estados).
+
 > **📅 ACTUALIZACIÓN (v3.132.0 — Motion System F2/20: navegación y continuidad espacial):**
 > Cada cambio de pantalla dice qué es: **entrar** llega desde la derecha y arriba del todo, **volver**
 > llega desde la izquierda al scroll donde lo dejaste y sin repetir las entradas, y **cambiar de sección**

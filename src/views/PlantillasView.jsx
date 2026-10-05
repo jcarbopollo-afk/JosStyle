@@ -99,7 +99,7 @@ export function TarjetaPlantilla({
 
       {/* Apartado 4: *"No quiero botones enormes para todas las acciones."* */}
       {abierto && (
-        <div className="flex gap-2 flex-wrap mt-2.5 pt-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+        <div className="despliegue-entra flex gap-2 flex-wrap mt-2.5 pt-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           <GhostBtn icon={Pencil} onClick={onEditar}>Editar</GhostBtn>
           <GhostBtn icon={Copy} onClick={onDuplicar}>Duplicar</GhostBtn>
           <GhostBtn icon={Trash2} onClick={onEliminar}>Eliminar</GhostBtn>

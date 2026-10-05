@@ -19,7 +19,7 @@ import {
   sePuedeCrear, nuevaTareaDeCalendario, tareasDelDia, indicadoresDelDia,
   resumenDeDia, cargaDelDia, marcaDeHoy, VACIO_MES, mesVacio, accesosDelDia,
 } from '../lib/calendarioMes';
-import { Card, SectionTitle, Field, TextInput, Select, Textarea, PrimaryButton, GhostBtn, ToggleTab, EmptyHint } from '../components/ui';
+import { Card, SectionTitle, Field, TextInput, Select, Textarea, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, PistaInterruptor } from '../components/ui';
 import { CambioDeContenido } from '../components/motion';
 // Entrega 3 · F9 (HC F4) — el ＋ y sus formularios, compartidos con Hoy y la Agenda.
 import { QuickAdd, FormularioTarea, FormularioEvento, MenuElemento, CambiarFecha, CambiarHora, BotonAnadir, AvisoAccion } from '../components/quickAdd';
@@ -35,7 +35,6 @@ import {
   distribucionHoraria, horasPlanificadas, tareasAtrasadas, resumenRecurrentes,
   comparar, tendencia, NO_MEDIBLE_TODAVIA,
 } from '../lib/estadisticasPlan';
-import { transicion } from '../lib/motion';
 
 // Un icono por tipo (solo para el resumen del día/agenda y el editor — la cuadrícula mensual usa
 // puntos compactos de color, nunca iconos, spec apartado 4: "no llenar las celdas con textos largos").
@@ -275,21 +274,18 @@ function EditorEvento({ base, accent, onGuardar, onEliminar, onCerrar, fechaOcur
           <TextInput type="date" value={ev.fecha} onChange={(e) => set({ fecha: e.target.value })} />
         </Field>
 
+        {/* MS F3 — la fila es el interruptor (`role="switch"`) y su pista es la de toda la
+            aplicación (`PistaInterruptor`). */}
         <button
+          type="button"
           onClick={() => set({ todoElDia: !ev.todoElDia })}
           className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 mb-3 text-sm"
           style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
+          role="switch"
+          aria-checked={!!ev.todoElDia}
         >
           Todo el día
-          <span
-            className="rounded-full flex-shrink-0"
-            style={{ width: 36, height: 20, background: ev.todoElDia ? accent : COLORS.border, position: 'relative', transition: transicion('background', 'fast') }}
-          >
-            <span
-              className="rounded-full absolute"
-              style={{ width: 16, height: 16, top: 2, left: ev.todoElDia ? 18 : 2, background: COLORS.textOnAccent, transition: transicion('left', 'fast') }}
-            />
-          </span>
+          <PistaInterruptor encendido={!!ev.todoElDia} accent={accent} />
         </button>
 
         {!ev.todoElDia && (
@@ -315,21 +311,15 @@ function EditorEvento({ base, accent, onGuardar, onEliminar, onCerrar, fechaOcur
         {!ev.todoElDia && (
           <>
             <button
+              type="button"
               onClick={() => set({ notificar: !ev.notificar })}
               className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 mb-1 text-sm toque-44"
               style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
-              aria-pressed={!!ev.notificar}
+              role="switch"
+              aria-checked={!!ev.notificar}
             >
               🔔 Avisarme
-              <span
-                className="rounded-full flex-shrink-0"
-                style={{ width: 36, height: 20, background: ev.notificar ? accent : COLORS.border, position: 'relative', transition: transicion('background', 'fast') }}
-              >
-                <span
-                  className="rounded-full absolute"
-                  style={{ width: 16, height: 16, top: 2, left: ev.notificar ? 18 : 2, background: COLORS.textOnAccent, transition: transicion('left', 'fast') }}
-                />
-              </span>
+              <PistaInterruptor encendido={!!ev.notificar} accent={accent} />
             </button>
 
             {ev.notificar && estadoPermiso().id !== 'granted' && (

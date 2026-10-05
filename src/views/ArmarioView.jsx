@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Loader2, Copy, Check, Layers, CalendarDays, History, List, Sparkles, BarChart3, TrendingUp } from 'lucide-react';
+import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, ChevronLeft, ChevronRight, Loader2, Copy, Check, Layers, CalendarDays, History, List, Sparkles, BarChart3, TrendingUp } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedPrendaUrl } from '../lib/supabase';
@@ -30,7 +30,7 @@ import { celdasMes, isoDeFecha } from '../lib/calendario';
 import {
   Card, SectionTitle, Field, TextInput, Textarea, PrimaryButton, GhostBtn, EmptyHint, SelectInput, ToggleTab, BotonBorrar,
 } from '../components/ui';
-import { CambioDeContenido } from '../components/motion';
+import { CambioDeContenido, ChevronDespliegue, LatidoAlMarcar } from '../components/motion';
 
 /* ---------- Miniatura ----------
    Apartado 6: "nunca dejar un enorme espacio vacío por no tener imagen". Sin foto se
@@ -181,11 +181,11 @@ function FormularioPrenda({ inicial, accent, guardando, errorFoto, onGuardar, on
         style={{ color: COLORS.textMuted }}
         aria-expanded={masInfo}
       >
-        {masInfo ? <ChevronUp size={13} /> : <ChevronDown size={13} />} Más información
+        <ChevronDespliegue abierto={masInfo} size={13} /> Más información
       </button>
 
       {masInfo && (
-        <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
+        <div className="despliegue-entra" style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Marca"><TextInput value={form.marca} onChange={(e) => set('marca', e.target.value)} placeholder="Nike, Zara…" /></Field>
             <Field label="Talla"><TextInput value={form.talla} onChange={(e) => set('talla', e.target.value)} placeholder="M, 42…" /></Field>
@@ -217,7 +217,7 @@ function FormularioPrenda({ inicial, accent, guardando, errorFoto, onGuardar, on
             style={{ color: form.favorita ? accent : COLORS.textMuted }}
             aria-pressed={form.favorita}
           >
-            <Star size={13} style={form.favorita ? { color: accent, fill: accent } : undefined} />
+            <LatidoAlMarcar activo={!!form.favorita}><Star size={13} style={form.favorita ? { color: accent, fill: accent } : undefined} /></LatidoAlMarcar>
             {form.favorita ? 'Es una de tus favoritas' : 'Marcar como favorita'}
           </button>
         </div>
@@ -324,11 +324,11 @@ function DetallePrenda({ prenda, outfits, usos, hoyISO, accent, onCerrar, onEdit
                   style={{ color: COLORS.textMuted }}
                   aria-expanded={verHistorial}
                 >
-                  {verHistorial ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                  <ChevronDespliegue abierto={verHistorial} size={13} />
                   <History size={12} /> Historial de uso
                 </button>
                 {verHistorial && (
-                  <div className="mt-2">
+                  <div className="despliegue-entra mt-2">
                     <HistorialDeUso
                       usosFiltrados={mios} outfits={outfits} prendas={[prenda]} accent={accent} hoyISO={hoyISO}
                       vacioTexto="Todavía no hay datos de uso."
@@ -556,7 +556,7 @@ function TarjetaOutfit({ outfit, prendas, accent, onAbrir, onEditar, onDuplicar,
           aria-pressed={!!outfit.favorito}
           aria-label={outfit.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}
         >
-          <Star size={13} style={outfit.favorito ? { color: accent, fill: accent } : { color: COLORS.textMuted }} />
+          <LatidoAlMarcar activo={!!outfit.favorito}><Star size={13} style={outfit.favorito ? { color: accent, fill: accent } : { color: COLORS.textMuted }} /></LatidoAlMarcar>
         </button>
         <button onClick={() => onEditar(outfit)} className="p-1.5 rounded-lg transition-transform active:scale-90" aria-label={`Editar ${outfit.nombre}`}>
           <Pencil size={13} style={{ color: COLORS.textMuted }} />
@@ -697,11 +697,11 @@ function FormularioOutfit({ inicial, prendas, accent, guardando, errorFoto, foto
         style={{ color: COLORS.textMuted }}
         aria-expanded={masInfo}
       >
-        {masInfo ? <ChevronUp size={13} /> : <ChevronDown size={13} />} Más información
+        <ChevronDespliegue abierto={masInfo} size={13} /> Más información
       </button>
 
       {masInfo && (
-        <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
+        <div className="despliegue-entra" style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Ocasión">
               <SelectInput value={form.ocasion} onChange={(e) => set('ocasion', e.target.value)}>
@@ -731,7 +731,7 @@ function FormularioOutfit({ inicial, prendas, accent, guardando, errorFoto, foto
             style={{ color: form.favorito ? accent : COLORS.textMuted }}
             aria-pressed={form.favorito}
           >
-            <Star size={13} style={form.favorito ? { color: accent, fill: accent } : undefined} />
+            <LatidoAlMarcar activo={!!form.favorito}><Star size={13} style={form.favorito ? { color: accent, fill: accent } : undefined} /></LatidoAlMarcar>
             {form.favorito ? 'Es uno de tus favoritos' : 'Marcar como favorito'}
           </button>
         </div>
@@ -786,7 +786,7 @@ function DetalleOutfit({ outfit, prendas, usos, hoyISO, accent, onCerrar, onEdit
               aria-pressed={!!outfit.favorito}
               aria-label={outfit.favorito ? 'Quitar de favoritos' : 'Marcar como favorito'}
             >
-              <Star size={14} style={outfit.favorito ? { color: accent, fill: accent } : { color: COLORS.textMuted }} />
+              <LatidoAlMarcar activo={!!outfit.favorito}><Star size={14} style={outfit.favorito ? { color: accent, fill: accent } : { color: COLORS.textMuted }} /></LatidoAlMarcar>
             </button>
             <button onClick={onCerrar} className="rounded-full p-1.5 flex-shrink-0" style={{ background: COLORS.surface2 }} aria-label="Cerrar outfit">
               <X size={14} style={{ color: COLORS.text }} />
@@ -841,11 +841,11 @@ function DetalleOutfit({ outfit, prendas, usos, hoyISO, accent, onCerrar, onEdit
               style={{ color: COLORS.textMuted }}
               aria-expanded={verHistorial}
             >
-              {verHistorial ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+              <ChevronDespliegue abierto={verHistorial} size={13} />
               <History size={12} /> Historial de uso
             </button>
             {verHistorial && (
-              <div className="mt-2">
+              <div className="despliegue-entra mt-2">
                 <HistorialDeUso
                   usosFiltrados={mios} outfits={[outfit]} prendas={prendas} accent={accent} hoyISO={hoyISO}
                   vacioTexto="Todavía no has registrado este outfit."
@@ -942,11 +942,11 @@ function FormularioUso({ inicial, outfits, prendas, accent, onGuardar, onCancela
         style={{ color: COLORS.textMuted }}
         aria-expanded={masInfo}
       >
-        {masInfo ? <ChevronUp size={13} /> : <ChevronDown size={13} />} Más información
+        <ChevronDespliegue abierto={masInfo} size={13} /> Más información
       </button>
 
       {masInfo && (
-        <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
+        <div className="despliegue-entra" style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Lugar"><TextInput value={form.lugar} onChange={(e) => set('lugar', e.target.value)} placeholder="Instituto, casa…" /></Field>
             <Field label="Ocasión">
@@ -2076,9 +2076,9 @@ function Bloque({ titulo, icono: Icono, accent, defecto = false, children }) {
           {Icono && <Icono size={15} style={{ color: accent }} />}
           <span className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{titulo}</span>
         </span>
-        {abierto ? <ChevronUp size={15} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={15} style={{ color: COLORS.textMuted }} />}
+        <ChevronDespliegue abierto={abierto} size={15} style={{ color: COLORS.textMuted }} />
       </button>
-      {abierto && <div className="mt-3">{children}</div>}
+      {abierto && <div className="despliegue-entra mt-3">{children}</div>}
     </Card>
   );
 }

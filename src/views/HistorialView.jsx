@@ -23,9 +23,10 @@
 import React, { useState, useMemo } from 'react';
 import { useScrollAlVolver } from '../components/scrollAlVolver';
 import {
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search, SlidersHorizontal, X,
+  ChevronLeft, ChevronRight, Search, SlidersHorizontal, X,
   Clock, Calendar, Dumbbell, Layers, Weight, Check, Minus, Trash2, Play, StickyNote,
 } from 'lucide-react';
+import { ChevronDespliegue } from '../components/motion';
 import { COLORS } from '../tokens';
 import { PastillaFiltro } from '../components/piezasFitness';
 import { acentoLegible } from '../lib/acabadoFitness';
@@ -260,9 +261,7 @@ export function EjercicioHistorial({ ejercicio, accent, abierto = false, onAlter
             {nada ? 'No realizado' : e.seriesTexto}
           </p>
         </div>
-        {abierto
-          ? <ChevronUp size={18} style={{ color: COLORS.textMuted }} aria-hidden="true" />
-          : <ChevronDown size={18} style={{ color: COLORS.textMuted }} aria-hidden="true" />}
+        <ChevronDespliegue abierto={abierto} size={18} style={{ color: COLORS.textMuted }} />
       </button>
 
       {/* 🚨 Apartado 25 — planificado y realizado, cada uno con su nombre. */}

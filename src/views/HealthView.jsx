@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
 import {
-  Camera, AlertCircle, HeartPulse, ChevronDown, ChevronRight, Ruler, ClipboardList, Plus, Stethoscope,
+  Camera, AlertCircle, HeartPulse, Ruler, ClipboardList, Plus, Stethoscope,
 } from 'lucide-react';
+import { ChevronDespliegue } from '../components/motion';
 import { COLORS, TIPOS_HISTORIAL_MEDICO } from '../tokens';
 import { uid, formatFecha, todayISO, hexToRgba } from '../lib/helpers';
 import { getSignedPhotoUrl } from '../lib/supabase';
@@ -65,11 +66,9 @@ function SeccionBN({ seccion, resumen, abierta, onAlternar, accent, indice, chil
             {resumen ? resumen.texto : seccion.descripcion}
           </span>
         </span>
-        {abierta
-          ? <ChevronDown size={18} style={{ color: COLORS.textMuted }} className="flex-shrink-0" />
-          : <ChevronRight size={18} style={{ color: COLORS.textMuted }} className="flex-shrink-0" />}
+        <ChevronDespliegue abierto={abierta} cerrado="derecha" alAbrir="abajo" size={18} style={{ color: COLORS.textMuted }} />
       </button>
-      {abierta && <div className="px-4 pb-4 space-y-4">{children}</div>}
+      {abierta && <div className="despliegue-entra px-4 pb-4 space-y-4">{children}</div>}
     </div>
   );
 }

@@ -23,7 +23,7 @@ se ordena es **el trabajo**.
 | **F0** ✅ **v3.130.0** | Auditoría total, arquitectura y plan maestro | 4046–4899 | 854 |
 | **F1** ✅ **v3.131.0** | Motor de movimiento + tokens + primitivas | 4900–5490 | 591 |
 | **F2** ✅ **v3.132.0** | Navegación, transiciones y continuidad espacial | 6038–6770 | 733 |
-| **F3** | Microinteracciones, componentes y feedback | 6771–7586 | 816 |
+| **F3** ✅ **v3.133.0** | Microinteracciones, componentes y feedback | 6771–7586 | 816 |
 | **F4** | Datos dinámicos, listas, gráficas y estados | 7587–8404 | 818 |
 | **F5** | Física, gestos, touch y comportamiento táctil | 8405–9145 | 741 |
 | **F6** | Profundidad, capas, z-index y contexto visual | 9146–9922 | 777 |
@@ -67,3 +67,5 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | La prueba de la F1 | `scripts/test-motion-f1.mjs`, y la sección «MS F1» del recorrido de Chromium |
 | La navegación: qué movimiento es cada cambio de la pila, el scroll por pantalla y el indicador | `src/lib/transicionNavegacion.js` (F2), y lo que pasa en la página en `src/components/navegacionMotion.js` |
 | La prueba de la F2 | `scripts/test-motion-f2.mjs`, y la sección «MS F2» del recorrido de Chromium |
+| Las microinteracciones: la auditoría de los componentes, el giro de un chevron, el latido de una marca y lo que no puede volver | `src/lib/microinteraccionesMotion.js` (F3) — ⚠️ **no** `microinteracciones.js`, que es de la EH F50 —, con `ChevronDespliegue` y `LatidoAlMarcar` en `src/components/motion.jsx` y `Switch`/`PistaInterruptor` en `ui.jsx` |
+| La prueba de la F3 | `scripts/test-motion-f3.mjs`, y la sección «MS F3» del recorrido de Chromium |

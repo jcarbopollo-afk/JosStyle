@@ -1,5 +1,100 @@
 # CHANGELOG.md
 
+## v3.133.0 — Motion System F3/20: microinteracciones, componentes y feedback
+
+La F3 del Motion System (*"Microinteracciones, componentes y feedback"*, líneas 6771–7586 de
+`especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). Su enunciado acaba con *"No quiero «más animaciones».
+Quiero: MEJOR FEEDBACK"*, y su apartado 35 manda sobre los demás: *"La ausencia de movimiento también
+forma parte del Motion System"*. La fase empezó por auditar los componentes reales (apartado 1,
+`AUDITORIA_F3`) y encontró más fallos que huecos.
+
+### 🐛 Tres fallos que nadie veía
+
+- **57 de los 138 botones que encogen al pulsarlos no tenían transición**: saltaban a 0,95 y volvían de
+  golpe. Y las pestañas de Fitness, que solo animaban el color (`transition-colors`), igual. Ahora una
+  regla de `index.css` se la da a todo lo que lleva la escalera `active:scale-*`, sin tocar a los que ya
+  animaban colores.
+- **Las tarjetas que entran en cascada no encogían al pulsarlas**: la entrada (`hubCardIn`) terminaba con
+  `both`, y su último fotograma se quedaba puesto para siempre, ganando a `:active` y a
+  `.hub-card-receding`. Así que en las portadas de las áreas **las demás tarjetas no han retrocedido
+  nunca** al tocar una, aunque la Fase N3 lo escribió. Termina con `backwards` (la `module-enter` de la F2
+  otra vez), y el recorrido lo mide: la tarjeta baja a 0,97 y las demás a 0,47 de opacidad.
+- **Los interruptores de Ajustes no se anunciaban como interruptores**: cinco dibujados a mano, sin
+  `role="switch"` ni `aria-checked`. Los tres de las notificaciones **no decían a VoiceOver si estaban
+  encendidos**, y los dos de la protección lo decían cambiándose el nombre. Se arregla al unificarlos.
+
+### La pulsación (apartados 2-5)
+
+Pulsar responde en `ultrafast` (120 ms: el dedo no espera) y soltar vuelve en `normal` con la curva
+`entrance`, que llega deprisa y se posa sin rebotar — el muelle crítico que la F0 reserva para lo que
+suelta el dedo. **Ni una curva nueva**: las curvas son de la F14. ⚠️ **En Reducido no encoge** (la escala
+de Tailwind no es un token, así que el modo no la apagaba, C-54): baja la opacidad. Y **lo destructivo no
+encoge en ninguna parte**: las papeleras de `ui.jsx` llevan `toque-destructivo`, la regla de Fitness (FIT
+F37) para toda la aplicación (apartado 28).
+
+### Un solo interruptor (hallazgo `tres_interruptores` de la F0, apartado 20)
+
+Había tres: el `Switch` de `ui.jsx`, seis dibujados a mano (cinco en Ajustes, uno en Gestión de temas con
+`transition-all`) y cuatro filas con su pista aparte (Todo el día, 🔔 Avisarme, Repetir cada año y la
+legibilidad automática). Los tres movían la bola con `left`, que recalcula el diseño en cada fotograma.
+Ahora son **`Switch`** y, dentro de una fila que se toca entera, **`PistaInterruptor`** —la fila es el
+control, con `role="switch"` y `aria-checked`—: la bola viaja con `transform`, se estira un poco al pulsar y
+en Reducido salta a su sitio. La deuda de `transition-all` de la F0 **baja de 6 a 0**, y es un trinquete.
+
+### El chevron gira, lo que se despliega aparece (apartados 14 y 27)
+
+Veinte desplegables cambiaban `ChevronDown` por `ChevronUp` (o por `ChevronRight`) de golpe; tres giraban.
+Los veintitrés son ahora **`ChevronDespliegue`**: el mismo icono gira —de la derecha hacia arriba, por el
+camino corto— y en Reducido llega sin girar. Lo de dentro aparece con un fundido de 160 ms
+(`despliegue-entra`), y también las acciones del `⋯` de las plantillas. Cerrar recolocando el resto es la
+F10 (C-54).
+
+### Las marcas laten al ponerlas (apartado 29)
+
+Solo dos estrellas (Biblioteca) latían, y latían **mientras se pulsaban, también al quitar el favorito**.
+Ahora las **trece** marcas de favorito de la aplicación —Biblioteca, Nutrición, Armario, Horario, planes,
+ejercicios, colores y apariencias— laten **una vez al marcarlas**, nunca al quitarlas ni al abrir la
+pantalla (`LatidoAlMarcar`). 🐛 Y el preset `selection` del motor latía `suave` mientras el CSS latía
+`fuerte`: ya dicen lo mismo.
+
+### Pestañas y foco (apartados 7, 24 y 27)
+
+La pestaña elegida (`ToggleTab`) funde su color al ritmo del contenido que cambia debajo (F2) y dice cuál es
+(`aria-pressed`). Y **el foco de teclado se ve en toda la aplicación** con el acento —antes solo en
+Fitness—, solo con teclado y sin tocar los campos de texto, cuyo aspecto en el iPhone es la C-32.
+
+### Lo que no hace esta fase (`NO_EN_F3`, C-54)
+
+El botón que pasa a «cargando» y a «Guardado» (los estados son la F9), añadir y quitar en una lista sin que
+salte (F10), arrastrar y reordenar (F5 y F8: hoy no hay nada arrastrable), los tooltips (no hay ninguno, y en
+un iPhone no hay puntero que se pose) y la tarjeta que se eleva con el ratón (no se añade: C-54).
+
+### 🐛 Y un error mío, que se deja escrito
+
+La librería de la fase se estrenó como `src/lib/microinteracciones.js`, **que ya era de la EH F50**, y la
+pisó: lo cantaron seis suites al no encontrar `MICROINTERACCIONES` ni `ESCALAS_AL_TOCAR`. Se recuperó de
+git y la de la F3 es `microinteraccionesMotion.js`; la auditoría de Imagen personal la excluye a mano (la
+décima). Es la E3 F9 otra vez: **antes de crear un archivo, mirar si ese nombre ya es de alguien.** Y un
+segundo, menor: los comentarios del cuerpo de `Switch` rompían el limpiador de comentarios de otra prueba
+(un `{` seguido de un comentario de bloque, E3 F5); van fuera de la función.
+
+### Cómo se comprueba
+
+- `scripts/test-motion-f3.mjs` (100 comprobaciones): las reglas de la pulsación y de Reducido, la entrada
+  con `backwards`, lo destructivo, el interruptor único y sus filas, el giro de un chevron en sus tres
+  posiciones, el latido (al marcar sí, al quitar y al pintarse no), el foco, el mapa, y que cada patrón de
+  `auditarComponentesMotion` caza su ejemplo malo —y hoy, en toda la aplicación, ni uno—.
+- La sección **«MS F3»** del recorrido de Chromium mantiene los botones pulsados con el ratón y los suelta
+  fuera, y mide lo que se ve: 0,98 en 120 ms y vuelta en 220 con la curva que se posa, la tarjeta de la
+  portada a 0,97 y las demás a 0,47, Reducido a escala 1 y opacidad 0,72, la bola a 19 px con `transform`,
+  el chevron de −90° a −180°, el anillo de foco del color del acento y la estrella que late 220 ms.
+- 44 casos nuevos en el banco de renderizado: el interruptor, su pista, el chevron, la marca, la pestaña y
+  la papelera.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.132.0 — Motion System F2/20: navegación, transiciones y continuidad espacial
 
 La F2 del Motion System (*"Navegación, transiciones y continuidad espacial"*, líneas 6038–6770 de

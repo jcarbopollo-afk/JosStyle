@@ -17,8 +17,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useScrollAlVolver } from '../components/scrollAlVolver';
 import {
-  ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search, Dumbbell, Camera, Play, X,
+  ChevronLeft, ChevronRight, Search, Dumbbell, Camera, Play, X,
 } from 'lucide-react';
+import { ChevronDespliegue } from '../components/motion';
 import { COLORS } from '../tokens';
 import { OpcionSegmentada } from '../components/piezasFitness';
 import { acentoLegible } from '../lib/acabadoFitness';
@@ -308,10 +309,10 @@ function FilaHistoria({ fila, accent, abierta, onAlternar, onVerSesion }) {
           {fila.parcial && <span className="ml-1.5" style={{ color: COLORS.warning }}>·&nbsp;Parcial</span>}
         </span>
         <span className="text-sm font-bold tabular-nums" style={{ color: COLORS.text }}>{fila.resumen}</span>
-        {abierta ? <ChevronUp size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" /> : <ChevronDown size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />}
+        <ChevronDespliegue abierto={abierta} size={16} style={{ color: COLORS.textMuted }} />
       </button>
       {abierta && (
-        <div className="pb-2.5 space-y-0.5">
+        <div className="despliegue-entra pb-2.5 space-y-0.5">
           {fila.series.map((s) => (
             <p key={s} className="text-xs tabular-nums" style={{ color: COLORS.text }}>{s}</p>
           ))}

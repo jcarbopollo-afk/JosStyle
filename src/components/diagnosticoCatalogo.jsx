@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Wrench, ChevronDown, ChevronUp } from 'lucide-react';
+import { Wrench } from 'lucide-react';
+import { ChevronDespliegue } from './motion';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { Card } from './ui';
@@ -125,9 +126,9 @@ export function CatalogDiagnosticsEntry({ accent }) {
           <span className="block text-sm font-bold" style={{ color: COLORS.text }}>Diagnóstico del catálogo</span>
           <span className="block text-[11px]" style={{ color: COLORS.textMuted }}>Solo en desarrollo</span>
         </span>
-        {abierto ? <ChevronUp size={16} style={{ color: COLORS.textMuted }} /> : <ChevronDown size={16} style={{ color: COLORS.textMuted }} />}
+        <ChevronDespliegue abierto={abierto} size={16} style={{ color: COLORS.textMuted }} />
       </button>
-      {abierto && <div className="mt-3"><CatalogDiagnostics diagnostico={diagnostico} /></div>}
+      {abierto && <div className="despliegue-entra mt-3"><CatalogDiagnostics diagnostico={diagnostico} /></div>}
     </Card>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Star } from 'lucide-react';
+import { LatidoAlMarcar } from './motion';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import {
@@ -215,7 +216,7 @@ export default function ColorPicker({
             style={{ background: esFavorito ? hexToRgba(accent, 0.16) : COLORS.surface2, border: `1px solid ${esFavorito ? accent : COLORS.border}` }}
             aria-label={esFavorito ? 'Quitar de favoritos' : 'Añadir a favoritos'}
           >
-            <Star size={16} style={{ color: esFavorito ? accent : COLORS.textMuted }} fill={esFavorito ? accent : 'none'} />
+            <LatidoAlMarcar activo={!!esFavorito}><Star size={16} style={{ color: esFavorito ? accent : COLORS.textMuted }} fill={esFavorito ? accent : 'none'} /></LatidoAlMarcar>
           </button>
         </div>
 

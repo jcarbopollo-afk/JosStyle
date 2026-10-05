@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Heart, Flame, GraduationCap, Calendar, ChevronDown,
+  Heart, Flame, GraduationCap, Calendar, 
   Moon, Dumbbell, Target, Wallet, Apple, ListTodo, HeartPulse,
   BookOpen, Briefcase, Library, Church, Smartphone,
   Plane, Sun, Home, ClipboardList,
 } from 'lucide-react';
+import { ChevronDespliegue } from '../components/motion';
 import { COLORS, MODOS_APP } from '../tokens';
 import { calcularDuracion, formatHoras, hexToRgba, diasHasta, formatFecha, todayISO, addDays } from '../lib/helpers';
 import { resumenHabito } from '../lib/rachas';
@@ -372,7 +373,7 @@ function IndicadorContexto({ modo, onSetModo, accent }) {
           {/* Apartado 4: la flecha rota, no cambia de golpe — mismo icono y misma transición que
               ya usan SkillCard/RutinaCard/AsignaturaCard/ExamenItem, para que esto se sienta
               parte del lenguaje visual de siempre y no un componente pegado después. */}
-          <ChevronDown size={16} style={{ color: COLORS.textMuted, flexShrink: 0, transform: expandido ? 'rotate(180deg)' : 'none', transition: transicion('transform', 'normal') }} />
+          <ChevronDespliegue abierto={expandido} size={16} style={{ color: COLORS.textMuted }} />
         </div>
       </button>
 
@@ -490,7 +491,7 @@ function TarjetaPuntuacion({ puntuacion, mensaje, accent }) {
             <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{mensaje}</p>
             <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: COLORS.textMuted, opacity: 0.75 }}>
               {puntuacion.hechos} de {puntuacion.total} hoy
-              <ChevronDown size={13} style={{ transform: expandido ? 'rotate(180deg)' : 'none', transition: transicion('transform', 'normal') }} />
+              <ChevronDespliegue abierto={expandido} size={13} />
             </p>
           </div>
         </div>

@@ -33,6 +33,7 @@
 import React, { useState, useMemo } from 'react';
 import { useScrollAlVolver } from '../components/scrollAlVolver';
 import { ArrowLeft, Search, Star, Check, Copy, SlidersHorizontal, X } from 'lucide-react';
+import { LatidoAlMarcar } from '../components/motion';
 import { COLORS } from '../tokens';
 import { PastillaFiltro as Pastilla } from '../components/piezasFitness';
 import { acentoLegible } from '../lib/acabadoFitness';
@@ -107,7 +108,7 @@ export function TarjetaPlan({ plan, accent, activo = false, favorito = false, on
               color: favorito ? COLORS.warning : COLORS.textMuted,
             }}
           >
-            <Star size={16} fill={favorito ? COLORS.warning : 'none'} />
+            <LatidoAlMarcar activo={!!favorito}><Star size={16} fill={favorito ? COLORS.warning : 'none'} /></LatidoAlMarcar>
           </button>
         )}
       </div>
@@ -220,7 +221,7 @@ export function DetallePlan({
                 color: favorito ? COLORS.warning : COLORS.textMuted,
               }}
             >
-              <Star size={16} fill={favorito ? COLORS.warning : 'none'} />
+              <LatidoAlMarcar activo={!!favorito}><Star size={16} fill={favorito ? COLORS.warning : 'none'} /></LatidoAlMarcar>
             </button>
           )}
         </div>
