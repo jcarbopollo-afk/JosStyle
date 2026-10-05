@@ -343,7 +343,19 @@ segundo, menor: los comentarios del cuerpo de `Switch` rompían el limpiador de 
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos): build de Vite, **22 799
+pruebas unitarias** con Node en **211 suites**, **3836 casos de renderizado real**, **11 reglas invariantes** y
+**3126 comprobaciones en Chromium** — **29 772 comprobaciones**. El salto desde la v3.132.0 son 101 pruebas de
+Node —la suite nueva de las microinteracciones (`test-motion-f3`) y su línea en el resumen—, los casos de
+renderizado nuevos —el `Switch`, `PistaInterruptor`, `ChevronDespliegue` y `LatidoAlMarcar`— (44) y la sección
+«MS F3» del recorrido (24).
+
+🐛 **Y la primera pasada entera salió roja en la sección de la F1, no en la de la F3.** Medía la entrada de las
+tarjetas de la muestra de movimiento **660 ms después del toque**, con la entrada ya terminada, y solo la
+encontraba porque `hubCardIn` acababa con `both` y se quedaba puesta para siempre —que es justo el fallo que
+arregla esta fase (`backwards`)—. Ahora se pulsa y se mide en el mismo turno, como enseñó la F2. ⚠️ **Una
+comprobación que mide una animación DESPUÉS de que acabe solo funciona mientras la animación no acaba**: al
+arreglar un `both`, buscar quién lo medía tarde.
 
 ## v3.132.0 — Motion System F2/20: navegación, transiciones y continuidad espacial
 
