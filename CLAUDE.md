@@ -216,6 +216,17 @@ La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
   🎬 **Y LO ABRIÓ EL 2026-10-04: EL MOTION SYSTEM, 21 FASES**, con la misma orden de encadenar sin
   parar y de seguir cuando se restablezca el límite. Se construye de la F0 a la F20
   (`docs/13_MOTION_SYSTEM_ORDEN.md`), una a una, cada una con `verificar.sh` en verde y a `main`.
+- 🤖 **AUTONOMÍA EN LA NUBE (2026-10-05, la pidió él para dejar la sesión trabajando mientras
+  duerme).** `.claude/settings.json` permite Bash, leer y editar archivos, las tareas, `send_later`,
+  `update_trigger` y leer GitHub, y **prohíbe** los empujes forzados, borrar ramas remotas o `main`,
+  `.git` y los borrados masivos. **Lo que ese archivo permite se ejecuta directamente, sin pedirle
+  confirmación**; lo que prohíbe **no se intenta por otro camino**. **Al cerrar cada fase o tarea se
+  deja programada la continuación** con `send_later`, y además hay una Routine que salta cada dos
+  horas en esta sesión como red de seguridad —si no queda nada pendiente, se desactiva con
+  `update_trigger`—. Lo que **no** se puede automatizar: el modo de la sesión (lo elige él en el
+  selector; lo mejor es **Auto**), el límite de uso de su cuenta, y lo que solo puede hacer él (SQL,
+  cuentas, DEP-29, DEP-30, C-27, C-32 y la seguridad de `/api/ask-ai`). ⚠️ **El listón no cambia**: a
+  `main` solo con `bash scripts/verificar.sh` en verde.
 - **Al terminar, decirle siempre dos cosas:** qué se ha hecho y hasta dónde se ha llegado.
 - **Lo que más le importa es recibir la entrega actualizada cuanto antes.** Priorizarlo sobre
   explicaciones largas; nunca dejar un turno a medias sin entregarla.
