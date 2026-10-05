@@ -295,6 +295,7 @@ export const DEPENDENCIAS_PERMITIDAS = Object.freeze([
   { modulo: 'accesibilidadEH', porque: 'Solo la auditoría móvil (F38) reutiliza su revisor de accesibilidad.' },
   { modulo: 'umbralesGesto', porque: 'Los umbrales de los gestos del Motion System (MS F5): `entrenamientoUx.js` toma de aquí el de cambiar de ejercicio (FIT F9). Una hoja sin dependencias, así que el motor no se trae la capa visual.' },
   { modulo: 'gestosMotion', porque: 'Las piezas de los gestos del Motion System (MS F5): el asa de una hoja y el deslizar entre ejercicios, en las pantallas. Ningún motor de Fitness lo importa.' },
+  { modulo: 'continuidad', porque: 'El elemento compartido del Motion System (MS F7): el nombre de un ejercicio viaja de la biblioteca a su ficha. Solo lo usan las piezas de la biblioteca; ningún motor de Fitness lo importa.' },
   { modulo: 'motion', porque: 'El Motion System de toda la aplicación (MS F1): `transicion()` para una transición en línea, y la auditoría de movimiento (F37) lee sus tokens para medir el CSS. Ningún motor de Fitness lo importa: es capa visual y de auditoría.' },
 ]);
 const baseDe = (spec) => spec.split('/').pop().replace(/\.(jsx?|mjs)$/, '');

@@ -138,7 +138,9 @@ import {
 } from './lib/navegacion';
 /* MS F2 — qué clase de movimiento es cada cambio de la pila (entrar, volver, cambiar de sección) y
    lo que pasa en la página al llegar (el scroll, las entradas que no se repiten, el foco). */
-import { tipoDeNavegacion, claseDeNavegacion, claveDeScroll, indiceDePestana, estiloDelIndicador } from './lib/transicionNavegacion';
+import { tipoDeNavegacion, claseDeNavegacion, claveDeScroll, indiceDePestana, estiloDelIndicador, ultimoDePila } from './lib/transicionNavegacion';
+import { hayOrigen } from './lib/continuidad';
+import { useContenedorDesdeOrigen } from './components/continuidad';
 import { useNavegacionEnLaPagina } from './components/navegacionMotion';
 import { useCapasMotion } from './components/capasMotion';
 import { AreaSegura } from './components/areaSegura';
@@ -191,7 +193,7 @@ import { eliminarGusto, restaurarGusto } from './lib/gustos';
 /* ⚠️ **EH F39, apartado 3** — el puente a Tareas. `App.jsx` es el dueño de
    `estiloHombre` y de `productividad`, así que el plan lo aplica aquí. */
 import { aplicarTarea } from './lib/integracionEstilo';
-import { atributoMotion, velocidadMotion, avisarCambioDeMotion } from './lib/motion';
+import { atributoMotion, velocidadMotion, avisarCambioDeMotion, contextoDelDocumento } from './lib/motion';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.
@@ -433,11 +435,15 @@ export default function App() {
   const [tipoNav, setTipoNav] = useState('seccion');
   const pilaNavRef = useRef(pilaNav);
   const pantallaRef = useRef(null);
+  /* 🎬 MS F7 — al volver, de qué pantalla se viene: la portada de un área hace que su tarjeta se pose. */
+  const [vieneDe, setVieneDe] = useState(null);
   const navegarA = (calcular, principal) => {
     const antes = pilaNavRef.current;
     const despues = calcular(antes);
     pilaNavRef.current = despues;
-    setTipoNav(tipoDeNavegacion(antes, despues, { principal, principales: PESTANAS_PRINCIPALES }));
+    const tipo = tipoDeNavegacion(antes, despues, { principal, principales: PESTANAS_PRINCIPALES });
+    setTipoNav(tipo);
+    setVieneDe(tipo === 'volver' ? ultimoDePila(antes) : null);
     setPilaNav(despues);
   };
   const setTab = (destino, foco) => navegarA((p) => abrirNav(p, destino, foco), false);
@@ -449,6 +455,10 @@ export default function App() {
   /* MS F6 — toda ventana, hoja o pantalla por encima entra y sale con el sistema de profundidad, sin
      escribir la suya (`capasMotion.js`). Un `useEffect`: también aquí arriba (regla 4). */
   useCapasMotion();
+  /* 🎬 MS F7, apartados 5 y 21 — una pantalla abierta desde una tarjeta de la portada de un área CRECE
+     DESDE ELLA (el origen lo apunta HubView al navegar). Después de `useNavegacionEnLaPagina`, que pone
+     el scroll arriba: el rectángulo de la pantalla se mide ya en su sitio. Regla 4: aquí arriba. */
+  useContenedorDesdeOrigen(pantallaRef, { id: tipoNav === 'entrar' ? `pantalla:${tab}` : null, clave: claveDeScroll(pilaNav) });
   const [loaded, setLoaded] = useState(false);
   const [accent, setAccent] = useState(ACCENTS[0].value);
   // Fase A3 — Apariencia avanzada: tema (claro/oscuro/automático), tamaño de texto, densidad,
@@ -3446,7 +3456,7 @@ export default function App() {
       return (
         <HubView
           area={area} modulos={catalogoConIconos} personalizacion={personalizacion}
-          resumenes={resumenesTodos} accent={accent} onOpenModulo={setTab}
+          resumenes={resumenesTodos} accent={accent} onOpenModulo={setTab} vieneDe={vieneDe}
         />
       );
     }
@@ -3504,6 +3514,11 @@ export default function App() {
        🐛 Y un LÍMITE DE ERROR por pantalla (apartado 18): fuera de Fitness, un fallo al pintar
        dejaba la aplicación en blanco y sin barra de abajo para salir. `AreaSegura` (FIT F36) es
        el mismo, con su «Reintentar», y se limpia al cambiar de pantalla (`clave`). */
+    /* MS F7 — si la pantalla crece desde su tarjeta, el contenedor NO lleva además la entrada desde la
+       derecha (`module-enter`): serían dos movimientos para la misma llegada. Solo se pregunta (sin
+       gastar el origen): lo gasta `useContenedorDesdeOrigen` al animar. En Reducido no hay recorte, y
+       entonces sí la entrada de siempre, que ya es un fundido. */
+    const desdeTarjeta = tipoNav === 'entrar' && hayOrigen(`pantalla:${tab}`) && !contextoDelDocumento().reducido && contextoDelDocumento().espacial;
     const nombrePantalla = tab === RAIZ_NAV ? 'Inicio'
       : (AREAS_NAV.find((a) => a.id === tab)?.label || MORE_NAV.find((m) => m.id === tab)?.label || 'esta pantalla');
     const protegido = (
@@ -3512,7 +3527,7 @@ export default function App() {
       </AreaSegura>
     );
     const contenedor = (hijos) => (
-      <div key={tab} ref={pantallaRef} tabIndex={-1} data-navegacion={tipoNav} className={`outline-none ${claseDeNavegacion(tipoNav)}`.trim()}>
+      <div key={tab} ref={pantallaRef} tabIndex={-1} data-navegacion={tipoNav} data-continuidad={desdeTarjeta ? 'desde-tarjeta' : undefined} className={`outline-none ${desdeTarjeta ? '' : claseDeNavegacion(tipoNav)}`.trim()}>
         {hijos}
       </div>
     );

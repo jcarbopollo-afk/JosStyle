@@ -5,7 +5,7 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**75 elementos**: ✅ Existe 66 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 7 · 🚨 Fuera de control 0.
+**78 elementos**: ✅ Existe 69 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 7 · 🚨 Fuera de control 0.
 
 ## Resumen
 
@@ -21,6 +21,9 @@
 | Portada de un área: la cascada de tarjetas | B | 3 · Protagonista | 420 ms | ✅ Existe | F10 |
 | Cabecera de un área (ÁREA / Vida) | B | 2 · Suave | 280 ms | ✅ Existe | F2 |
 | Tocar un módulo de la portada | D | 2 · Suave | 160 ms | ✅ Existe | F7 |
+| La pantalla de un módulo crece desde su tarjeta | B | 3 · Protagonista | 340 ms | ✅ Existe | F7 |
+| Al volver, la tarjeta de la que se salió se posa | D | 2 · Suave | 280 ms | ✅ Existe | F7 |
+| El nombre de un ejercicio viaja de la biblioteca a su ficha | J | 3 · Protagonista | 280 ms | ✅ Existe | F7 |
 | Pulsar un módulo de la portada (y las demás retroceden) | D | 1 · Micro | 160 ms | ✅ Existe | F3 |
 | El icono de un módulo de la portada al pulsarlo | D | 1 · Micro | 160 ms | ✅ Existe | F3 |
 | Una pantalla de Fitness aparece | B | 2 · Suave | 220 ms | ✅ Existe | F2 |
@@ -333,6 +336,36 @@
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
+#### La pantalla de un módulo crece desde su tarjeta
+
+`contenedor_desde_tarjeta` · ✅ Existe · lo trata la **F7**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/continuidad.jsx (useContenedorDesdeOrigen, en App.jsx) · src/lib/continuidad.js · HubView |
+| Componente | useContenedorDesdeOrigen |
+| Clase CSS | — |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Que abrir un módulo desde la portada de su área se lea como ENTRAR EN LA TARJETA, no como una pantalla que llega de otro sitio (apartados 5, 20, 21 y 24). |
+| Estado inicial | Recortada al rectángulo de la tarjeta, con sus esquinas, medio visible |
+| Estado final | La pantalla entera, con las esquinas rectas |
+| Entrada | El recorte se abre (`clip-path`) y lo de dentro se revela |
+| Salida | — |
+| Interacción | Tocar una tarjeta de la portada de un área |
+| Transición | clip-path y opacity, por la Web Animations API |
+| Duración | 340 ms |
+| Curva | --motion-curva-emphasized |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 3 · Protagonista |
+| Prioridad | alta |
+| Relación | Sustituye a `module-enter` SOLO en ese caso: dos movimientos para la misma llegada serían uno de más. Desde Inicio (una tarjeta resumen) se sigue entrando desde la derecha. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Sin recorte: la entrada de siempre, que en Reducido es un fundido. |
+
 #### Una pantalla de Fitness aparece
 
 `pantalla_fitness` · ✅ Existe · lo trata la **F2**
@@ -542,10 +575,40 @@
 | Escalonado | — |
 | Intensidad | 2 · Suave |
 | Prioridad | alta |
-| Relación | La navegación espera el mismo token (`duracionMs('fast')`, MS F1), no un número escrito aparte. |
+| Relación | La navegación espera el mismo token (`duracionMs('fast')`, MS F1), no un número escrito aparte. 🔓 MS F7: justo antes de navegar, la tarjeta YA crecida apunta su rectángulo, y la pantalla del módulo nace de él (`contenedor_desde_tarjeta`). |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+
+#### Al volver, la tarjeta de la que se salió se posa
+
+`llegada_tarjeta` · ✅ Existe · lo trata la **F7**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/views/HubView.jsx · src/components/continuidad.jsx (animarLlegada) |
+| Componente | HubView |
+| Clase CSS | — |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Reconstruir la relación inversa: el ojo encuentra de dónde salió (apartado 6). |
+| Estado inicial | Un poco más grande (1,02) y más clara |
+| Estado final | En su sitio |
+| Entrada | Se posa |
+| Salida | — |
+| Interacción | Volver de un módulo a la portada de su área |
+| Transición | transform y filter, por la Web Animations API |
+| Duración | 280 ms |
+| Curva | --motion-curva-entrance |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 2 · Suave |
+| Prioridad | media |
+| Relación | La portada ya vuelve sin repetir su cascada (F2); esto es lo único que se mueve en ella. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Se funde desde medio visible, sin escala. |
 
 #### Pulsar un módulo de la portada (y las demás retroceden)
 
@@ -1068,6 +1131,36 @@
 | Movimiento reducido | Solo el fundido. |
 
 ### J · Listas
+
+#### El nombre de un ejercicio viaja de la biblioteca a su ficha
+
+`compartido_ejercicio` · ✅ Existe · lo trata la **F7**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/bibliotecaEjercicios.jsx (ExerciseCard, ExerciseHeader) · src/components/continuidad.jsx (Compartido) |
+| Componente | Compartido |
+| Clase CSS | — |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Que el nombre que se tocó sea el mismo que encabeza la ficha (apartados 3, 4 y 22). |
+| Estado inicial | Donde estaba en la tarjeta, a su tamaño de letra |
+| Estado final | El título de la ficha |
+| Entrada | Viaja y crece por su letra, sin estirarse (FLIP) |
+| Salida | — |
+| Interacción | Tocar un ejercicio; y al volver, de la ficha a la tarjeta |
+| Transición | transform, por la Web Animations API |
+| Duración | 280 ms |
+| Curva | --motion-curva-emphasized |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 3 · Protagonista |
+| Prioridad | media |
+| Relación | Funciona en los dos sentidos: lo que desaparece apunta dónde estaba y lo que aparece con el mismo id sale de ahí. Si el scroll cambia antes del primer fotograma, el viaje se corrige. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Se funde en su sitio: la continuidad sin recorrido (apartado 34). |
 
 #### Tarjetas de una lista que entran en cascada (Biblioteca, Productividad, Nutrición, Salud)
 

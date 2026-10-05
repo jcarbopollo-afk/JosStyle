@@ -18,6 +18,7 @@ import {
   SlidersHorizontal, X, Check, Heart, Plus, ChevronRight, ArrowDown, Dumbbell, Target,
 } from 'lucide-react';
 import { LatidoAlMarcar } from './motion';
+import { Compartido } from './continuidad';
 import { COLORS } from '../tokens';
 import { PastillaFiltro } from './piezasFitness';
 import { acentoLegible } from '../lib/acabadoFitness';
@@ -147,10 +148,12 @@ export function ExerciseCard({ ejercicio, accent, onAbrir, accion = 'Ver', marca
     >
       <ExerciseVisual ejercicio={ejercicio} accent={accent} />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+        {/* MS F7 — el nombre que se toca VIAJA hasta el título de la ficha (`Compartido`): es el
+            elemento con más valor de la tarjeta, y la ficha empieza por él (apartados 3 y 22). */}
+        <Compartido as="p" id={`ejercicio:${ejercicio.id}`} className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
           {ejercicio.nombre}
           {favorito && <Heart size={12} className="inline ml-1.5 -mt-0.5" style={{ color: acentoLegible(accent) }} fill={acentoLegible(accent)} aria-label="En favoritos" />}
-        </p>
+        </Compartido>
         {ejercicio.variante && (
           <p className="text-[11px] truncate" style={{ color: COLORS.textMuted }}>{ejercicio.variante}</p>
         )}
@@ -217,9 +220,9 @@ export function ExerciseHeader({ ficha, accent }) {
       <div className="flex items-start gap-3">
         <ExerciseVisual ejercicio={ficha.ejercicio} accent={accent} grande />
         <div className="min-w-0 flex-1">
-          <p className="text-xl font-extrabold leading-tight" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+          <Compartido as="p" id={`ejercicio:${ficha.ejercicio.id}`} className="text-xl font-extrabold leading-tight" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
             {ficha.nombre}
-          </p>
+          </Compartido>
           {ficha.variante && <p className="text-sm font-semibold" style={{ color: acentoLegible(accent) }}>{ficha.variante}</p>}
           {ficha.etiquetas.length > 0 && (
             <div className="flex gap-1.5 flex-wrap mt-1.5">

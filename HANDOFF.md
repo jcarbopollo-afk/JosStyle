@@ -2,6 +2,12 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.137.0 — Motion System F7/20: continuidad espacial):**
+> Abrir un módulo desde la portada de su área ya es **entrar en la tarjeta**: la pantalla crece desde ella, con sus
+> esquinas. Al volver, esa tarjeta se posa. El nombre de un ejercicio **viaja** de la biblioteca al título de su
+> ficha y de vuelta (`Compartido`). Hay un mapa de transiciones con su nivel y su protagonista. **La siguiente es
+> la F8** (física, springs, gestos e interacción directa).
+
 > **📅 ACTUALIZACIÓN (v3.136.0 — Motion System F6/20: profundidad, capas y z-index):**
 > Las cuarenta ventanas, hojas y pantallas por encima **entran y salen** —ya no aparecen de golpe— sin que ninguna
 > escriba su movimiento: un vigilante (`useCapasMotion`) decide qué es cada una. Las hojas suben desde su borde y bajan

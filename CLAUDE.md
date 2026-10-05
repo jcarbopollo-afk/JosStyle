@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.136.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.137.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -36,8 +36,8 @@ se te vuelva a restablecer, sigue."* El índice con la línea de cada fase está
 **`docs/13_MOTION_SYSTEM_ORDEN.md`** (el archivo empieza por la F16 y trae la F2 y la F11 repetidas,
 C-51), y **se construye de la F0 a la F20**. **Hechas la F0 (v3.130.0)** —el mapa, la auditoría y el
 plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegación—, la **F3 (v3.133.0)**
-—las microinteracciones—, la **F4 (v3.134.0)** —los datos que cambian—, la **F5 (v3.135.0)** —los gestos— y la
-**F6 (v3.136.0)** —la profundidad y las capas—.
+—las microinteracciones—, la **F4 (v3.134.0)** —los datos que cambian—, la **F5 (v3.135.0)** —los gestos—, la
+**F6 (v3.136.0)** —la profundidad y las capas— y la **F7 (v3.137.0)** —la continuidad espacial—.
 Lo que vale para cualquier cambio a partir de hoy:
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
@@ -126,6 +126,11 @@ Lo que vale para cualquier cambio a partir de hoy:
   vaya**. 🚨 **Ni un z-index con número** (`z-50`, `zIndex: 3`): las capas tienen nombre (`CAPAS_Z`, `z-capa`,
   `z-flotante`…); **ni un velo, un desenfoque ni una sombra de elevación escritos a mano**: `CAPAS.veloHoja`,
   `desenfoque('medium')`, `sombra('flotante')`. `auditarProfundidad` caza los cuatro.
+- 🚨 **LA CONTINUIDAD SE APUNTA, NO SE CRUZA** (F7, `continuidad.js`): JosStyle pinta una pantalla cada vez, así que
+  lo que se toca **apunta su rectángulo** (`apuntarOrigen`, o `Compartido` al tocarlo o al desaparecer) y lo nuevo
+  sale de ahí; el origen caduca a los 700 ms y se gasta al usarlo. **Una tarjeta que ES lo que abre** crece hasta su
+  pantalla (`useContenedorDesdeOrigen`); **lo mismo en dos sitios** lleva `<Compartido id>` en los dos. Una tarjeta
+  que es un resumen (Inicio) no crece. El mapa de relaciones es `MAPA_TRANSICIONES`.
 - 🐛 **UNA ANIMACIÓN DE VUELTA SE CANCELA CUANDO EL DEDO VUELVE A AGARRAR** (F5, apartado 19): si no, manda sobre
   el `transform` hasta acabar y el dedo no mueve nada. **Y un muelle que mueve píxeles reposa a un cuarto de
   píxel** (`muestrearSpring(…, { reposo })`): con el reposo genérico una vuelta de 30 px «duraba» 900 ms.
@@ -2107,8 +2112,8 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F7 DEL MOTION SYSTEM** (*"Continuidad espacial, shared elements y transiciones entre
-   vistas"*, líneas 9923–10687 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F8… hasta la F20, en
+0. 🎬 **LA SIGUIENTE ES LA F8 DEL MOTION SYSTEM** (*"Física, springs, gestos e interacción directa"*, líneas
+   10688–11379 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F9… hasta la F20, en
    el orden de
    `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
    `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**

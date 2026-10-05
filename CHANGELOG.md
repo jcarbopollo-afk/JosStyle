@@ -1,5 +1,56 @@
 # CHANGELOG.md
 
+## v3.137.0 — Motion System F7/20: continuidad espacial, elementos compartidos y transiciones entre vistas
+
+La F7 del Motion System (*"Continuidad espacial, shared elements y transiciones entre vistas"*, líneas 9923–10687
+de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). Su resultado: dejar de sentirse como *"pantalla → animación →
+pantalla"* y sentirse como *"espacio → movimiento → transformación → nuevo estado"*. Vive en
+`src/lib/continuidad.js` y `src/components/continuidad.jsx`.
+
+### 🔓 La pantalla de un módulo NACE DE SU TARJETA (apartados 5, 20, 21 y 24)
+
+Al tocar una tarjeta de la portada de un área, la tarjeta crecía (Fase N3)… y luego la pantalla del módulo llegaba
+desde la derecha como si no tuviera nada que ver con ella. Ahora, justo antes de navegar, la tarjeta ya crecida
+**apunta su rectángulo** y la pantalla nueva **crece desde él**: su recorte empieza en la tarjeta, con sus
+esquinas redondas, y se abre hasta la pantalla entera mientras las esquinas se enderezan y lo de dentro se revela
+(`slow`, curva enfatizada). Sin la entrada desde la derecha a la vez —dos movimientos para la misma llegada serían
+uno de más—. Las tarjetas de **Inicio** no crecen: son un resumen del módulo, no el módulo.
+
+### 🔓 Al volver, la tarjeta de la que se salió SE POSA (apartado 6)
+
+La portada vuelve como siempre (F2: desde la izquierda, en su scroll, sin repetir su cascada) y la tarjeta del
+módulo del que se viene baja de un poco más grande y más clara a su sitio: el ojo encuentra de dónde salió.
+
+### 🔓 El elemento compartido (apartados 3, 4, 19, 22 y 23)
+
+`<Compartido id="…">` en los dos sitios donde está LO MISMO: el que desaparece apunta dónde estaba y el que
+aparece sale de ahí (FLIP), **en los dos sentidos**. El primero: **el nombre de un ejercicio** viaja de su tarjeta
+de la biblioteca al título de su ficha, y de vuelta. Un texto crece **por su letra** (14 → 20 px), nunca por su
+caja —que cambia al partirse en dos líneas— y nunca se estira; una superficie o una imagen interpolan sus esquinas.
+
+### El mapa de transiciones y el registro de orígenes (apartados 1, 2, 12, 13, 16-18)
+
+`MAPA_TRANSICIONES`: nueve relaciones —sección, tarjeta → pantalla y vuelta, padre ↔ hijo, lista → detalle,
+pestaña, capa y capa anidada— con su nivel (micro · contextual · estructural · capa), su movimiento, su
+protagonista y dónde vive. El origen **caduca a los 700 ms** (una pantalla que llega tarde no sale de un sitio que
+ya no tiene que ver) y **se gasta al usarlo** (dos destinos no salen del mismo toque).
+
+### 🐛 Lo que se encontró al construirla
+
+- **El scroll lo pone el padre DESPUÉS de que el elemento se mida**: abrir la ficha de un ejercicio lleva la página
+  arriba (FIT F38) en un efecto que corre después, así que el viaje salía del sitio equivocado. Se corrige en el
+  primer `requestAnimationFrame`, que corre antes de pintar nada.
+
+### Lo que no se construye (`NO_EN_F7`, C-58)
+
+Dos pantallas vivas a la vez (C-56), el indicador que viaja entre las pestañas de `ToggleTab` (la F10), la imagen
+que viaja a un detalle que es una capa (la F11) y el progreso del gesto en una transición de página (no hay gesto
+de página).
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.136.0 — Motion System F6/20: profundidad, capas, z-index y contexto visual
 
 La F6 del Motion System (*"Profundidad, capas, z-index y contexto visual"*, líneas 9146–9922 de

@@ -95,6 +95,9 @@ export function tipoDeNavegacion(antes, despues, { principal = false, principale
   return 'entrar';
 }
 
+/** MS F7 — de qué pantalla se viene (la de arriba de la pila de antes): al volver, su tarjeta se posa. */
+export const ultimoDePila = (pila) => { const ids = idsDe(pila); return ids.length ? ids[ids.length - 1] : null; };
+
 /** La clase de `index.css` que lleva el contenedor de la pantalla en cada tipo. */
 export const claseDeNavegacion = (tipo) => (TIPOS_NAVEGACION[tipo] ? TIPOS_NAVEGACION[tipo].clase : null) || '';
 

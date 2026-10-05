@@ -27,7 +27,7 @@ se ordena es **el trabajo**.
 | **F4** ✅ **v3.134.0** | Datos dinámicos, listas, gráficas y estados | 7587–8404 | 818 |
 | **F5** ✅ **v3.135.0** | Física, gestos, touch y comportamiento táctil | 8405–9145 | 741 |
 | **F6** ✅ **v3.136.0** | Profundidad, capas, z-index y contexto visual | 9146–9922 | 777 |
-| **F7** | Continuidad espacial, shared elements y transiciones entre vistas | 9923–10687 | 765 |
+| **F7** ✅ **v3.137.0** | Continuidad espacial, shared elements y transiciones entre vistas | 9923–10687 | 765 |
 | **F8** | Física, springs, gestos e interacción directa | 10688–11379 | 692 |
 | **F9** | Microinteracciones, estados y feedback de interfaz | 11380–12127 | 748 |
 | **F10** | Layout motion, scroll, listas y contenido dinámico | 12128–12784 | 657 |
@@ -75,3 +75,5 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | La prueba de la F5 | `scripts/test-motion-f5.mjs`, y la sección «MS F5» del recorrido de Chromium |
 | La profundidad: la jerarquía de capas, los niveles, las sombras, el velo, qué capa es cada ventana y cómo entra y sale | `src/lib/profundidad.js` (F6), con el vigilante de capas en `src/components/capasMotion.js` (`useCapasMotion`, montado en App.jsx) |
 | La prueba de la F6 | `scripts/test-motion-f6.mjs`, y la sección «MS F6» del recorrido de Chromium |
+| La continuidad: el mapa de transiciones, el registro de orígenes, la pantalla que crece desde su tarjeta, la llegada al volver y el elemento compartido | `src/lib/continuidad.js` (F7), con `Compartido`, `useContenedorDesdeOrigen`, `apuntarOrigen` y `animarLlegada` en `src/components/continuidad.jsx` |
+| La prueba de la F7 | `scripts/test-motion-f7.mjs`, y la sección «MS F7» del recorrido de Chromium |

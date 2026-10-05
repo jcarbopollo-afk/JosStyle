@@ -12976,6 +12976,119 @@ await page.emulateMedia({ reducedMotion: 'no-preference' });
 ok(errores.length === erroresAntes_ms6, `MS F6 — …sin un error en la consola${errores.length > erroresAntes_ms6 ? `: ${errores.slice(erroresAntes_ms6).join(' | ').slice(0, 200)}` : ''}`);
 almacen.ajustes = ajustesDeAntes_ms6;
 
+/* ── MS F7 · Continuidad espacial: la pantalla nace de su tarjeta, la tarjeta se posa al volver, y un nombre viaja ──
+   Lo que solo se ve en la página de verdad: que el contenedor de la pantalla nueva SALGA DEL RECTÁNGULO
+   de la tarjeta que se tocó —con sus esquinas— en vez de llegar desde la derecha, que al volver esa
+   tarjeta se pose, que el nombre de un ejercicio sea el mismo elemento en la lista y en la ficha, y que en
+   Reducido quede la entrada de siempre. Todo se mide en el MISMO turno en que React aplica el cambio
+   (la lección de la F2). ⚠️ Sufijo `_ms7`. */
+console.log('\n── MS F7 · Continuidad espacial y elementos compartidos ──');
+const ajustesDeAntes_ms7 = almacen.ajustes;
+almacen.ajustes = { ...(ajustesDeAntes_ms7 || {}), apariencia: { ...((ajustesDeAntes_ms7 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms7 = errores.length;
+/* Toca una tarjeta de la portada y espera a que la pantalla cambie (la tarjeta crece `fast` antes de navegar). */
+const abrirDesdeTarjeta_ms7 = (modulo) => page.evaluate(async (m) => {
+  const t = document.querySelector(`button.hub-card[data-modulo="${m}"]`);
+  if (!t) return null;
+  const antes = document.querySelector('.pantalla-segura > [data-navegacion]');
+  t.click();
+  const hasta = performance.now() + 2000;
+  let w = null;
+  while (performance.now() < hasta) {
+    await new Promise((ok) => requestAnimationFrame(() => ok()));
+    w = document.querySelector('.pantalla-segura > [data-navegacion]');
+    if (w && w !== antes) break;
+  }
+  if (!w || w === antes) return { sinCambio: true };
+  const r = t.getBoundingClientRect ? null : null;
+  const a = w.getAnimations().find((x) => x.id === 'continuidad-contenedor');
+  const cw = w.getBoundingClientRect();
+  return {
+    tipo: w.dataset.navegacion, continuidad: w.dataset.continuidad || null, clase: w.className,
+    css: w.getAnimations().filter((x) => x.animationName).map((x) => x.animationName),
+    desde: a ? a.effect.getKeyframes()[0].clipPath : null, hasta: a ? a.effect.getKeyframes().at(-1).clipPath : null,
+    opacidad: a ? a.effect.getKeyframes()[0].opacity : null, dura: a ? Math.round(a.effect.getComputedTiming().duration) : null,
+    contTop: Math.round(cw.top), contLeft: Math.round(cw.left),
+  };
+}, modulo);
+ok(await pulsar('Bienestar') && /Área/i.test(await esperarTexto(/Área/i)), 'MS F7 — la portada de Bienestar');
+const tarjeta_ms7 = await page.evaluate(() => {
+  const t = document.querySelector('button.hub-card[data-modulo="sueno"]');
+  if (!t) return null;
+  const r = t.getBoundingClientRect();
+  return { top: r.top, left: r.left, width: r.width, height: r.height, radio: getComputedStyle(t).borderTopLeftRadius };
+});
+ok(!!tarjeta_ms7, `MS F7 — la tarjeta de Sueño está en la portada (${JSON.stringify(tarjeta_ms7)})`);
+const e_ms7 = await abrirDesdeTarjeta_ms7('sueno');
+const insets_ms7 = e_ms7 && e_ms7.desde ? (/inset\(([\d.]+)px ([\d.]+)px ([\d.]+)px ([\d.]+)px round ([\d.]+)px\)/.exec(e_ms7.desde) || []).slice(1).map(Number) : [];
+ok(e_ms7 && e_ms7.tipo === 'entrar' && e_ms7.continuidad === 'desde-tarjeta' && !/module-enter/.test(e_ms7.clase) && !e_ms7.css.includes('moduleSlideIn'),
+  `🚨 MS F7 — abrir un módulo desde su tarjeta es ENTRAR EN ELLA: la pantalla no llega además desde la derecha (${JSON.stringify(e_ms7 && { tipo: e_ms7.tipo, continuidad: e_ms7.continuidad, css: e_ms7.css })}; apartados 5 y 21)`);
+ok(insets_ms7.length === 5 && tarjeta_ms7 && Math.abs(insets_ms7[3] - (tarjeta_ms7.left - e_ms7.contLeft)) < 30 && Math.abs(insets_ms7[0] - (tarjeta_ms7.top - e_ms7.contTop)) < 40 && insets_ms7[4] >= 16,
+  `🚨 MS F7 — …su recorte EMPIEZA en el rectángulo de la tarjeta, con sus esquinas redondas (${e_ms7?.desde}; tarjeta en ${Math.round(tarjeta_ms7?.top)},${Math.round(tarjeta_ms7?.left)}; apartados 20 y 21)`);
+ok(e_ms7 && e_ms7.hasta === 'inset(0px 0px 0px 0px round 0px)' && e_ms7.dura === 340 && Number(e_ms7.opacidad) < 1,
+  `MS F7 — …y se abre hasta la pantalla entera, enderezando las esquinas, en \`slow\`, revelando lo de dentro (${JSON.stringify(e_ms7 && { hasta: e_ms7.hasta, dura: e_ms7.dura, opacidad: e_ms7.opacidad })})`);
+await page.waitForTimeout(700);
+/* Volver: la tarjeta de Sueño se posa. */
+const v_ms7 = await page.evaluate(async () => {
+  const b = document.querySelector('button.back-bar');
+  if (!b) return null;
+  b.click();
+  await new Promise((ok) => setTimeout(ok, 0));
+  const t = document.querySelector('button.hub-card[data-modulo="sueno"]');
+  const a = t ? t.getAnimations().find((x) => x.id === 'continuidad-llegada') : null;
+  const otras = [...document.querySelectorAll('button.hub-card[data-modulo]')].filter((x) => x !== t && x.getAnimations().some((y) => y.id === 'continuidad-llegada')).length;
+  return { hay: !!t, desde: a ? a.effect.getKeyframes()[0] : null, dura: a ? Math.round(a.effect.getComputedTiming().duration) : null, otras };
+});
+ok(v_ms7 && v_ms7.hay && v_ms7.desde && /scale\(1\.0\d+\)/.test(v_ms7.desde.transform || '') && /brightness/.test(v_ms7.desde.filter || '') && v_ms7.dura === 280 && v_ms7.otras === 0,
+  `🚨 MS F7 — al volver, la tarjeta de la que se salió SE POSA —y solo ella—: el ojo encuentra de dónde salió (${JSON.stringify(v_ms7)}; apartado 6)`);
+await page.waitForTimeout(500);
+
+/* El nombre de un ejercicio: el mismo elemento en la lista y en la ficha. */
+ok(await pulsar('Fitness') && await pulsar('Abrir Ejercicios') && await esperarCampo('Buscar un ejercicio'), 'MS F7 — Fitness → Ejercicios');
+const c_ms7 = await page.evaluate(async () => {
+  const nombre = document.querySelector('[data-compartido^="ejercicio:"]');
+  if (!nombre) return null;
+  const id = nombre.dataset.compartido;
+  const r = nombre.getBoundingClientRect();
+  const boton = nombre.closest('button');
+  boton.click();
+  await new Promise((ok) => setTimeout(ok, 0));
+  const destino = [...document.querySelectorAll(`[data-compartido="${id}"]`)].find((x) => x !== nombre);
+  const a = destino ? destino.getAnimations().find((x) => x.id === 'compartido') : null;
+  return { id, origen: { top: Math.round(r.top), left: Math.round(r.left) }, hay: !!destino, desde: a ? a.effect.getKeyframes()[0].transform : null, dura: a ? Math.round(a.effect.getComputedTiming().duration) : null, fuente: destino ? getComputedStyle(destino).fontSize : null };
+});
+ok(c_ms7 && c_ms7.hay && /^translate\(-?[\d.]+px, -?[\d.]+px\) scale\(0\.7, 0\.7\)$/.test(c_ms7.desde || '') && c_ms7.dura === 280,
+  `🚨 MS F7 — el nombre que se toca VIAJA hasta el título de la ficha, creciendo por su letra (14 → 20 px), sin estirarse (${JSON.stringify(c_ms7)}; apartados 3 y 22)`);
+await page.waitForTimeout(500);
+const vc_ms7 = await page.evaluate(async () => {
+  const b = [...document.querySelectorAll('button')].find((x) => /^←?\s*Ejercicios$/.test(x.innerText.trim()) || x.getAttribute('aria-label') === 'Volver a Ejercicios');
+  if (!b) return null;
+  b.click();
+  await new Promise((ok) => setTimeout(ok, 0));
+  const vivos = [...document.querySelectorAll('[data-compartido^="ejercicio:"]')].filter((x) => x.getAnimations().some((a) => a.id === 'compartido'));
+  return { viajan: vivos.length };
+});
+ok(vc_ms7 && vc_ms7.viajan === 1, `MS F7 — …y al volver, el nombre viaja de la ficha a SU tarjeta: los dos sentidos, solo ella (${JSON.stringify(vc_ms7)}; apartado 6)`);
+await page.waitForTimeout(400);
+
+/* Con «Reducir movimiento»: sin recorte, la entrada de siempre (que ya es un fundido). */
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+ok(await pulsar('Bienestar') && /Área/i.test(await esperarTexto(/Área/i)), 'MS F7 — con «Reducir movimiento», la portada de Bienestar');
+const r_ms7 = await abrirDesdeTarjeta_ms7('sueno');
+ok(r_ms7 && r_ms7.tipo === 'entrar' && !r_ms7.continuidad && /module-enter/.test(r_ms7.clase) && !r_ms7.desde,
+  `🚨 MS F7 — en Reducido no hay recorte: la entrada de siempre, que ya es un fundido (${JSON.stringify(r_ms7 && { continuidad: r_ms7.continuidad, clase: r_ms7.clase })}; apartado 34)`);
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.waitForTimeout(300);
+
+ok(errores.length === erroresAntes_ms7, `MS F7 — …sin un error en la consola${errores.length > erroresAntes_ms7 ? `: ${errores.slice(erroresAntes_ms7).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms7;
+
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

@@ -987,6 +987,11 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f6.mjs >/tmp/jc
 else
   fallo "Falla la profundidad del Motion System (F6)"; grep '✗' /tmp/jc_motion_f6.log
 fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f7.mjs >/tmp/jc_motion_f7.log 2>&1; then
+  ok "El Motion System, F7: continuidad espacial y elementos compartidos — $(grep -c '✓' /tmp/jc_motion_f7.log) comprobaciones"
+else
+  fallo "Falla la continuidad del Motion System (F7)"; grep '✗' /tmp/jc_motion_f7.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

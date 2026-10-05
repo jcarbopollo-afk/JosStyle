@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
@@ -6,6 +6,7 @@ import { Card } from '../components/ui';
 import { useFundidoBajoCabecera } from '../components/fundidoBajoCabecera';
 import { duracionMs, contextoDelDocumento, escalonado } from '../lib/motion';
 import { desenfoque } from '../lib/profundidad';
+import { apuntarOrigen, animarLlegada } from '../components/continuidad';
 
 // Fase N1 — Nueva navegación por áreas (sustituye la barra inferior de 4 accesos + "Más" plano
 // por 5 pestañas fijas: Inicio, Salud, Vida, Gestión, Más). Al tocar cualquiera que no sea
@@ -31,9 +32,12 @@ import { desenfoque } from '../lib/profundidad';
 // «Sin movimiento» no se espera nada y con la velocidad Pausada se espera lo que de verdad dura.
 const esperaDeExpansion = () => duracionMs('fast', contextoDelDocumento());
 
-export default function HubView({ area, modulos, personalizacion, resumenes, accent, onOpenModulo }) {
+export default function HubView({ area, modulos, personalizacion, resumenes, accent, onOpenModulo, vieneDe = null }) {
   const [expandingId, setExpandingId] = useState(null);
   const timeoutRef = useRef(null);
+  /* MS F7 — las tarjetas, por id: la que se abre deja su rectángulo como origen de la pantalla, y la
+     de la que se vuelve se posa. */
+  const tarjetas = useRef({});
   const cabeceraRef = useRef(null);
   const listaRef = useRef(null);
 
@@ -46,8 +50,20 @@ export default function HubView({ area, modulos, personalizacion, resumenes, acc
   const handleAbrir = (id) => {
     if (expandingId) return;
     setExpandingId(id);
-    timeoutRef.current = setTimeout(() => onOpenModulo(id), esperaDeExpansion());
+    /* 🔓 MS F7, apartados 5 y 21 — justo antes de navegar, la tarjeta YA crecida apunta dónde está:
+       la pantalla del módulo nace de ese rectángulo, con sus esquinas (`useContenedorDesdeOrigen`,
+       App.jsx), en vez de llegar desde la derecha como si no tuviera nada que ver con ella. */
+    timeoutRef.current = setTimeout(() => {
+      apuntarOrigen(`pantalla:${id}`, tarjetas.current[id]);
+      onOpenModulo(id);
+    }, esperaDeExpansion());
   };
+
+  /* 🔓 MS F7, apartado 6 — al VOLVER de un módulo, su tarjeta se posa en su sitio: así el ojo
+     encuentra de dónde salió. Antes de pintarse, para que el primer fotograma ya sea el de partida. */
+  useLayoutEffect(() => {
+    if (vieneDe && tarjetas.current[vieneDe]) animarLlegada(tarjetas.current[vieneDe]);
+  }, [area.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fijos = area.id === 'mas' ? ['ajustes'] : [];
   const personalizables = area.modulos.filter((id) => !fijos.includes(id));
@@ -112,6 +128,8 @@ export default function HubView({ area, modulos, personalizacion, resumenes, acc
         return (
           <button
             key={id}
+            ref={(el) => { tarjetas.current[id] = el; }}
+            data-modulo={id}
             onClick={() => handleAbrir(id)}
             disabled={!!expandingId}
             aria-label={`Abrir ${mod.label}`}

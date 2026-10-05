@@ -1187,6 +1187,24 @@ sin motivo. ⚠️ **Imagen personal está congelada (EH F65)**: sus tres avisos
 literal por el token —el mismo valor—, y reciben la entrada y salida comunes porque viven fuera del módulo, como el
 pulsar de la F3; no se les añade nada propio.
 
+### C-58 — ✅ RESUELTA AL CONSTRUIR (Motion System F7, v3.137.0) · Elementos compartidos sin dos pantallas vivas, qué tarjeta crece y el indicador de las pestañas
+
+La F7 (*"Continuidad espacial, shared elements y transiciones entre vistas"*) da por hecho algo que JosStyle no
+tiene, y pide cosas que otras fases ya reparten:
+
+1. **Un elemento compartido clásico necesita las dos pantallas vivas a la vez** (el origen y el destino se cruzan),
+   y JosStyle pinta UNA (F2: un contenedor por pantalla, `key={tab}`). Mantener la de antes montada es lo mismo que
+   pide deslizar para volver (C-56) y es arquitectura de navegación. Lectura que respeta las dos cosas —el
+   apartado 4 pide continuidad y el 37 *"no reescribir arquitectura estable"*—: **el origen se APUNTA** (su
+   rectángulo, sus esquinas y su letra, al tocarlo o al desaparecer) y lo nuevo sale de él. Caduca a los 700 ms y
+   se gasta al usarlo.
+2. **"Auditar todas las cards clicables" y "no convertir cada card en una animación compleja"** (apartado 5). Solo
+   crecen las tarjetas que **son** lo que abren —las de la portada de un área—; las de Inicio son un resumen y
+   entran como cualquier pantalla (su comprobación de la F2 sigue igual). Y un elemento viaja donde es el mismo
+   en los dos sitios: el nombre de un ejercicio. `AUDITORIA_F7` dice cada decisión.
+3. **El indicador que viaja entre pestañas** (apartado 9) en `ToggleTab`, que usan diez vistas y que se parte en dos
+   líneas cuando no cabe (GE F1), es la F10 (el diseño que cambia). La barra de abajo ya lo tiene (F2).
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

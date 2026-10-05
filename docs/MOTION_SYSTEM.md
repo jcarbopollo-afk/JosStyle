@@ -289,6 +289,30 @@ estática** —el velo y el fundido— y se van la escala y el recorrido. ⚠️
 sombra** (en oscuro aporta poco): se separa con superficie, borde, velo y cristal, y siempre hay estructura
 (`role="dialog"`, foco, Escape).
 
+## 8.6 · Continuidad espacial y elementos compartidos (F7)
+
+*"Estado A → transformación espacial → estado B"*, no *"pantalla A → animación → pantalla B"*. El sistema vive en
+`src/lib/continuidad.js` (el mapa, el registro de orígenes y los planes) y `src/components/continuidad.jsx`.
+
+**El mapa** (`MAPA_TRANSICIONES`) dice, para cada relación entre dos sitios, su nivel (micro · contextual ·
+estructural · capa), su movimiento y su protagonista: sección → sección es un fundido con el indicador que viaja
+(F2); tarjeta → pantalla, la pantalla que crece desde la tarjeta; pantalla → tarjeta, la tarjeta que se posa;
+padre → hijo se acerca y hijo → padre se retira (F2); lista → detalle, el elemento que viaja; detalle → capa, la F6.
+
+| Si es… | Usa | Cómo se mueve |
+|---|---|---|
+| Una tarjeta que ES lo que abre (la de la portada de un área) | `apuntarOrigen('pantalla:<id>', tarjeta)` justo antes de navegar; la pantalla la hace crecer `useContenedorDesdeOrigen` (App.jsx) | El recorte de la pantalla nueva empieza en el rectángulo de la tarjeta, con sus esquinas, y se abre hasta la pantalla entera (`slow`, curva enfatizada) mientras lo de dentro se revela. Sin la entrada desde la derecha a la vez |
+| Volver a la portada de la que se salió | `vieneDe` (App.jsx → HubView) y `animarLlegada` | La tarjeta se posa: de 1,02 y más clara, a su sitio |
+| Lo mismo en dos sitios (el nombre de un ejercicio en la lista y en su ficha) | `<Compartido id="ejercicio:<id>" as="p">` en los DOS sitios | Viaja de uno a otro (FLIP) en `medium`; un texto crece por su letra, nunca se estira; una superficie o una imagen interpolan sus esquinas. En los dos sentidos |
+| Una tarjeta que es un RESUMEN (Inicio) | Nada: entra como cualquier pantalla (F2) | Crecer desde ella prometería que dentro está lo mismo que en la tarjeta |
+
+🚨 **El origen se apunta y caduca** (`TTL_ORIGEN_MS`, 700 ms): JosStyle pinta una pantalla cada vez, así que lo de
+antes ya no existe cuando lo nuevo aparece. Tomar un origen lo gasta: dos destinos no salen del mismo toque.
+🚨 **Fallback**: sin origen, con un viaje desmesurado (más de ×3) o en Reducido, no hay viaje: queda la entrada de
+siempre o un fundido en su sitio. Nunca un destello, un hueco ni un elemento que desaparece.
+⚠️ **Si el padre mueve el scroll después de medir** (abrir un detalle de Fitness lo lleva arriba), el viaje se
+corrige en el primer `requestAnimationFrame`, antes de pintar nada.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en
