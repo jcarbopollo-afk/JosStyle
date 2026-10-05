@@ -17,6 +17,7 @@ import {
 } from '../src/lib/motionMapa.js';
 import { ANIMACIONES_HC, MAX_ANIMACION_MS } from '../src/lib/pulidoHC.js';
 import { NIVELES_ANIMACION, DEFAULT_APARIENCIA } from '../src/tokens.js';
+import { STAGGER_MOTION, tokensRaiz, movimientoReducidoEnCss, escalonado } from '../src/lib/motion.js';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (p) => readFileSync(join(RAIZ, p), 'utf8');
@@ -81,9 +82,11 @@ ok(nivelMotion(0).maxMs === 0 && nivelMotion(5).id === 'signature', 'el 0 no se 
 ok(PRESUPUESTO_MOTION.duracionAbsolutaMaxMs === MAX_ANIMACION_MS, '🚨 el tope absoluto es el de la E3 F14, no un número nuevo');
 ok(PRESUPUESTO_MOTION.staggerPasoMaxMs * (PRESUPUESTO_MOTION.staggerElementosMax - 1) <= PRESUPUESTO_MOTION.staggerTotalMaxMs + PRESUPUESTO_MOTION.staggerPasoMaxMs,
   'el escalonado cabe en su total');
-/* La portada de un área es el caso que fija el presupuesto: cabecera + 5 tarjetas a 80 ms. */
-const pasoHub = Number((leer('src/views/HubView.jsx').match(/`\$\{i \* (\d+)\}ms`/) || [])[1]);
-ok(pasoHub === PRESUPUESTO_MOTION.staggerPasoMaxMs, `⚠️ el paso del presupuesto es el de la portada de un área (${pasoHub} ms)`);
+/* La portada de un área era el caso que fijaba el presupuesto: cabecera + 5 tarjetas a 80 ms.
+   🔓 MS F1 — desde la F1 la cascada es `escalonado(i)` del motor, con un solo paso para toda la
+   aplicación (60 ms), que cabe en ese presupuesto. */
+ok(/\.\.\.escalonado\(i\)/.test(leer('src/views/HubView.jsx')) && STAGGER_MOTION.pasoMs <= PRESUPUESTO_MOTION.staggerPasoMaxMs,
+  `🔓 la portada de un área escalona con el motor, y su paso (${STAGGER_MOTION.pasoMs} ms) cabe en el presupuesto (MS F1)`);
 ok(PRESUPUESTO_MOTION.reglas.length >= 5 && PRESUPUESTO_MOTION.reglas.every((r) => r.si && r.no),
   'cuándo sí y cuándo no: spring, blur, escala, parallax y bucles');
 
@@ -109,8 +112,8 @@ ok(MOTION_MAP.every((e) => CAMPOS.every((k) => k in e)), '⚠️ con todos los c
 /* Un elemento que se da por bueno respeta el tope de su nivel. Los bucles se miden aparte. */
 const fueraDeNivel = MOTION_MAP.filter((e) => e.estado === 'existe' && !e.bucle && e.duracion && e.duracion > nivelMotion(e.nivel).maxMs);
 ok(fueraDeNivel.length === 0, `🚨 lo que está «bien» cabe en el tope de su nivel${fueraDeNivel.length ? `: ${fueraDeNivel.map((e) => e.id).join(', ')}` : ''}`);
-ok(MOTION_MAP.find((e) => e.id === 'favorito').estado === 'inconsistente',
-  '⚠️ …y la estrella de favorito (240 ms en un nivel de 220) queda marcada, no escondida');
+ok(MOTION_MAP.find((e) => e.id === 'favorito').estado === 'existe' && MOTION_MAP.find((e) => e.id === 'favorito').duracion <= nivelMotion(1).maxMs,
+  '🔓 …y la estrella de favorito, que era 240 ms en un nivel de 220, ya cabe en su nivel con el token `normal` (MS F1)');
 /* Todo ANIMACIONES_HC está en el mapa: el mapa amplía el catálogo, no lo sustituye. */
 const enMapa = new Set(MOTION_MAP.map((e) => e.catalogo).filter(Boolean));
 const fueraDelMapa = ANIMACIONES_HC.filter((a) => !enMapa.has(a.id)).map((a) => a.id);
@@ -156,13 +159,14 @@ ok(Object.keys(DEUDA_F0).every((k) => k in a.cuentas), 'la deuda se mide en las 
 console.log('\n── 8. Los hallazgos dicen lo que se ve, y lo que dicen es verdad hoy ──');
 ok(HALLAZGOS_F0.length >= 10 && HALLAZGOS_F0.every((h) => h.fase >= 1 && h.fase <= 20 && h.seVe.length > 60),
   'cada hallazgo dice qué se ve y qué fase lo arregla');
-/* Estas tres se darán la vuelta cuando llegue su fase: son promesas, no adornos. */
-ok(/Hoy la app tiene pocas animaciones propias/.test(AJUSTES), '🚨 niveles decorativos: la pantalla de Ajustes todavía lo confiesa (la F1 lo arregla)');
+/* Estas se dan la vuelta cuando llega su fase: son promesas, no adornos. */
+ok(!/pocas animaciones propias/.test(AJUSTES) && NIVELES_ANIMACION.length === 5 && HALLAZGOS_F0.find((h) => h.id === 'niveles_decorativos').resuelto === 1,
+  '🔓 niveles decorativos: la pantalla ya no lo confiesa, porque cada modo hace algo (MS F1)');
 ok(a.cuentas.series_sin_gobierno > 0, `gráficas sin gobernar: ${a.cuentas.series_sin_gobierno} series de Recharts sin isAnimationActive (la F4)`);
 const togglesAMano = (AJUSTES.match(/rounded-full transition-all/g) || []).length;
-ok(togglesAMano > 0 && /left 150ms/.test(leer('src/views/CalendarView.jsx')), `tres interruptores: ${togglesAMano} a mano en Ajustes y los de 150 ms del Calendario (la F3)`);
-ok(/EXPAND_MS = 190/.test(leer('src/views/HubView.jsx')) && /hubCardExpand 190ms/.test(CSS),
-  'el mismo 190 ms en la vista y en el CSS (la F1 lo une)');
+ok(togglesAMano > 0 && /transicion\('left', 'fast'\)/.test(leer('src/views/CalendarView.jsx')), `tres interruptores: ${togglesAMano} a mano en Ajustes y los del Calendario, que animan \`left\` (la F3)`);
+ok(!/EXPAND_MS|190/.test(leer('src/views/HubView.jsx').replace(/\/\/.*$/gm, '')) && /duracionMs\('fast'/.test(leer('src/views/HubView.jsx')) && /hubCardExpand var\(--motion-dur-fast\)/.test(CSS),
+  '🔓 el mismo 190 ms en la vista y en el CSS es ya UN token: `fast`, leído por los dos (MS F1)');
 
 console.log('\n── 9. Los ajustes y la arquitectura ──');
 ok(AJUSTES_MOVIMIENTO.niveles.map((n) => n.id).join() === NIVELES_ANIMACION.map((n) => n.value).join(),

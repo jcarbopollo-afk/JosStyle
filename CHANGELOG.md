@@ -1,5 +1,92 @@
 # CHANGELOG.md
 
+## v3.131.0 — Motion System F1/20: el motor de movimiento, los tokens y las primitivas
+
+La F1 del Motion System (*"Motor de movimiento + tokens + primitivas"*, líneas 4900–5490 de
+`especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). La F0 dejó el mapa y el plan; ésta construye **el motor**
+del que sale todo el movimiento de JosStyle a partir de hoy.
+
+### Un solo sitio: `src/lib/motion.js`
+
+- **Los tokens** del apartado 3: nueve duraciones (`instant` … `momento`), seis curvas (`standard` **es**
+  `--ease-premium`, la de la Fase N2, que no cambia de nombre), cinco muelles con su amortiguación
+  calculada, distancias, escalas, pulsos, opacidades y desenfoques. **Viven en `motion.js` y se escriben
+  en `index.css` como variables** (`--motion-dur-*`, `--motion-curva-*`, `--motion-dist-*`…), y
+  `auditarTokensCss` compara las dos cosas valor a valor: cambiar uno sin el otro pone la suite roja.
+  ⚠️ **Ni un `calc()` con milisegundos** (Safari ha tenido sus más y sus menos con eso): cada velocidad
+  trae sus duraciones ya calculadas.
+- **El escalonado** (apartado 7): un paso de 60 ms y **como mucho seis escalones** —el séptimo elemento
+  entra con el sexto—, en tres direcciones. `escalonado(i)` devuelve la variable que el CSS ya conoce.
+  🐛 **Había cinco cadencias** (60, 70 y 80 ms y dos funciones, `retrasoDeTarjeta` y
+  `retrasoDeTarjetaPR`) **y ningún tope**: el libro cincuenta de la Biblioteca esperaba tres segundos.
+- **`transicion('width', 'slow')`** para las vistas: la duración y la curva salen del motor. Las 25
+  transiciones y los 13 retrasos que había escritos a mano en las vistas **pasan por ahí**, y la deuda
+  de la F0 (`DEUDA_F0`) baja **a cero** en las dos —y en la duración y la curva por defecto de Tailwind,
+  que ahora son el token `fast` y la curva común—.
+
+### Los cinco modos y la velocidad (apartados 14, 15 y 16)
+
+**Sin movimiento · Reducido · Normal · Premium · Ultra**, en *Ajustes → Apariencia → Texto y
+movimiento*, más una velocidad global (**Pausada ×1,3 · Normal · Rápida ×0,75**) que multiplica las
+duraciones y los retrasos y **no toca el recorrido**. El modo cambia **la intensidad**, nunca la
+duración: una función por escalones (lo micro casi no cambia, lo grande cambia más) y **recortada al
+presupuesto de la F0** —una superficie nunca entra desde menos de 0,95 ni crece de 1,03, un
+desplazamiento nunca pasa de 56 px—.
+
+- 🐛 **Tres de los cuatro niveles que había no hacían nada** (hallazgo `niveles_decorativos` de la F0).
+  Ahora cada modo cambia algo que se ve, y **el recorrido de Chromium lo mide en una pantalla de
+  verdad**: la misma tarjeta entra desde más lejos en Premium y en Ultra, con la misma duración, y en
+  Ultra **el velo de una hoja desenfoca lo de detrás**.
+- 🔓 **«Mínima» se lee como Reducido** (C-52): eran lo mismo dicho dos veces. **No se reescribe lo
+  guardado**: los ids de siempre siguen siendo los de siempre, y solo nacen `premium` y `ultra`.
+- 🚨 **Reducir ya no es apagar** (apartado 17 y hallazgo `reducido_rompe`): el interruptor de Ajustes y
+  el «Reducir movimiento» del iPhone llevaban **todo** a 0,01 ms. Ahora llevan a **Reducido**: fundidos
+  en su sitio, sin desplazamientos ni escalas, conservando el aviso de cada cambio. Solo «Sin
+  movimiento» apaga. La comprobación de la FIT F37 que exigía el 0,01 ms **se dio la vuelta**.
+- El modo vive en un solo atributo, `html[data-motion]`, que pone `App.jsx` junto a los demás de
+  Apariencia; la velocidad en `html[data-velocidad]`. Lo del sistema operativo lo aplica el propio CSS
+  con su `@media`.
+
+### Las primitivas (apartados 8–13)
+
+`animar(el, preset)` con dieciocho presets con nombre (`pageEnter`, `modalEnter`, `sheetExit`,
+`success`, `error`, `heroReveal`…) por la **Web Animations API**, que **arranca desde donde esté** si
+interrumpe a otra (apartado 12). `Presencia` (`src/components/motion.jsx`) monta y desmonta con su salida
+—al ocultar no desaparece de golpe, y si se vuelve a mostrar a mitad de la salida **invierte sin
+desmontarse**—; `useFlip` y `flip()` hacen que una lista reordenada viaje en vez de saltar, y
+`compartirElemento` deja preparado el «tarjeta → detalle» de la F7. Todas obedecen al modo: en Reducido
+se funden, apagadas no se mueven. El recorrido las prueba en Chromium (interrumpir, FLIP y elemento
+compartido).
+
+### Lo que se arregló de paso
+
+- 🐛 **El mismo 190 ms escrito en dos sitios** (`EXPAND_MS` de `HubView` y el CSS): ahora los dos leen
+  el token. Y **las barras de progreso se movían a siete ritmos**: todas usan `transicion()`.
+- 🐛 **Ocho animaciones fuera del catálogo** (la llama, el «+1», la entrada de la portada…) que el tope
+  de la E3 F14 no medía: **su duración es ahora un token del motor** y el mapa la compara con el CSS.
+  Y las del catálogo que estaban a medio camino entre dos tokens **se acercaron al más próximo** (300 →
+  280, 380 → 340, 140 → 160…): la diferencia no se ve y deja una sola escala.
+- 🔓 **El techo de escala de la F0 era uno y tenían que ser dos** (C-52): superficie 0,95–1,03, marca
+  pequeña hasta 1,35 (la llama late a 1,35 desde la E3 F2). `TOPES_ESCALA`.
+- El interruptor de «Reducir movimiento» pasa al `Switch` común (los otros seis interruptores son de la
+  F3).
+
+### La regla de futuro (apartado 24)
+
+**Ningún componente nuevo escribe su propia animación**: usa una clase de `index.css`, `transicion()`,
+`escalonado()` o un preset de `animar()`. Si algo no se puede expresar con eso, se añade el token o el
+preset **al motor** y se documenta en `docs/MOTION_SYSTEM.md`, que ya cuenta todo esto.
+
+### Lo que no hace esta fase (`NO_EN_F1`)
+
+Animar las ~40 ventanas que aparecen de golpe (la F6, que tiene `Presencia` y los presets listos), la
+navegación tarjeta → detalle (la F7), las gráficas de Recharts (la F4), los otros interruptores (la F3)
+y las cifras que cuentan (la F17).
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.130.0 — Motion System F0/20: auditoría total, arquitectura y plan maestro
 
 Josué pasó el 2026-10-04 el **Motion System**: 17 913 líneas, 21 fases (F0–F20), para construir *"el

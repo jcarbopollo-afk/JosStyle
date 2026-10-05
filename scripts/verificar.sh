@@ -882,7 +882,7 @@ fi
 #     con la densidad) el caso de un ajuste que se guarda, se anuncia como funcional en un
 #     comentario del código y no hace absolutamente nada.
 SIN_CSS=""
-for attr in radio densidad animaciones; do
+for attr in radio densidad animaciones motion velocidad; do
   grep -q "dataset\.$attr" src/App.jsx || { SIN_CSS="$SIN_CSS $attr(no-se-aplica)"; continue; }
   grep -q "data-$attr" src/index.css   || SIN_CSS="$SIN_CSS $attr(sin-CSS)"
 done
@@ -945,6 +945,13 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f0.mjs >/tmp/jc
   ok "El Motion System, F0: mapa, auditoría y plan — $(grep -c '✓' /tmp/jc_motion_f0.log) comprobaciones"
 else
   fallo "Falla la auditoría del Motion System (F0)"; grep '✗' /tmp/jc_motion_f0.log
+fi
+# Motion System F1 — el motor: la tabla de `motion.js` contra los tokens de index.css (cada modo y
+# cada velocidad), la intensidad, los presets, la presencia, la interrupción, el FLIP y el cableado.
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f1.mjs >/tmp/jc_motion_f1.log 2>&1; then
+  ok "El Motion System, F1: motor, tokens y primitivas — $(grep -c '✓' /tmp/jc_motion_f1.log) comprobaciones"
+else
+  fallo "Falla el motor del Motion System (F1)"; grep '✗' /tmp/jc_motion_f1.log
 fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"

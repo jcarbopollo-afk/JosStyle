@@ -20,12 +20,13 @@ import {
   MAPEO_EXISTENTE_PR, NINGUNA_ES_NUEVA,
   OBJETIVOS_INTEGRACION, LO_QUE_HEREDA_DE_PRODUCTIVIDAD,
   elementosDePR, pomodorosDeHoy, contarPR, indicadorDePR, totalProductividad,
-  CLASE_TARJETA_PR, retrasoDeTarjetaPR, RETRASO_CASCADA_PR_MS,
+  CLASE_TARJETA_PR,
   NIVELES_PR, nivelPR, atrasPR, destinoPR,
   PARA_HOY, HOY_NO_SE_TOCA, NO_EN_PR1,
   DONDE_SE_GUARDA_PR, AISLAMIENTO_PR,
   condicionPR1, pr1Terminada,
 } from '../src/lib/productividad.js';
+import { escalonado } from '../src/lib/motion.js';
 import { DESTINO_OBJETIVOS, FOCO_OBJETIVOS } from '../src/lib/objetivosEnEstiloHombre.js';
 import { CATALOGO_PAPELERA } from '../src/lib/papelera.js';
 import { DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS } from '../src/tokens.js';
@@ -267,9 +268,13 @@ ok(/aria-label="Volver a Productividad"/.test(VISTA),
 
 eq(CLASE_TARJETA_PR, 'hub-card',
   '🚨 la cascada es `.hub-card`, la que ya usan los hubs y la Biblioteca: escribir una segunda se vería distinta');
-eq(retrasoDeTarjetaPR(0), '0ms', 'la primera tarjeta entra sin retardo');
-eq(retrasoDeTarjetaPR(3), `${RETRASO_CASCADA_PR_MS * 3}ms`, '⚠️ y las siguientes escalonadas');
-eq(retrasoDeTarjetaPR(-5), '0ms', '⚠️ y un índice negativo no da un retardo negativo');
+/* 🔓 MS F1 — el retraso es `escalonado(i)` del motor: `retrasoDeTarjetaPR` era la misma función que
+   la de la Biblioteca, y las dos se retiraron. */
+eq(escalonado(0), { '--motion-retraso': 'var(--motion-retraso-0)' }, 'la primera tarjeta entra sin retardo');
+eq(escalonado(3), { '--motion-retraso': 'var(--motion-retraso-3)' }, '⚠️ y las siguientes escalonadas');
+eq(escalonado(-5), { '--motion-retraso': 'var(--motion-retraso-0)' }, '⚠️ y un índice negativo no da un retardo negativo');
+ok(/escalonado\(indice\)/.test(VISTA_LIMPIA) && !/retrasoDeTarjetaPR|animationDelay/.test(VISTA_LIMPIA),
+  '🔓 y la vista escalona con el motor (MS F1)');
 ok(!/animation:|@keyframes/.test(VISTA),
   '⚠️ y ninguna animación se escribe en la vista: van a `index.css`, así respetan "Reducir movimiento" solas (E3 F14)');
 

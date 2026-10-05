@@ -42,6 +42,7 @@ import { notificarSiCorresponde } from '../lib/notificaciones';
 import { avisosPendientes } from '../lib/avisosPlanificacion';
 // Entrega 3 · F9 (HC F4) — el ＋ que comparten Hoy, la Agenda y el Calendario.
 import { QuickAdd, FormularioTarea, FormularioEvento, FormularioApunte, BotonAnadir, AvisoAccion } from '../components/quickAdd';
+import { transicion } from '../lib/motion';
 
 // Fase 12 — Relación: recordatorio en pantalla principal de la próxima fecha importante.
 // Se muestra directo, sin pedir el PIN otra vez — es solo la etiqueta y la cuenta atrás,
@@ -371,7 +372,7 @@ function IndicadorContexto({ modo, onSetModo, accent }) {
           {/* Apartado 4: la flecha rota, no cambia de golpe — mismo icono y misma transición que
               ya usan SkillCard/RutinaCard/AsignaturaCard/ExamenItem, para que esto se sienta
               parte del lenguaje visual de siempre y no un componente pegado después. */}
-          <ChevronDown size={16} style={{ color: COLORS.textMuted, flexShrink: 0, transform: expandido ? 'rotate(180deg)' : 'none', transition: 'transform 220ms var(--ease-premium)' }} />
+          <ChevronDown size={16} style={{ color: COLORS.textMuted, flexShrink: 0, transform: expandido ? 'rotate(180deg)' : 'none', transition: transicion('transform', 'normal') }} />
         </div>
       </button>
 
@@ -392,14 +393,14 @@ function IndicadorContexto({ modo, onSetModo, accent }) {
         id={idPanel}
         role="region"
         aria-label="Opciones de la situación actual"
-        style={{ display: 'grid', gridTemplateRows: expandido ? '1fr' : '0fr', transition: 'grid-template-rows 300ms var(--ease-premium)' }}
+        style={{ display: 'grid', gridTemplateRows: expandido ? '1fr' : '0fr', transition: transicion('grid-template-rows', 'medium') }}
       >
         <div style={{ overflow: 'hidden', minHeight: 0 }}>
           <div
             style={{
               opacity: expandido ? 1 : 0,
-              transform: expandido ? 'none' : 'translateY(-4px)',
-              transition: `opacity ${expandido ? '260ms 60ms' : '120ms'} ease, transform 260ms var(--ease-premium)`,
+              transform: expandido ? 'none' : 'translateY(calc(-1 * var(--motion-dist-micro)))',
+              transition: `${expandido ? transicion('opacity', 'medium', 'standard', { retraso: 'ultraFast' }) : transicion('opacity', 'ultraFast')}, ${transicion('transform', 'medium')}`,
               padding: '0 1.1rem 0.9rem',
             }}
           >
@@ -489,7 +490,7 @@ function TarjetaPuntuacion({ puntuacion, mensaje, accent }) {
             <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{mensaje}</p>
             <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: COLORS.textMuted, opacity: 0.75 }}>
               {puntuacion.hechos} de {puntuacion.total} hoy
-              <ChevronDown size={13} style={{ transform: expandido ? 'rotate(180deg)' : 'none', transition: 'transform 220ms var(--ease-premium)' }} />
+              <ChevronDown size={13} style={{ transform: expandido ? 'rotate(180deg)' : 'none', transition: transicion('transform', 'normal') }} />
             </p>
           </div>
         </div>
@@ -499,9 +500,9 @@ function TarjetaPuntuacion({ puntuacion, mensaje, accent }) {
             se niega a bajar de su contenido y deja el hueco vacío en Safari. Los dos acordeones de
             Inicio son los dos únicos de la aplicación y los dos están arreglados; hay una regla
             invariante en `test-imports.mjs` que caza al siguiente que se escriba sin él. */}
-        <div style={{ display: 'grid', gridTemplateRows: expandido ? '1fr' : '0fr', transition: 'grid-template-rows 300ms var(--ease-premium)' }}>
+        <div style={{ display: 'grid', gridTemplateRows: expandido ? '1fr' : '0fr', transition: transicion('grid-template-rows', 'medium') }}>
           <div style={{ overflow: 'hidden', minHeight: 0 }}>
-            <div style={{ opacity: expandido ? 1 : 0, transition: `opacity ${expandido ? '260ms 60ms' : '120ms'} ease`, paddingTop: '0.9rem' }}>
+            <div style={{ opacity: expandido ? 1 : 0, transition: expandido ? transicion('opacity', 'medium', 'standard', { retraso: 'ultraFast' }) : transicion('opacity', 'ultraFast'), paddingTop: '0.9rem' }}>
               <ul className="space-y-1">
                 {puntuacion.detalle.map((d) => (
                   <li key={d.id} className="text-xs flex items-center gap-2" style={{ color: d.hecho ? COLORS.text : COLORS.textMuted }}>

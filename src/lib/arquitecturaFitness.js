@@ -293,6 +293,7 @@ export const DEPENDENCIAS_PERMITIDAS = Object.freeze([
   { modulo: 'videoFrames', porque: 'Los fotogramas de ese vídeo (Fase 2).' },
   { modulo: 'pulidoHC', porque: 'Solo la auditoría de movimiento (F37) lee sus `ANIMACIONES_HC`.' },
   { modulo: 'accesibilidadEH', porque: 'Solo la auditoría móvil (F38) reutiliza su revisor de accesibilidad.' },
+  { modulo: 'motion', porque: 'El Motion System de toda la aplicación (MS F1): `transicion()` para una transición en línea, y la auditoría de movimiento (F37) lee sus tokens para medir el CSS. Ningún motor de Fitness lo importa: es capa visual y de auditoría.' },
 ]);
 const baseDe = (spec) => spec.split('/').pop().replace(/\.(jsx?|mjs)$/, '');
 /** Y de los módulos de otra área (el horario, el calendario, las rachas), solo

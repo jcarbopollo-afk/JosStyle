@@ -437,7 +437,8 @@ import { TIPOS_GUARDADO, crearGuardado } from '../src/lib/guardados.js';
 import { ESTADOS_IDEA, crearIdea } from '../src/lib/ideas.js';
 import { crearDocumento } from '../src/lib/documentos.js';
 import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
-import { AvatarPerfil, BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal } from '../src/views/SettingsView.jsx';
+import { AvatarPerfil, BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal, AjusteMovimiento } from '../src/views/SettingsView.jsx';
+import { Presencia } from '../src/components/motion.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
@@ -3162,6 +3163,17 @@ const CASOS = [
      encontrar, porque el que más fácil es dejar roto NO es el de la foto puesta:
      es el hueco. Sin foto se pintan las iniciales; sin nombre tampoco hay
      iniciales y entra el icono de persona. */
+  /* MS F1 — el movimiento de Apariencia solo se ve tras abrir Apariencia → Texto y movimiento,
+     así que se pinta aparte: los cinco modos, un «minima» de antes, «Sin movimiento» y el
+     interruptor de reducir encendido. */
+  ['SettingsView · Movimiento (Normal)', AjusteMovimiento, () => ({ apariencia: { ...DEFAULT_APARIENCIA }, onUpdateApariencia: noop, accent })],
+  ['SettingsView · Movimiento (Ultra, Pausada)', AjusteMovimiento, () => ({ apariencia: { ...DEFAULT_APARIENCIA, animaciones: 'ultra', velocidadMovimiento: 'lenta' }, onUpdateApariencia: noop, accent })],
+  ['SettingsView · Movimiento (un «minima» guardado antes)', AjusteMovimiento, () => ({ apariencia: { ...DEFAULT_APARIENCIA, animaciones: 'minima' }, onUpdateApariencia: noop, accent })],
+  ['SettingsView · Movimiento (Sin movimiento)', AjusteMovimiento, () => ({ apariencia: { ...DEFAULT_APARIENCIA, animaciones: 'desactivadas' }, onUpdateApariencia: noop, accent })],
+  ['SettingsView · Movimiento (Premium con Reducir movimiento)', AjusteMovimiento, () => ({ apariencia: { ...DEFAULT_APARIENCIA, animaciones: 'premium', reducirMovimiento: true }, onUpdateApariencia: noop, accent })],
+  ['SettingsView · Movimiento (apariencia de antes, sin velocidad)', AjusteMovimiento, () => ({ apariencia: { tema: 'oscuro', animaciones: 'completa' }, onUpdateApariencia: noop, accent })],
+  ['Presencia (visible)', Presencia, () => ({ visible: true, children: 'Contenido' })],
+  ['Presencia (visible, sin animar al montar)', Presencia, () => ({ visible: true, animarAlMontar: false, children: 'Contenido' })],
   ['SettingsView · Avatar con foto', AvatarPerfil, () => ({
     perfil: { ...DEFAULT_PERFIL, foto: `data:image/jpeg;base64,${'A'.repeat(400)}` },
     accent, onCambiar: noop, onQuitar: noop,

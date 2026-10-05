@@ -4,6 +4,7 @@ import { COLORS, TIPOS_FECHA_RELACION } from '../tokens';
 import { uid, formatFecha, diasHasta } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, ToggleTab, EmptyHint, BotonBorrarDefinitivo } from '../components/ui';
 import { fotosDelAlbum, validarFotoAlbum, TIPOS_FOTO_ALBUM, MAX_NOTA_ALBUM, BORRADO_ALBUM } from '../lib/albumRelacion';
+import { transicion } from '../lib/motion';
 
 // Fase 13 — solo la lista de nombres del Prompt Maestro. Tocar uno abre el formulario de fecha
 // para que Josué la escriba él mismo.
@@ -47,11 +48,11 @@ function RepeticionToggle({ valor, onChange, accent }) {
       <span className="flex items-center gap-1.5"><Repeat size={13} /> Repetir cada año</span>
       <span
         className="rounded-full flex-shrink-0"
-        style={{ width: 36, height: 20, background: valor ? accent : COLORS.border, position: 'relative', transition: 'background 150ms' }}
+        style={{ width: 36, height: 20, background: valor ? accent : COLORS.border, position: 'relative', transition: transicion('background', 'fast') }}
       >
         <span
           className="rounded-full absolute"
-          style={{ width: 16, height: 16, top: 2, left: valor ? 18 : 2, background: COLORS.textOnAccent, transition: 'left 150ms' }}
+          style={{ width: 16, height: 16, top: 2, left: valor ? 18 : 2, background: COLORS.textOnAccent, transition: transicion('left', 'fast') }}
         />
       </span>
     </button>

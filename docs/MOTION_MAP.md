@@ -1,66 +1,66 @@
 # MOTION_MAP — el movimiento de JosStyle, elemento a elemento
 
-> **Motion System · Fase 0.** Cada elemento que se mueve —o que debería moverse— con lo que pide el
+> **Motion System · desde la Fase 0.** Cada elemento que se mueve —o que debería moverse— con lo que pide el
 > apartado 3 de la F0. 🚨 **Este documento se genera desde `src/lib/motionMapa.js`** con
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**59 elementos**: ✅ Existe 34 · ⚠️ Inconsistente 15 · ⬜ Sin movimiento 9 · 🚨 Fuera de control 1.
+**60 elementos**: ✅ Existe 43 · ⚠️ Inconsistente 7 · ⬜ Sin movimiento 9 · 🚨 Fuera de control 1.
 
 ## Resumen
 
 | Elemento | Cat. | Nivel | Duración | Estado | Fase |
 |---|---|---|---|---|---|
-| Pestaña activa de la barra de abajo | A | 1 · Micro | 200 ms | ✅ Existe | F2 |
+| Pestaña activa de la barra de abajo | A | 1 · Micro | 220 ms | ✅ Existe | F2 |
 | Barra de «Volver» | A | 2 · Suave | 220 ms | ✅ Existe | F2 |
 | Entrar en un módulo | B | 2 · Suave | 340 ms | ⚠️ Inconsistente | F2 |
 | Portada de un área: la cascada de tarjetas | B | 3 · Protagonista | 420 ms | ✅ Existe | F10 |
-| Cabecera de un área (ÁREA / Vida) | B | 2 · Suave | 320 ms | ✅ Existe | F2 |
-| Tocar un módulo de la portada | D | 2 · Suave | 190 ms | ⚠️ Inconsistente | F7 |
+| Cabecera de un área (ÁREA / Vida) | B | 2 · Suave | 280 ms | ✅ Existe | F2 |
+| Tocar un módulo de la portada | D | 2 · Suave | 160 ms | ✅ Existe | F7 |
 | Pulsar un módulo de la portada (y las demás retroceden) | D | 1 · Micro | 160 ms | ✅ Existe | F3 |
 | El icono de un módulo de la portada al pulsarlo | D | 1 · Micro | 160 ms | ✅ Existe | F3 |
 | Una pantalla de Fitness aparece | B | 2 · Suave | 220 ms | ✅ Existe | F2 |
-| Acordeones de Inicio (situación actual y puntuación) | C | 2 · Suave | 300 ms | ⚠️ Inconsistente | F9 |
-| Chevron que gira al desplegar | C | 1 · Micro | 220 ms | ⚠️ Inconsistente | F3 |
-| Pulsar una tarjeta o un botón (la escalera de escalas) | D | 1 · Micro | 150 ms | ⚠️ Inconsistente | F3 |
-| Pulsar una tarjeta de Fitness | D | 1 · Micro | 140 ms | ✅ Existe | F3 |
-| Pulsar algo destructivo en Fitness | E | 1 · Micro | 140 ms | ✅ Existe | F3 |
-| Tarjeta destacada al llegar por un enlace (objetivo, tarea) | D | 2 · Suave | 300 ms | ⚠️ Inconsistente | F7 |
-| Tarjetas de una lista que entran en cascada (Biblioteca, Productividad, Nutrición, Salud) | J | 3 · Protagonista | 420 ms | ⚠️ Inconsistente | F10 |
-| Marcar un favorito | E | 1 · Micro | 240 ms | ⚠️ Inconsistente | F3 |
+| Acordeones de Inicio (situación actual y puntuación) | C | 2 · Suave | 280 ms | ✅ Existe | F9 |
+| Chevron que gira al desplegar | C | 1 · Micro | 220 ms | ✅ Existe | F3 |
+| Pulsar una tarjeta o un botón (la escalera de escalas) | D | 1 · Micro | 160 ms | ✅ Existe | F3 |
+| Pulsar una tarjeta de Fitness | D | 1 · Micro | 160 ms | ✅ Existe | F3 |
+| Pulsar algo destructivo en Fitness | E | 1 · Micro | 160 ms | ✅ Existe | F3 |
+| Tarjeta destacada al llegar por un enlace (objetivo, tarea) | D | 2 · Suave | 280 ms | ✅ Existe | F7 |
+| Tarjetas de una lista que entran en cascada (Biblioteca, Productividad, Nutrición, Salud) | J | 3 · Protagonista | 420 ms | ✅ Existe | F10 |
+| Marcar un favorito | E | 1 · Micro | 220 ms | ✅ Existe | F3 |
 | «Pensando…» y los botones que esperan | M | 1 · Micro | 1000 ms | ✅ Existe | F16 |
 | Campos de texto al enfocar | F | 0 · Estático | — | ⬜ Sin movimiento | F9 |
-| Una hoja de Fitness entra desde abajo | H | 2 · Suave | 240 ms | ⚠️ Inconsistente | F6 |
-| El fondo de una hoja se oscurece | G | 2 · Suave | 180 ms | ✅ Existe | F6 |
-| Hojas del Calendario | H | 2 · Suave | 240 ms | ⚠️ Inconsistente | F6 |
+| Una hoja de Fitness entra desde abajo | H | 2 · Suave | 220 ms | ⚠️ Inconsistente | F6 |
+| El fondo de una hoja se oscurece | G | 2 · Suave | 220 ms | ✅ Existe | F6 |
+| Hojas del Calendario | H | 2 · Suave | 220 ms | ⚠️ Inconsistente | F6 |
 | El resto de ventanas y hojas (unas 40 en 18 archivos) | G | 0 · Estático | — | ⬜ Sin movimiento | F6 |
-| El aviso de «añadido» (y los de Fitness) | Q | 2 · Suave | 260 ms | ✅ Existe | F9 |
+| El aviso de «añadido» (y los de Fitness) | Q | 2 · Suave | 280 ms | ✅ Existe | F9 |
 | Menús «⋯» y desplegables | I | 0 · Estático | — | ⬜ Sin movimiento | F6 |
-| Completar una tarea | J | 2 · Suave | 300 ms | ✅ Existe | F9 |
+| Completar una tarea | J | 2 · Suave | 280 ms | ✅ Existe | F9 |
 | Completar un hábito | J | 2 · Suave | 280 ms | ✅ Existe | F9 |
 | Terminar una rutina | Q | 3 · Protagonista | 420 ms | ✅ Existe | F9 |
 | Marcar una serie | J | 1 · Micro | 160 ms | ✅ Existe | F9 |
 | Borrar o añadir un elemento de una lista | J | 0 · Estático | — | ⬜ Sin movimiento | F10 |
 | Gráficas de Recharts (Salud, Nutrición, Sueño) | K | 3 · Protagonista | 1500 ms | 🚨 Fuera de control | F4 |
 | Gráficas propias en SVG (Fitness, Sueño) | K | 0 · Estático | — | ⬜ Sin movimiento | F17 |
-| Barras de progreso con su clase (Hoy, Biblioteca, Nutrición, Fitness) | L | 3 · Protagonista | 380 ms | ⚠️ Inconsistente | F17 |
-| Barras de progreso escritas en la vista (Objetivos, Productividad, Rachas, Bienestar digital) | L | 3 · Protagonista | 400 ms | ⚠️ Inconsistente | F17 |
-| El aro de progreso de `ui.jsx` | L | 3 · Protagonista | 1000 ms | ⚠️ Inconsistente | F17 |
-| El aro del temporizador | L | 2 · Suave | 300 ms | ✅ Existe | F17 |
+| Barras de progreso con su clase (Hoy, Biblioteca, Nutrición, Fitness) | L | 3 · Protagonista | 340 ms | ⚠️ Inconsistente | F17 |
+| Barras de progreso escritas en la vista (Objetivos, Productividad, Rachas, Bienestar digital) | L | 3 · Protagonista | 340 ms | ⚠️ Inconsistente | F17 |
+| El aro de progreso de `ui.jsx` | L | 3 · Protagonista | 420 ms | ✅ Existe | F17 |
+| El aro del temporizador | L | 2 · Suave | 280 ms | ✅ Existe | F17 |
 | Cifras que cambian (rachas, kcal, puntuación, saldo) | L | 0 · Estático | — | ⬜ Sin movimiento | F17 |
 | El latido del esqueleto | N | 1 · Micro | 1400 ms | ✅ Existe | F16 |
 | Estados vacíos | O | 0 · Estático | — | ⬜ Sin movimiento | F16 |
 | Avisos de error (guardado, archivo, conexión) | P | 0 · Estático | — | ⬜ Sin movimiento | F16 |
 | El entrenamiento guardado | Q | 2 · Suave | 280 ms | ✅ Existe | F9 |
-| Terminar un libro | Q | 3 · Protagonista | 320 ms | ✅ Existe | F9 |
-| Termina el descanso | Q | 2 · Suave | 300 ms | ✅ Existe | F9 |
-| Subir de rango | Q | 4 · Momento | 300 ms | ✅ Existe | F17 |
+| Terminar un libro | Q | 3 · Protagonista | 340 ms | ✅ Existe | F9 |
+| Termina el descanso | Q | 2 · Suave | 280 ms | ✅ Existe | F9 |
+| Subir de rango | Q | 4 · Momento | 280 ms | ✅ Existe | F17 |
 | La llama de una racha que sube | Q | 4 · Momento | 620 ms | ✅ Existe | F17 |
 | El «+1» de una racha | Q | 5 · Firma | 900 ms | ✅ Existe | F18 |
-| El interruptor de `ui.jsx` | R | 1 · Micro | 200 ms | ⚠️ Inconsistente | F3 |
-| Interruptores escritos a mano (Calendario, Relación, Ajustes, Gestión de temas) | R | 1 · Micro | 150 ms | ⚠️ Inconsistente | F3 |
+| El interruptor de `ui.jsx` | R | 1 · Micro | 220 ms | ⚠️ Inconsistente | F3 |
+| Interruptores escritos a mano (Calendario, Relación, Ajustes, Gestión de temas) | R | 1 · Micro | 160 ms | ⚠️ Inconsistente | F3 |
 | Deslizadores (`input type=range`) | S | 0 · Estático | — | ✅ Existe | F5 |
-| Deslizar para cambiar de ejercicio | T | 1 · Micro | 200 ms | ✅ Existe | F8 |
+| Deslizar para cambiar de ejercicio | T | 1 · Micro | 220 ms | ✅ Existe | F8 |
 | El divisor del comparador de fotos | T | 1 · Micro | — | ✅ Existe | F8 |
 | El rebote de la página | U | 1 · Micro | — | ✅ Existe | F5 |
 | Las tarjetas se desvanecen al pasar bajo la cabecera de un área | U | 1 · Micro | 0 ms | ✅ Existe | F10 |
@@ -69,6 +69,7 @@
 | El progreso de un libro | W | 3 · Protagonista | 420 ms | ✅ Existe | F17 |
 | El progreso de un macro | W | 3 · Protagonista | 420 ms | ✅ Existe | F17 |
 | Una barra de progreso de Fitness | W | 3 · Protagonista | 280 ms | ✅ Existe | F17 |
+| La muestra de «Ver cómo se mueve» en Ajustes | R | 3 · Protagonista | 420 ms | ✅ Existe | F1 |
 | Todo lo que se añada a partir de hoy | X | 0 · Estático | — | ✅ Existe | F0 |
 
 ## Ficha de cada elemento
@@ -93,7 +94,7 @@
 | Salida | — |
 | Interacción | Tocar una pestaña |
 | Transición | color |
-| Duración | 200 ms |
+| Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -117,11 +118,11 @@
 | @keyframes | `backBarIn` |
 | En ANIMACIONES_HC | — |
 | Función | Aparece al entrar en un módulo para salir de él. |
-| Estado inicial | Opacidad 0, 6 px arriba |
+| Estado inicial | Opacidad 0, 8 px a la izquierda |
 | Estado final | En su sitio |
 | Entrada | Fundido + desplazamiento corto |
 | Salida | — |
-| Interacción | Pulsar: opacidad y fondo 140 ms |
+| Interacción | Pulsar: opacidad y fondo 160 ms |
 | Transición | opacity, transform |
 | Duración | 220 ms |
 | Curva | --ease-premium |
@@ -189,7 +190,7 @@
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
-| Escalonado | 80 ms entre elementos |
+| Escalonado | 60 ms entre elementos |
 | Intensidad | 3 · Protagonista |
 | Prioridad | alta |
 | Relación | Después de la cabecera (hub-header). |
@@ -209,13 +210,13 @@
 | @keyframes | `hubHeaderIn` |
 | En ANIMACIONES_HC | — |
 | Función | Primero el título y luego las tarjetas. |
-| Estado inicial | Opacidad 0, 6 px arriba |
+| Estado inicial | Opacidad 0, 8 px arriba |
 | Estado final | En su sitio |
 | Entrada | Fundido corto |
 | Salida | — |
 | Interacción | — |
 | Transición | opacity, transform |
-| Duración | 320 ms |
+| Duración | 280 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -261,7 +262,7 @@
 
 #### Acordeones de Inicio (situación actual y puntuación)
 
-`acordeon_inicio` · ⚠️ Inconsistente · lo trata la **F9**
+`acordeon_inicio` · ✅ Existe · lo trata la **F9**
 
 | Campo | Valor |
 |---|---|
@@ -276,8 +277,8 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | Tocar la cabecera |
-| Transición | grid-template-rows 300 ms + opacidad 260/120 ms con `ease` |
-| Duración | 300 ms |
+| Transición | grid-template-rows `medium` + opacidad `medium`/`ultraFast` (MS F1: `transicion()`) |
+| Duración | 280 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -291,7 +292,7 @@
 
 #### Chevron que gira al desplegar
 
-`chevron` · ⚠️ Inconsistente · lo trata la **F3**
+`chevron` · ✅ Existe · lo trata la **F3**
 
 | Campo | Valor |
 |---|---|
@@ -306,7 +307,7 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | Tocar |
-| Transición | transform: 220 ms con la curva en Inicio, 0,2 s con la curva de serie en Entrenamiento |
+| Transición | transform `normal` con la curva de JosStyle en Inicio y en Entrenamiento (MS F1: `transicion()`) |
 | Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
@@ -323,7 +324,7 @@
 
 #### Tocar un módulo de la portada
 
-`expandir_tarjeta_area` · ⚠️ Inconsistente · lo trata la **F7**
+`expandir_tarjeta_area` · ✅ Existe · lo trata la **F7**
 
 | Campo | Valor |
 |---|---|
@@ -339,14 +340,14 @@
 | Salida | — |
 | Interacción | Tocar |
 | Transición | transform, filter, box-shadow |
-| Duración | 190 ms |
+| Duración | 160 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
 | Intensidad | 2 · Suave |
 | Prioridad | alta |
-| Relación | La navegación espera 190 ms (EXPAND_MS, escrito aparte en la vista): dos sitios para el mismo número. |
+| Relación | La navegación espera el mismo token (`duracionMs('fast')`, MS F1), no un número escrito aparte. |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
@@ -413,7 +414,7 @@
 
 #### Pulsar una tarjeta o un botón (la escalera de escalas)
 
-`pulsar_tarjeta` · ⚠️ Inconsistente · lo trata la **F3**
+`pulsar_tarjeta` · ✅ Existe · lo trata la **F3**
 
 | Campo | Valor |
 |---|---|
@@ -428,15 +429,15 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | Mantener pulsado |
-| Transición | transform con `transition-transform` de Tailwind (150 ms y otra curva) |
-| Duración | 150 ms |
-| Curva | curva por defecto de Tailwind |
+| Transición | transform con `transition-transform` de Tailwind, que desde la MS F1 usa el token `fast` y la curva de JosStyle (tailwind.config.js) |
+| Duración | 160 ms |
+| Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | alta |
-| Relación | Fitness usa su propio escalón (fit-pulsable, 140 ms con la curva común). |
+| Relación | Fitness usa su propio escalón (fit-pulsable, también `fast`). |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
@@ -459,7 +460,7 @@
 | Salida | — |
 | Interacción | Pulsar |
 | Transición | transform |
-| Duración | 140 ms |
+| Duración | 160 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -473,7 +474,7 @@
 
 #### Tarjeta destacada al llegar por un enlace (objetivo, tarea)
 
-`tarjeta_destacada` · ⚠️ Inconsistente · lo trata la **F7**
+`tarjeta_destacada` · ✅ Existe · lo trata la **F7**
 
 | Campo | Valor |
 |---|---|
@@ -488,9 +489,9 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | — |
-| Transición | box-shadow 0,3 s ease |
-| Duración | 300 ms |
-| Curva | ease |
+| Transición | box-shadow `medium` (MS F1: `transicion()`) |
+| Duración | 280 ms |
+| Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -516,12 +517,12 @@
 | En ANIMACIONES_HC | `fit_contenido` |
 | Función | Lo destructivo no escala: baja la opacidad. |
 | Estado inicial | Opacidad 1 |
-| Estado final | 0,7 |
+| Estado final | 0,72 |
 | Entrada | — |
 | Salida | — |
 | Interacción | Pulsar |
 | Transición | opacity |
-| Duración | 140 ms |
+| Duración | 160 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -535,7 +536,7 @@
 
 #### Marcar un favorito
 
-`favorito` · ⚠️ Inconsistente · lo trata la **F3**
+`favorito` · ✅ Existe · lo trata la **F3**
 
 | Campo | Valor |
 |---|---|
@@ -551,14 +552,14 @@
 | Salida | — |
 | Interacción | Pulsar |
 | Transición | transform |
-| Duración | 240 ms |
+| Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | media |
-| Relación | 240 ms: 20 por encima del tope de su nivel (micro, 220). |
+| Relación | Era 240 ms, 20 por encima del tope de su nivel: con el token `normal` vuelve a su nivel (MS F1). |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
@@ -610,12 +611,12 @@
 | En ANIMACIONES_HC | `fondo_entra` |
 | Función | Separar la hoja de lo de detrás. |
 | Estado inicial | Transparente |
-| Estado final | Velo |
+| Estado final | Velo (en Ultra, además, lo de detrás desenfocado y fijo) |
 | Entrada | — |
 | Salida | — |
 | Interacción | — |
 | Transición | — |
-| Duración | 180 ms |
+| Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -677,7 +678,7 @@
 | Salida | Ninguna: desaparece de golpe |
 | Interacción | — |
 | Transición | — |
-| Duración | 240 ms |
+| Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -707,7 +708,7 @@
 | Salida | Ninguna |
 | Interacción | — |
 | Transición | — |
-| Duración | 240 ms |
+| Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -755,7 +756,7 @@
 
 #### Tarjetas de una lista que entran en cascada (Biblioteca, Productividad, Nutrición, Salud)
 
-`tarjeta_lista_entra` · ⚠️ Inconsistente · lo trata la **F10**
+`tarjeta_lista_entra` · ✅ Existe · lo trata la **F10**
 
 | Campo | Valor |
 |---|---|
@@ -778,7 +779,7 @@
 | Escalonado | 60 ms entre elementos |
 | Intensidad | 3 · Protagonista |
 | Prioridad | media |
-| Relación | Cuatro cadencias distintas: 60, 70, 80 ms y dos funciones (`retrasoDeTarjeta`, `retrasoDeTarjetaPR`). |
+| Relación | Una sola cadencia y como mucho seis escalones: `escalonado(i)` del motor (MS F1). Antes eran 60, 70 y 80 ms y dos funciones. |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
@@ -801,7 +802,7 @@
 | Salida | — |
 | Interacción | — |
 | Transición | — |
-| Duración | 300 ms |
+| Duración | 280 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -985,14 +986,14 @@
 | Salida | — |
 | Interacción | — |
 | Transición | width |
-| Duración | 380 ms |
+| Duración | 340 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
 | Intensidad | 3 · Protagonista |
 | Prioridad | media |
-| Relación | Cuatro clases con cuatro duraciones: barra-progreso 380, nu-progreso 420, progreso-libro 420, fit-barra 280. |
+| Relación | Cuatro clases con tres tokens: barra-progreso `slow`, nu-progreso y progreso-libro `cinematic`, fit-barra `medium`. Ya son tokens (MS F1); que digan uno solo es de la F17. |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
@@ -1014,9 +1015,9 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | — |
-| Transición | width 0,3 s / 0,35 s / 0,4 s / 0,5 s con `ease` |
-| Duración | 400 ms |
-| Curva | ease |
+| Transición | width `slow` con la curva de JosStyle (MS F1: `transicion()`; antes 0,3 / 0,35 / 0,4 / 0,5 s con `ease`) |
+| Duración | 340 ms |
+| Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -1029,7 +1030,7 @@
 
 #### El aro de progreso de `ui.jsx`
 
-`aro_progreso` · ⚠️ Inconsistente · lo trata la **F17**
+`aro_progreso` · ✅ Existe · lo trata la **F17**
 
 | Campo | Valor |
 |---|---|
@@ -1044,15 +1045,15 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | — |
-| Transición | stroke-dashoffset 1 s ease |
-| Duración | 1000 ms |
-| Curva | ease |
+| Transición | stroke-dashoffset `cinematic` (MS F1; antes 1 s con `ease`, por encima del tope) |
+| Duración | 420 ms |
+| Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
 | Intensidad | 3 · Protagonista |
 | Prioridad | media |
-| Relación | Pasa del tope de una animación (700 ms). |
+| Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
@@ -1075,8 +1076,8 @@
 | Salida | — |
 | Interacción | — |
 | Transición | stroke-dashoffset lineal (es un reloj) |
-| Duración | 300 ms |
-| Curva | --ease-premium |
+| Duración | 280 ms |
+| Curva | --motion-curva-linear |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -1265,7 +1266,7 @@
 | Salida | Ninguna |
 | Interacción | — |
 | Transición | — |
-| Duración | 260 ms |
+| Duración | 280 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -1355,7 +1356,7 @@
 | Salida | — |
 | Interacción | — |
 | Transición | — |
-| Duración | 320 ms |
+| Duración | 340 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -1385,7 +1386,7 @@
 | Salida | — |
 | Interacción | — |
 | Transición | — |
-| Duración | 300 ms |
+| Duración | 280 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -1415,7 +1416,7 @@
 | Salida | — |
 | Interacción | — |
 | Transición | — |
-| Duración | 300 ms |
+| Duración | 280 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -1452,7 +1453,7 @@
 | Escalonado | — |
 | Intensidad | 4 · Momento |
 | Prioridad | media |
-| Relación | No estaba en ANIMACIONES_HC, así que el tope de la E3 F14 no la medía. |
+| Relación | No está en ANIMACIONES_HC, pero desde la MS F1 su duración es el token `momento` y el mapa la mide. |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
@@ -1482,7 +1483,7 @@
 | Escalonado | — |
 | Intensidad | 5 · Firma |
 | Prioridad | media |
-| Relación | La única animación de nivel firma. Tampoco estaba en el catálogo. |
+| Relación | La única animación de nivel firma; su duración es el token `firma` (MS F1). |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
@@ -1506,8 +1507,8 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | — |
-| Transición | left y fondo 200 ms con la curva común |
-| Duración | 200 ms |
+| Transición | left y fondo `normal` con la curva común (MS F1: `transicion()`) |
+| Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -1536,13 +1537,43 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | — |
-| Transición | `left 150ms` sin curva, o `transition-all` de Tailwind |
-| Duración | 150 ms |
-| Curva | por defecto |
+| Transición | `left` `fast` con `transicion()` en Calendario y Relación (MS F1), y `transition-all` en Ajustes |
+| Duración | 160 ms |
+| Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
 | Intensidad | 1 · Micro |
+| Prioridad | media |
+| Relación | — |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Aparece directamente en su estado final: las dos reglas globales de index.css llevan su duración a 0,01 ms. |
+
+#### La muestra de «Ver cómo se mueve» en Ajustes
+
+`muestra_ajustes` · ✅ Existe · lo trata la **F1**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/views/SettingsView.jsx (AjusteMovimiento) |
+| Componente | AjusteMovimiento |
+| Clase CSS | — |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Ver la diferencia entre modos y velocidades sin ir a buscarla (MS F1). |
+| Estado inicial | — |
+| Estado final | — |
+| Entrada | La cascada de la portada, con el modo y la velocidad elegidos |
+| Salida | — |
+| Interacción | Tocar «Ver cómo se mueve» la repite |
+| Transición | — |
+| Duración | 420 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | 60 ms entre elementos |
+| Intensidad | 3 · Protagonista |
 | Prioridad | media |
 | Relación | — |
 | Móvil | Igual |
@@ -1600,8 +1631,8 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | Deslizar en horizontal (umbral, `pan-y`) |
-| Transición | width, padding y colores 200 ms |
-| Duración | 200 ms |
+| Transición | width, padding y colores `normal` |
+| Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |

@@ -388,12 +388,15 @@ export function totalBiblioteca(datos) {
    exageradas. Prioridad: fluidez > efectos."*
 
    ⚠️ **Y se reutiliza la que ya existe**: `.hub-card` en `index.css`, la misma
-   cascada de 80 ms que usan los hubs desde la Fase N2. Escribir una segunda
-   sería el duplicado de siempre, y además se vería distinta. */
-export const RETRASO_CASCADA_MS = 60;
-export const CLASE_TARJETA = 'hub-card';
+   cascada que usan los hubs desde la Fase N2. Escribir una segunda sería el
+   duplicado de siempre, y además se vería distinta.
 
-export const retrasoDeTarjeta = (indice) => `${Math.max(0, indice) * RETRASO_CASCADA_MS}ms`;
+   🔓 MS F1 — el retraso de cada tarjeta ya no se calcula aquí: es
+   `escalonado(i)` del motor (`src/lib/motion.js`), con un solo paso para toda
+   la aplicación, seis escalones como mucho, y que respeta el modo y la
+   velocidad. `retrasoDeTarjeta` y su `RETRASO_CASCADA_MS` se retiraron: eran la
+   misma función que `retrasoDeTarjetaPR` (hallazgo `cadencias` de la F0). */
+export const CLASE_TARJETA = 'hub-card';
 
 /* ── Lo que esta fase NO hace ──────────────────────────────────────────────
 

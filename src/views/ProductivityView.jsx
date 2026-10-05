@@ -16,7 +16,7 @@ import {
      cuadraditos los da `panelDeMiniApp`, que le pregunta a cada mini-app por su
      propia función. La de la PR F1 sigue viva en `productividad.js`, que la usa
      en su condición de finalización. */
-  MINI_APPS_PR, miniAppPR, CLASE_TARJETA_PR, retrasoDeTarjetaPR,
+  MINI_APPS_PR, miniAppPR, CLASE_TARJETA_PR,
 } from '../lib/productividad';
 /* E3 F24 (PR F2) — Hábitos, la mini-app completa. Ni una racha se calcula en esta
    vista: todo sale de `habitos.js`, que se lo pregunta al motor de `rachas.js`. */
@@ -89,6 +89,7 @@ import {
   PERIODOS_PR, estadisticasPR, rachaProductividad, DEFINICION_DIA_PRODUCTIVO,
 } from '../lib/integracionPR';
 import ObjectivesView from './ObjectivesView';
+import { escalonado, transicion } from '../lib/motion';
 
 /* ---------- Hábitos ---------- */
 // RA Fase 1 — la racha ya no se guarda: se deriva del historial con el motor de
@@ -204,7 +205,7 @@ export function TarjetaHabito({ habito, hoy, accent, indice = 0, onAlternar, onA
   const pausado = habito.activo === false;
 
   return (
-    <Card style={{ padding: '0.85rem', opacity: pausado ? 0.55 : 1, animationDelay: retrasoDeTarjetaPR(indice) }} className={CLASE_TARJETA_PR}>
+    <Card style={{ padding: '0.85rem', opacity: pausado ? 0.55 : 1, ...escalonado(indice) }} className={CLASE_TARJETA_PR}>
       <div className="flex items-center gap-3">
         <button onClick={onAbrir} className="flex items-center gap-3 flex-1 min-w-0 text-left toque-44" aria-label={`Ver ${habito.nombre}`}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: COLORS.surface2 }}>
@@ -655,7 +656,7 @@ function HabitosTab({ habitos, onAdd, onUpdate, onDelete, accent }) {
 function BarraFlujo({ porcentaje, accent }) {
   return (
     <div className="h-2 rounded-full overflow-hidden" style={{ background: COLORS.border }}>
-      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: 'width 0.4s ease' }} />
+      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: transicion('width', 'slow') }} />
     </div>
   );
 }
@@ -1524,7 +1525,7 @@ function TarjetaTarea({ tarea, hoy, accent, onCompletar, onAbrir, onConcentrarse
       id={`tarea-${tarea.id}`}
       className="flex items-start gap-3"
       style={{
-        transition: 'box-shadow 0.3s ease, opacity 0.3s ease',
+        transition: transicion(['box-shadow', 'opacity'], 'medium'),
         boxShadow: destacada ? `0 0 0 2px ${accent}` : 'none',
         opacity: tarea.hecha ? 0.6 : 1,
       }}
@@ -1976,7 +1977,7 @@ export function TareasTab({ tareas, onAdd, onUpdate, onToggle, onDelete, onConce
 function BarraMeta({ porcentaje, accent }) {
   return (
     <div className="h-2 rounded-full mt-2 overflow-hidden" style={{ background: COLORS.border }}>
-      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: 'width 0.4s ease' }} />
+      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: transicion('width', 'slow') }} />
     </div>
   );
 }
@@ -2341,7 +2342,7 @@ export function TarjetaMiniAppPR({ app, indicador, secundaria = null, accent, in
     <button
       onClick={onAbrir}
       className={`w-full text-left ${CLASE_TARJETA_PR}`}
-      style={{ animationDelay: retrasoDeTarjetaPR(indice) }}
+      style={{ ...escalonado(indice) }}
       aria-label={`Abrir ${app.nombre}`}
     >
       <Card style={{ padding: '0.95rem' }}>
@@ -2389,7 +2390,7 @@ function BarraDia({ porcentaje, accent }) {
   if (porcentaje === null) return null;
   return (
     <div className="h-2.5 rounded-full mt-2 overflow-hidden" style={{ background: COLORS.border }}>
-      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: 'width 0.5s ease' }} />
+      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: transicion('width', 'slow') }} />
     </div>
   );
 }

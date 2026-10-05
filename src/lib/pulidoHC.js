@@ -145,13 +145,17 @@ export function sinPalabrasTecnicas(texto) {
    sin escribir una línea (RA F2 lo dejó dicho). */
 export const MAX_ANIMACION_MS = 700;
 
+/* 🔓 MS F1 — desde la F1 cada una de estas duraciones es un TOKEN del motor (`src/lib/motion.js`,
+   `--motion-dur-*` en index.css) a la velocidad Normal: las que estaban a medio camino se acercaron
+   al más próximo (300 → 280, 260 → 280, 380 → 340, 140 → 160, 200/240 → 220, 180 → 220). La prueba
+   sigue comparando cada una con el CSS, que ahora se lee resolviendo el token. */
 export const ANIMACIONES_HC = [
   /* 🐛 FIT F37 — decía 420 y en `index.css` son 340 desde la Fase N2 (y el
      cambio de mes decía 260 siendo 220): un catálogo que declara otra
      duración que la escrita miente, y ahora una prueba compara las dos. */
   { id: 'entrada_pantalla', apartado: 14, nombre: 'Cambiar de vista', ms: 340, clase: 'module-enter' },
-  { id: 'completar', apartado: 16, nombre: 'Completar una tarea', ms: 300, clase: 'tarea-hecha' },
-  { id: 'aviso', apartado: 17, nombre: 'El aviso de "añadido"', ms: 260, clase: 'aviso-entra' },
+  { id: 'completar', apartado: 16, nombre: 'Completar una tarea', ms: 280, clase: 'tarea-hecha' },
+  { id: 'aviso', apartado: 17, nombre: 'El aviso de "añadido"', ms: 280, clase: 'aviso-entra' },
   { id: 'cambio_mes', apartado: 19, nombre: 'Cambiar de mes', ms: 220, clase: 'calendar-month-grid' },
   { id: 'esqueleto', apartado: 23, nombre: 'El latido del esqueleto', ms: 1400, clase: 'esqueleto', repetida: true },
   /* E3 F24 (PR F2) — las dos de Hábitos. Entran aquí y no en un catálogo aparte
@@ -159,10 +163,10 @@ export const ANIMACIONES_HC = [
      declarada existe de verdad en el CSS: una animación declarada y no escrita es
      un catálogo que miente, y ya pasó con `tarea-hecha` y `aviso-entra`. */
   { id: 'habito_hecho', apartado: 16, nombre: 'Completar un hábito', ms: 280, clase: 'habito-hecho' },
-  { id: 'progreso_dia', apartado: 16, nombre: 'La barra del progreso del día', ms: 380, clase: 'barra-progreso' },
+  { id: 'progreso_dia', apartado: 16, nombre: 'La barra del progreso del día', ms: 340, clase: 'barra-progreso' },
   /* E3 F25 (PR F3) — el aro del temporizador. Entra aquí por lo mismo: la prueba
      de la E3 F14 recorre esta lista y comprueba que cada clase existe en el CSS. */
-  { id: 'aro_pomodoro', apartado: 16, nombre: 'El aro del temporizador', ms: 300, clase: 'aro-pomodoro' },
+  { id: 'aro_pomodoro', apartado: 16, nombre: 'El aro del temporizador', ms: 280, clase: 'aro-pomodoro' },
   /* E3 F33 (NU F1) — el progreso de los indicadores de Nutrición, por lo mismo. */
   { id: 'progreso_nutricion', apartado: 16, nombre: 'El progreso de un macro', ms: 420, clase: 'nu-progreso' },
   { id: 'rutina_fin', apartado: 16, nombre: 'Terminar una rutina', ms: 420, clase: 'rutina-fin' },
@@ -177,15 +181,15 @@ export const ANIMACIONES_HC = [
      `tipo`: la F37 mide cada una contra el rango de duración de su clase
      (`movimientoFitness.js`). */
   { id: 'fit_entra', apartado: 4, nombre: 'Una pantalla de Fitness aparece', ms: 220, clase: 'fit-entra', fitness: true, tipo: 'pantalla' },
-  { id: 'fit_pulsar', apartado: 5, nombre: 'Pulsar una tarjeta', ms: 140, clase: 'fit-pulsable', fitness: true, tipo: 'micro' },
-  { id: 'fit_contenido', apartado: 7, nombre: 'Pulsar algo destructivo', ms: 140, clase: 'fit-contenido', fitness: true, tipo: 'micro' },
+  { id: 'fit_pulsar', apartado: 5, nombre: 'Pulsar una tarjeta', ms: 160, clase: 'fit-pulsable', fitness: true, tipo: 'micro' },
+  { id: 'fit_contenido', apartado: 7, nombre: 'Pulsar algo destructivo', ms: 160, clase: 'fit-contenido', fitness: true, tipo: 'micro' },
   { id: 'fit_barra', apartado: 15, nombre: 'Una barra de progreso que avanza', ms: 280, clase: 'fit-barra', fitness: true, tipo: 'tarjeta' },
   { id: 'fit_serie', apartado: 8, nombre: 'Marcar una serie', ms: 160, clase: 'fit-serie-hecha', fitness: true, tipo: 'micro' },
-  { id: 'fit_miniatura', apartado: 10, nombre: 'Cambiar de ejercicio', ms: 200, clase: 'fit-miniatura', fitness: true, tipo: 'micro' },
-  { id: 'fit_descanso', apartado: 9, nombre: 'Termina el descanso', ms: 300, clase: 'fit-descanso-fin', fitness: true, tipo: 'tarjeta' },
-  { id: 'fit_rango_sube', apartado: 14, nombre: 'Subir de rango', ms: 300, clase: 'fit-rango-sube', fitness: true, tipo: 'tarjeta' },
-  { id: 'fondo_entra', apartado: 22, nombre: 'El fondo de una hoja se oscurece', ms: 180, clase: 'fondo-entra', fitness: true, tipo: 'pantalla' },
-  { id: 'hoja_entra', apartado: 22, nombre: 'Una hoja entra desde abajo', ms: 240, clase: 'hoja-entra', fitness: true, tipo: 'pantalla' },
+  { id: 'fit_miniatura', apartado: 10, nombre: 'Cambiar de ejercicio', ms: 220, clase: 'fit-miniatura', fitness: true, tipo: 'micro' },
+  { id: 'fit_descanso', apartado: 9, nombre: 'Termina el descanso', ms: 280, clase: 'fit-descanso-fin', fitness: true, tipo: 'tarjeta' },
+  { id: 'fit_rango_sube', apartado: 14, nombre: 'Subir de rango', ms: 280, clase: 'fit-rango-sube', fitness: true, tipo: 'tarjeta' },
+  { id: 'fondo_entra', apartado: 22, nombre: 'El fondo de una hoja se oscurece', ms: 220, clase: 'fondo-entra', fitness: true, tipo: 'pantalla' },
+  { id: 'hoja_entra', apartado: 22, nombre: 'Una hoja entra desde abajo', ms: 220, clase: 'hoja-entra', fitness: true, tipo: 'pantalla' },
 ];
 
 export const animacionHC = (id) => ANIMACIONES_HC.find((a) => a.id === id) || null;

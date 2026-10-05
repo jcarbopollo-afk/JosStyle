@@ -18,8 +18,12 @@ let total = 0;
 let fallos = 0;
 const ok = (c, m) => { total += 1; if (c) console.log(`  \x1b[32m✓\x1b[0m ${m}`); else { fallos += 1; console.log(`  \x1b[31m✗ ${m}\x1b[0m`); } };
 
-/* El bloque de Apariencia de la pantalla, de su `actual.id === 'apariencia'` al siguiente. */
-const apariencia = SV.slice(SV.indexOf("actual.id === 'apariencia' && ("), SV.indexOf("actual.id === 'pantalla-principal' && ("));
+/* El bloque de Apariencia de la pantalla, de su `actual.id === 'apariencia'` al siguiente.
+   🔓 MS F1 — el movimiento se pinta con su propia pieza (`AjusteMovimiento`), que el bloque
+   usa: lo que hay dentro cuenta como parte de Apariencia, porque es donde se ve. */
+const bloqueApariencia = SV.slice(SV.indexOf("actual.id === 'apariencia' && ("), SV.indexOf("actual.id === 'pantalla-principal' && ("));
+const piezaMovimiento = SV.slice(SV.indexOf('function AjusteMovimiento('), SV.indexOf('function OpcionesFila('));
+const apariencia = bloqueApariencia + (/<AjusteMovimiento /.test(bloqueApariencia) ? piezaMovimiento : '');
 
 console.log('\n── 1. Lo que Apariencia agrupa ──');
 const secciones = [...apariencia.matchAll(/<Seccion titulo="([^"]+)"/g)].map((m) => m[1]);

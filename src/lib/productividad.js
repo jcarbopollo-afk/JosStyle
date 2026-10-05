@@ -289,9 +289,10 @@ export const totalProductividad = (datos) =>
    ⚠️ **Y se reutiliza la que ya existe**: `.hub-card` en `index.css`, la misma
    cascada que usan los hubs y la Biblioteca desde la BL F1. Escribir una segunda
    sería el duplicado de siempre, y encima se vería distinta. */
-export const RETRASO_CASCADA_PR_MS = 60;
 export const CLASE_TARJETA_PR = 'hub-card';
-export const retrasoDeTarjetaPR = (indice) => `${Math.max(0, indice) * RETRASO_CASCADA_PR_MS}ms`;
+/* 🔓 MS F1 — el retraso es `escalonado(i)` del motor (`src/lib/motion.js`):
+   `retrasoDeTarjetaPR` era la misma función que `retrasoDeTarjeta` de la
+   Biblioteca, y las dos se retiraron (hallazgo `cadencias` de la F0). */
 
 /* ── Navegación ───────────────────────────────────────────────────────────
 

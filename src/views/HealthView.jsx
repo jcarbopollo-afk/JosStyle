@@ -15,6 +15,7 @@ import {
   BotonBorrar, BotonBorrarDefinitivo, Card, SectionTitle, Field, TextInput, Select, PrimaryButton,
   EmptyHint, AIPanel, PinGate,
 } from '../components/ui';
+import { escalonado } from '../lib/motion';
 
 /* Entrega 3 · Fase 30 (BN) — «Rediseño y reorganización del apartado Bienestar».
    ═══════════════════════════════════════════════════════════════════════════
@@ -43,7 +44,7 @@ import {
 function SeccionBN({ seccion, resumen, abierta, onAlternar, accent, indice, children }) {
   const Icono = ICONOS_SECCION[seccion.id] || HeartPulse;
   return (
-    <div className="hub-card rounded-3xl overflow-hidden" style={{ animationDelay: `${indice * 70}ms`, background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
+    <div className="hub-card rounded-3xl overflow-hidden" style={{ ...escalonado(indice), background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
       <button
         onClick={() => onAlternar(seccion.id)}
         aria-expanded={abierta}

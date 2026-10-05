@@ -2,39 +2,43 @@
 
 > **Para qué sirve.** Que quien añada una pantalla, una tarjeta o un botón sepa sin preguntar
 > *"¿cómo debe moverse esto?"* (F0, apartado 18). Lo que dice aquí está escrito como datos en
-> `src/lib/motionMapa.js` y lo comprueba `scripts/test-motion-f0.mjs`: si este documento y la librería
-> dejan de decir lo mismo, la prueba se pone roja.
+> `src/lib/motionMapa.js` (el mapa y el plan, F0) y en `src/lib/motion.js` (el motor, F1), y lo
+> comprueban `scripts/test-motion-f0.mjs` y `scripts/test-motion-f1.mjs`: si este documento y las
+> librerías dejan de decir lo mismo, la prueba se pone roja.
 >
-> **Estado: Motion System · Fase 0 de 20** (auditoría y plan). El motor llega en la F1. El índice de las
-> 21 fases está en `docs/13_MOTION_SYSTEM_ORDEN.md`, y el mapa de cada elemento en `docs/MOTION_MAP.md`.
+> **Estado: Motion System · Fase 1 de 20** (el motor). El índice de las 21 fases está en
+> `docs/13_MOTION_SYSTEM_ORDEN.md`, y el mapa de cada elemento en `docs/MOTION_MAP.md`.
 
 ---
 
 ## 1 · La regla más importante: todo lo nuevo hereda motion
 
-Es permanente (F0, apartado 19):
+Es permanente (F0, apartado 19, y F1, apartado 24):
 
 1. Todo lo nuevo —módulo, pantalla, tarjeta, botón, ventana, gráfica, interacción— se mira contra el
    **MOTION_MAP** antes de darlo por terminado.
 2. Usa los tokens, la jerarquía y el contexto que ya existen: **ni una duración escrita a mano, ni una
-   curva propia**.
-3. Si necesita una animación que todavía no existe: se diseña, se añade al mapa y a `index.css`, se
-   documenta y se reutiliza.
-4. **Una animación que no está en el MOTION_MAP pone la suite roja** (`auditarMotion().sinMapa`), y la
-   deuda medida en la F0 **no puede crecer** (`DEUDA_F0`).
+   curva propia, ni un desplazamiento ni una escala con un número suyo**.
+3. **Ningún componente nuevo crea su propio sistema de animación.** Usa una clase de `index.css`,
+   `transicion()`, `escalonado()` o las primitivas del motor (sección 8).
+4. Si necesita algo que todavía no existe: se identifica el patrón, se añade el token, el preset o la
+   primitiva a `motion.js` (y su variable a `index.css`), se añade al mapa, se documenta aquí y se usa.
+5. **Una animación que no está en el MOTION_MAP pone la suite roja** (`auditarMotion().sinMapa`), y la
+   deuda medida en la F0 **no puede crecer** (`DEUDA_F0`, que la F1 bajó a cero en duraciones, curvas
+   y retrasos escritos en las vistas).
 
 ## 2 · Lo que ya había, y no se tira
 
-JosStyle ya tenía un lenguaje de movimiento aunque nadie lo llamara así, y la F0 lo respeta
-(apartado 1: *"Respeta lo que ya funciona"*):
+JosStyle ya tenía un lenguaje de movimiento aunque nadie lo llamara así, y el sistema lo respeta
+(F0, apartado 1: *"Respeta lo que ya funciona"*):
 
 - **Una sola curva**, `--ease-premium` (`cubic-bezier(0.32, 0.72, 0, 1)`, Fase N2): una deceleración
-  enfática, sin rebote. La usan las 35 reglas animadas de `index.css`.
+  enfática, sin rebote. **Es la `standard` del motor**, no se sustituye.
 - **Un catálogo de animaciones**, `ANIMACIONES_HC` (`src/lib/pulidoHC.js`, E3 F14 y FIT F37), con su
-  duración comprobada contra el CSS. El MOTION_MAP **se apoya en él**: no hay un segundo catálogo.
+  duración comprobada contra el CSS. El MOTION_MAP **se apoya en él**: no hay un segundo catálogo. Desde
+  la F1 cada una de sus duraciones es un token.
 - **Una escalera de escalas al pulsar** en `ui.jsx` (EH F50): 0,90 / 0,95 / 0,96–0,99 según el tamaño.
-- **Dos reglas de movimiento reducido** en `index.css`: la del sistema (`prefers-reduced-motion`) y la
-  de Ajustes (`data-reducir-movimiento`, `data-animaciones='desactivadas'`).
+- **Los ids de Ajustes** (`completa`, `reducida`, `desactivadas`): no se renombran.
 
 ## 3 · La jerarquía: seis niveles
 
@@ -54,14 +58,17 @@ JosStyle ya tenía un lenguaje de movimiento aunque nadie lo llamara así, y la 
 *"MUCHO DETALLE ≠ MUCHO MOVIMIENTO."*
 
 - **Como mucho 6 elementos animándose a la vez** (la portada de un área: cabecera + cinco tarjetas).
-- **Escalonado**: 80 ms entre elementos como mucho, 6 elementos como mucho, 400 ms en total.
+- **Escalonado**: un paso de 60 ms para toda la aplicación y **seis escalones como mucho**: el elemento
+  cuarenta de una lista entra con el sexto, no dos segundos después.
 - **Duración**: 340 ms para lo normal, 420 ms para una transición, **700 ms** como tope absoluto de
   algo que no se repite (el de la E3 F14).
 - **Spring**: solo cuando el dedo suelta algo con velocidad (una hoja, un deslizamiento). Nunca en una
-  entrada que no ha tocado nadie.
-- **Blur**: fijo, como material (la barra de abajo, una tarjeta de cristal, el velo de una hoja). Nunca
-  animado, y nunca una franja que tape el fondo sin motivo.
-- **Escala**: pulsar entre 0,90 y 0,99, entrar desde 0,97. Nunca por encima de 1,03.
+  entrada que no ha tocado nadie, y ninguno rebota más de un 12 %.
+- **Blur**: fijo, como material (la barra de abajo, una tarjeta de cristal, el velo de una hoja en
+  Ultra). Nunca animado, y nunca una franja que tape el fondo sin motivo.
+- **Escala**: dos techos, porque son dos cosas. **Una superficie** (tarjeta, hoja, pantalla) entra desde
+  0,95 como poco y no crece de 1,03. **Una marca pequeña** (una llama, un ✓, una estrella) puede latir
+  hasta 1,35: mide 16 px y el pulso es el mensaje (la F1 corrigió el techo único que escribió la F0).
 - **Parallax**: en ningún sitio. Marea a quien tiene sensibilidad vestibular y no explica nada.
 - **Bucles infinitos**: solo mientras algo carga de verdad.
 
@@ -78,44 +85,104 @@ JosStyle ya tenía un lenguaje de movimiento aunque nadie lo llamara así, y la 
 | Éxito | — | **Satisfacción**: una marca que entra y se queda. | 4 |
 | Error | — | **Claro y sin agresividad**: aparece donde está el problema. | 2 |
 
-## 6 · Los ajustes de movimiento
+## 6 · Los ajustes de movimiento (Ajustes → Apariencia → Texto y movimiento)
 
-**Dónde se guardan:** `apariencia.animaciones` y `apariencia.reducirMovimiento`, dentro de `ajustes`
-(Supabase), como el resto de Apariencia. **Ni localStorage ni una clave nueva** (apartado 15).
+**Dónde se guardan:** `apariencia.animaciones`, `apariencia.velocidadMovimiento` y
+`apariencia.reducirMovimiento`, dentro de `ajustes` (Supabase), como el resto de Apariencia. **Ni
+localStorage ni una clave nueva.** `App.jsx` los escribe en `<html>` como `data-motion` y
+`data-velocidad`, y de ahí los leen el CSS y el motor.
 
-| Guardado | Hoy se llama | Será | Qué hará |
-|---|---|---|---|
-| `completa` | Completa | **Normal** | Todo el lenguaje del sistema. |
-| `reducida` | Reducida | **Reducido** | Sin desplazamientos ni escalas: fundidos cortos que conservan orden y feedback. |
-| `minima` | Mínima | **Mínimo** | Solo el feedback imprescindible, instantáneo o casi. |
-| `desactivadas` | Desactivadas | **Sin movimiento** | Nada se mueve. |
+| Modo | Se guarda | Qué hace |
+|---|---|---|
+| **Sin movimiento** | `desactivadas` | Nada se mueve: todo aparece en su estado final. |
+| **Reducido** | `reducida` | Sin desplazamientos ni escalas: fundidos que conservan el orden y el aviso de cada cambio. |
+| **Normal** | `completa` | El movimiento de JosStyle. Es el de serie. |
+| **Premium** | `premium` | Desplazamientos y escalas algo más amplios, dentro del presupuesto. Misma duración. |
+| **Ultra** | `ultra` | Lo de Premium con más amplitud, y profundidad: el velo de una hoja desenfoca lo de detrás. |
 
-🚨 **Hoy tres de los cuatro niveles no hacen nada** (hallazgo de la F0): solo «Desactivadas» cambia
-algo, y la propia pantalla lo dice. **La F1 los hace reales.** Los ids guardados no se renombran.
+- Un `minima` guardado antes (el cuarto nivel que había) **se lee como Reducido** y no se reescribe (C-52).
+- **Velocidad**: Pausada (×1,3), Normal y Rápida (×0,75) multiplican **todas** las duraciones y retrasos
+  desde un solo sitio. Con «Sin movimiento» no hay nada que acelerar, y la pantalla lo dice.
+- **«Reducir movimiento»** (el interruptor de Ajustes o el del iPhone) manda sobre Normal, Premium y Ultra:
+  se ve como **Reducido**, nunca como «Sin movimiento». Reducir no es romper (F1, apartado 17).
+- **«Ver cómo se mueve»** repite la cascada de verdad con lo elegido, para notar la diferencia.
 
-«Premium» y «Ultra» (apartado 14) **no se ofrecen** salvo que la F1 demuestre una diferencia que se
-note sin romper el presupuesto: un nivel por encima de un movimiento que ya está al tope sería un
-control que no cambia nada visible (regla 8). Y si el iPhone tiene activado «Reducir movimiento», manda
-sobre «Normal» y se comporta como **Reducido**, nunca como «Sin movimiento».
+## 7 · Los tokens (src/lib/motion.js → index.css)
 
-## 7 · La arquitectura (la decide la F0, la construye la F1)
+Una sola tabla en `motion.js`, escrita como variables CSS en `index.css` y **comparada por una prueba**
+(`auditarTokensCss`). `:root` es Normal a velocidad Normal; cada modo cambia **solo la intensidad**
+(`html[data-motion=…]`) y cada velocidad **solo el tiempo** (`html[data-velocidad=…]`).
 
-- **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vive en
+| Familia | Tokens | Variable |
+|---|---|---|
+| Duración | instant 0 · ultraFast 120 · fast 160 · normal 220 · medium 280 · slow 340 · cinematic 420 · momento 620 · firma 900 · latido 1400 | `--motion-dur-*` |
+| Curva | standard (= `--ease-premium`) · smooth · entrance · exit · emphasized · linear | `--motion-curva-*` |
+| Spring | soft · normal · responsive · bouncy · heavy (ζ ≥ 0,6) | solo en JavaScript |
+| Distancia | micro 4 · small 8 · medium 14 · large 24 · hero 40 px | `--motion-dist-*` |
+| Escala (entrar) | micro 0,98 · subtle 0,97 · normal 0,96 · hero 0,82 | `--motion-escala-*` |
+| Pulso | micro 1,08 · suave 1,12 · medio 1,18 · fuerte 1,25 · firma 1,35 · sobrepaso 1,03 | `--motion-pulso-*` |
+| Opacidad | hidden 0 · subtle 0,45 · secondary 0,65 · visible 0,9 · full 1 | `--motion-opac-*` |
+| Desenfoque | none 0 · subtle 4 · medium 10 · strong 20 px | `--motion-blur-*` |
+| Escalonado | seis escalones de 60 ms | `--motion-retraso-0…5` |
+
+🚨 **Ni un `calc()` con milisegundos en el CSS.** Las duraciones van ya calculadas por velocidad: si Safari
+no resolviera un `calc` de tiempo dentro de un `animation`, la declaración entera sería inválida y la
+aplicación se quedaría sin animaciones sin que fallara nada en Chromium (SF F1).
+
+**La intensidad no es multiplicar.** *"Intensidad 50 % no significa todo × 0,5"*: cada escalón de la
+jerarquía responde distinto (lo micro casi no cambia, lo hero cambia más), todo se recorta al
+presupuesto y la jerarquía se conserva (`intensificar`).
+
+## 8 · Cómo se mueve una pantalla nueva (la API)
+
+De más sencillo a menos. Lo primero que sirva, eso:
+
+1. **Una clase de `index.css` que ya existe**: `module-enter` (una pantalla entra), `hub-card` (una
+   tarjeta de una lista entra en cascada), `hoja-entra` + `fondo-entra` (una hoja y su velo),
+   `aviso-entra`, `tarea-hecha`, `habito-hecho`, `exito-entra`, `fit-pulsable`, `fit-barra`…
+2. **La cascada**: `style={{ ...escalonado(indice) }}` sobre una tarjeta con `hub-card`. Nunca un
+   `animationDelay` calculado en la vista.
+3. **Una transición en el `style`**: `transition: transicion('width', 'slow')` o
+   `transicion(['box-shadow', 'opacity'], 'medium')`. Nunca `0.4s ease`.
+4. **Lo que el CSS no puede hacer**, con la Web Animations API a través del motor:
+   - `animar(el, 'modalExit')` — un preset (`pageEnter`, `cardEnter`, `sheetExit`, `success`, `error`,
+     `heroReveal`…); **si había otra animación en marcha, la nueva arranca desde donde está ahora**
+     (interrumpir, apartado 12).
+   - `<Presencia visible={x} entrada="modalEnter" salida="modalExit">` — montar y desmontar con su
+     animación: sale antes de desaparecer, desmontada no ocupa sitio, y volver a mostrarla a mitad de la
+     salida invierte sin parpadeo ni doble montaje.
+   - `useFlip(refDelContenedor, clave)` (o `flip(elementos, cambiar)`) — cuando una lista cambia de
+     orden o de tamaño, cada elemento viaja desde donde estaba en vez de saltar.
+   - `compartirElemento(cajaDelOrigen, destino)` — tarjeta → detalle: el destino nace donde estaba el
+     origen.
+   - `useMotion()` — el contexto de ahora (modo, velocidad, intensidad, si está reducido).
+5. **Si nada de eso sirve**: se añade al motor, no a la pantalla (sección 1).
+
+Todo lo anterior respeta solo el modo, la velocidad y «Reducir movimiento». Una animación de
+JavaScript lee el contexto antes de empezar; una de CSS lo hereda de los tokens.
+
+## 9 · La arquitectura
+
+- **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en
   `index.css`, una librería sería un segundo sistema al lado, y el archivo de la aplicación ya pesa
-  4,4 MB (C-42).
-- **Tokens como variables CSS** en `:root`, con sus valores por nivel en `html[data-animaciones=…]`. Un
-  solo punto que se cambia y llega a todo el CSS; JavaScript los lee del mismo sitio.
-- **Lo que puede ser CSS, sigue siendo CSS**: entradas, pulsar, barras, cascadas. Así respeta los
-  niveles y el movimiento reducido sin una línea de JavaScript.
-- **Lo que el CSS no puede hacer va por la Web Animations API** (`element.animate`): salir antes de
-  desmontarse, FLIP de una lista que cambia, seguir al dedo y soltar con su velocidad, una cifra que
-  cuenta. Se interrumpe desde el estado visual actual y existe en Safari desde la 13.1. Cada animación
-  JavaScript lee el nivel antes de empezar.
+  4,4 MB (C-42). `package.json` lo vigila.
+- **Lo que puede ser CSS, sigue siendo CSS**: entradas, pulsar, barras, cascadas. Así respeta los modos y
+  el movimiento reducido sin una línea de JavaScript.
+- **El motor (`src/lib/motion.js`) no importa nada** y no guarda nada: lo puede leer cualquier capa sin
+  un ciclo, y se prueba en Node con elementos de mentira y en Chromium con los de verdad.
+- **Las piezas de React (`src/components/motion.jsx`)** solo hacen lo que necesita React: `useMotion`,
+  `Presencia` y `useFlip`.
+- **Tailwind**: las clases `transition-*` usan por defecto el token `fast` y `--ease-premium`
+  (`tailwind.config.js`), así que también respetan los modos.
 
-## 8 · Cómo se comprueba
+## 10 · Cómo se comprueba
 
-- `auditarMotion({ css, vistas })` lee `index.css` y todas las vistas y componentes: cada regla animada
-  tiene que estar en el MOTION_MAP, ningún `@keyframes` puede quedar huérfano, el mapa y
-  `ANIMACIONES_HC` tienen que decir la misma duración, y la deuda (duraciones escritas a mano,
-  `transition-all`, curvas de Tailwind, gráficas sin gobernar) no puede crecer.
+- `auditarMotion({ css, vistas })` (F0) lee `index.css` y todas las vistas y componentes: cada regla
+  animada tiene que estar en el MOTION_MAP, ningún `@keyframes` puede quedar huérfano, el mapa y
+  `ANIMACIONES_HC` tienen que decir la misma duración, y la deuda no puede crecer.
+- `auditarTokensCss(css)` (F1) compara cada variable de `index.css` con la tabla del motor, en cada modo
+  y cada velocidad, y `movimientoReducidoEnCss(css)` que reducir deje el fundido y apagar lo quite todo.
+- La sección «MS F1» del recorrido de Chromium mide en la pantalla de verdad que cada modo, cada velocidad
+  y el «Reducir movimiento» del sistema cambian lo que se ve, y prueba la interrupción, el FLIP y el
+  elemento compartido con la Web Animations API real.
 - `docs/MOTION_MAP.md` se genera del mapa y la prueba lo compara con el archivo.

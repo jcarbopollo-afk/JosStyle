@@ -140,7 +140,8 @@ for (const clase of ['fuego-sube', 'racha-mas-uno']) {
   ok(new RegExp(`\\.${clase}\\s*\\{`).test(CSS), `la animación \`${clase}\` existe en index.css`);
   ok(new RegExp(`className="[^"]*${clase}`).test(VISTA), `y la pantalla la usa`);
 }
-ok(/animation: fuegoSube \d+ms/.test(CSS) && Number((CSS.match(/animation: fuegoSube (\d+)ms/) || [])[1]) <= 1000,
+/* MS F1 — la duración es el token `momento` del motor; se lee su valor de `:root`. */
+ok(/animation: fuegoSube var\(--motion-dur-momento\)/.test(CSS) && parseInt((CSS.match(/--motion-dur-momento:\s*(\d+)ms/) || [])[1], 10) <= 1000,
   '⚠️ el pulso del fuego dura menos de un segundo (apartado 7)');
 
 // ⚠️ Regla 4 del proyecto: todos los hooks antes de cualquier `return` condicional.

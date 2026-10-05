@@ -17,10 +17,11 @@ import {
   tituloValido, MAX_TITULO, crearLibro, crearIdea, crearColeccion,
   normalizarLibro, normalizarIdea, normalizarColeccion, normalizarBiblioteca,
   elementosDe, contarMiniApp, indicadorDe, totalBiblioteca,
-  RETRASO_CASCADA_MS, CLASE_TARJETA, retrasoDeTarjeta,
+  CLASE_TARJETA,
   NO_EN_ESTA_FASE, DONDE_SE_GUARDA, AISLAMIENTO,
 } from '../src/lib/biblioteca.js';
 import { CATALOGO_PAPELERA } from '../src/lib/papelera.js';
+import { escalonado, STAGGER_MOTION } from '../src/lib/motion.js';
 import { DEFAULT_BIBLIOTECA } from '../src/tokens.js';
 
 let n = 0; let fallos = 0;
@@ -223,11 +224,15 @@ console.log('\n═══ 10. LA CASCADA ES LA QUE YA EXISTE ═══\n');
 eq(CLASE_TARJETA, 'hub-card',
   '🚨 se reutiliza la cascada de los hubs (Fase N2): una segunda se vería distinta');
 ok(leer('src/index.css').includes('.hub-card'), '⚠️ y esa clase EXISTE en `index.css` — una clase declarada y no escrita no pinta nada (E3 F14)');
-eq(retrasoDeTarjeta(0), '0ms', 'la primera entra sin retraso');
-eq(retrasoDeTarjeta(3), `${RETRASO_CASCADA_MS * 3}ms`, '⚠️ y cada una un poco después');
-eq(retrasoDeTarjeta(-2), '0ms', 'un índice imposible no da un retraso negativo');
-ok(RETRASO_CASCADA_MS * MINI_APPS.length <= 400,
+/* 🔓 MS F1 — el retraso de cada tarjeta es `escalonado(i)` del motor: `retrasoDeTarjeta` se
+   retiró, porque era la misma función que la de Productividad con otro nombre. */
+eq(escalonado(0), { '--motion-retraso': 'var(--motion-retraso-0)' }, 'la primera entra sin retraso');
+eq(escalonado(3), { '--motion-retraso': 'var(--motion-retraso-3)' }, '⚠️ y cada una un poco después');
+eq(escalonado(-2), { '--motion-retraso': 'var(--motion-retraso-0)' }, 'un índice imposible no da un retraso negativo');
+ok(STAGGER_MOTION.pasoMs * (MINI_APPS.length - 1) <= 400,
   '⚠️ las seis terminan de entrar en menos de medio segundo: *"fluidez > efectos"*');
+ok(!/retrasoDeTarjeta|animationDelay/.test(VISTA_LIMPIA) && /escalonado\(indice\)/.test(VISTA_LIMPIA),
+  '🔓 y la vista escalona con el motor, sin un retraso escrito en su estilo (MS F1)');
 ok(/active:scale-\[0\.97\]/.test(VISTA_LIMPIA), '⚠️ y el feedback al tocar es el de `ui.jsx`, no uno propio');
 
 console.log('\n═══ 11. LA PANTALLA: LANZADOR PRIMERO, Y CADA MINI-APP CON SUS CUATRO COSAS ═══\n');

@@ -168,7 +168,7 @@ ok(ACORDEON.loQueNoSeHizo.length >= 4, 'se declara lo que NO se hizo, que es lo 
    fijo para móvil". Esto lo comprueba sobre el archivo, no sobre una promesa. */
 ok(!/(maxHeight|minHeight):\s*['"]?\d+px/.test(DASH_CODIGO), '🚨 ni una altura fija en la tarjeta desplegable');
 ok(!/@media/.test(DASH_CODIGO), '…ni un tamaño de pantalla: el fallo no era del tamaño, era del navegador');
-ok(/transition: 'grid-template-rows 300ms/.test(DASH),
+ok(/transition: transicion\('grid-template-rows', 'medium'\)/.test(DASH),
   '⚠️ y la animación se conserva: su apartado 5 pide mantenerla si está bien implementada');
 
 console.log('\n── 6. Lo que no se toca ──');

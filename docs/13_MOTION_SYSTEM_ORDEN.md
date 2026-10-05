@@ -21,7 +21,7 @@ se ordena es **el trabajo**.
 | | Fase | Líneas | Tamaño |
 |---|---|---|---|
 | **F0** ✅ **v3.130.0** | Auditoría total, arquitectura y plan maestro | 4046–4899 | 854 |
-| **F1** | Motor de movimiento + tokens + primitivas | 4900–5490 | 591 |
+| **F1** ✅ **v3.131.0** | Motor de movimiento + tokens + primitivas | 4900–5490 | 591 |
 | **F2** | Navegación, transiciones y continuidad espacial | 6038–6770 | 733 |
 | **F3** | Microinteracciones, componentes y feedback | 6771–7586 | 816 |
 | **F4** | Datos dinámicos, listas, gráficas y estados | 7587–8404 | 818 |
@@ -60,6 +60,8 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | Pieza | Dónde |
 |---|---|
 | El inventario, la jerarquía, el presupuesto, el plan y la auditoría | `src/lib/motionMapa.js` (F0) |
+| El motor: tokens, modos, velocidad, intensidad, presets y primitivas | `src/lib/motion.js` (F1), con sus piezas de React en `src/components/motion.jsx` |
 | El documento del sistema (las reglas, para cualquier pantalla nueva) | `docs/MOTION_SYSTEM.md` |
 | El mapa elemento a elemento (**generado**, no se edita a mano) | `docs/MOTION_MAP.md` ← `scripts/generar-motion-map.mjs` |
 | La prueba de la F0 | `scripts/test-motion-f0.mjs` |
+| La prueba de la F1 | `scripts/test-motion-f1.mjs`, y la sección «MS F1» del recorrido de Chromium |

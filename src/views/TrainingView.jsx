@@ -6,6 +6,7 @@ import { askAI, askAIWithImages, AI_SYSTEM } from '../lib/ai';
 import { extractFramesFromSrc } from '../lib/videoFrames';
 import { getSignedVideoUrl } from '../lib/supabase';
 import { BotonBorrar, BotonBorrarDefinitivo, Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
+import { transicion } from '../lib/motion';
 
 // Cuántos días seguidos (incluyendo hoy) hay que llevar entrenando la misma habilidad
 // para que aparezca el aviso de "descanso recomendado".
@@ -351,7 +352,7 @@ function SkillCard({ skill, data, onUpdate, videos, onAddVideo, onDeleteVideo, o
           </p>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className="text-xs font-bold" style={{ color: accent }}>{full.nivel}%</span>
-            <ChevronDown size={15} style={{ color: COLORS.textMuted, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+            <ChevronDown size={15} style={{ color: COLORS.textMuted, transform: expanded ? 'rotate(180deg)' : 'none', transition: transicion('transform', 'normal') }} />
           </div>
         </div>
       </button>

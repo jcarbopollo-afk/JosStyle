@@ -17,6 +17,7 @@ import {
   progresoDeObjetivo, metasDeObjetivo, progresoDeMeta, metaCompletada,
   FILTROS_OBJETIVO, filtrarObjetivos, ordenarObjetivos, VACIO_OBJETIVOS,
 } from '../lib/metasObjetivos';
+import { transicion } from '../lib/motion';
 
 function diasDesde(iso) {
   if (!iso) return Infinity;
@@ -97,7 +98,7 @@ function BarraProgreso({ porcentaje, accent }) {
   if (porcentaje === null || porcentaje === undefined) return null;
   return (
     <div className="h-2 rounded-full mt-2 overflow-hidden" style={{ background: COLORS.border }}>
-      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: 'width 0.4s ease' }} />
+      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: transicion('width', 'slow') }} />
     </div>
   );
 }
@@ -119,7 +120,7 @@ function TarjetaObjetivo({ objetivo, metas, accent, destacada, onAbrir }) {
   return (
     <Card
       id={`objetivo-${objetivo.id}`}
-      style={{ padding: '1rem', transition: 'box-shadow 0.3s ease', boxShadow: destacada ? `0 0 0 2px ${accent}` : 'none' }}
+      style={{ padding: '1rem', transition: transicion('box-shadow', 'medium'), boxShadow: destacada ? `0 0 0 2px ${accent}` : 'none' }}
     >
       <button onClick={() => onAbrir(objetivo)} className="w-full text-left">
         <div className="flex items-start gap-2">

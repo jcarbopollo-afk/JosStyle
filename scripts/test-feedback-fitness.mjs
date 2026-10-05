@@ -16,6 +16,7 @@ import {
   auditarMovimiento, AVISOS_FITNESS, avisoFitness, avisosFitnessEnCatalogo, resultadoDeGuardado,
   subidasDeRango, TEXTOS_SUBIDA, TEXTOS_GUARDADO, YA_EXISTIA, NO_EN_FIT37, DECISIONES_FIT37,
 } from '../src/lib/feedbackFitness.js';
+import { tokensRaiz, movimientoReducidoEnCss } from '../src/lib/motion.js';
 import { ANIMACIONES_HC, MAX_ANIMACION_MS } from '../src/lib/pulidoHC.js';
 import { AVISOS_ACCION } from '../src/lib/accionesHoyAgenda.js';
 import { ESCALAS_AL_TOCAR } from '../src/lib/microinteracciones.js';
@@ -82,12 +83,13 @@ ok(ESCALA_PULSAR >= RANGO_ESCALA_PULSAR.min && ESCALA_PULSAR <= RANGO_ESCALA_PUL
   `Pulsar una tarjeta encoge a ${ESCALA_PULSAR}, dentro del 0,98-0,99 del apartado 5`);
 ok(JSON.stringify(ESCALAS_AL_TOCAR).includes('0.98'),
   '⚠️ …que es el escalón de las FILAS de la escalera de ui.jsx (EH F50): no un valor nuevo');
-ok(/\.fit-pulsable:active:not\(:disabled\)\s*\{\s*transform:\s*scale\(0\.98\)/.test(CSS), '…y es lo que dice index.css');
+ok(/\.fit-pulsable:active:not\(:disabled\)\s*\{\s*transform:\s*scale\(var\(--motion-escala-micro\)\)/.test(CSS) && tokensRaiz(CSS)['--motion-escala-micro'] === '0.98',
+  '…y es lo que dice index.css (MS F1: el token `micro` del motor, 0,98)');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 2. index.css, leído de verdad ──');
 
-ok(duracionEnCss(CSS, 'fit-entra') === 220 && duracionEnCss(CSS, 'fit-barra') === 280, 'Se leen las duraciones escritas en index.css');
+ok(duracionEnCss(CSS, 'fit-entra') === 220 && duracionEnCss(CSS, 'fit-barra') === 280, 'Se leen las duraciones escritas en index.css (MS F1: resolviendo el token)');
 ok(duracionEnCss('/* .x { animation: a 900ms } */ .x { animation: a 120ms ease; }', 'x') === 120,
   '…sin contar lo que dice un comentario');
 ok(duracionEnCss('.fit-entra-otra { animation: a 999ms; }', 'fit-entra') === null,
@@ -110,13 +112,13 @@ aud.casillas.forEach((c) => ok(c.ok, `Casilla «${c.id}» — ${c.dato}`));
 ok(aud.ok, '🚨 La auditoría del movimiento de Fitness sale entera en verde');
 /* Y cada casilla se pone roja con su caso (EH F42). */
 const roja = (id, entrada) => !auditarMovimiento(entrada).casillas.find((c) => c.id === id).ok;
-ok(roja('duraciones_ciertas', { css: CSS.replace('fitEntra 220ms', 'fitEntra 500ms'), archivos }),
+ok(roja('duraciones_ciertas', { css: CSS.replace('fitEntra var(--motion-dur-normal)', 'fitEntra 500ms'), archivos }),
   '…«duraciones_ciertas» se pone roja si index.css dice otra cosa que el catálogo');
 ok(roja('sin_excesos', { css: CSS, archivos: { ...archivos, 'x.jsx': '<div className="transition-all duration-500" />' } }),
   '…«sin_excesos» caza un `transition-all duration-500`');
-ok(roja('sin_rastro_de_transform', { css: CSS.replace('fitEntra 220ms var(--ease-premium) backwards', 'fitEntra 220ms var(--ease-premium) both'), archivos }),
+ok(roja('sin_rastro_de_transform', { css: CSS.replace('fitEntra var(--motion-dur-normal) var(--ease-premium) backwards', 'fitEntra var(--motion-dur-normal) var(--ease-premium) both'), archivos }),
   '…«sin_rastro_de_transform» caza un `both`');
-ok(roja('una_sola_curva', { css: CSS.replace('transition: width 280ms var(--ease-premium)', 'transition: width 280ms linear'), archivos }),
+ok(roja('una_sola_curva', { css: CSS.replace('.fit-barra {\n  transition: width var(--motion-dur-medium) var(--ease-premium)', '.fit-barra {\n  transition: width var(--motion-dur-medium) linear'), archivos }),
   '…«una_sola_curva» caza una curva propia');
 ok(roja('movimiento_reducido', { css: CSS.replace(/@media \(prefers-reduced-motion: reduce\)/, '@media (min-width: 1px)'), archivos }),
   '…«movimiento_reducido» se pone roja sin la regla del sistema (apartado 40)');
@@ -144,7 +146,7 @@ const barrasSinClase = conBarra.flatMap(([ruta, src]) => (src.match(/<(?:div|spa
   .filter((t) => !/fit-barra/.test(t) && /rounded-full/.test(t))
   .map((t) => `${ruta.split('/').pop()}: ${t.slice(0, 60)}`));
 ok(barrasSinClase.length === 0, `🚨 Toda barra de progreso de Fitness lleva \`fit-barra\`${barrasSinClase.length ? ` — ${barrasSinClase.join('; ')}` : ''}`);
-ok(/\.fit-barra\s*\{\s*transition:\s*width 280ms/.test(CSS),
+ok(/\.fit-barra\s*\{\s*transition:\s*width var\(--motion-dur-medium\)/.test(CSS) && tokensRaiz(CSS)['--motion-dur-medium'] === '280ms',
   '…que transiciona SOLO el ancho: al montar no se dispara, así que no hay un «desde cero» cada vez');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
@@ -278,8 +280,8 @@ console.log('\n── 9. Lo que ya existía, lo que no se hace y lo decidido ─
 ok(YA_EXISTIA.length >= 8 && YA_EXISTIA.every((y) => y.apartado && y.que && y.donde), 'Lo que ya existía, con su apartado y dónde vive');
 ok(/export function AvisoAccion/.test(quickAdd) && /export function Esqueleto/.test(leer('src/components/ui.jsx')) && /function LoadingScreen/.test(leer('src/App.jsx') + leer('src/components/ui.jsx')),
   '…y lo que dice que existe, existe (el aviso y el esqueleto)');
-ok(/data-reducir-movimiento='true'\] \*/.test(CSS) && /@media \(prefers-reduced-motion: reduce\)/.test(CSS),
-  '…incluidas las dos reglas del movimiento reducido: sistema y Ajustes (apartado 40)');
+ok(movimientoReducidoEnCss(CSS).ok,
+  '…incluido el movimiento reducido: el del sistema y el de Ajustes dejan el fundido, y «Sin movimiento» lo quita todo (apartado 40; MS F1)');
 ok(NO_EN_FIT37.length >= 6 && NO_EN_FIT37.every((x) => x.que && x.porque), 'Lo que no se hace, con su motivo');
 ok(NO_EN_FIT37.some((x) => /cierre/i.test(x.que)) && NO_EN_FIT37.some((x) => /scroll/i.test(x.que)) && NO_EN_FIT37.some((x) => /module-enter/.test(x.que)),
   '…el cierre animado, el scroll al volver y la transición global de módulos');

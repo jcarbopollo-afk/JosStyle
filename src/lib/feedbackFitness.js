@@ -4,6 +4,7 @@ import { rangoEfectivoDeEjercicio, rangoGlobalEfectivo } from './motorRangos';
 import { ejerciciosDeSesion } from './entrenamiento';
 import { ejercicioPorId, nombreCompleto } from './ejercicios';
 import { nivelRango } from './fitness';
+import { tokensRaiz, resolverDuraciones, movimientoReducidoEnCss } from './motion';
 
 /* Entrega 4 · Fase 37/45 — «Microinteracciones y feedback premium de Fitness».
    ═══════════════════════════════════════════════════════════════════════════
@@ -74,11 +75,14 @@ export function reglasDeClase(css, clase) {
   return salida;
 }
 
-/** La duración más larga que `index.css` le da a una clase, en ms, o `null`. */
+/** La duración más larga que `index.css` le da a una clase, en ms, o `null`.
+ *  🔓 MS F1 — las reglas usan los tokens del motor (`var(--motion-dur-medium)`), así
+ *  que se sustituyen por su valor de `:root` (velocidad Normal) antes de medir. */
 export function duracionEnCss(css, clase) {
+  const raiz = tokensRaiz(css);
   const ms = reglasDeClase(css, clase)
-    .filter((r) => !/:active|:hover|:focus/.test(r.selector))
-    .flatMap((r) => [...r.cuerpo.matchAll(/(?:animation|transition)\s*:[^;]*/g)].map((d) => d[0]))
+    .filter((r) => !/:active|:hover|:focus/.test(r.selector) && !/^html\[/.test(r.selector))
+    .flatMap((r) => [...r.cuerpo.matchAll(/(?:animation|transition)\s*:[^;]*/g)].map((d) => resolverDuraciones(d[0], raiz)))
     .flatMap((d) => [...d.matchAll(/(\d+(?:\.\d+)?)ms/g)].map((x) => Number(x[1])));
   return ms.length ? Math.max(...ms) : null;
 }
@@ -161,9 +165,10 @@ export function auditarMovimiento({ css = '', archivos = {} } = {}) {
   const sinUso = fit.filter((a) => !new RegExp(`\\b${a.clase}\\b`).test(codigo)).map((a) => a.clase);
   const excesos = Object.entries(archivos)
     .flatMap(([ruta, src]) => excesosEn(src).map((e) => `${ruta.split('/').pop()}:${e.linea} ${e.exceso}`));
-  const limpio = sinComentariosCss(css);
-  const reducido = /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*?animation-duration:\s*0\.01ms/.test(limpio)
-    && /data-reducir-movimiento='true'\][\s\S]*?transition-duration:\s*0\.01ms/.test(limpio);
+  /* 🔓 MS F1 — reducir ya no es llevarlo todo a 0,01 ms (eso es «Sin movimiento»): el
+     sistema operativo y el ajuste dejan los desplazamientos y las escalas a cero y
+     conservan el fundido. Lo comprueba la misma función que usa el motor. */
+  const reducido = movimientoReducidoEnCss(css).ok;
   const casillas = [
     { id: 'duraciones_ciertas', ok: desfasadas.length === 0, dato: desfasadas.join('; ') || `${conCss.length} medidas` },
     { id: 'rangos_del_apartado_2', ok: fit.length > 0 && fueraDeRango.length === 0, dato: fueraDeRango.join(', ') || `${fit.length} en su rango` },
@@ -171,7 +176,7 @@ export function auditarMovimiento({ css = '', archivos = {} } = {}) {
     { id: 'sin_rastro_de_transform', ok: conRastro.length === 0, dato: conRastro.join(', ') || 'todas con backwards' },
     { id: 'todas_se_usan', ok: sinUso.length === 0, dato: sinUso.join(', ') || 'ninguna declarada sin usar' },
     { id: 'sin_excesos', ok: excesos.length === 0, dato: excesos.slice(0, 8).join('; ') || 'ninguno' },
-    { id: 'movimiento_reducido', ok: reducido, dato: reducido ? 'sistema y Ajustes' : 'falta una de las dos reglas' },
+    { id: 'movimiento_reducido', ok: reducido, dato: reducido ? 'sistema, Ajustes y «Sin movimiento»' : 'falta una de las tres reglas' },
   ];
   return { casillas, ok: casillas.every((c) => c.ok) };
 }

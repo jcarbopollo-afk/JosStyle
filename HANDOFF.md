@@ -2,6 +2,15 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.131.0 — Motion System F1/20: el motor de movimiento):**
+> Todo el movimiento sale ahora de **`src/lib/motion.js`** (tokens, escalonado, modos, velocidad,
+> presets y primitivas por la Web Animations API) y de sus variables en `index.css`. En *Ajustes →
+> Apariencia → Texto y movimiento* hay **cinco modos** —Sin movimiento, Reducido, Normal, Premium y
+> Ultra— y **tres velocidades**; cada uno cambia algo que se ve, y el recorrido de Chromium lo mide.
+> **«Reducir movimiento» ya no lo apaga todo**: funde sin desplazar (solo «Sin movimiento» apaga). Lo
+> guardado no se renombra (`minima` se lee como Reducido, C-52). Ningún componente nuevo escribe su
+> propia animación. **La siguiente es la F2** (navegación y continuidad espacial).
+
 > **📅 ACTUALIZACIÓN (v3.130.0 — Motion System F0/20: auditoría, mapa y plan):**
 > Josué pasó el **Motion System** (21 fases, desordenadas): el índice ordenado está en
 > `docs/13_MOTION_SYSTEM_ORDEN.md` y se construye de la F0 a la F20. La F0 no cambia ninguna pantalla:

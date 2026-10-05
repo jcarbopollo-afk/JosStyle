@@ -36,6 +36,7 @@ import {
   panelGamificacion, diasDelMes, progresoHaciaHito,
   ESTADOS_LOGRO, definicionLogro, EVENTOS_GAMIFICACION, NIVELES_CELEBRACION,
 } from '../lib/rachasGamificacion';
+import { transicion } from '../lib/motion';
 
 /* ---------------------------------------------------------------------------
    Apartado 5 — *"No uses únicamente colores. Combina iconos, texto, animación,
@@ -83,7 +84,7 @@ function BarraHito({ hito, accent }) {
         {/* La transición la gobierna el ajuste global de animaciones y
             `prefers-reduced-motion` desde `index.css`: no hay un segundo sistema
             de animaciones (apartado 17). */}
-        <div style={{ width: `${hito.progreso}%`, height: '100%', background: accent, transition: 'width .35s var(--ease-premium, ease)' }} />
+        <div style={{ width: `${hito.progreso}%`, height: '100%', background: accent, transition: transicion('width', 'slow') }} />
       </div>
       <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
         {hito.faltan} {plural(hito.faltan, 'día', 'días')} para los {hito.objetivo}

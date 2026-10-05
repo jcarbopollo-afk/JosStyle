@@ -1,4 +1,5 @@
 import { ANIMACIONES_HC, MAX_ANIMACION_MS } from './pulidoHC';
+import { tokensRaiz, resolverDuraciones, TOPES_ESCALA } from './motion';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MOTION SYSTEM · FASE 0 — AUDITORÍA TOTAL, ARQUITECTURA Y PLAN MAESTRO
@@ -80,7 +81,11 @@ export const PRESUPUESTO_MOTION = {
   reglas: [
     { cuando: 'spring', si: 'Solo cuando el movimiento lo provoca el dedo y tiene que soltarse con su velocidad: arrastrar una hoja, soltar un deslizamiento.', no: 'Nunca en una entrada o salida que no ha tocado nadie: ahí un rebote es teatro.' },
     { cuando: 'blur', si: 'Fijo, como material: la barra de abajo, una tarjeta de cristal, el velo de una hoja.', no: 'Nunca animado (es lo más caro que hay en un iPhone) y nunca una franja que tape el fondo sin motivo —la v3.129.1 quitó la de los hubs—.' },
-    { cuando: 'scale', si: 'Pulsar (0,90–0,99, la escalera de `ui.jsx`) y entrar desde 0,97.', no: 'Nunca por encima de 1,03, y nunca un elemento que crece para llamar la atención.' },
+    /* 🔓 MS F1 — la F0 escribió un solo techo (1,03) y la llama de una racha late a 1,35 desde la
+       E3 F2: las dos cosas son ciertas para cosas distintas. Una SUPERFICIE no pasa de 1,03 ni entra
+       desde menos de 0,95; una MARCA pequeña (llama, ✓, estrella) puede latir hasta 1,35, porque
+       mide 16 px y el pulso es el mensaje. Los topes viven en `TOPES_ESCALA` (motion.js). */
+    { cuando: 'scale', si: `Pulsar (0,90–0,99, la escalera de \`ui.jsx\`); una superficie entra desde ${TOPES_ESCALA.superficie.min} como poco y crece hasta ${TOPES_ESCALA.superficie.max} como mucho; una marca pequeña late hasta ${TOPES_ESCALA.marca.max}.`, no: 'Nunca una superficie por encima de 1,03, y nunca un elemento que crece para llamar la atención.' },
     { cuando: 'parallax', si: 'En ningún sitio de JosStyle hoy.', no: 'Mueve el fondo contra el contenido, que es justo lo que marea a quien tiene sensibilidad vestibular, y no explica nada en una aplicación de datos.' },
     { cuando: 'bucle infinito', si: 'Solo mientras algo está cargando de verdad (el latido del esqueleto, el giro de «Pensando…»).', no: 'Nunca para adornar.' },
   ],
@@ -149,40 +154,40 @@ const m = (e) => ({
 
 export const MOTION_MAP = [
   /* ── A · Navegación ── */
-  m({ id: 'pestanas_barra', nombre: 'Pestaña activa de la barra de abajo', categoria: 'A', nivel: 1, ubicacion: 'src/App.jsx · src/index.css', componente: 'nav.nav-segura', clase: 'nav-tab-icon', funcion: 'Decir en qué área estás.', inicial: 'Gris', final: 'Color de acento', interaccion: 'Tocar una pestaña', transicion: 'color', duracion: 200, prioridad: 'alta', relacion: 'Cambia a la vez que entra la pantalla del área (module-enter).', fase: 2 }),
-  m({ id: 'barra_volver', nombre: 'Barra de «Volver»', categoria: 'A', nivel: 2, ubicacion: 'src/index.css', clase: 'back-bar', keyframe: 'backBarIn', funcion: 'Aparece al entrar en un módulo para salir de él.', inicial: 'Opacidad 0, 6 px arriba', final: 'En su sitio', entrada: 'Fundido + desplazamiento corto', interaccion: 'Pulsar: opacidad y fondo 140 ms', transicion: 'opacity, transform', duracion: 220, prioridad: 'alta', relacion: 'Acompaña a module-enter.', fase: 2 }),
+  m({ id: 'pestanas_barra', nombre: 'Pestaña activa de la barra de abajo', categoria: 'A', nivel: 1, ubicacion: 'src/App.jsx · src/index.css', componente: 'nav.nav-segura', clase: 'nav-tab-icon', funcion: 'Decir en qué área estás.', inicial: 'Gris', final: 'Color de acento', interaccion: 'Tocar una pestaña', transicion: 'color', duracion: 220, prioridad: 'alta', relacion: 'Cambia a la vez que entra la pantalla del área (module-enter).', fase: 2 }),
+  m({ id: 'barra_volver', nombre: 'Barra de «Volver»', categoria: 'A', nivel: 2, ubicacion: 'src/index.css', clase: 'back-bar', keyframe: 'backBarIn', funcion: 'Aparece al entrar en un módulo para salir de él.', inicial: 'Opacidad 0, 8 px a la izquierda', final: 'En su sitio', entrada: 'Fundido + desplazamiento corto', interaccion: 'Pulsar: opacidad y fondo 160 ms', transicion: 'opacity, transform', duracion: 220, prioridad: 'alta', relacion: 'Acompaña a module-enter.', fase: 2 }),
   /* ── B · Pantallas ── */
   m({ id: 'entrada_modulo', nombre: 'Entrar en un módulo', categoria: 'B', nivel: 2, ubicacion: 'src/index.css · src/App.jsx', clase: 'module-enter', keyframe: 'moduleSlideIn', catalogo: 'entrada_pantalla', funcion: 'Que la pantalla nueva llegue desde la derecha en vez de aparecer.', inicial: 'Opacidad 0, desplazada a la derecha y al 0,98', final: 'En su sitio', entrada: 'Desliza + fundido + escala', salida: 'Ninguna: la anterior desaparece de golpe', transicion: 'opacity, transform', duracion: 340, prioridad: 'alta', relacion: 'La pila de navegación (NAVO F1) decide a dónde vuelve; la dirección no cambia al volver.', estado: 'inconsistente', fase: 2 }),
-  m({ id: 'portada_area', nombre: 'Portada de un área: la cascada de tarjetas', categoria: 'B', nivel: 3, ubicacion: 'src/views/HubView.jsx · src/index.css', componente: 'HubView', clase: 'hub-card', keyframe: 'hubCardIn', funcion: 'Que los cinco módulos del área entren de arriba abajo.', inicial: 'Opacidad 0, 14 px abajo, 0,97', final: 'En su sitio', entrada: 'Cascada', transicion: 'opacity, transform', duracion: 420, stagger: 80, prioridad: 'alta', relacion: 'Después de la cabecera (hub-header).', fase: 10 }),
-  m({ id: 'cabecera_area', nombre: 'Cabecera de un área (ÁREA / Vida)', categoria: 'B', nivel: 2, ubicacion: 'src/views/HubView.jsx · src/index.css', componente: 'HubView', clase: 'hub-header', keyframe: 'hubHeaderIn', funcion: 'Primero el título y luego las tarjetas.', inicial: 'Opacidad 0, 6 px arriba', final: 'En su sitio', entrada: 'Fundido corto', transicion: 'opacity, transform', duracion: 320, prioridad: 'media', relacion: 'Se queda fija al desplazar (SC F1) y sin fondo desde la v3.129.1.', fase: 2 }),
-  m({ id: 'expandir_tarjeta_area', nombre: 'Tocar un módulo de la portada', categoria: 'D', nivel: 2, ubicacion: 'src/views/HubView.jsx · src/index.css', clase: 'hub-card-expanding', keyframe: 'hubCardExpand', funcion: 'La tarjeta crece un poco y se abre su módulo.', inicial: '0,97', final: '1,03 con brillo y sombra', interaccion: 'Tocar', transicion: 'transform, filter, box-shadow', duracion: 190, prioridad: 'alta', relacion: 'La navegación espera 190 ms (EXPAND_MS, escrito aparte en la vista): dos sitios para el mismo número.', estado: 'inconsistente', fase: 7 }),
+  m({ id: 'portada_area', nombre: 'Portada de un área: la cascada de tarjetas', categoria: 'B', nivel: 3, ubicacion: 'src/views/HubView.jsx · src/index.css', componente: 'HubView', clase: 'hub-card', keyframe: 'hubCardIn', funcion: 'Que los cinco módulos del área entren de arriba abajo.', inicial: 'Opacidad 0, 14 px abajo, 0,97', final: 'En su sitio', entrada: 'Cascada', transicion: 'opacity, transform', duracion: 420, stagger: 60, prioridad: 'alta', relacion: 'Después de la cabecera (hub-header).', fase: 10 }),
+  m({ id: 'cabecera_area', nombre: 'Cabecera de un área (ÁREA / Vida)', categoria: 'B', nivel: 2, ubicacion: 'src/views/HubView.jsx · src/index.css', componente: 'HubView', clase: 'hub-header', keyframe: 'hubHeaderIn', funcion: 'Primero el título y luego las tarjetas.', inicial: 'Opacidad 0, 8 px arriba', final: 'En su sitio', entrada: 'Fundido corto', transicion: 'opacity, transform', duracion: 280, prioridad: 'media', relacion: 'Se queda fija al desplazar (SC F1) y sin fondo desde la v3.129.1.', fase: 2 }),
+  m({ id: 'expandir_tarjeta_area', nombre: 'Tocar un módulo de la portada', categoria: 'D', nivel: 2, ubicacion: 'src/views/HubView.jsx · src/index.css', clase: 'hub-card-expanding', keyframe: 'hubCardExpand', funcion: 'La tarjeta crece un poco y se abre su módulo.', inicial: '0,97', final: '1,03 con brillo y sombra', interaccion: 'Tocar', transicion: 'transform, filter, box-shadow', duracion: 160, prioridad: 'alta', relacion: 'La navegación espera el mismo token (`duracionMs(\'fast\')`, MS F1), no un número escrito aparte.', fase: 7 }),
   m({ id: 'pulsar_tarjeta_area', nombre: 'Pulsar un módulo de la portada (y las demás retroceden)', categoria: 'D', nivel: 1, ubicacion: 'src/index.css · src/views/HubView.jsx', componente: 'HubView', funcion: 'Respuesta al dedo antes de abrir el módulo.', inicial: '1', final: '0,97, más clara y con sombra; las demás al 0,98 y medio transparentes', interaccion: 'Mantener pulsado', transicion: 'transform, filter, box-shadow, opacity', duracion: 160, prioridad: 'alta', relacion: 'Anima `filter` y `box-shadow`, que no son baratos en un iPhone (la F13 lo mide).', fase: 3 }),
   m({ id: 'icono_tarjeta_area', nombre: 'El icono de un módulo de la portada al pulsarlo', categoria: 'D', nivel: 1, ubicacion: 'src/index.css', clase: 'hub-card-icon', funcion: 'Un pellizco de escala extra sobre el de la tarjeta.', inicial: '1', final: '1,08', interaccion: 'Mantener pulsado', transicion: 'transform', duracion: 160, relacion: 'Va con «Pulsar un módulo de la portada».', fase: 3 }),
   m({ id: 'pantalla_fitness', nombre: 'Una pantalla de Fitness aparece', categoria: 'B', nivel: 2, ubicacion: 'src/index.css', clase: 'fit-entra', keyframe: 'fitEntra', catalogo: 'fit_entra', funcion: 'Cambiar de área dentro de Fitness.', inicial: 'Opacidad 0, 6 px abajo', final: 'En su sitio', transicion: 'opacity, transform', duracion: 220, fase: 2 }),
   /* ── C · Secciones ── */
-  m({ id: 'acordeon_inicio', nombre: 'Acordeones de Inicio (situación actual y puntuación)', categoria: 'C', nivel: 2, ubicacion: 'src/views/DashboardView.jsx', componente: 'IndicadorContexto · TarjetaPuntuacion', funcion: 'Abrir y cerrar el detalle sin medir la altura a mano.', inicial: 'grid-template-rows 0fr', final: '1fr', interaccion: 'Tocar la cabecera', transicion: 'grid-template-rows 300 ms + opacidad 260/120 ms con `ease`', duracion: 300, prioridad: 'media', relacion: 'Sin hueco en Safari desde la SC F1 (minHeight: 0).', estado: 'inconsistente', fase: 9 }),
-  m({ id: 'chevron', nombre: 'Chevron que gira al desplegar', categoria: 'C', nivel: 1, ubicacion: 'DashboardView · TrainingView', funcion: 'Decir si una sección está abierta.', inicial: '0°', final: '180°', interaccion: 'Tocar', transicion: 'transform: 220 ms con la curva en Inicio, 0,2 s con la curva de serie en Entrenamiento', duracion: 220, estado: 'inconsistente', fase: 3 }),
+  m({ id: 'acordeon_inicio', nombre: 'Acordeones de Inicio (situación actual y puntuación)', categoria: 'C', nivel: 2, ubicacion: 'src/views/DashboardView.jsx', componente: 'IndicadorContexto · TarjetaPuntuacion', funcion: 'Abrir y cerrar el detalle sin medir la altura a mano.', inicial: 'grid-template-rows 0fr', final: '1fr', interaccion: 'Tocar la cabecera', transicion: 'grid-template-rows `medium` + opacidad `medium`/`ultraFast` (MS F1: `transicion()`)', duracion: 280, prioridad: 'media', relacion: 'Sin hueco en Safari desde la SC F1 (minHeight: 0).', fase: 9 }),
+  m({ id: 'chevron', nombre: 'Chevron que gira al desplegar', categoria: 'C', nivel: 1, ubicacion: 'DashboardView · TrainingView', funcion: 'Decir si una sección está abierta.', inicial: '0°', final: '180°', interaccion: 'Tocar', transicion: 'transform `normal` con la curva de JosStyle en Inicio y en Entrenamiento (MS F1: `transicion()`)', duracion: 220, fase: 3 }),
   /* ── D · Tarjetas ── */
-  m({ id: 'pulsar_tarjeta', nombre: 'Pulsar una tarjeta o un botón (la escalera de escalas)', categoria: 'D', nivel: 1, ubicacion: 'src/components/ui.jsx', componente: 'Card, PrimaryBtn, GhostBtn, chips…', funcion: 'Respuesta inmediata al dedo.', inicial: '1', final: '0,90–0,99 según el tamaño', interaccion: 'Mantener pulsado', transicion: 'transform con `transition-transform` de Tailwind (150 ms y otra curva)', duracion: 150, easing: 'curva por defecto de Tailwind', prioridad: 'alta', relacion: 'Fitness usa su propio escalón (fit-pulsable, 140 ms con la curva común).', estado: 'inconsistente', fase: 3 }),
-  m({ id: 'pulsar_fitness', nombre: 'Pulsar una tarjeta de Fitness', categoria: 'D', nivel: 1, ubicacion: 'src/index.css', clase: 'fit-pulsable', catalogo: 'fit_pulsar', funcion: 'El escalón 0,98 de la escalera.', inicial: '1', final: '0,98', interaccion: 'Pulsar', transicion: 'transform', duracion: 140, fase: 3 }),
-  m({ id: 'pulsar_destructivo', nombre: 'Pulsar algo destructivo en Fitness', categoria: 'E', nivel: 1, ubicacion: 'src/index.css', clase: 'fit-contenido', catalogo: 'fit_contenido', funcion: 'Lo destructivo no escala: baja la opacidad.', inicial: 'Opacidad 1', final: '0,7', interaccion: 'Pulsar', transicion: 'opacity', duracion: 140, fase: 3 }),
-  m({ id: 'tarjeta_destacada', nombre: 'Tarjeta destacada al llegar por un enlace (objetivo, tarea)', categoria: 'D', nivel: 2, ubicacion: 'ObjectivesView · ProductivityView', funcion: 'Señalar a qué tarjeta te ha llevado un enlace.', inicial: 'Sin borde', final: 'Anillo del acento', transicion: 'box-shadow 0,3 s ease', duracion: 300, easing: 'ease', estado: 'inconsistente', fase: 7 }),
-  m({ id: 'tarjeta_lista_entra', nombre: 'Tarjetas de una lista que entran en cascada (Biblioteca, Productividad, Nutrición, Salud)', categoria: 'J', nivel: 3, ubicacion: 'LibraryView · ProductivityView · NutritionView · HealthView', funcion: 'Que una lista no aparezca de golpe.', entrada: 'Cascada con la animación de la portada', transicion: 'opacity, transform', duracion: 420, stagger: 60, relacion: 'Cuatro cadencias distintas: 60, 70, 80 ms y dos funciones (`retrasoDeTarjeta`, `retrasoDeTarjetaPR`).', estado: 'inconsistente', fase: 10 }),
+  m({ id: 'pulsar_tarjeta', nombre: 'Pulsar una tarjeta o un botón (la escalera de escalas)', categoria: 'D', nivel: 1, ubicacion: 'src/components/ui.jsx', componente: 'Card, PrimaryBtn, GhostBtn, chips…', funcion: 'Respuesta inmediata al dedo.', inicial: '1', final: '0,90–0,99 según el tamaño', interaccion: 'Mantener pulsado', transicion: 'transform con `transition-transform` de Tailwind, que desde la MS F1 usa el token `fast` y la curva de JosStyle (tailwind.config.js)', duracion: 160, prioridad: 'alta', relacion: 'Fitness usa su propio escalón (fit-pulsable, también `fast`).', fase: 3 }),
+  m({ id: 'pulsar_fitness', nombre: 'Pulsar una tarjeta de Fitness', categoria: 'D', nivel: 1, ubicacion: 'src/index.css', clase: 'fit-pulsable', catalogo: 'fit_pulsar', funcion: 'El escalón 0,98 de la escalera.', inicial: '1', final: '0,98', interaccion: 'Pulsar', transicion: 'transform', duracion: 160, fase: 3 }),
+  m({ id: 'pulsar_destructivo', nombre: 'Pulsar algo destructivo en Fitness', categoria: 'E', nivel: 1, ubicacion: 'src/index.css', clase: 'fit-contenido', catalogo: 'fit_contenido', funcion: 'Lo destructivo no escala: baja la opacidad.', inicial: 'Opacidad 1', final: '0,72', interaccion: 'Pulsar', transicion: 'opacity', duracion: 160, fase: 3 }),
+  m({ id: 'tarjeta_destacada', nombre: 'Tarjeta destacada al llegar por un enlace (objetivo, tarea)', categoria: 'D', nivel: 2, ubicacion: 'ObjectivesView · ProductivityView', funcion: 'Señalar a qué tarjeta te ha llevado un enlace.', inicial: 'Sin borde', final: 'Anillo del acento', transicion: 'box-shadow `medium` (MS F1: `transicion()`)', duracion: 280, fase: 7 }),
+  m({ id: 'tarjeta_lista_entra', nombre: 'Tarjetas de una lista que entran en cascada (Biblioteca, Productividad, Nutrición, Salud)', categoria: 'J', nivel: 3, ubicacion: 'LibraryView · ProductivityView · NutritionView · HealthView', funcion: 'Que una lista no aparezca de golpe.', entrada: 'Cascada con la animación de la portada', transicion: 'opacity, transform', duracion: 420, stagger: 60, relacion: 'Una sola cadencia y como mucho seis escalones: `escalonado(i)` del motor (MS F1). Antes eran 60, 70 y 80 ms y dos funciones.', fase: 10 }),
   /* ── E · Botones ── */
-  m({ id: 'favorito', nombre: 'Marcar un favorito', categoria: 'E', nivel: 1, ubicacion: 'src/index.css', clase: 'favorito-guardado', keyframe: 'favoritoPulso', funcion: 'La estrella late una vez al pulsarla.', interaccion: 'Pulsar', transicion: 'transform', duracion: 240, relacion: '240 ms: 20 por encima del tope de su nivel (micro, 220).', estado: 'inconsistente', fase: 3 }),
+  m({ id: 'favorito', nombre: 'Marcar un favorito', categoria: 'E', nivel: 1, ubicacion: 'src/index.css', clase: 'favorito-guardado', keyframe: 'favoritoPulso', funcion: 'La estrella late una vez al pulsarla.', interaccion: 'Pulsar', transicion: 'transform', duracion: 220, relacion: 'Era 240 ms, 20 por encima del tope de su nivel: con el token `normal` vuelve a su nivel (MS F1).', fase: 3 }),
   m({ id: 'pensando', nombre: '«Pensando…» y los botones que esperan', categoria: 'M', nivel: 1, bucle: true, ubicacion: 'src/components/ui.jsx · BarcodeScanner', funcion: 'Que se vea que algo está trabajando.', transicion: 'Giro continuo (`animate-spin` de Tailwind)', duracion: 1000, easing: 'linear', relacion: 'Es de los pocos bucles infinitos permitidos (presupuesto).', fase: 16 }),
   /* ── F · Campos ── */
   m({ id: 'campos', nombre: 'Campos de texto al enfocar', categoria: 'F', nivel: 0, ubicacion: 'src/components/ui.jsx', componente: 'TextInput, Textarea', funcion: 'Enfocar un campo.', transicion: 'Ninguna: el anillo de foco aparece de golpe', estado: 'sin_motion', fase: 9 }),
   /* ── G · Modales y H · Hojas ── */
-  m({ id: 'hoja_fitness', nombre: 'Una hoja de Fitness entra desde abajo', categoria: 'H', nivel: 2, ubicacion: 'src/lib/acabadoFitness.js (HOJA) · src/index.css', clase: 'hoja-entra', keyframe: 'calendarSheetIn', catalogo: 'hoja_entra', funcion: 'Las hojas de Fitness suben y su velo se oscurece.', inicial: 'Abajo', final: 'En su sitio', entrada: 'Sube', salida: 'Ninguna: desaparece de golpe', duracion: 240, relacion: 'Comparte la animación con las hojas del Calendario.', estado: 'inconsistente', fase: 6 }),
-  m({ id: 'velo_hoja', nombre: 'El fondo de una hoja se oscurece', categoria: 'G', nivel: 2, ubicacion: 'src/index.css', clase: 'fondo-entra', keyframe: 'fondoEntra', catalogo: 'fondo_entra', funcion: 'Separar la hoja de lo de detrás.', inicial: 'Transparente', final: 'Velo', duracion: 180, fase: 6 }),
-  m({ id: 'hoja_calendario', nombre: 'Hojas del Calendario', categoria: 'H', nivel: 2, ubicacion: 'src/views/CalendarView.jsx · src/index.css', clase: 'calendar-sheet', keyframe: 'calendarSheetIn', funcion: 'Crear o editar un evento.', entrada: 'Sube', salida: 'Ninguna', duracion: 240, estado: 'inconsistente', fase: 6 }),
+  m({ id: 'hoja_fitness', nombre: 'Una hoja de Fitness entra desde abajo', categoria: 'H', nivel: 2, ubicacion: 'src/lib/acabadoFitness.js (HOJA) · src/index.css', clase: 'hoja-entra', keyframe: 'calendarSheetIn', catalogo: 'hoja_entra', funcion: 'Las hojas de Fitness suben y su velo se oscurece.', inicial: 'Abajo', final: 'En su sitio', entrada: 'Sube', salida: 'Ninguna: desaparece de golpe', duracion: 220, relacion: 'Comparte la animación con las hojas del Calendario.', estado: 'inconsistente', fase: 6 }),
+  m({ id: 'velo_hoja', nombre: 'El fondo de una hoja se oscurece', categoria: 'G', nivel: 2, ubicacion: 'src/index.css', clase: 'fondo-entra', keyframe: 'fondoEntra', catalogo: 'fondo_entra', funcion: 'Separar la hoja de lo de detrás.', inicial: 'Transparente', final: 'Velo (en Ultra, además, lo de detrás desenfocado y fijo)', duracion: 220, fase: 6 }),
+  m({ id: 'hoja_calendario', nombre: 'Hojas del Calendario', categoria: 'H', nivel: 2, ubicacion: 'src/views/CalendarView.jsx · src/index.css', clase: 'calendar-sheet', keyframe: 'calendarSheetIn', funcion: 'Crear o editar un evento.', entrada: 'Sube', salida: 'Ninguna', duracion: 220, estado: 'inconsistente', fase: 6 }),
   m({ id: 'modales_resto', nombre: 'El resto de ventanas y hojas (unas 40 en 18 archivos)', categoria: 'G', nivel: 0, ubicacion: 'App.jsx, ui.jsx, LibraryView, ArmarioView, EstiloHombreView, CalendarView, quickAdd…', funcion: 'Confirmaciones, formularios, buscador, papelera, visor de fotos.', entrada: 'Ninguna: aparecen de golpe', salida: 'Ninguna: desaparecen de golpe', prioridad: 'alta', estado: 'sin_motion', fase: 6 }),
-  m({ id: 'aviso_anadido', nombre: 'El aviso de «añadido» (y los de Fitness)', categoria: 'Q', nivel: 2, ubicacion: 'src/index.css', clase: 'aviso-entra', keyframe: 'avisoEntra', catalogo: 'aviso', funcion: 'Confirmar una acción sin pararte.', entrada: 'Sube y aparece', salida: 'Ninguna', duracion: 260, fase: 9 }),
+  m({ id: 'aviso_anadido', nombre: 'El aviso de «añadido» (y los de Fitness)', categoria: 'Q', nivel: 2, ubicacion: 'src/index.css', clase: 'aviso-entra', keyframe: 'avisoEntra', catalogo: 'aviso', funcion: 'Confirmar una acción sin pararte.', entrada: 'Sube y aparece', salida: 'Ninguna', duracion: 280, fase: 9 }),
   /* ── I · Menús ── */
   m({ id: 'menus', nombre: 'Menús «⋯» y desplegables', categoria: 'I', nivel: 0, ubicacion: 'HoyView, BibliotecaPlanesView, PlantillasView…', funcion: 'Acciones de un elemento.', entrada: 'Ninguna', salida: 'Ninguna', estado: 'sin_motion', fase: 6 }),
   /* ── J · Listas ── */
-  m({ id: 'tarea_hecha', nombre: 'Completar una tarea', categoria: 'J', nivel: 2, ubicacion: 'src/index.css', clase: 'tarea-hecha', keyframe: 'tareaHecha', catalogo: 'completar', funcion: 'Que se note que se ha completado.', duracion: 300, fase: 9 }),
+  m({ id: 'tarea_hecha', nombre: 'Completar una tarea', categoria: 'J', nivel: 2, ubicacion: 'src/index.css', clase: 'tarea-hecha', keyframe: 'tareaHecha', catalogo: 'completar', funcion: 'Que se note que se ha completado.', duracion: 280, fase: 9 }),
   m({ id: 'habito_hecho', nombre: 'Completar un hábito', categoria: 'J', nivel: 2, ubicacion: 'src/index.css', clase: 'habito-hecho', keyframe: 'habitoHecho', catalogo: 'habito_hecho', funcion: 'El hábito de hoy hecho.', duracion: 280, fase: 9 }),
   m({ id: 'rutina_fin', nombre: 'Terminar una rutina', categoria: 'Q', nivel: 3, ubicacion: 'src/index.css', clase: 'rutina-fin', keyframe: 'rutinaFin', catalogo: 'rutina_fin', funcion: 'Cerrar una rutina entera.', duracion: 420, fase: 9 }),
   m({ id: 'serie_hecha', nombre: 'Marcar una serie', categoria: 'J', nivel: 1, ubicacion: 'src/index.css', clase: 'fit-serie-hecha', keyframe: 'fitSerieHecha', catalogo: 'fit_serie', funcion: 'Una serie del entrenamiento en vivo hecha.', duracion: 160, fase: 9 }),
@@ -191,10 +196,10 @@ export const MOTION_MAP = [
   m({ id: 'graficas_recharts', nombre: 'Gráficas de Recharts (Salud, Nutrición, Sueño)', categoria: 'K', nivel: 3, ubicacion: 'HealthView · NutritionView · SleepView', componente: 'LineChart', funcion: 'Dibujar los datos.', entrada: 'La de Recharts por defecto: 1,5 s', transicion: 'JavaScript de la librería, no CSS', duracion: 1500, easing: 'ease (de la librería)', prioridad: 'alta', reducido: '❌ NO se respeta: Recharts anima por JavaScript y las reglas globales de index.css no lo alcanzan.', estado: 'fuera_de_control', fase: 4 }),
   m({ id: 'graficas_propias', nombre: 'Gráficas propias en SVG (Fitness, Sueño)', categoria: 'K', nivel: 0, ubicacion: 'GraficaProgreso y similares', funcion: 'Progreso de un ejercicio, sueño de la semana.', entrada: 'Ninguna', estado: 'sin_motion', fase: 17 }),
   /* ── L · Estadísticas ── */
-  m({ id: 'barras_progreso_css', nombre: 'Barras de progreso con su clase (Hoy, Biblioteca, Nutrición, Fitness)', categoria: 'L', nivel: 3, ubicacion: 'src/index.css', clase: 'barra-progreso', catalogo: 'progreso_dia', funcion: 'Que la barra avance en vez de saltar.', transicion: 'width', duracion: 380, relacion: 'Cuatro clases con cuatro duraciones: barra-progreso 380, nu-progreso 420, progreso-libro 420, fit-barra 280.', estado: 'inconsistente', fase: 17 }),
-  m({ id: 'barras_progreso_sueltas', nombre: 'Barras de progreso escritas en la vista (Objetivos, Productividad, Rachas, Bienestar digital)', categoria: 'L', nivel: 3, ubicacion: 'ObjectivesView · ProductivityView · RachasView · WellbeingView', funcion: 'Lo mismo que las de arriba.', transicion: 'width 0,3 s / 0,35 s / 0,4 s / 0,5 s con `ease`', duracion: 400, easing: 'ease', estado: 'inconsistente', fase: 17 }),
-  m({ id: 'aro_progreso', nombre: 'El aro de progreso de `ui.jsx`', categoria: 'L', nivel: 3, ubicacion: 'src/components/ui.jsx', componente: 'ProgressRing', funcion: 'Un porcentaje en círculo.', transicion: 'stroke-dashoffset 1 s ease', duracion: 1000, easing: 'ease', relacion: 'Pasa del tope de una animación (700 ms).', estado: 'inconsistente', fase: 17 }),
-  m({ id: 'aro_pomodoro', nombre: 'El aro del temporizador', categoria: 'L', nivel: 2, ubicacion: 'src/index.css', clase: 'aro-pomodoro', catalogo: 'aro_pomodoro', funcion: 'El tiempo que queda.', transicion: 'stroke-dashoffset lineal (es un reloj)', duracion: 300, fase: 17 }),
+  m({ id: 'barras_progreso_css', nombre: 'Barras de progreso con su clase (Hoy, Biblioteca, Nutrición, Fitness)', categoria: 'L', nivel: 3, ubicacion: 'src/index.css', clase: 'barra-progreso', catalogo: 'progreso_dia', funcion: 'Que la barra avance en vez de saltar.', transicion: 'width', duracion: 340, relacion: 'Cuatro clases con tres tokens: barra-progreso `slow`, nu-progreso y progreso-libro `cinematic`, fit-barra `medium`. Ya son tokens (MS F1); que digan uno solo es de la F17.', estado: 'inconsistente', fase: 17 }),
+  m({ id: 'barras_progreso_sueltas', nombre: 'Barras de progreso escritas en la vista (Objetivos, Productividad, Rachas, Bienestar digital)', categoria: 'L', nivel: 3, ubicacion: 'ObjectivesView · ProductivityView · RachasView · WellbeingView', funcion: 'Lo mismo que las de arriba.', transicion: 'width `slow` con la curva de JosStyle (MS F1: `transicion()`; antes 0,3 / 0,35 / 0,4 / 0,5 s con `ease`)', duracion: 340, estado: 'inconsistente', fase: 17 }),
+  m({ id: 'aro_progreso', nombre: 'El aro de progreso de `ui.jsx`', categoria: 'L', nivel: 3, ubicacion: 'src/components/ui.jsx', componente: 'ProgressRing', funcion: 'Un porcentaje en círculo.', transicion: 'stroke-dashoffset `cinematic` (MS F1; antes 1 s con `ease`, por encima del tope)', duracion: 420, fase: 17 }),
+  m({ id: 'aro_pomodoro', nombre: 'El aro del temporizador', categoria: 'L', nivel: 2, ubicacion: 'src/index.css', clase: 'aro-pomodoro', catalogo: 'aro_pomodoro', funcion: 'El tiempo que queda.', transicion: 'stroke-dashoffset lineal (es un reloj)', duracion: 280, easing: '--motion-curva-linear', fase: 17 }),
   m({ id: 'cifras', nombre: 'Cifras que cambian (rachas, kcal, puntuación, saldo)', categoria: 'L', nivel: 0, ubicacion: 'Toda la aplicación', funcion: 'Un número que sube o baja.', transicion: 'Ninguna: el número cambia de golpe', estado: 'sin_motion', fase: 17 }),
   /* ── M · Carga y N · Esqueletos ── */
   m({ id: 'esqueleto', nombre: 'El latido del esqueleto', categoria: 'N', nivel: 1, bucle: true, ubicacion: 'src/index.css', clase: 'esqueleto', keyframe: 'latido', catalogo: 'esqueleto', funcion: 'Que la pantalla de carga tenga la forma de Hoy y respire.', transicion: 'opacity en bucle', duracion: 1400, relacion: 'Bucle permitido: solo mientras carga.', fase: 16 }),
@@ -203,18 +208,18 @@ export const MOTION_MAP = [
   m({ id: 'errores', nombre: 'Avisos de error (guardado, archivo, conexión)', categoria: 'P', nivel: 0, ubicacion: 'AvisoAccion y cada vista', funcion: 'Decir qué ha fallado y qué hacer.', entrada: 'La del aviso (aviso-entra) cuando es un aviso; ninguna cuando es una línea en la pantalla', estado: 'sin_motion', fase: 16 }),
   /* ── Q · Éxito ── */
   m({ id: 'entreno_guardado', nombre: 'El entrenamiento guardado', categoria: 'Q', nivel: 2, ubicacion: 'src/index.css', clase: 'exito-entra', keyframe: 'exitoEntra', catalogo: 'entreno_guardado', funcion: 'La marca de la pantalla de éxito.', duracion: 280, fase: 9 }),
-  m({ id: 'libro_terminado', nombre: 'Terminar un libro', categoria: 'Q', nivel: 3, ubicacion: 'src/index.css', clase: 'celebracion-libro', keyframe: 'celebracionLibro', funcion: 'El libro pasa a Terminado.', duracion: 320, fase: 9 }),
-  m({ id: 'descanso_fin', nombre: 'Termina el descanso', categoria: 'Q', nivel: 2, ubicacion: 'src/index.css', clase: 'fit-descanso-fin', keyframe: 'fitDescansoFin', catalogo: 'fit_descanso', funcion: 'Avisar de que toca la siguiente serie.', duracion: 300, fase: 9 }),
-  m({ id: 'rango_sube', nombre: 'Subir de rango', categoria: 'Q', nivel: 4, ubicacion: 'src/index.css', clase: 'fit-rango-sube', keyframe: 'fitRangoSube', catalogo: 'fit_rango_sube', funcion: 'El momento de un rango nuevo.', duracion: 300, fase: 17 }),
-  m({ id: 'racha_sube', nombre: 'La llama de una racha que sube', categoria: 'Q', nivel: 4, ubicacion: 'src/index.css', clase: 'fuego-sube', keyframe: 'fuegoSube', funcion: 'La racha de hoy cuenta.', duracion: 620, relacion: 'No estaba en ANIMACIONES_HC, así que el tope de la E3 F14 no la medía.', fase: 17 }),
-  m({ id: 'racha_mas_uno', nombre: 'El «+1» de una racha', categoria: 'Q', nivel: 5, ubicacion: 'src/index.css', clase: 'racha-mas-uno', keyframe: 'masUnoSube', funcion: 'La firma de JosStyle: un día más.', duracion: 900, relacion: 'La única animación de nivel firma. Tampoco estaba en el catálogo.', fase: 18 }),
+  m({ id: 'libro_terminado', nombre: 'Terminar un libro', categoria: 'Q', nivel: 3, ubicacion: 'src/index.css', clase: 'celebracion-libro', keyframe: 'celebracionLibro', funcion: 'El libro pasa a Terminado.', duracion: 340, fase: 9 }),
+  m({ id: 'descanso_fin', nombre: 'Termina el descanso', categoria: 'Q', nivel: 2, ubicacion: 'src/index.css', clase: 'fit-descanso-fin', keyframe: 'fitDescansoFin', catalogo: 'fit_descanso', funcion: 'Avisar de que toca la siguiente serie.', duracion: 280, fase: 9 }),
+  m({ id: 'rango_sube', nombre: 'Subir de rango', categoria: 'Q', nivel: 4, ubicacion: 'src/index.css', clase: 'fit-rango-sube', keyframe: 'fitRangoSube', catalogo: 'fit_rango_sube', funcion: 'El momento de un rango nuevo.', duracion: 280, fase: 17 }),
+  m({ id: 'racha_sube', nombre: 'La llama de una racha que sube', categoria: 'Q', nivel: 4, ubicacion: 'src/index.css', clase: 'fuego-sube', keyframe: 'fuegoSube', funcion: 'La racha de hoy cuenta.', duracion: 620, relacion: 'No está en ANIMACIONES_HC, pero desde la MS F1 su duración es el token `momento` y el mapa la mide.', fase: 17 }),
+  m({ id: 'racha_mas_uno', nombre: 'El «+1» de una racha', categoria: 'Q', nivel: 5, ubicacion: 'src/index.css', clase: 'racha-mas-uno', keyframe: 'masUnoSube', funcion: 'La firma de JosStyle: un día más.', duracion: 900, relacion: 'La única animación de nivel firma; su duración es el token `firma` (MS F1).', fase: 18 }),
   /* ── R · Interruptores ── */
-  m({ id: 'interruptor_ui', nombre: 'El interruptor de `ui.jsx`', categoria: 'R', nivel: 1, ubicacion: 'src/components/ui.jsx', componente: 'Switch', funcion: 'Encender o apagar algo.', transicion: 'left y fondo 200 ms con la curva común', duracion: 200, relacion: 'Anima `left`, que obliga a recalcular el diseño, en vez de `transform`.', estado: 'inconsistente', fase: 3 }),
-  m({ id: 'interruptores_a_mano', nombre: 'Interruptores escritos a mano (Calendario, Relación, Ajustes, Gestión de temas)', categoria: 'R', nivel: 1, ubicacion: 'CalendarView · RelationView · SettingsView (6) · GestionTemas', funcion: 'Lo mismo que el Switch.', transicion: '`left 150ms` sin curva, o `transition-all` de Tailwind', duracion: 150, easing: 'por defecto', estado: 'inconsistente', fase: 3 }),
+  m({ id: 'interruptor_ui', nombre: 'El interruptor de `ui.jsx`', categoria: 'R', nivel: 1, ubicacion: 'src/components/ui.jsx', componente: 'Switch', funcion: 'Encender o apagar algo.', transicion: 'left y fondo `normal` con la curva común (MS F1: `transicion()`)', duracion: 220, relacion: 'Anima `left`, que obliga a recalcular el diseño, en vez de `transform`.', estado: 'inconsistente', fase: 3 }),
+  m({ id: 'interruptores_a_mano', nombre: 'Interruptores escritos a mano (Calendario, Relación, Ajustes, Gestión de temas)', categoria: 'R', nivel: 1, ubicacion: 'CalendarView · RelationView · SettingsView (6) · GestionTemas', funcion: 'Lo mismo que el Switch.', transicion: '`left` `fast` con `transicion()` en Calendario y Relación (MS F1), y `transition-all` en Ajustes', duracion: 160, estado: 'inconsistente', fase: 3 }),
   /* ── S · Deslizadores ── */
   m({ id: 'deslizadores', nombre: 'Deslizadores (`input type=range`)', categoria: 'S', nivel: 0, ubicacion: 'SettingsView y otros', funcion: 'Elegir un valor.', transicion: 'Los del navegador', estado: 'existe', fase: 5 }),
   /* ── T · Gestos y U · Scroll ── */
-  m({ id: 'cambiar_ejercicio', nombre: 'Deslizar para cambiar de ejercicio', categoria: 'T', nivel: 1, ubicacion: 'src/views/EntrenamientoVivoView.jsx · src/index.css', clase: 'fit-miniatura', catalogo: 'fit_miniatura', funcion: 'Pasar al ejercicio siguiente en el entrenamiento en vivo.', interaccion: 'Deslizar en horizontal (umbral, `pan-y`)', transicion: 'width, padding y colores 200 ms', duracion: 200, relacion: 'Sin seguir al dedo: el cambio ocurre al soltar.', fase: 8 }),
+  m({ id: 'cambiar_ejercicio', nombre: 'Deslizar para cambiar de ejercicio', categoria: 'T', nivel: 1, ubicacion: 'src/views/EntrenamientoVivoView.jsx · src/index.css', clase: 'fit-miniatura', catalogo: 'fit_miniatura', funcion: 'Pasar al ejercicio siguiente en el entrenamiento en vivo.', interaccion: 'Deslizar en horizontal (umbral, `pan-y`)', transicion: 'width, padding y colores `normal`', duracion: 220, relacion: 'Sin seguir al dedo: el cambio ocurre al soltar.', fase: 8 }),
   m({ id: 'comparador', nombre: 'El divisor del comparador de fotos', categoria: 'T', nivel: 1, ubicacion: 'src/components/comparadorFotos.jsx', funcion: 'Arrastrar para comparar dos fotos.', interaccion: 'Arrastrar: sigue al dedo (requestAnimationFrame)', transicion: 'Directa, sin animación: es el dedo', fase: 8 }),
   m({ id: 'rebote', nombre: 'El rebote de la página', categoria: 'U', nivel: 1, ubicacion: 'El navegador (Safari)', funcion: 'Arrastrar más allá del principio o del final.', interaccion: 'Arrastrar', transicion: 'La del sistema', relacion: 'Se quedó (v3.129.1): en su iPhone los hubs caben y es lo único que los mueve.', reducido: 'Lo decide iOS.', fase: 5 }),
   m({ id: 'fundido_cabecera', nombre: 'Las tarjetas se desvanecen al pasar bajo la cabecera de un área', categoria: 'U', nivel: 1, ubicacion: 'src/components/fundidoBajoCabecera.js', funcion: 'Que la cabecera transparente no se lea encima de una tarjeta.', interaccion: 'Desplazar', transicion: 'Máscara que sigue al desplazamiento (una vez por fotograma)', duracion: 0, easing: 'Directa: es el dedo', reducido: 'Igual: no es una animación, es recortar lo que está detrás del título.', fase: 10 }),
@@ -225,6 +230,7 @@ export const MOTION_MAP = [
   m({ id: 'progreso_libro', nombre: 'El progreso de un libro', categoria: 'W', nivel: 3, ubicacion: 'src/index.css', clase: 'progreso-libro', funcion: 'La barra de páginas leídas.', transicion: 'width', duracion: 420, fase: 17 }),
   m({ id: 'progreso_nutricion', nombre: 'El progreso de un macro', categoria: 'W', nivel: 3, ubicacion: 'src/index.css', clase: 'nu-progreso', catalogo: 'progreso_nutricion', funcion: 'Lo consumido frente al objetivo.', transicion: 'width', duracion: 420, fase: 17 }),
   m({ id: 'barra_fitness', nombre: 'Una barra de progreso de Fitness', categoria: 'W', nivel: 3, ubicacion: 'src/index.css', clase: 'fit-barra', catalogo: 'fit_barra', funcion: 'Rangos, objetivos y cobertura.', transicion: 'width', duracion: 280, fase: 17 }),
+  m({ id: 'muestra_ajustes', nombre: 'La muestra de «Ver cómo se mueve» en Ajustes', categoria: 'R', nivel: 3, ubicacion: 'src/views/SettingsView.jsx (AjusteMovimiento)', componente: 'AjusteMovimiento', funcion: 'Ver la diferencia entre modos y velocidades sin ir a buscarla (MS F1).', entrada: 'La cascada de la portada, con el modo y la velocidad elegidos', interaccion: 'Tocar «Ver cómo se mueve» la repite', duracion: 420, stagger: 60, fase: 1 }),
   /* ── X · Lo que viene ── */
   m({ id: 'futuros', nombre: 'Todo lo que se añada a partir de hoy', categoria: 'X', nivel: 0, ubicacion: '—', funcion: 'Apartado 19: hereda el Motion System sin que nadie lo pida.', relacion: '`auditarMotion` pone la suite roja si aparece una animación que no está en este mapa, y la deuda medida (`DEUDA_F0`) no puede crecer.', estado: 'existe', reducido: '—', fase: 0 }),
 ];
@@ -238,18 +244,18 @@ export const entradaMotion = (id) => MOTION_MAP.find((e) => e.id === id) || null
    arregla: es el mapa. Pero no se queda sin dueño.
    ─────────────────────────────────────────────────────────────────────────── */
 export const HALLAZGOS_F0 = [
-  { id: 'niveles_decorativos', fase: 1, que: 'Tres de los cuatro niveles de «Animaciones» de Ajustes no hacen nada', seVe: 'Completa, Reducida y Mínima se ven exactamente igual; solo «Desactivadas» cambia algo. La propia pantalla lo confiesa: «Hoy la app tiene pocas animaciones propias». Es un control decorativo (regla 8).' },
+  { id: 'niveles_decorativos', resuelto: 1, fase: 1, que: 'Tres de los cuatro niveles de «Animaciones» de Ajustes no hacen nada', seVe: 'Completa, Reducida y Mínima se ven exactamente igual; solo «Desactivadas» cambia algo. La propia pantalla lo confiesa: «Hoy la app tiene pocas animaciones propias». Es un control decorativo (regla 8).' },
   { id: 'graficas_sin_control', fase: 4, que: 'Las gráficas de Recharts animan 1,5 s y no obedecen a «Reducir movimiento»', seVe: 'Salud, Nutrición y Sueño dibujan su gráfica durante segundo y medio aunque tenga activado reducir movimiento: Recharts anima por JavaScript y las reglas de index.css no lo alcanzan.' },
-  { id: 'duraciones_sueltas', fase: 1, que: 'Duraciones escritas a mano en las vistas, con otra curva', seVe: 'Las barras de progreso se mueven a siete ritmos distintos —0,3 / 0,35 / 0,4 / 0,5 s escritos en las vistas con `ease`, y 280, 380 y 420 ms en index.css— y el aro de progreso tarda 1 s: la misma cosa se mueve a un ritmo distinto en cada pantalla.' },
+  { id: 'duraciones_sueltas', resuelto: 1, fase: 1, que: 'Duraciones escritas a mano en las vistas, con otra curva', seVe: 'Las barras de progreso se mueven a siete ritmos distintos —0,3 / 0,35 / 0,4 / 0,5 s escritos en las vistas con `ease`, y 280, 380 y 420 ms en index.css— y el aro de progreso tarda 1 s: la misma cosa se mueve a un ritmo distinto en cada pantalla.' },
   { id: 'tres_interruptores', fase: 3, que: 'Tres interruptores distintos', seVe: 'El Switch de ui.jsx (200 ms, curva común), los escritos a mano en Calendario y Relación (150 ms, sin curva) y seis en Ajustes con `transition-all`. Los tres animan `left`, que obliga al navegador a recalcular el diseño.' },
-  { id: 'dos_curvas', fase: 14, que: 'Dos curvas conviviendo', seVe: 'Todo index.css usa --ease-premium, pero las 80 clases `transition-transform` y las 26 `transition` de Tailwind usan la curva por defecto de Tailwind (y 150 ms): el pulsar de un botón y el de una tarjeta de Fitness no frenan igual.' },
+  { id: 'dos_curvas', resuelto: 1, fase: 14, que: 'Dos curvas conviviendo', seVe: 'Todo index.css usa --ease-premium, pero las 80 clases `transition-transform` y las 26 `transition` de Tailwind usan la curva por defecto de Tailwind (y 150 ms): el pulsar de un botón y el de una tarjeta de Fitness no frenan igual.' },
   { id: 'modales_de_golpe', fase: 6, que: 'Casi ninguna ventana anima', seVe: 'De unas cuarenta ventanas y hojas, solo las de Fitness y las del Calendario entran; ninguna sale con transición. El resto aparece y desaparece de golpe.' },
   { id: 'listas_que_saltan', fase: 10, que: 'Las listas saltan al añadir o borrar', seVe: 'Borrar una tarea o añadir una comida hace que el resto de la lista salte de sitio sin transición.' },
   { id: 'cifras_de_golpe', fase: 17, que: 'Las cifras cambian de golpe', seVe: 'Rachas, kcal, saldo y puntuación cambian sin transición; las barras sí se mueven, los números que las acompañan no.' },
-  { id: 'cadencias', fase: 10, que: 'Cinco cadencias para la misma cascada', seVe: '60, 70 y 80 ms escritos a mano y dos funciones (`retrasoDeTarjeta`, `retrasoDeTarjetaPR`) para el mismo efecto.' },
-  { id: 'mismo_numero_dos_sitios', fase: 1, que: 'El mismo número escrito en dos sitios', seVe: 'Tocar un módulo de la portada: la animación dura 190 ms en index.css y la navegación espera 190 ms escritos aparte en HubView (EXPAND_MS). Si uno cambia, el otro no se entera.' },
-  { id: 'fuera_del_catalogo', fase: 1, que: 'Animaciones que el tope de la E3 F14 no mide', seVe: 'La llama (620 ms) y el «+1» de las rachas (900 ms), la entrada de la portada (420 ms), la cabecera, la barra de volver, la expansión de una tarjeta, el favorito y el libro terminado no están en ANIMACIONES_HC, así que nadie comprobaba su duración.' },
-  { id: 'reducido_rompe', fase: 12, que: 'Movimiento reducido = movimiento cero', seVe: 'Las dos reglas globales llevan TODO a 0,01 ms. El apartado 13 pide conservar el feedback, la jerarquía y la orientación con alternativas menos dinámicas (un fundido corto en vez de un desplazamiento), no quitarlo todo.' },
+  { id: 'cadencias', resuelto: 1, fase: 10, que: 'Cinco cadencias para la misma cascada', seVe: '60, 70 y 80 ms escritos a mano y dos funciones (`retrasoDeTarjeta`, `retrasoDeTarjetaPR`) para el mismo efecto.' },
+  { id: 'mismo_numero_dos_sitios', resuelto: 1, fase: 1, que: 'El mismo número escrito en dos sitios', seVe: 'Tocar un módulo de la portada: la animación dura 190 ms en index.css y la navegación espera 190 ms escritos aparte en HubView (EXPAND_MS). Si uno cambia, el otro no se entera.' },
+  { id: 'fuera_del_catalogo', resuelto: 1, fase: 1, que: 'Animaciones que el tope de la E3 F14 no mide', seVe: 'La llama (620 ms) y el «+1» de las rachas (900 ms), la entrada de la portada (420 ms), la cabecera, la barra de volver, la expansión de una tarjeta, el favorito y el libro terminado no están en ANIMACIONES_HC, así que nadie comprobaba su duración.' },
+  { id: 'reducido_rompe', resuelto: 1, fase: 12, que: 'Movimiento reducido = movimiento cero', seVe: 'Las dos reglas globales llevan TODO a 0,01 ms. El apartado 13 pide conservar el feedback, la jerarquía y la orientación con alternativas menos dinámicas (un fundido corto en vez de un desplazamiento), no quitarlo todo.' },
 ];
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -281,6 +287,10 @@ export function aMs(valor) {
 /** Todas las reglas de index.css que animan o transicionan, con su línea. */
 export function escanearCss(css = '') {
   const limpio = sinComentariosCss(css);
+  /* MS F1 — desde la F1 las reglas usan los tokens (`var(--motion-dur-slow)`): para
+     medir milisegundos se sustituyen por su valor de `:root`, que es el de la
+     velocidad Normal. */
+  const raiz = tokensRaiz(css);
   const reglas = [];
   const re = /([^{}]+)\{([^{}]*)\}/g;
   let mt;
@@ -292,8 +302,9 @@ export function escanearCss(css = '') {
     props.forEach((p) => {
       const tipo = p.startsWith('animation') ? 'animation' : 'transition';
       const valor = p.replace(/^[a-z-]+\s*:/, '').trim();
-      const ms = (valor.match(/\d*\.?\d+m?s\b/g) || []).map(aMs).filter((x) => x !== null);
-      const curvas = (valor.match(/var\(--[a-z-]+\)|cubic-bezier\([^)]*\)|\bease(-in|-out|-in-out)?\b|\blinear\b/g) || []);
+      const ms = (resolverDuraciones(valor, raiz).match(/\d*\.?\d+m?s\b/g) || []).map(aMs).filter((x) => x !== null);
+      const curvas = (valor.match(/var\(--[a-z-]+\)|cubic-bezier\([^)]*\)|\bease(-in|-out|-in-out)?\b|\blinear\b/g) || [])
+        .filter((c) => !/^var\(--motion-(?:dur|retraso)-/.test(c));
       const keyframe = tipo === 'animation' ? (valor.match(/^([A-Za-z][\w-]*)/) || [])[1] || null : null;
       reglas.push({ linea: lineaDe(limpio, mt.index + mt[1].length), selector, tipo, valor, ms, curvas, keyframe });
     });
@@ -311,7 +322,9 @@ const clasesDe = (selector) => [...selector.matchAll(/\.([a-zA-Z][\w-]*)/g)].map
 
 /* El movimiento escrito dentro de una vista o componente. */
 const PATRONES_VISTA = [
-  { id: 'transicion_en_linea', re: /transition:\s*['`]([^'`]+)['`]/g, que: 'Una transición escrita en el `style` de la vista' },
+  /* 🔓 MS F1 — lo que se cuenta es un LITERAL (una duración o una curva escrita a mano), no que
+     haya una transición: `transition: transicion('width', 'slow')` usa el motor y no es deuda. */
+  { id: 'transicion_en_linea', re: /transition:\s*['`][^'`]*?(?:\d*\.?\d+m?s\b|\bease(?:-in|-out|-in-out)?\b|cubic-bezier)[^'`]*['`]/g, que: 'Una transición con una duración o una curva escrita a mano en el `style` de la vista' },
   { id: 'retraso_en_linea', re: /animationDelay:\s*[^,}\n]+/g, que: 'Un retraso de animación calculado en la vista' },
   { id: 'transition_all', re: /\btransition-all\b/g, que: '`transition-all`: anima cualquier propiedad que cambie, también las caras' },
   { id: 'tailwind_duracion', re: /\bduration-\d+\b/g, que: 'Una duración de Tailwind escrita en la clase' },
@@ -350,11 +363,18 @@ export function graficasSinGobierno(src = '', archivo = '') {
    número; una vista nueva que escriba su propia duración pone la suite roja.
    ─────────────────────────────────────────────────────────────────────────── */
 export const DEUDA_F0 = {
-  transicion_en_linea: 25,
-  retraso_en_linea: 13,
-  transition_all: 7,
-  tailwind_duracion: 2,
-  tailwind_curva: 1,
+  /* 🔓 MS F1 — de 25 a 0: las transiciones de las vistas piden su duración y su
+     curva al motor (`transicion()`). */
+  transicion_en_linea: 0,
+  /* 🔓 MS F1 — de 13 a 0: el retraso de una cascada es `escalonado(i)`. */
+  retraso_en_linea: 0,
+  /* MS F1 — de 7 a 6: el interruptor de «Reducir movimiento» pasa a `Switch`.
+     Los otros seis son de la F3 (hallazgo `tres_interruptores`). */
+  transition_all: 6,
+  /* 🔓 MS F1 — de 2 a 0 y de 1 a 0: la duración por defecto de Tailwind ya es el
+     token `fast`, y el comparador usa `transicion()`. */
+  tailwind_duracion: 0,
+  tailwind_curva: 0,
   grafica_recharts: 3,
   series_sin_gobierno: 3,
   curvas_ajenas_css: 0,
@@ -392,7 +412,7 @@ export function auditarMotion({ css = '', vistas = {} } = {}) {
     return { id: e.id, catalogo: e.catalogo, mapa: e.duracion, hc: a ? a.ms : null };
   }).filter((x) => x.hc === null || x.hc !== x.mapa);
 
-  const curvasAjenas = reglas.filter((r) => r.curvas.some((c) => c !== 'var(--ease-premium)' && c !== 'linear'))
+  const curvasAjenas = reglas.filter((r) => r.curvas.some((c) => c !== 'var(--ease-premium)' && c !== 'linear' && !/^var\(--motion-curva-[a-z]+\)$/.test(c)))
     .map((r) => ({ linea: r.linea, selector: r.selector, curvas: r.curvas }));
 
   const enVistas = Object.entries(vistas).flatMap(([archivo, src]) => escanearVista(src, archivo));
@@ -418,16 +438,21 @@ export function auditarMotion({ css = '', vistas = {} } = {}) {
    cambia es que cada nivel **haga algo de verdad**.
    ─────────────────────────────────────────────────────────────────────────── */
 export const AJUSTES_MOVIMIENTO = {
-  dondeSeGuarda: 'apariencia.animaciones y apariencia.reducirMovimiento, dentro de `ajustes` (app_data, Supabase), como el resto de Apariencia. Ni localStorage ni una clave nueva: sería un segundo sistema de persistencia (apartado 15) y el ajuste no viajaría al otro dispositivo.',
-  comoLlegaALaPantalla: 'App.jsx los escribe en <html> como data-animaciones y data-reducir-movimiento (ya lo hace), y el CSS y el motor de la F1 los leen de ahí: un solo punto.',
+  dondeSeGuarda: 'apariencia.animaciones, apariencia.velocidadMovimiento y apariencia.reducirMovimiento, dentro de `ajustes` (app_data, Supabase), como el resto de Apariencia. Ni localStorage ni una clave nueva: sería un segundo sistema de persistencia (apartado 15) y el ajuste no viajaría al otro dispositivo.',
+  comoLlegaALaPantalla: 'App.jsx los escribe en <html> como data-motion y data-velocidad (MS F1), y el CSS y el motor (`src/lib/motion.js`) los leen de ahí: un solo punto.',
+  /* 🔓 MS F1 — lo que la F0 dejó escrito como plan ya es lo que hay: cinco modos que cambian de
+     verdad (los de `MODOS_MOTION`), con los ids de siempre para los tres primeros. */
   niveles: [
-    { id: 'completa', hoy: 'Completa', seraLlamado: 'Normal', efecto: 'Todo el lenguaje del Motion System.' },
-    { id: 'reducida', hoy: 'Reducida', seraLlamado: 'Reducido', efecto: 'Sin desplazamientos ni escalas: fundidos cortos que conservan el orden y el feedback (apartado 13).' },
-    { id: 'minima', hoy: 'Mínima', seraLlamado: 'Mínimo', efecto: 'Solo el feedback imprescindible (pulsar, marcar, un aviso), instantáneo o casi.' },
-    { id: 'desactivadas', hoy: 'Desactivadas', seraLlamado: 'Sin movimiento', efecto: 'Nada se mueve. Lo que hoy ya funciona.' },
+    { id: 'desactivadas', hoy: 'Sin movimiento', efecto: 'Nada se mueve: todo aparece en su estado final.' },
+    { id: 'reducida', hoy: 'Reducido', efecto: 'Sin desplazamientos ni escalas: fundidos que conservan el orden y el feedback (apartado 13).' },
+    { id: 'completa', hoy: 'Normal', efecto: 'Todo el lenguaje del Motion System.' },
+    { id: 'premium', hoy: 'Premium', efecto: 'Más amplitud en desplazamientos y escalas, misma duración.' },
+    { id: 'ultra', hoy: 'Ultra', efecto: 'Lo de Premium con más amplitud, y profundidad: el velo de una hoja desenfoca lo de detrás.' },
   ],
-  premiumYUltra: 'El apartado 14 propone también «Premium» y «Ultra». No se ofrecen salvo que la F1 demuestre que dan una diferencia que se note y que no rompa el presupuesto: un nivel «más que normal» en una aplicación que ya usa su movimiento al tope del presupuesto sería un control que no cambia nada visible (regla 8). La arquitectura (una escala global de duración e intensidad) los admitiría sin tocar nada más.',
-  sistemaOperativo: 'Si el iPhone tiene activado «Reducir movimiento», manda sobre «Normal»: se comporta como «Reducido», nunca como «Sin movimiento» (apartado 13: reducir no es romper).',
+  minima: 'Lo guardado como «minima» (el cuarto nivel de antes) se lee como Reducido y no se reescribe (C-52).',
+  premiumYUltra: 'Premium y Ultra se ofrecen desde la MS F1, porque la F1 demuestra en Chromium que cambian lo que se ve (el desplazamiento de una pantalla y de una tarjeta, y el desenfoque del velo) sin pasar del presupuesto. No son «más duración»: la duración es de la velocidad.',
+  velocidad: 'Pausada (×1,3), Normal y Rápida (×0,75) multiplican todas las duraciones y retrasos desde un solo sitio (apartado 15).',
+  sistemaOperativo: 'Si el iPhone tiene activado «Reducir movimiento», manda sobre Normal, Premium y Ultra: se comporta como «Reducido», nunca como «Sin movimiento» (apartado 13: reducir no es romper). Lo aplica el propio CSS con su @media.',
 };
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -515,7 +540,7 @@ export function motionMapMarkdown() {
   const p = (t = '') => L.push(t);
   p('# MOTION_MAP — el movimiento de JosStyle, elemento a elemento');
   p();
-  p('> **Motion System · Fase 0.** Cada elemento que se mueve —o que debería moverse— con lo que pide el');
+  p('> **Motion System · desde la Fase 0.** Cada elemento que se mueve —o que debería moverse— con lo que pide el');
   p('> apartado 3 de la F0. 🚨 **Este documento se genera desde `src/lib/motionMapa.js`** con');
   p('> `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita');
   p('> el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.');

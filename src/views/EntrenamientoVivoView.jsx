@@ -395,7 +395,7 @@ export function TablaSeries({
             <div
               key={f.id}
               data-serie-activa={activa ? 'true' : undefined}
-              className="rounded-2xl px-1.5 py-1.5 transition-colors duration-150"
+              className="rounded-2xl px-1.5 py-1.5 transition-colors"
               style={{
                 background: hecha ? hexToRgba(accent, 0.1) : activa ? hexToRgba(accent, 0.05) : 'transparent',
                 border: `${activa ? 2 : 1}px solid ${activa ? accent : hecha ? hexToRgba(accent, 0.35) : 'transparent'}`,
@@ -460,7 +460,7 @@ export function TablaSeries({
                     onClick={() => onMarcar(f.id, !hecha)}
                     aria-label={hecha ? `Desmarcar la serie ${f.numero}` : `Marcar la serie ${f.numero} como hecha`}
                     aria-pressed={hecha}
-                    className="w-11 h-11 rounded-xl flex items-center justify-center toque-44 active:scale-90 transition-colors duration-150"
+                    className="w-11 h-11 rounded-xl flex items-center justify-center toque-44 active:scale-90 transition-colors"
                     style={{
                       background: hecha ? accent : hexToRgba(COLORS.border, 0.5),
                       color: hecha ? COLORS.textOnAccent : COLORS.textMuted,

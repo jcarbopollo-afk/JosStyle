@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.130.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.131.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -34,8 +34,26 @@ líneas— para construir *"el sistema de movimiento de Jos Style"*, y dijo: *"E
 ordenadlas. Y volverás y ejecutarás todas y no pares hasta acabarlo. Y cuando se te acabe el límite y
 se te vuelva a restablecer, sigue."* El índice con la línea de cada fase está en
 **`docs/13_MOTION_SYSTEM_ORDEN.md`** (el archivo empieza por la F16 y trae la F2 y la F11 repetidas,
-C-51), y **se construye de la F0 a la F20**. **Hecha la F0 (v3.130.0)**: el mapa, la auditoría y el
-plan. Lo que vale para cualquier cambio a partir de hoy:
+C-51), y **se construye de la F0 a la F20**. **Hechas la F0 (v3.130.0)** —el mapa, la auditoría y el
+plan— y la **F1 (v3.131.0)** —el motor—. Lo que vale para cualquier cambio a partir de hoy:
+- 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
+  apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
+  `animar(el, 'modalEnter')`; para montar y desmontar, `Presencia`, y para una lista que se reordena,
+  `useFlip` (`src/components/motion.jsx`). Los tokens viven en `motion.js` **y** en `index.css`
+  (`--motion-dur-*`, `--motion-curva-*`…), y `auditarTokensCss` compara las dos cosas valor a valor:
+  **un token nuevo va a los dos sitios**. Ni un `calc()` con milisegundos en el CSS: cada velocidad trae
+  sus duraciones calculadas. La deuda de duraciones, retrasos y curvas escritos a mano está **a cero**.
+- 🚨 **CINCO MODOS Y TRES VELOCIDADES, EN DOS ATRIBUTOS** (F1, C-52): `html[data-motion]` (off ·
+  reducido · normal · premium · ultra) cambia **la intensidad**, nunca la duración; `html[data-velocidad]`
+  (lenta ×1,3 · normal · rápida ×0,75) cambia **el tiempo**, nunca el recorrido. Los pone `App.jsx`
+  (`atributoMotion`). ⚠️ **Lo guardado no se renombra**: `completa`, `reducida` y `desactivadas` siguen
+  siendo los ids, `minima` se lee como Reducido, y solo nacen `premium` y `ultra`.
+- 🚨 **REDUCIR NO ES APAGAR** (F1, apartado 17): «Reducir movimiento» —el de Ajustes y el del iPhone—
+  lleva a **Reducido**: fundidos en su sitio, sin desplazamientos ni escalas. Solo «Sin movimiento»
+  (`data-motion='off'`) deja todo a 0,01 ms. Una regla nueva de `index.css` que se desplace **tiene que
+  quedarse quieta en Reducido**, y el recorrido lo mide.
+- ⚠️ **DOS TECHOS DE ESCALA, NO UNO** (F1, C-52): una superficie entra desde 0,95 y crece hasta 1,03 como
+  mucho; una marca pequeña (llama, ✓) late hasta 1,35. `TOPES_ESCALA`, y la intensidad se recorta ahí.
 - 🚨 **TODO LO NUEVO HEREDA MOTION, Y ES UNA PRUEBA** (`src/lib/motionMapa.js`, F0 apartado 19): una
   regla animada de `index.css` que no esté en el `MOTION_MAP` pone la suite roja, igual que un
   `@keyframes` huérfano, una curva que no sea `--ease-premium` o una duración escrita a mano en una
@@ -47,10 +65,11 @@ plan. Lo que vale para cualquier cambio a partir de hoy:
   Animations API. `package.json` lo vigila.
 - ⚠️ **EL MAPA SE APOYA EN `ANIMACIONES_HC`, NO LO SUSTITUYE**: las 21 animaciones del catálogo de la
   E3 F14 están en el mapa con la misma duración, comprobado.
-- 🐛 **TRES DE LOS CUATRO NIVELES DE «ANIMACIONES» DE AJUSTES NO HACEN NADA** (hallazgo de la F0, lo
-  arregla la F1): la propia pantalla lo confiesa. Y **las gráficas de Recharts no obedecen a «Reducir
-  movimiento»** (animan por JavaScript): lo arregla la F4. Los doce hallazgos están en `HALLAZGOS_F0`,
-  cada uno con la fase que lo trata.
+- 🐛 **LOS DOCE HALLAZGOS DE LA F0 ESTÁN EN `HALLAZGOS_F0`, CADA UNO CON SU FASE**, y el que la arregla
+  pone `resuelto: <fase>`. La F1 cerró siete —los niveles de Ajustes que no hacían nada, las duraciones
+  sueltas, el mismo número en dos sitios, lo de fuera del catálogo, reducido = cero, las cadencias y las
+  dos curvas—. Siguen abiertos, entre otros, **las gráficas de Recharts que no obedecen a «Reducir
+  movimiento»** (la F4), los tres interruptores (la F3) y las ventanas que aparecen de golpe (la F6).
 
 🚨 **Y la lección de la F1, que vale para todas las que quedan: ENTRENAMIENTO YA EXISTÍA, y no era una
 cosa, eran tres.** El módulo es `entreno` + `calistenia` desde la Fase 2; **las fotos de progreso son
@@ -2015,11 +2034,12 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F1 DEL MOTION SYSTEM** (*"Motor de movimiento + tokens + primitivas"*,
-   líneas 4900–5490 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F2… hasta la F20,
-   en el orden de `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el
-   `MOTION_MAP` y `HALLAZGOS_F0`: la F1 empieza por hacer reales los niveles de Ajustes, poner los
-   tokens en `index.css` y bajar la deuda de duraciones sueltas.
+0. 🎬 **LA SIGUIENTE ES LA F2 DEL MOTION SYSTEM** (*"Navegación, transiciones y continuidad
+   espacial"*, líneas 6038–6770 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt` —la de la 5491 es un
+   borrador cortado, C-51—), y después la F3… hasta la F20, en el orden de
+   `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
+   `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**
+   (`motion.js`): un token o un preset que falte se añade allí, no en la vista.
 1. 🏁 **DE FITNESS NO HAY UNA FASE SIGUIENTE QUE CONSTRUIR SOLO.** La Entrega 4 está cerrada (45/45) y su
    apartado 63 lo dice: *"NO continuar automáticamente con otra fase. No crear una Fase 46. Si
    posteriormente se quieren añadir nuevas funcionalidades: deberán tratarse como un nuevo ciclo de

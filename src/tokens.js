@@ -2,6 +2,7 @@ import { buildRolesFromAccent, rotateHue, generateScale, bestReadableText, ensur
 // FO Fase 1 — `fondos.js` solo depende de `colorEngine`, nunca de este archivo: importarlo aquí
 // no crea ningún ciclo. El modelo del fondo vive allí; aquí solo entra en `DEFAULT_APARIENCIA`.
 import { DEFAULT_FONDO } from './lib/fondos';
+import { MODOS_MOTION, VELOCIDADES_MOTION } from './lib/motion';
 
 // Fase 1 del Sistema de Personalización Visual Extrema — `warning`/`info` se suman aquí a los
 // ya existentes `positive`/`negative` (mismo criterio: colores de "Estados" fijos y curados por
@@ -261,8 +262,14 @@ export const DEFAULT_APARIENCIA = {
   tamanoTexto: 'predeterminado', // 'pequeno' | 'predeterminado' | 'grande'
   densidad: 'estandar', // 'compacta' | 'estandar' | 'comoda' — efecto real: reglas html[data-densidad] en index.css
   radioBorde: 'redondeado', // 'recto' | 'suave' | 'redondeado'
-  animaciones: 'completa', // 'completa' | 'reducida' | 'minima' | 'desactivadas'
+  // MS F1 — el modo de movimiento (`src/lib/motion.js`): 'desactivadas' | 'reducida' | 'completa' |
+  // 'premium' | 'ultra'. Los tres primeros son los ids de siempre (no se renombran); un 'minima'
+  // guardado antes se lee como Reducido (C-52).
+  animaciones: 'completa',
   reducirMovimiento: false,
+  // MS F1 (apartado 15) — la velocidad global: 'lenta' | 'normal' | 'rapida'. Multiplica todas las
+  // duraciones desde un solo sitio (los bloques `html[data-velocidad]` de index.css).
+  velocidadMovimiento: 'normal',
   altoContraste: false, // Fase A7 — Accesibilidad
   // Fase 4 del Sistema de Personalización Visual Extrema — "modo sencillo" (por defecto) muestra
   // solo el acento y la galería de paletas predefinidas, como ya existía; "modo avanzado" revela
@@ -353,12 +360,13 @@ export const RADIOS_BORDE = [
   { value: 'redondeado', label: 'Redondeado' },
 ];
 
-export const NIVELES_ANIMACION = [
-  { value: 'completa', label: 'Completa' },
-  { value: 'reducida', label: 'Reducida' },
-  { value: 'minima', label: 'Mínima' },
-  { value: 'desactivadas', label: 'Desactivadas' },
-];
+/* MS F1 — los modos de movimiento SALEN DEL MOTOR (`MODOS_MOTION`), no de una segunda lista: de
+   menos a más, con el id que se guarda (`guardado`) y el nombre que se lee. Antes eran cuatro y tres
+   no hacían nada (hallazgo de la F0). */
+export const NIVELES_ANIMACION = MODOS_MOTION.map((m) => ({ value: m.guardado, label: m.nombre }));
+
+/** MS F1 (apartado 15) — la velocidad global del movimiento, también del motor. */
+export const VELOCIDADES_ANIMACION = VELOCIDADES_MOTION.map((v) => ({ value: v.id, label: v.nombre }));
 
 export const SKILLS = ['Handstand', 'Front Lever', 'Back Lever', 'Planche', 'Human Flag', 'Muscle Up', 'L-Sit'];
 

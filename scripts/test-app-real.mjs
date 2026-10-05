@@ -10419,9 +10419,13 @@ ok(entra_fit37 && entra_fit37.nombre === 'fitEntra' && entra_fit37.dura === 0.22
   `🔓 FIT F37 — el área de Fitness ENTRA: opacidad y seis píxeles, en 220 ms (${JSON.stringify(entra_fit37)}, apartado 4)`);
 await page.emulateMedia({ reducedMotion: 'reduce' });
 await page.waitForTimeout(200);
+/* 🔓 MS F1 — reducir ya no es llevarlo todo a 0,01 ms (eso es «Sin movimiento», y el apartado 17
+   de la F1 lo llama romper): con «Reducir movimiento» del sistema el área se FUNDE sin desplazarse,
+   porque su desplazamiento es el token `small`, que en Reducido vale 0. */
 const quieta_fit37 = await animacion_fit37();
-ok(quieta_fit37 && quieta_fit37.dura < 0.001,
-  `🚨 FIT F37 — y con «Reducir movimiento» del sistema, NO se mueve (${quieta_fit37 && quieta_fit37.dura} s, apartado 40)`);
+const desplaza_fit37 = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--motion-dist-small').trim());
+ok(quieta_fit37 && quieta_fit37.nombre === 'fitEntra' && desplaza_fit37 === '0px',
+  `🚨 FIT F37 — y con «Reducir movimiento» del sistema NO se desplaza: se funde en su sitio (${JSON.stringify(quieta_fit37)}, desplazamiento ${desplaza_fit37}; apartado 40 y MS F1)`);
 await page.emulateMedia({ reducedMotion: 'no-preference' });
 
 /* 2 · EL GUARDADO QUE NO LLEGA A LA CUENTA (apartados 25 y 28). */
@@ -12006,5 +12010,163 @@ ok(!!tras_ac2.fondo && tras_ac2.fondo.tipo === 'degradado' && tras_ac2.fondo.act
   `🐛 AC F2 — y el fondo de pantalla se QUEDA (antes se borraba sin decirlo): ${tras_ac2.fondo && tras_ac2.fondo.tipo}`);
 ok(errores.length === erroresAntes_ac2, `…sin un error en la consola${errores.length > erroresAntes_ac2 ? `: ${errores.slice(erroresAntes_ac2).join(' | ').slice(0, 200)}` : ''}`);
 almacen.ajustes = ajustesDeAntes_ac2;
+await page.setViewportSize({ width: 1280, height: 900 });
+/* ── MS F1 · El motor de movimiento: cada modo, cada velocidad, reducir y las primitivas ──
+   Lo que la suite de Node no puede ver: que en una pantalla de verdad cada modo y cada velocidad
+   CAMBIEN lo que se mueve (la F0 puso como condición para ofrecer Premium y Ultra que se notara),
+   que el «Reducir movimiento» del sistema deje el fundido sin desplazamiento, y que la
+   interrupción, el FLIP y el elemento compartido funcionen con la Web Animations API del navegador. */
+console.log('\n── MS F1 · El motor de movimiento ──');
+const ajustesDeAntes_ms1 = almacen.ajustes;
+almacen.ajustes = { ...(almacen.ajustes || {}), apariencia: { ...((almacen.ajustes || {}).apariencia || {}), animaciones: 'minima', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
+const erroresAntes_ms1 = errores.length;
+const raiz_ms1 = () => page.evaluate(() => {
+  const cs = getComputedStyle(document.documentElement);
+  return { motion: document.documentElement.dataset.motion, velocidad: document.documentElement.dataset.velocidad,
+    large: cs.getPropertyValue('--motion-dist-large').trim(), medium: cs.getPropertyValue('--motion-dist-medium').trim() };
+});
+ok((await raiz_ms1()).motion === 'reducido', `🔓 MS F1 — un «minima» guardado antes se lee como Reducido, sin reescribirlo (C-52): ${JSON.stringify(await raiz_ms1())}`);
+ok(await pulsar('Ajustes') && await pulsar('Apariencia') && await pulsar('Texto y movimiento'), 'MS F1 — Ajustes → Apariencia → Texto y movimiento');
+const texto_ms1 = await esperarTexto(/Ver cómo se mueve/);
+ok(['Sin movimiento', 'Reducido', 'Normal', 'Premium', 'Ultra', 'Pausada', 'Rápida'].every((x) => texto_ms1.includes(x)),
+  'MS F1 — los cinco modos y las tres velocidades, en la pantalla');
+ok(!/pocas animaciones propias/.test(texto_ms1), '🔓 …y ya no dice que los niveles no hacen nada');
+/* Elige una opción de un grupo de la tarjeta (0 = modo, 1 = velocidad): «Normal» está en los dos. */
+const elegir_ms1 = (grupo, texto) => page.evaluate(({ g, t }) => {
+  const tarjeta = [...document.querySelectorAll('div')].find((d) => d.querySelector(':scope > p') && /^Movimiento$/.test(d.querySelector(':scope > p').innerText.trim()) && d.querySelector('[data-muestra-movimiento]'));
+  const filas = tarjeta ? [...tarjeta.querySelectorAll('.flex.flex-wrap.gap-2')] : [];
+  const b = filas[g] ? [...filas[g].querySelectorAll('button')].find((x) => x.innerText.trim() === t) : null;
+  if (!b) return false;
+  b.click();
+  return true;
+}, { g: grupo, t: texto });
+const medir_ms1 = async () => {
+  await pulsar('Ver cómo se mueve');
+  await page.waitForTimeout(60);
+  return page.evaluate(() => {
+    const els = [...document.querySelectorAll('[data-muestra-movimiento] .hub-card')];
+    const medir = (el) => {
+      const a = el && el.getAnimations()[0];
+      if (!a) return null;
+      a.pause();
+      a.currentTime = 0;
+      const cs = getComputedStyle(el);
+      const m = new DOMMatrix(cs.transform === 'none' ? undefined : cs.transform);
+      const t = a.effect.getComputedTiming();
+      const r = { y: Math.round(m.m42 * 10) / 10, escala: Math.round(m.a * 1000) / 1000, opacidad: Number(cs.opacity), dura: Math.round(t.duration * 100) / 100, retraso: t.delay };
+      a.play();
+      return r;
+    };
+    return { primera: medir(els[0]), segunda: medir(els[1]) };
+  });
+};
+const pasos_ms1 = [
+  ['Normal', 14, 0.97], ['Premium', 18, 0.965], ['Ultra', 20, 0.961],
+];
+const medidas_ms1 = {};
+for (const [modo, y, escala] of pasos_ms1) {
+  ok(await elegir_ms1(0, modo), `MS F1 — se elige ${modo}`);
+  await page.waitForTimeout(500);
+  const m = await medir_ms1();
+  medidas_ms1[modo] = m;
+  ok(m.primera && m.primera.y === y && Math.abs(m.primera.escala - escala) < 0.002 && m.primera.opacidad === 0 && m.primera.dura === 420,
+    `🚨 MS F1 — ${modo}: una tarjeta entra desde ${y} px y ${escala}, transparente, en 420 ms (${JSON.stringify(m.primera)})`);
+}
+ok(medidas_ms1.Premium?.primera?.y > medidas_ms1.Normal?.primera?.y && medidas_ms1.Ultra?.primera?.y > medidas_ms1.Premium?.primera?.y,
+  '🔓 MS F1 — Premium y Ultra SE NOTAN en una pantalla de verdad: más recorrido, la misma duración (la condición de la F0 para ofrecerlos)');
+ok(medidas_ms1.Normal?.segunda?.retraso === 60, `…y la cascada escalona 60 ms (${medidas_ms1.Normal?.segunda?.retraso})`);
+ok(((almacen.ajustes || {}).apariencia || {}).animaciones === 'ultra', '…y el modo elegido se guarda en la cuenta');
+const velo_ms1 = () => page.evaluate(() => {
+  const d = document.createElement('div');
+  d.className = 'fondo-entra';
+  document.body.appendChild(d);
+  const f = getComputedStyle(d).backdropFilter || getComputedStyle(d).webkitBackdropFilter || 'none';
+  d.remove();
+  return f;
+});
+const veloUltra_ms1 = await velo_ms1();
+ok(/blur\(6px\)/.test(veloUltra_ms1), `🔓 MS F1 — Ultra añade profundidad: el velo de una hoja desenfoca lo de detrás (${veloUltra_ms1})`);
+/* «Reducir movimiento» aquí, con Ultra elegido. */
+ok(await page.evaluate(() => { const s = document.querySelector('button[role="switch"][aria-label="Reducir movimiento"]'); if (!s) return false; s.click(); return true; }),
+  'MS F1 — se enciende «Reducir movimiento» (el `Switch` común)');
+await page.waitForTimeout(500);
+const reducidoAjuste_ms1 = await medir_ms1();
+ok((await raiz_ms1()).motion === 'reducido' && reducidoAjuste_ms1.primera?.y === 0 && reducidoAjuste_ms1.primera?.escala === 1 && reducidoAjuste_ms1.primera?.opacidad === 0 && reducidoAjuste_ms1.primera?.dura === 420,
+  `🚨 MS F1 — con Ultra elegido, «Reducir movimiento» lo deja en Reducido: se funde sin desplazarse ni escalar (${JSON.stringify(reducidoAjuste_ms1.primera)})`);
+ok(/porque tienes activado «Reducir movimiento» aquí abajo/.test(await page.evaluate(() => document.body.innerText)), '…y la pantalla dice por qué se ve así');
+ok(await velo_ms1() === 'none' || /blur\(0px\)/.test(await velo_ms1()), '…y la profundidad de Ultra se apaga también');
+await page.evaluate(() => document.querySelector('button[role="switch"][aria-label="Reducir movimiento"]')?.click());
+await page.waitForTimeout(400);
+ok(((almacen.ajustes || {}).apariencia || {}).reducirMovimiento === false, '…y se vuelve a apagar');
+/* La velocidad, con Normal. */
+ok(await elegir_ms1(0, 'Normal') && await elegir_ms1(1, 'Pausada'), 'MS F1 — Normal y velocidad Pausada');
+await page.waitForTimeout(500);
+const lenta_ms1 = await medir_ms1();
+ok(lenta_ms1.primera?.dura === 546 && lenta_ms1.segunda?.retraso === 78 && lenta_ms1.primera?.y === 14,
+  `🚨 MS F1 — Pausada multiplica la duración y el retraso (×1,3) sin tocar el recorrido (${JSON.stringify(lenta_ms1)})`);
+ok(await elegir_ms1(1, 'Rápida'), 'MS F1 — velocidad Rápida');
+await page.waitForTimeout(500);
+const rapida_ms1 = await medir_ms1();
+ok(rapida_ms1.primera?.dura === 315 && rapida_ms1.segunda?.retraso === 45, `…y Rápida los acorta (×0,75): ${JSON.stringify(rapida_ms1)}`);
+ok(((almacen.ajustes || {}).apariencia || {}).velocidadMovimiento === 'rapida', '…y la velocidad se guarda en la cuenta, dentro de `apariencia`');
+ok(await elegir_ms1(1, 'Normal'), '…se vuelve a la velocidad Normal');
+await page.waitForTimeout(400);
+/* Sin movimiento. */
+ok(await elegir_ms1(0, 'Sin movimiento'), 'MS F1 — Sin movimiento');
+await page.waitForTimeout(500);
+const off_ms1 = await medir_ms1();
+ok((await raiz_ms1()).motion === 'off' && (!off_ms1.primera || off_ms1.primera.dura < 1),
+  `🚨 MS F1 — «Sin movimiento» lo quita todo (${JSON.stringify(off_ms1.primera)})`);
+ok(/no hay nada que acelerar/.test(await page.evaluate(() => document.body.innerText)), '…y dice que la velocidad no tiene nada que acelerar (regla 8)');
+/* El «Reducir movimiento» del sistema, con Normal. */
+ok(await elegir_ms1(0, 'Normal'), 'MS F1 — Normal otra vez');
+await page.waitForTimeout(400);
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.waitForTimeout(300);
+const sistema_ms1 = await medir_ms1();
+ok((await raiz_ms1()).motion === 'normal' && sistema_ms1.primera?.y === 0 && sistema_ms1.primera?.opacidad === 0 && sistema_ms1.primera?.dura === 420,
+  `🚨 MS F1 — con «Reducir movimiento» en el iPhone, Normal se FUNDE sin desplazarse: reducir no es apagar (${JSON.stringify(sistema_ms1.primera)})`);
+ok(/tu iPhone tiene activado «Reducir movimiento»/.test(await page.evaluate(() => document.body.innerText)), '…y la pantalla lo dice');
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.waitForTimeout(300);
+/* Las primitivas, con la Web Animations API de verdad (el motor se carga tal cual lo sirve Vite). */
+const prim_ms1 = await page.evaluate(async () => {
+  const m = await import('/src/lib/motion.js');
+  const ctx = m.contextoMotion();
+  const caja = (css) => { const d = document.createElement('div'); d.style.cssText = css; document.body.appendChild(d); return d; };
+  const el = caja('position:fixed;top:0;left:0;width:100px;height:40px;');
+  const a1 = m.animar(el, 'modalExit', { ctx });
+  await new Promise((r) => setTimeout(r, 70));
+  const opMitad = Number(getComputedStyle(el).opacity);
+  const a2 = m.animar(el, 'modalEnter', { ctx });
+  const k0 = a2.effect.getKeyframes()[0];
+  const interrumpe = { opMitad, desde: Number(k0.opacity), interrumpida: a2.interrumpida, anterior: a1.playState };
+  el.remove();
+  const cont = caja('position:absolute;top:200px;left:0;width:200px;');
+  const x = document.createElement('div'); x.style.cssText = 'height:40px;'; cont.appendChild(x);
+  const y = document.createElement('div'); y.style.cssText = 'height:40px;'; cont.appendChild(y);
+  const flips = m.flip([x, y], () => cont.insertBefore(y, x), { ctx });
+  const flipX = flips.length === 2 ? String(x.getAnimations()[0]?.effect.getKeyframes()[0].transform || '') : '';
+  const flipsR = m.flip([x, y], () => cont.insertBefore(x, y), { ctx: m.contextoMotion({ animaciones: 'reducida' }) });
+  cont.remove();
+  const destino = caja('position:fixed;top:0;left:0;width:300px;height:200px;');
+  const comp = m.compartirElemento({ left: 20, top: 400, width: 60, height: 40 }, destino, { ctx });
+  const compT = comp ? String(comp.effect.getKeyframes()[0].transform) : '';
+  destino.remove();
+  return { interrumpe, flips: flips.length, flipX, flipsR: flipsR.length, compT };
+});
+ok(prim_ms1.interrumpe.opMitad > 0.05 && prim_ms1.interrumpe.opMitad < 0.95 && Math.abs(prim_ms1.interrumpe.desde - prim_ms1.interrumpe.opMitad) < 0.08
+  && prim_ms1.interrumpe.interrumpida === true && prim_ms1.interrumpe.anterior === 'idle',
+  `🚨 MS F1 — interrumpir: a mitad de salir, volver a entrar arranca desde donde está (${JSON.stringify(prim_ms1.interrumpe)}, apartado 12)`);
+ok(prim_ms1.flips === 2 && /translate\(0px, -?40px\)/.test(prim_ms1.flipX), `🚨 MS F1 — FLIP: al reordenar, cada elemento viaja desde donde estaba (${prim_ms1.flipX})`);
+ok(prim_ms1.flipsR === 0, `…y en Reducido el orden cambia sin desplazar nada (${prim_ms1.flipsR})`);
+ok(/scale\(0\.2, 0\.2\)/.test(prim_ms1.compT), `MS F1 — elemento compartido: el destino nace donde estaba el origen (${prim_ms1.compT})`);
+ok(errores.length === erroresAntes_ms1, `…sin un error en la consola${errores.length > erroresAntes_ms1 ? `: ${errores.slice(erroresAntes_ms1).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms1;
+await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

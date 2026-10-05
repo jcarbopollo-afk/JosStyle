@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   User, Download, Upload, RotateCcw, Undo2, Lock, LogOut, ArrowLeft, Search, ChevronRight,
   Palette, LayoutGrid, SlidersHorizontal, Bell, ShieldCheck,
-  Database, RefreshCw, Puzzle, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star, ChevronUp, Type, Volume2, Camera,
+  Database, RefreshCw, Puzzle, Info, EyeOff, Plus, Trash2, Image as ImageIcon, Loader2, Sparkles, Copy, Star, ChevronUp, Type, Volume2, Camera, Play,
 } from 'lucide-react';
 import pkg from '../../package.json';
 import {
@@ -10,7 +10,7 @@ import {
   SEXOS_PERFIL, MANOS_DOMINANTES, OBJETIVOS_PRINCIPALES, DEPORTES_DISPONIBLES,
   NIVELES_DEPORTIVOS, ANIOS_EXPERIENCIA_OPCIONES, ESTADOS_LESION, NIVELES_EDUCATIVOS,
   IDIOMAS_DISPONIBLES, SISTEMAS_UNIDADES,
-  DEFAULT_APARIENCIA, TEMAS_DISPONIBLES, TAMANOS_TEXTO, DENSIDADES_INTERFAZ, RADIOS_BORDE, NIVELES_ANIMACION,
+  DEFAULT_APARIENCIA, TEMAS_DISPONIBLES, TAMANOS_TEXTO, DENSIDADES_INTERFAZ, RADIOS_BORDE, NIVELES_ANIMACION, VELOCIDADES_ANIMACION,
   DEFAULT_NOTIFICACIONES, CATEGORIAS_NOTIFICACION,
   OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, OPCIONES_SESION_PIN,
 } from '../tokens';
@@ -32,6 +32,7 @@ import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton, 
 import { CONTROLES, MARCAS_VOLUMEN, ejemploDe, normalizarAudio } from '../lib/sonidoProduccion';
 import { reproducir, diagnosticoAudio, soporteVibracion } from '../lib/audioEngine';
 import { sello } from '../lib/version';
+import { contextoMotion, modoMotion, velocidadMotion, valorSelector, escalonado, sistemaPideReducir } from '../lib/motion';
 import { suscribir } from '../lib/eventos';
 import PersonalizationView from './PersonalizationView';
 import PapeleraView from './PapeleraView';
@@ -1607,6 +1608,70 @@ export function BloqueFondo({ fondo, accent, onCambiar, onSubirFoto, urlFotoFond
   );
 }
 
+/* ---------------------------------------------------------------------------
+   MS F1 — el movimiento (apartados 13-17 de la F1): el modo, la velocidad, el
+   interruptor de «Reducir movimiento» y una muestra para verlo.
+
+   ⚠️ Cada frase dice lo que de verdad va a pasar con lo que hay elegido AHORA:
+   si «Reducir movimiento» (el de aquí o el del iPhone) está mandando sobre el
+   modo, se dice; y con «Sin movimiento» la velocidad no tiene nada que acelerar,
+   y también se dice en vez de dejar un control que no cambia nada (regla 8).
+   --------------------------------------------------------------------------- */
+export function AjusteMovimiento({ apariencia, onUpdateApariencia, accent }) {
+  const [vuelta, setVuelta] = useState(0);
+  const ctx = contextoMotion({
+    animaciones: apariencia.animaciones,
+    reducirMovimiento: apariencia.reducirMovimiento,
+    velocidad: apariencia.velocidadMovimiento,
+    sistemaReduce: sistemaPideReducir(),
+  });
+  const elegido = modoMotion(ctx.elegido);
+  const velocidad = velocidadMotion(ctx.velocidad);
+  return (
+    <div>
+      <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Movimiento</p>
+      <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Cuánto se mueve JosStyle al entrar en una pantalla, completar algo o abrir una hoja.</p>
+      <OpcionesFila opciones={NIVELES_ANIMACION} valor={valorSelector(apariencia.animaciones)} onChange={(v) => onUpdateApariencia({ ...apariencia, animaciones: v })} accent={accent} />
+      <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>{elegido.explica}</p>
+      {ctx.motivo && (
+        <p className="text-xs mt-1" style={{ color: COLORS.text }}>
+          {ctx.motivo === 'ajuste'
+            ? 'Ahora mismo se ve como Reducido, porque tienes activado «Reducir movimiento» aquí abajo.'
+            : 'Ahora mismo se ve como Reducido, porque tu iPhone tiene activado «Reducir movimiento».'}
+        </p>
+      )}
+
+      <p className="text-xs font-semibold mt-4 mb-2" style={{ color: COLORS.text }}>Velocidad</p>
+      <OpcionesFila opciones={VELOCIDADES_ANIMACION} valor={velocidad.id} onChange={(v) => onUpdateApariencia({ ...apariencia, velocidadMovimiento: v })} accent={accent} />
+      <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
+        {ctx.apagado ? 'Con «Sin movimiento» no hay nada que acelerar ni frenar: la velocidad se aplicará cuando elijas otro modo.' : velocidad.explica}
+      </p>
+
+      <div className="flex items-start justify-between gap-3 mt-4">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Reducir movimiento</p>
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>Quita los desplazamientos y las escalas y deja fundidos, aunque arriba elijas más. Si tu iPhone ya lo tiene activado, JosStyle lo aplica sin que lo toques.</p>
+        </div>
+        <Switch checked={!!apariencia.reducirMovimiento} onChange={(v) => onUpdateApariencia({ ...apariencia, reducirMovimiento: v })} accent={accent} label="Reducir movimiento" />
+      </div>
+
+      <div className="mt-4 rounded-2xl p-3" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+        <div key={vuelta} className="space-y-2" aria-hidden="true" data-muestra-movimiento="true">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="hub-card rounded-xl px-3 py-2.5 flex items-center gap-2.5" style={{ ...escalonado(i), background: COLORS.surface, border: `1px solid ${COLORS.border}` }}>
+              <span className="w-6 h-6 rounded-lg flex-shrink-0" style={{ background: hexToRgba(accent, 0.2) }} />
+              <span className="h-2 rounded-full" style={{ width: `${70 - i * 12}%`, background: COLORS.border }} />
+            </div>
+          ))}
+        </div>
+        <div className="mt-3">
+          <GhostBtn onClick={() => setVuelta((v) => v + 1)} icon={Play}>Ver cómo se mueve</GhostBtn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OpcionesFila({ opciones, valor, onChange, accent }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -2571,24 +2636,13 @@ export default function SettingsView({
               </div>
             </Card>
 
+            {/* MS F1 — EL MOVIMIENTO, DE VERDAD. Hasta la F1 había cuatro niveles y tres no hacían nada
+                (hallazgo de la F0), y la propia pantalla reconocía que casi no se notaban. Ahora cada
+                modo cambia los tokens del motor (`src/lib/motion.js`), la
+                velocidad multiplica todas las duraciones desde un solo sitio, y la muestra de abajo deja
+                ver la diferencia sin tener que ir a buscarla. */}
             <Card>
-              <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Animaciones</p>
-              <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>Nivel de animación e interruptor directo para reducir movimiento.</p>
-              <OpcionesFila opciones={NIVELES_ANIMACION} valor={apariencia.animaciones} onChange={(v) => onUpdateApariencia({ ...apariencia, animaciones: v })} accent={accent} />
-              <div className="flex items-center justify-between mt-3">
-                <p className="text-xs" style={{ color: COLORS.textMuted }}>Reducir movimiento (independiente del nivel de arriba)</p>
-                <button
-                  onClick={() => onUpdateApariencia({ ...apariencia, reducirMovimiento: !apariencia.reducirMovimiento })}
-                  aria-label="Reducir movimiento"
-                  className="w-11 h-6 rounded-full relative flex-shrink-0"
-                  style={{ background: apariencia.reducirMovimiento ? accent : COLORS.surface2, border: `1px solid ${COLORS.border}` }}
-                >
-                  <span className="absolute top-0.5 w-5 h-5 rounded-full transition-all" style={{ background: '#fff', left: apariencia.reducirMovimiento ? 22 : 2 }} />
-                </button>
-              </div>
-              <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>
-                Hoy la app tiene pocas animaciones propias, así que el efecto real más notable es "Desactivadas" o el interruptor de arriba: eliminan transiciones y animaciones CSS en toda la app. También se respeta automáticamente si tu sistema operativo tiene activado "Reducir movimiento".
-              </p>
+              <AjusteMovimiento apariencia={apariencia} onUpdateApariencia={onUpdateApariencia} accent={accent} />
             </Card>
 
             </Seccion>

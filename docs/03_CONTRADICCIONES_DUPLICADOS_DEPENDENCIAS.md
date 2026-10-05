@@ -1023,6 +1023,39 @@ hasta acabarlo."* El documento tiene 21 fases (F0–F20) en este orden: F16–F2
    en el presupuesto. Y **los cuatro ids que ya se guardan** (`completa`, `reducida`, `minima`,
    `desactivadas`) no se renombran: lo que cambia es que hagan algo de verdad.
 
+### C-52 — ✅ RESUELTA AL CONSTRUIR (Motion System F1, v3.131.0) · Cuatro niveles guardados contra cinco modos pedidos, «reducir» contra «apagar», y un techo de escala que la F0 escribió una sola vez
+
+La F1 (*"Motor de movimiento + tokens + primitivas"*) pide en su apartado 14 cinco modos —OFF, REDUCED,
+NORMAL, PREMIUM y ULTRA— y Ajustes guardaba cuatro desde la A7 (`completa`, `reducida`, `minima`,
+`desactivadas`), de los que tres no hacían nada (hallazgo `niveles_animacion` de la F0). Cuatro choques,
+y la lectura de cada uno:
+
+1. **«Mínima» y REDUCED son lo mismo dicho dos veces.** *"Solo el feedback imprescindible"* (lo que decía
+   Ajustes) y *"solo movimiento esencial"* (el enunciado). Ofrecer los dos sería un control que no cambia
+   nada visible (regla 8). **Lo guardado como `minima` no se reescribe**: se lee como Reducido
+   (`GUARDADOS_ANTIGUOS`), y si él elige otro, se guarda el nuevo. Los ids de siempre siguen siendo los
+   de siempre (`desactivadas`, `reducida`, `completa`); solo nacen `premium` y `ultra`.
+2. **Premium y Ultra se ofrecen, porque la F1 demuestra la diferencia** que la C-51 puso como condición.
+   No son *"más duración"* —el apartado 14 lo prohíbe—: son **más intensidad** (desplazamientos y escalas
+   algo más amplios, recortados al presupuesto) y, en Ultra, **profundidad**: el velo de una hoja
+   desenfoca lo de detrás. El recorrido de Chromium mide en una pantalla de verdad que el desplazamiento
+   de entrada crece de Normal a Premium a Ultra con la misma duración.
+3. **«Reducir movimiento» no es «Sin movimiento».** El apartado 15 lo dice literal (*"Reducido no
+   significa eliminar toda la animación"*) y hasta hoy el interruptor de Ajustes y el del sistema dejaban
+   todo a 0,01 ms. Ahora los dos llevan a **Reducido**: fundidos, sin desplazamientos ni escalas. Solo
+   «Sin movimiento» apaga, y la comprobación de la FIT F37 que exigía el 0,01 ms con el sistema reducido
+   **se dio la vuelta**: ahora exige que no haya transformación y sí fundido.
+4. **El techo de escala de la F0 era uno y tenían que ser dos.** La F0 escribió *"nunca por encima de
+   1,03"*, y la llama de una racha late a 1,35 desde la E3 F2. Las dos cosas son ciertas para cosas
+   distintas: una **superficie** (tarjeta, hoja, módulo) entra desde 0,95 como poco y crece hasta 1,03
+   como mucho; una **marca** pequeña (llama, ✓, estrella) puede latir hasta 1,35, porque mide 16 px y el
+   pulso es el mensaje. Los dos topes viven en `TOPES_ESCALA` (`motion.js`) y la regla del presupuesto de
+   la F0 los lee de ahí.
+
+Y uno que no es choque, pero se escribe para que no se reabra: **la intensidad no toca ni el escalonado ni
+la duración**. Los dos los decide la velocidad (y en Reducido el escalonado desaparece). Así un modo nunca
+alarga lo que tarda la aplicación en responder.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

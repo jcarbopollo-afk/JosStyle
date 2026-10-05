@@ -11,7 +11,7 @@ import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedBibliotecaUrl } from '../lib/supabase';
 import {
   MINI_APPS, miniApp, elementosDe, indicadorDe, diferenciaDe,
-  CLASE_TARJETA, retrasoDeTarjeta,
+  CLASE_TARJETA,
 } from '../lib/biblioteca';
 /* BL F8 — la capa de integración: Recientes, la búsqueda global de la Biblioteca,
    los favoritos y las acciones rápidas. Ninguna guarda un solo dato. */
@@ -68,6 +68,7 @@ import {
   tituloDeLibroValido, revisarPortada, inicialesDe,
 } from '../lib/libros';
 import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, GhostBtn, EmptyHint, BotonBorrar, BotonBorrarDefinitivo } from '../components/ui';
+import { escalonado, transicion } from '../lib/motion';
 
 // Fase 11 — Biblioteca: PDFs, vídeos, fotos, apuntes y enlaces conviven en un único listado
 // buscable. Los tres tipos de archivo comparten forma { id, tipo, path, titulo, fecha } +
@@ -317,7 +318,7 @@ export function TarjetaMiniApp({ app, indicador, accent, indice, onAbrir }) {
       style={{
         background: COLORS.surface,
         border: `1px solid ${COLORS.border}`,
-        animationDelay: retrasoDeTarjeta(indice),
+        ...escalonado(indice),
       }}
     >
       <div
@@ -359,7 +360,7 @@ export function CabeceraMiniApp({ app, accent, abierto, onVolver, onToggleCrear 
           style={{
             color: abierto ? COLORS.textMuted : COLORS.textOnAccent,
             transform: abierto ? 'rotate(45deg)' : 'none',
-            transition: 'transform 180ms var(--ease-premium)',
+            transition: transicion('transform', 'fast'),
           }}
         />
       </button>
@@ -764,7 +765,7 @@ export function TarjetaLibro({ libro, url, accent, indice = 0, onAbrir }) {
     <button
       onClick={onAbrir}
       className={`${CLASE_TARJETA} text-left rounded-2xl p-3 w-full transition-transform active:scale-[0.97]`}
-      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, animationDelay: retrasoDeTarjeta(indice) }}
+      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, ...escalonado(indice) }}
     >
       <Portada libro={libro} url={url} accent={accent} />
       <p className="text-sm font-semibold mt-2 leading-snug" style={{ color: COLORS.text }}>{libro.titulo}</p>
@@ -1236,7 +1237,7 @@ export function TarjetaGuardado({ guardado, accent, indice = 0, onAbrir, onFavor
   const dominio = dominioDe(guardado.url);
   const tipo = tipoGuardado(guardado.tipo);
   return (
-    <Card style={{ padding: '0.85rem 1rem', animationDelay: retrasoDeTarjeta(indice) }} className={CLASE_TARJETA}>
+    <Card style={{ padding: '0.85rem 1rem', ...escalonado(indice) }} className={CLASE_TARJETA}>
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 mt-0.5"><IconoGuardado guardado={guardado} accent={accent} /></div>
         <button onClick={onAbrir} className="flex-1 min-w-0 text-left">
@@ -1609,7 +1610,7 @@ export function TarjetaIdea({ idea, accent, indice = 0, onAbrir }) {
     <button
       onClick={onAbrir}
       className={`${CLASE_TARJETA} text-left rounded-2xl p-4 w-full transition-transform active:scale-[0.97]`}
-      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, animationDelay: retrasoDeTarjeta(indice) }}
+      style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, ...escalonado(indice) }}
     >
       <div className="flex items-start justify-between gap-2">
         <span style={{ fontSize: 18 }} aria-hidden="true">💡</span>
@@ -2153,7 +2154,7 @@ export function TarjetaDocumento({ documento, accent, indice = 0, onAbrir }) {
   const adelanto = adelantoDe(documento);
   const estado = estadoDocumento(documento.estado);
   return (
-    <Card style={{ padding: '0.9rem 1rem', animationDelay: retrasoDeTarjeta(indice) }} className={CLASE_TARJETA}>
+    <Card style={{ padding: '0.9rem 1rem', ...escalonado(indice) }} className={CLASE_TARJETA}>
       <button onClick={onAbrir} className="w-full text-left">
         <div className="flex items-start justify-between gap-2">
           <span style={{ fontSize: 16 }} aria-hidden="true">📄</span>
@@ -2746,7 +2747,7 @@ export function TarjetaColeccion({ coleccion, datos, accent, indice = 0, onAbrir
     <button
       onClick={onAbrir}
       className={`w-full text-left ${CLASE_TARJETA}`}
-      style={{ animationDelay: retrasoDeTarjeta(indice) }}
+      style={escalonado(indice)}
       aria-label={`Abrir la colección ${coleccion.nombre}`}
     >
       <Card style={{ padding: '1rem', borderLeft: `3px solid ${color}` }}>
@@ -3369,7 +3370,7 @@ export function FilaDeBiblioteca({ tipo, nombre, detalle, accent, indice = 0, on
     <button
       onClick={onAbrir}
       className={`w-full text-left ${CLASE_TARJETA}`}
-      style={{ animationDelay: retrasoDeTarjeta(indice) }}
+      style={escalonado(indice)}
       aria-label={`Abrir ${nombre}`}
     >
       <Card style={{ padding: '0.7rem 0.85rem' }}>

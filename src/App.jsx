@@ -185,6 +185,7 @@ import { eliminarGusto, restaurarGusto } from './lib/gustos';
 /* ⚠️ **EH F39, apartado 3** — el puente a Tareas. `App.jsx` es el dueño de
    `estiloHombre` y de `productividad`, así que el plan lo aplica aquí. */
 import { aplicarTarea } from './lib/integracionEstilo';
+import { atributoMotion, velocidadMotion, avisarCambioDeMotion } from './lib/motion';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.
@@ -898,7 +899,14 @@ export default function App() {
     document.documentElement.dataset.densidad = apariencia.densidad;
     document.documentElement.dataset.animaciones = apariencia.animaciones;
     document.documentElement.dataset.reducirMovimiento = String(apariencia.reducirMovimiento);
-  }, [apariencia.tamanoTexto, apariencia.radioBorde, apariencia.densidad, apariencia.animaciones, apariencia.reducirMovimiento]);
+    /* MS F1 — el modo de movimiento y la velocidad, en un solo punto: el CSS los lee de aquí
+       (`html[data-motion]`, `html[data-velocidad]`) y el motor también (`contextoDelDocumento`).
+       `data-motion` ya lleva dentro el interruptor de «Reducir movimiento»; el del sistema operativo
+       lo aplica el propio CSS con su `@media`. */
+    document.documentElement.dataset.motion = atributoMotion(apariencia);
+    document.documentElement.dataset.velocidad = velocidadMotion(apariencia.velocidadMovimiento).id;
+    avisarCambioDeMotion();
+  }, [apariencia.tamanoTexto, apariencia.radioBorde, apariencia.densidad, apariencia.animaciones, apariencia.reducirMovimiento, apariencia.velocidadMovimiento]);
 
   // Fase A5 — Bloqueo automático (apartado 146): sin PIN no hay nada que auto-bloquear; con
   // "nunca" (por defecto) tampoco se arma ningún temporizador. Reinicia el temporizador con

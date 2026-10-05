@@ -34,6 +34,7 @@ import {
   distribucionHoraria, horasPlanificadas, tareasAtrasadas, resumenRecurrentes,
   comparar, tendencia, NO_MEDIBLE_TODAVIA,
 } from '../lib/estadisticasPlan';
+import { transicion } from '../lib/motion';
 
 // Un icono por tipo (solo para el resumen del día/agenda y el editor — la cuadrícula mensual usa
 // puntos compactos de color, nunca iconos, spec apartado 4: "no llenar las celdas con textos largos").
@@ -281,11 +282,11 @@ function EditorEvento({ base, accent, onGuardar, onEliminar, onCerrar, fechaOcur
           Todo el día
           <span
             className="rounded-full flex-shrink-0"
-            style={{ width: 36, height: 20, background: ev.todoElDia ? accent : COLORS.border, position: 'relative', transition: 'background 150ms' }}
+            style={{ width: 36, height: 20, background: ev.todoElDia ? accent : COLORS.border, position: 'relative', transition: transicion('background', 'fast') }}
           >
             <span
               className="rounded-full absolute"
-              style={{ width: 16, height: 16, top: 2, left: ev.todoElDia ? 18 : 2, background: COLORS.textOnAccent, transition: 'left 150ms' }}
+              style={{ width: 16, height: 16, top: 2, left: ev.todoElDia ? 18 : 2, background: COLORS.textOnAccent, transition: transicion('left', 'fast') }}
             />
           </span>
         </button>
@@ -321,11 +322,11 @@ function EditorEvento({ base, accent, onGuardar, onEliminar, onCerrar, fechaOcur
               🔔 Avisarme
               <span
                 className="rounded-full flex-shrink-0"
-                style={{ width: 36, height: 20, background: ev.notificar ? accent : COLORS.border, position: 'relative', transition: 'background 150ms' }}
+                style={{ width: 36, height: 20, background: ev.notificar ? accent : COLORS.border, position: 'relative', transition: transicion('background', 'fast') }}
               >
                 <span
                   className="rounded-full absolute"
-                  style={{ width: 16, height: 16, top: 2, left: ev.notificar ? 18 : 2, background: COLORS.textOnAccent, transition: 'left 150ms' }}
+                  style={{ width: 16, height: 16, top: 2, left: ev.notificar ? 18 : 2, background: COLORS.textOnAccent, transition: transicion('left', 'fast') }}
                 />
               </span>
             </button>

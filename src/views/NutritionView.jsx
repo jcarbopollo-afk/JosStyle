@@ -58,6 +58,7 @@ import { buscarProductoPorCodigoBarras, buscarAlimentosPorNombre } from '../lib/
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
 import BarcodeScanner from '../components/BarcodeScanner';
+import { escalonado } from '../lib/motion';
 
 const emptyForm = () => ({ nombre: '', calorias: '', proteinas: '', carbohidratos: '', grasas: '', fibra: '' });
 const round1 = (v) => Math.round((v || 0) * 10) / 10;
@@ -252,7 +253,7 @@ function Indicador({ dato, accent, principal = false, indice = 0 }) {
     <div
       className="hub-card rounded-2xl p-3"
       style={{
-        animationDelay: `${indice * 60}ms`,
+        ...escalonado(indice),
         background: principal
           ? `linear-gradient(135deg, ${hexToRgba(accent, 0.14)}, ${hexToRgba(accent, 0.04)})`
           : COLORS.surface2,
@@ -982,7 +983,7 @@ function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha
   return (
     <div
       className="hub-card rounded-2xl overflow-hidden"
-      style={{ animationDelay: `${indice * 60}ms`, background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+      style={{ ...escalonado(indice), background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
     >
       <div className="flex items-center gap-2 p-3.5">
         <span className="text-base">{mom.emoji}</span>

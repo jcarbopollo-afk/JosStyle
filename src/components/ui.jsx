@@ -7,6 +7,7 @@ import { resolverConsulta, sugerenciasIniciales } from '../lib/indiceBusqueda';
 import { askAI, askAIWithImage, AI_SYSTEM } from '../lib/ai';
 import { extractPdfText } from '../lib/pdfText';
 import { verificarPin } from '../lib/pin';
+import { transicion } from '../lib/motion';
 
 export function Card({ children, style, className = '', id }) {
   return (
@@ -401,7 +402,7 @@ export function Switch({ checked, onChange, accent, disabled = false, label }) {
         width: 44, height: 26,
         background: checked ? accent : COLORS.surface2,
         border: `1px solid ${checked ? accent : COLORS.border}`,
-        transition: 'background 200ms var(--ease-premium), border-color 200ms var(--ease-premium)',
+        transition: transicion(['background', 'border-color'], 'normal'),
       }}
     >
       <span
@@ -410,7 +411,7 @@ export function Switch({ checked, onChange, accent, disabled = false, label }) {
           width: 18, height: 18, top: 3,
           left: checked ? 22 : 3,
           background: checked ? COLORS.textOnAccent : COLORS.textMuted,
-          transition: 'left 200ms var(--ease-premium), background 200ms var(--ease-premium)',
+          transition: transicion(['left', 'background'], 'normal'),
         }}
       />
     </button>
@@ -1128,7 +1129,7 @@ export function ScoreGauge({ value, accent, size = 118 }) {
         cx={size / 2} cy={size / 2} r={r}
         stroke="url(#gaugeGrad)" strokeWidth={stroke} strokeLinecap="round" fill="none"
         strokeDasharray={c} strokeDashoffset={offset}
-        style={{ transition: 'stroke-dashoffset 1s ease' }}
+        style={{ transition: transicion('stroke-dashoffset', 'cinematic') }}
       />
     </svg>
   );

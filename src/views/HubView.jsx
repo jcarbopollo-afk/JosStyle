@@ -4,6 +4,7 @@ import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { Card } from '../components/ui';
 import { useFundidoBajoCabecera } from '../components/fundidoBajoCabecera';
+import { duracionMs, contextoDelDocumento, escalonado } from '../lib/motion';
 
 // Fase N1 — Nueva navegación por áreas (sustituye la barra inferior de 4 accesos + "Más" plano
 // por 5 pestañas fijas: Inicio, Salud, Vida, Gestión, Más). Al tocar cualquiera que no sea
@@ -19,10 +20,15 @@ import { useFundidoBajoCabecera } from '../components/fundidoBajoCabecera';
 // Fase N3 — al soltar una tarjeta no se navega al instante: `expandingId` marca cuál se pulsó,
 // dispara su animación de "expansión" (`.hub-card-expanding` en index.css: escala + brillo +
 // sombra por encima de las demás) y hace retroceder ligeramente al resto (`.hub-card-receding`),
-// y solo entonces, tras `EXPAND_MS`, se llama a `onOpenModulo` — así la navegación real ocurre
-// cuando la expansión ya se ve, dando la sensación de "entrar" en la tarjeta en vez de un salto
-// brusco a la pantalla siguiente (que además ya desliza sola, ver `.module-enter` de la Fase N1/N2).
-const EXPAND_MS = 190;
+// y solo entonces, tras lo que dura esa expansión, se llama a `onOpenModulo` — así la navegación
+// real ocurre cuando la expansión ya se ve, dando la sensación de "entrar" en la tarjeta en vez de
+// un salto brusco a la pantalla siguiente (que además ya desliza sola, ver `.module-enter`).
+//
+// 🔓 MS F1 — lo que se espera es el token `fast` del motor, **el mismo que usa `.hub-card-expanding`
+// en index.css**, leído en el momento con el modo y la velocidad de ahora: antes eran 190 ms escritos
+// aquí y 190 escritos allí (hallazgo de la F0), y con «Sin movimiento» se esperaba igual. Ahora con
+// «Sin movimiento» no se espera nada y con la velocidad Pausada se espera lo que de verdad dura.
+const esperaDeExpansion = () => duracionMs('fast', contextoDelDocumento());
 
 export default function HubView({ area, modulos, personalizacion, resumenes, accent, onOpenModulo }) {
   const [expandingId, setExpandingId] = useState(null);
@@ -39,7 +45,7 @@ export default function HubView({ area, modulos, personalizacion, resumenes, acc
   const handleAbrir = (id) => {
     if (expandingId) return;
     setExpandingId(id);
-    timeoutRef.current = setTimeout(() => onOpenModulo(id), EXPAND_MS);
+    timeoutRef.current = setTimeout(() => onOpenModulo(id), esperaDeExpansion());
   };
 
   const fijos = area.id === 'mas' ? ['ajustes'] : [];
@@ -118,11 +124,11 @@ export default function HubView({ area, modulos, personalizacion, resumenes, acc
               backdropFilter: 'blur(18px)',
               WebkitBackdropFilter: 'blur(18px)',
               border: `1px solid ${hexToRgba(COLORS.border, 0.8)}`,
-              // La entrada en cascada (hubCardIn) usa este retraso por índice; la expansión al
-              // pulsar (hubCardExpand) es una animación distinta que debe arrancar ya, sin
-              // heredar el retraso — si no, `animation-delay` (que viene por estilo en línea,
-              // máxima prioridad) retrasaría también la expansión hasta 480ms de más.
-              animationDelay: expandiendoEsta ? '0ms' : `${i * 80}ms`,
+              // La entrada en cascada (hubCardIn) usa el escalón de cada tarjeta (MS F1:
+              // `escalonado`, una variable que apunta al token). ⚠️ Ya no es un `animationDelay`
+              // en línea, que ganaba a todo: la expansión al pulsar (`.hub-card-expanding`, más
+              // abajo en index.css) pone su propio `animation-delay: 0ms` y arranca ya.
+              ...escalonado(i),
             }}
           >
             <div

@@ -155,35 +155,30 @@ input[type='range']::-webkit-slider-thumb {
    pegada de otro sitio. `drop-shadow` en vez de `box-shadow` porque el fuego es
    un icono SVG, no una caja: así el brillo sigue la forma de la llama.
 
-   ⚠️ **Respetan "Reducir movimiento" solas**, por la regla global de arriba que
-   fuerza `animation-duration: 0.01ms` en toda la app. No hace falta un `if`.
+   ⚠️ **Respetan "Reducir movimiento" solas**: la escala y el desplazamiento son
+   tokens del Motion System (MS F1), que en Reducido valen 1 y 0 —queda el
+   fundido— y en «Sin movimiento» la regla de abajo lo lleva todo a 0,01 ms. No
+   hace falta un `if`.
    ════════════════════════════════════════════════════════════════════════════ */
 @keyframes fuegoSube {
   0%   { transform: scale(1);    filter: drop-shadow(0 0 0 transparent); }
-  35%  { transform: scale(1.35); filter: drop-shadow(0 0 6px var(--accent)); }
+  35%  { transform: scale(var(--motion-pulso-firma)); filter: drop-shadow(0 0 6px var(--accent)); }
   100% { transform: scale(1);    filter: drop-shadow(0 0 0 transparent); }
 }
 .fuego-sube {
   display: inline-flex;
-  animation: fuegoSube 620ms var(--ease-premium) both;
+  animation: fuegoSube var(--motion-dur-momento) var(--ease-premium) both;
 }
 
 @keyframes masUnoSube {
-  0%   { opacity: 0; transform: translateY(4px) scale(0.9); }
-  25%  { opacity: 1; transform: translateY(-2px) scale(1); }
-  70%  { opacity: 1; transform: translateY(-6px) scale(1); }
-  100% { opacity: 0; transform: translateY(-12px) scale(1); }
+  0%   { opacity: 0; transform: translateY(var(--motion-dist-micro)) scale(var(--motion-escala-hero)); }
+  25%  { opacity: 1; transform: translateY(calc(var(--motion-dist-micro) * -0.5)) scale(1); }
+  70%  { opacity: 1; transform: translateY(calc(var(--motion-dist-micro) * -1.5)) scale(1); }
+  100% { opacity: 0; transform: translateY(calc(var(--motion-dist-micro) * -3)) scale(1); }
 }
 .racha-mas-uno {
-  animation: masUnoSube 900ms var(--ease-premium) both;
+  animation: masUnoSube var(--motion-dur-firma) var(--ease-premium) both;
   pointer-events: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
 }
 
 /* Fase A3 — Apariencia avanzada (apartados 92 y 95-98 de la especificación extendida).
@@ -229,24 +224,216 @@ html[data-densidad='comoda'] .space-y-2 > :not([hidden]) ~ :not([hidden]) { marg
 html[data-densidad='comoda'] .p-5 { padding: 1.6rem !important; }
 html[data-densidad='comoda'] .p-4 { padding: 1.3rem !important; }
 
-/* Animaciones: "Desactivadas" o "Reducir movimiento" (interruptor aparte del nivel) tienen
-   efecto real hoy — el resto de niveles (Completa/Reducida/Mínima) se guardan como preferencia
-   pero se ven igual porque la app todavía tiene muy pocas animaciones propias que graduar. */
-html[data-animaciones='desactivadas'] *, html[data-animaciones='desactivadas'] *::before, html[data-animaciones='desactivadas'] *::after,
-html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::before, html[data-reducir-movimiento='true'] *::after {
+/* ════════════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM · F1 — «SIN MOVIMIENTO» ES LA ÚNICA QUE LO QUITA TODO.
+
+   Hasta la F1 había dos reglas que llevaban CUALQUIER animación a 0,01 ms: la
+   del sistema operativo y el interruptor de Ajustes. El apartado 17 lo llama
+   romper: *"mantener feedback, mantener estados, mantener orientación"*. Desde
+   la F1 esas dos dejan el modo en **Reducido** (fundidos sin desplazamiento ni
+   escala: los tokens de abajo), y solo lo que él elige como «Sin movimiento»
+   —`data-motion='off'`, que se guarda como `desactivadas` desde la Fase A3—
+   aparece directamente en su estado final.
+
+   ⚠️ Y una animación infinita (el latido del esqueleto) se queda en una sola
+   vuelta: a 0,01 ms por vuelta y para siempre, el navegador la recalcularía
+   sin parar para no enseñar nada. */
+html[data-motion='off'] *, html[data-motion='off'] *::before, html[data-motion='off'] *::after,
+html[data-animaciones='desactivadas'] *, html[data-animaciones='desactivadas'] *::before, html[data-animaciones='desactivadas'] *::after {
   animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0ms !important;
   transition-duration: 0.01ms !important;
+  transition-delay: 0ms !important;
 }
 
 /* Fase N1/N2 — Nueva navegación por áreas. Curva de easing compartida por todas las transiciones
    de este sistema de navegación: una "deceleración enfática" (arranca con más velocidad, frena
    suave al final, sin rebote) — el mismo tipo de curva que usan las transiciones de pantalla de
    iOS, elegida en la Fase N2 para que la app entera se sienta consistente y "premium" en vez de
-   cada animación con su propio ritmo. Respeta "Reducir movimiento"/"Desactivadas" automáticamente
-   gracias a la regla de arriba, que ya fuerza `animation-duration: 0.01ms` sobre cualquier
-   animación de toda la app, todas las de aquí abajo incluidas. */
+   cada animación con su propio ritmo. Respeta "Reducir movimiento"/"Desactivadas" automáticamente:
+   desde la MS F1 sus valores son los tokens de abajo, que cambian con el modo, y «Sin
+   movimiento» las lleva todas a 0,01 ms con la regla de arriba. */
+
+/* ════════════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM · F1 — LOS TOKENS DEL MOTOR (src/lib/motion.js)
+
+   🚨 **ESTOS BLOQUES SON LA TABLA DE `motion.js` ESCRITA EN CSS, Y UNA PRUEBA
+   LOS COMPARA** (`scripts/test-motion-f1.mjs`): si se cambia un número aquí y no
+   allí, o al revés, la suite se pone roja. `:root` es el modo Normal a velocidad
+   Normal; cada modo cambia SOLO la intensidad (desplazamientos, escalas,
+   pulsos, el velo) y cada velocidad SOLO el tiempo (duraciones y retrasos), así
+   que se combinan sin un bloque por pareja.
+
+   🚨 **NI UN `calc()` CON TIEMPOS** (motion.js, cabecera): las duraciones van ya
+   calculadas por velocidad. Si Safari no resolviera un `calc` de milisegundos
+   dentro de un `animation`, la declaración entera sería inválida y la
+   aplicación se quedaría sin animaciones sin que fallara nada en Chromium.
+
+   ⚠️ `--ease-premium` sigue siendo LA curva (Fase N2): es la `standard` del
+   motor, y las otras cinco son su familia.
+
+   ⚠️ Y el del sistema operativo va el último: con «Reducir movimiento» en el
+   iPhone, Normal, Premium y Ultra se comportan como Reducido —nunca como «Sin
+   movimiento»—, y lo decide el CSS al momento, sin escuchar nada. */
 :root {
+  --motion-curva-smooth: cubic-bezier(0.45, 0, 0.2, 1);
+  --motion-curva-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-curva-exit: cubic-bezier(0.4, 0, 1, 1);
+  --motion-curva-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --motion-curva-linear: linear;
   --ease-premium: cubic-bezier(0.32, 0.72, 0, 1);
+  --motion-opac-hidden: 0;
+  --motion-opac-subtle: 0.45;
+  --motion-opac-secondary: 0.65;
+  --motion-opac-visible: 0.9;
+  --motion-opac-full: 1;
+  --motion-blur-none: 0px;
+  --motion-blur-subtle: 4px;
+  --motion-blur-medium: 10px;
+  --motion-blur-strong: 20px;
+  --motion-dist-micro: 4px;
+  --motion-dist-small: 8px;
+  --motion-dist-medium: 14px;
+  --motion-dist-large: 24px;
+  --motion-dist-hero: 40px;
+  --motion-escala-micro: 0.98;
+  --motion-escala-subtle: 0.97;
+  --motion-escala-normal: 0.96;
+  --motion-escala-hero: 0.82;
+  --motion-pulso-micro: 1.08;
+  --motion-pulso-suave: 1.12;
+  --motion-pulso-medio: 1.18;
+  --motion-pulso-fuerte: 1.25;
+  --motion-pulso-firma: 1.35;
+  --motion-pulso-sobrepaso: 1.03;
+  --motion-velo-desenfoque: 0px;
+  --motion-dur-instant: 0ms;
+  --motion-dur-ultrafast: 120ms;
+  --motion-dur-fast: 160ms;
+  --motion-dur-normal: 220ms;
+  --motion-dur-medium: 280ms;
+  --motion-dur-slow: 340ms;
+  --motion-dur-cinematic: 420ms;
+  --motion-dur-momento: 620ms;
+  --motion-dur-firma: 900ms;
+  --motion-dur-latido: 1400ms;
+  --motion-retraso-0: 0ms;
+  --motion-retraso-1: 60ms;
+  --motion-retraso-2: 120ms;
+  --motion-retraso-3: 180ms;
+  --motion-retraso-4: 240ms;
+  --motion-retraso-5: 300ms;
+}
+html[data-motion='reducido'] {
+  --motion-dist-micro: 0px;
+  --motion-dist-small: 0px;
+  --motion-dist-medium: 0px;
+  --motion-dist-large: 0px;
+  --motion-dist-hero: 0px;
+  --motion-escala-micro: 1;
+  --motion-escala-subtle: 1;
+  --motion-escala-normal: 1;
+  --motion-escala-hero: 1;
+  --motion-pulso-micro: 1;
+  --motion-pulso-suave: 1;
+  --motion-pulso-medio: 1;
+  --motion-pulso-fuerte: 1;
+  --motion-pulso-firma: 1;
+  --motion-pulso-sobrepaso: 1;
+  --motion-velo-desenfoque: 0px;
+}
+html[data-motion='premium'] {
+  --motion-dist-micro: 4px;
+  --motion-dist-small: 9px;
+  --motion-dist-medium: 18px;
+  --motion-dist-large: 30px;
+  --motion-dist-hero: 52px;
+  --motion-escala-micro: 0.978;
+  --motion-escala-subtle: 0.965;
+  --motion-escala-normal: 0.95;
+  --motion-escala-hero: 0.775;
+  --motion-pulso-micro: 1.089;
+  --motion-pulso-suave: 1.142;
+  --motion-pulso-medio: 1.225;
+  --motion-pulso-fuerte: 1.313;
+  --motion-pulso-firma: 1.35;
+  --motion-pulso-sobrepaso: 1.03;
+  --motion-velo-desenfoque: 0px;
+}
+html[data-motion='ultra'] {
+  --motion-dist-micro: 5px;
+  --motion-dist-small: 10px;
+  --motion-dist-medium: 20px;
+  --motion-dist-large: 34px;
+  --motion-dist-hero: 56px;
+  --motion-escala-micro: 0.976;
+  --motion-escala-subtle: 0.961;
+  --motion-escala-normal: 0.95;
+  --motion-escala-hero: 0.748;
+  --motion-pulso-micro: 1.095;
+  --motion-pulso-suave: 1.154;
+  --motion-pulso-medio: 1.252;
+  --motion-pulso-fuerte: 1.35;
+  --motion-pulso-firma: 1.35;
+  --motion-pulso-sobrepaso: 1.03;
+  --motion-velo-desenfoque: 6px;
+}
+html[data-velocidad='lenta'] {
+  --motion-dur-instant: 0ms;
+  --motion-dur-ultrafast: 156ms;
+  --motion-dur-fast: 208ms;
+  --motion-dur-normal: 286ms;
+  --motion-dur-medium: 364ms;
+  --motion-dur-slow: 442ms;
+  --motion-dur-cinematic: 546ms;
+  --motion-dur-momento: 806ms;
+  --motion-dur-firma: 1170ms;
+  --motion-dur-latido: 1820ms;
+  --motion-retraso-0: 0ms;
+  --motion-retraso-1: 78ms;
+  --motion-retraso-2: 156ms;
+  --motion-retraso-3: 234ms;
+  --motion-retraso-4: 312ms;
+  --motion-retraso-5: 390ms;
+}
+html[data-velocidad='rapida'] {
+  --motion-dur-instant: 0ms;
+  --motion-dur-ultrafast: 90ms;
+  --motion-dur-fast: 120ms;
+  --motion-dur-normal: 165ms;
+  --motion-dur-medium: 210ms;
+  --motion-dur-slow: 255ms;
+  --motion-dur-cinematic: 315ms;
+  --motion-dur-momento: 465ms;
+  --motion-dur-firma: 675ms;
+  --motion-dur-latido: 1050ms;
+  --motion-retraso-0: 0ms;
+  --motion-retraso-1: 45ms;
+  --motion-retraso-2: 90ms;
+  --motion-retraso-3: 135ms;
+  --motion-retraso-4: 180ms;
+  --motion-retraso-5: 225ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='off']) {
+    --motion-dist-micro: 0px;
+    --motion-dist-small: 0px;
+    --motion-dist-medium: 0px;
+    --motion-dist-large: 0px;
+    --motion-dist-hero: 0px;
+    --motion-escala-micro: 1;
+    --motion-escala-subtle: 1;
+    --motion-escala-normal: 1;
+    --motion-escala-hero: 1;
+    --motion-pulso-micro: 1;
+    --motion-pulso-suave: 1;
+    --motion-pulso-medio: 1;
+    --motion-pulso-fuerte: 1;
+    --motion-pulso-firma: 1;
+    --motion-pulso-sobrepaso: 1;
+    --motion-velo-desenfoque: 0px;
+  }
 }
 
 /* Entrada en cascada de las tarjetas de un hub (Salud, Vida, Gestión, Más), 80ms de retraso entre
@@ -255,22 +442,26 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    "asentara" en su sitio en vez de solo deslizar, y alarga un poco la duración para que la curva
    de deceleración se note bien sin llegar a sentirse lenta. */
 @keyframes hubCardIn {
-  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  from { opacity: 0; transform: translateY(var(--motion-dist-medium)) scale(var(--motion-escala-subtle)); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .hub-card {
-  animation: hubCardIn 420ms var(--ease-premium) both;
+  animation: hubCardIn var(--motion-dur-cinematic) var(--ease-premium) both;
+  /* MS F1 — el escalonado: la vista pone `escalonado(i)` (motion.js), que es una
+     variable que apunta al token de su escalón. Un solo paso para toda la
+     aplicación, seis escalones como mucho, y respeta el modo y la velocidad. */
+  animation-delay: var(--motion-retraso, 0ms);
 }
 
 /* Fase N2 — el título del área ("Salud", "Vida"...) entra con un fundido rápido y sutil justo
    antes que las tarjetas, para que el hub no aparezca de golpe: primero el encabezado, luego la
    cascada de tarjetas debajo (clase aplicada en HubView.jsx). */
 @keyframes hubHeaderIn {
-  from { opacity: 0; transform: translateY(-6px); }
+  from { opacity: 0; transform: translateY(calc(-1 * var(--motion-dist-small))); }
   to { opacity: 1; transform: translateY(0); }
 }
 .hub-header {
-  animation: hubHeaderIn 320ms var(--ease-premium) both;
+  animation: hubHeaderIn var(--motion-dur-medium) var(--ease-premium) both;
 }
 
 /* SC F1 — LA CABECERA DEL ÁREA SE QUEDA QUIETA MIENTRAS LAS TARJETAS SE DESPLAZAN.
@@ -318,11 +509,11 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    + un ligerísimo escalado (0.98→1), para que la vista nueva se sienta como si "entrara" en primer
    plano en vez de solo desplazarse por encima — aplicada por App.jsx a la vista del módulo activo. */
 @keyframes moduleSlideIn {
-  from { opacity: 0; transform: translateX(26px) scale(0.98); }
+  from { opacity: 0; transform: translateX(var(--motion-dist-large)) scale(var(--motion-escala-micro)); }
   to { opacity: 1; transform: translateX(0) scale(1); }
 }
 .module-enter {
-  animation: moduleSlideIn 340ms var(--ease-premium) both;
+  animation: moduleSlideIn var(--motion-dur-slow) var(--ease-premium) both;
 }
 /* Nota para quien toque esto — Optimización de navegación/scroll: `animation-fill-mode: both`
    deja aplicado el `transform` del último fotograma (scale(1) translateX(0)) para siempre después
@@ -340,11 +531,11 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    de debajo, para que se sienta como una capa fija que ya estaba ahí, no como si arrastrara con
    el resto de la pantalla. */
 @keyframes backBarIn {
-  from { opacity: 0; transform: translateX(-6px); }
+  from { opacity: 0; transform: translateX(calc(-1 * var(--motion-dist-small))); }
   to { opacity: 1; transform: translateX(0); }
 }
 .back-bar {
-  animation: backBarIn 220ms var(--ease-premium) both;
+  animation: backBarIn var(--motion-dur-normal) var(--ease-premium) both;
 }
 
 /* Fase N3 — microinteracción al pulsar una tarjeta de hub (HubView.jsx), en dos tiempos:
@@ -357,37 +548,41 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
       salto brusco a la pantalla siguiente. Las demás tarjetas del hub retroceden levemente
       (`.hub-card-receding`) para que quede claro que el foco está en la que se pulsó. */
 .hub-card {
-  transition: transform 160ms var(--ease-premium), box-shadow 160ms var(--ease-premium), filter 160ms var(--ease-premium), opacity 160ms var(--ease-premium);
+  transition: transform var(--motion-dur-fast) var(--ease-premium), box-shadow var(--motion-dur-fast) var(--ease-premium), filter var(--motion-dur-fast) var(--ease-premium), opacity var(--motion-dur-fast) var(--ease-premium);
   box-shadow: 0 1px 2px rgba(0,0,0,0.06);
 }
 .hub-card:active:not(:disabled) {
-  transform: scale(0.97);
+  transform: scale(var(--motion-escala-subtle));
   filter: brightness(1.1);
   box-shadow: 0 10px 26px rgba(0,0,0,0.32);
 }
 @keyframes hubCardExpand {
-  0% { transform: scale(0.97); filter: brightness(1.1); box-shadow: 0 10px 26px rgba(0,0,0,0.32); }
-  100% { transform: scale(1.03); filter: brightness(1.16); box-shadow: 0 18px 40px rgba(0,0,0,0.4); }
+  0% { transform: scale(var(--motion-escala-subtle)); filter: brightness(1.1); box-shadow: 0 10px 26px rgba(0,0,0,0.32); }
+  100% { transform: scale(var(--motion-pulso-sobrepaso)); filter: brightness(1.16); box-shadow: 0 18px 40px rgba(0,0,0,0.4); }
 }
 .hub-card-expanding {
   position: relative;
   z-index: 5;
-  animation: hubCardExpand 190ms var(--ease-premium) forwards;
+  /* MS F1 — dura `fast`, y la navegación de HubView espera ESE token
+     (`duracionMs('fast')`), no un número escrito aparte: eran 190 ms en los dos
+     sitios y nadie habría notado que uno cambiaba (hallazgo de la F0). */
+  animation: hubCardExpand var(--motion-dur-fast) var(--ease-premium) forwards;
+  animation-delay: 0ms;
 }
 .hub-card-receding {
-  opacity: 0.45;
-  transform: scale(0.98);
+  opacity: var(--motion-opac-subtle);
+  transform: scale(var(--motion-escala-micro));
 }
 
 /* Fase N4 — el círculo del icono (dentro de .hub-card) responde también al mismo gesto: un
    pellizco de escala extra sobre el de la tarjeta, para que se sienta como una pieza propia con
    algo de "peso" en vez de un dibujo plano pegado encima. */
 .hub-card-icon {
-  transition: transform 160ms var(--ease-premium);
+  transition: transform var(--motion-dur-fast) var(--ease-premium);
 }
 .hub-card:active:not(:disabled) .hub-card-icon,
 .hub-card-expanding .hub-card-icon {
-  transform: scale(1.08);
+  transform: scale(var(--motion-pulso-micro));
 }
 
 /* Fase N4 — pulido visual final del bloque de navegación (cierra N1-N4): la barra "← {Área}"
@@ -395,30 +590,30 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    lenguaje "glass" de esta pantalla), y los botones de la barra inferior ganan una transición de
    color suave al cambiar de pestaña activa en vez de un cambio brusco. */
 .back-bar {
-  transition: opacity 140ms var(--ease-premium), background-color 140ms var(--ease-premium);
+  transition: opacity var(--motion-dur-fast) var(--ease-premium), background-color var(--motion-dur-fast) var(--ease-premium);
 }
 .nav-tab-icon, .nav-tab-label {
-  transition: color 200ms var(--ease-premium);
+  transition: color var(--motion-dur-normal) var(--ease-premium);
 }
 
 /* Fase 1 del Calendario Universal — dos animaciones discretas y funcionales (spec apartado 16:
    "transición al cambiar de mes", "apertura/cierre del formulario"), reutilizando --ease-premium
    (Fase N1/N2) en vez de definir una curva propia — mismo lenguaje de movimiento que el resto de
    la navegación, sin montar un segundo sistema de animaciones. Respetan "Reducir movimiento"/
-   "Desactivadas" automáticamente, gracias a la regla global de arriba (líneas 58-62). */
+   "Desactivadas" automáticamente, porque sus valores son tokens del Motion System (MS F1). */
 @keyframes calendarMonthIn {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(var(--motion-dist-micro)); }
   to { opacity: 1; transform: translateY(0); }
 }
 .calendar-month-grid {
-  animation: calendarMonthIn 220ms var(--ease-premium) both;
+  animation: calendarMonthIn var(--motion-dur-normal) var(--ease-premium) both;
 }
 @keyframes calendarSheetIn {
-  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  from { opacity: 0; transform: translateY(var(--motion-dist-medium)) scale(var(--motion-escala-micro)); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .calendar-sheet {
-  animation: calendarSheetIn 240ms var(--ease-premium) both;
+  animation: calendarSheetIn var(--motion-dur-normal) var(--ease-premium) both;
 }
 
 /* ===========================================================================
@@ -430,12 +625,12 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    de las animaciones del proyecto: así **respeta "Reducir movimiento" solo**, y
    ése es el apartado 18 cumplido sin escribir una línea más. */
 @keyframes latido {
-  0%, 100% { opacity: 0.55; }
-  50%      { opacity: 0.9; }
+  0%, 100% { opacity: var(--motion-opac-secondary); }
+  50%      { opacity: var(--motion-opac-visible); }
 }
 
 .esqueleto {
-  animation: latido 1400ms var(--ease-premium) infinite;
+  animation: latido var(--motion-dur-latido) var(--ease-premium) infinite;
   border-radius: 1rem;
 }
 
@@ -449,39 +644,39 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    ⚠️ Viven aquí, con el resto: así respetan "Reducir movimiento" solas. */
 @keyframes tareaHecha {
   0%   { transform: scale(1); }
-  45%  { transform: scale(1.12); }
+  45%  { transform: scale(var(--motion-pulso-suave)); }
   100% { transform: scale(1); }
 }
 
 .tarea-hecha {
   display: inline-flex;
-  animation: tareaHecha 300ms var(--ease-premium) both;
+  animation: tareaHecha var(--motion-dur-medium) var(--ease-premium) both;
 }
 
 @keyframes avisoEntra {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(var(--motion-dist-small)); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .aviso-entra {
-  animation: avisoEntra 260ms var(--ease-premium) both;
+  animation: avisoEntra var(--motion-dur-medium) var(--ease-premium) both;
 }
 
 /* Entrega 3 · F17 (BL F2) — Libros.
    La barra de progreso se anima al cambiar de ancho, para que actualizar la página
    se note sin sacudidas: *"actualización de progreso"* del enunciado. */
 .progreso-libro {
-  transition: width 420ms var(--ease-premium);
+  transition: width var(--motion-dur-cinematic) var(--ease-premium);
 }
 
 /* Y la celebración al terminar un libro: *"animación de finalización… discreta.
    No exagerar."* Entra desde abajo, se queda y se cierra al tocar. */
 @keyframes celebracionLibro {
-  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  from { opacity: 0; transform: translateY(var(--motion-dist-medium)) scale(var(--motion-escala-normal)); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .celebracion-libro {
-  animation: celebracionLibro 320ms var(--ease-premium) both;
+  animation: celebracionLibro var(--motion-dur-slow) var(--ease-premium) both;
 }
 
 /* Entrega 3 · F18 (BL F4) — Guardados.
@@ -489,11 +684,11 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    excesivas."* Un pulso de 240 ms sobre la estrella, y nada más. */
 @keyframes favoritoPulso {
   0% { transform: scale(1); }
-  50% { transform: scale(1.25); }
+  50% { transform: scale(var(--motion-pulso-fuerte)); }
   100% { transform: scale(1); }
 }
 .favorito-guardado:active svg {
-  animation: favoritoPulso 240ms var(--ease-premium);
+  animation: favoritoPulso var(--motion-dur-normal) var(--ease-premium);
 }
 
 /* Entrega 3 · F24 (PR F2) — Hábitos.
@@ -504,25 +699,25 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    "Reducir movimiento" solas (E3 F14). Y ninguna pasa de `MAX_ANIMACION_MS`. */
 @keyframes habitoHecho {
   0%   { transform: scale(1); }
-  40%  { transform: scale(1.18); }
+  40%  { transform: scale(var(--motion-pulso-medio)); }
   100% { transform: scale(1); }
 }
 
 .habito-hecho {
-  animation: habitoHecho 280ms var(--ease-premium) both;
+  animation: habitoHecho var(--motion-dur-medium) var(--ease-premium) both;
 }
 
 /* La barra del progreso del día se anima al cambiar de ancho, para que marcar un
    hábito se note sin sacudidas. */
 .barra-progreso {
-  transition: width 380ms var(--ease-premium), background 380ms var(--ease-premium);
+  transition: width var(--motion-dur-slow) var(--ease-premium), background var(--motion-dur-slow) var(--ease-premium);
 }
 
 /* Entrega 3 · F33 (NU F1) — *"Progreso animado"* (apartado 10) en los indicadores
    de Nutrición. Va aquí, y no en un `style` de la vista, para que respete solo
    «Reducir movimiento» como todas las demás (E3 F14). */
 .nu-progreso {
-  transition: width 420ms var(--ease-premium);
+  transition: width var(--motion-dur-cinematic) var(--ease-premium);
 }
 
 /* Entrega 3 · F25 (PR F3) — Pomodoro.
@@ -534,7 +729,7 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    temporizador esté veinticinco minutos en marcha. Y vive aquí, con el resto, así
    que respeta "Reducir movimiento" sola (E3 F14). */
 .aro-pomodoro {
-  transition: stroke-dashoffset 300ms linear, stroke 300ms var(--ease-premium);
+  transition: stroke-dashoffset var(--motion-dur-medium) var(--motion-curva-linear), stroke var(--motion-dur-medium) var(--ease-premium);
 }
 
 /* E3 F28 (PR F6) — la celebración al terminar una rutina. *"Añadir una
@@ -542,10 +737,10 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    que haya que esperar a que acabe. Y vive aquí, con el resto, así que respeta
    "Reducir movimiento" sola (E3 F14). */
 .rutina-fin {
-  animation: rutinaFin 420ms var(--ease-premium) both;
+  animation: rutinaFin var(--motion-dur-cinematic) var(--ease-premium) both;
 }
 @keyframes rutinaFin {
-  from { opacity: 0; transform: scale(0.96); }
+  from { opacity: 0; transform: scale(var(--motion-escala-normal)); }
   to { opacity: 1; transform: scale(1); }
 }
 
@@ -555,14 +750,14 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    ⚠️ Vive aquí y no en un `style` de la vista para que respete «Reducir
    movimiento» sola, como todas las demás (E3 F14). */
 @keyframes exitoEntra {
-  from { opacity: 0; transform: scale(0.82); }
+  from { opacity: 0; transform: scale(var(--motion-escala-hero)); }
   to { opacity: 1; transform: scale(1); }
 }
 .exito-entra {
   /* 🔓 FIT F37, apartado 47 — de 420 ms a 280: una marca de éxito es una
      microinteracción, y el apartado 2 las quiere cortas. Y `backwards`, como
      todas las de Fitness (ver el bloque de la F37, al final). */
-  animation: exitoEntra 280ms var(--ease-premium) backwards;
+  animation: exitoEntra var(--motion-dur-medium) var(--ease-premium) backwards;
 }
 
 /* ===========================================================================
@@ -581,17 +776,18 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    de `.module-enter`, más arriba). `backwards` aplica el primer fotograma
    mientras espera y no deja nada al terminar.
 
-   ⚠️ Y respetan «Reducir movimiento» solas: las dos reglas de arriba
-   (`prefers-reduced-motion` y `data-reducir-movimiento`) llevan cualquier
-   animación y transición de la aplicación a 0,01 ms (apartado 40). */
+   ⚠️ Y respetan «Reducir movimiento» solas (apartado 40): desde la MS F1 sus
+   desplazamientos y escalas son tokens que en Reducido valen 0 y 1 —el del
+   sistema operativo y el de Ajustes—, así que queda un fundido; y «Sin
+   movimiento» lo lleva todo a 0,01 ms. */
 
 /* Apartado 4 — una pantalla aparece: opacidad y seis píxeles hacia arriba. */
 @keyframes fitEntra {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(var(--motion-dist-small)); }
   to { opacity: 1; transform: none; }
 }
 .fit-entra {
-  animation: fitEntra 220ms var(--ease-premium) backwards;
+  animation: fitEntra var(--motion-dur-normal) var(--ease-premium) backwards;
 }
 
 /* Apartado 5 — una tarjeta que se pulsa se encoge un pelo (0,98-0,99) y
@@ -600,15 +796,15 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    un valor nuevo; lo que aporta esta clase es la curva de la aplicación, que
    la `transition-transform` de Tailwind no usa. */
 .fit-pulsable {
-  transition: transform 140ms var(--ease-premium);
+  transition: transform var(--motion-dur-fast) var(--ease-premium);
 }
 .fit-pulsable:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(var(--motion-escala-micro));
 }
 
 /* Apartado 7 — lo destructivo responde, pero más contenido: sin escala. */
 .fit-contenido {
-  transition: opacity 140ms var(--ease-premium);
+  transition: opacity var(--motion-dur-fast) var(--ease-premium);
 }
 .fit-contenido:active:not(:disabled) {
   opacity: 0.72;
@@ -619,22 +815,22 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
    hay un «desde cero» cada vez que se abre la pantalla. Solo `width`: un
    `transition-all` animaría también lo que no debe moverse. */
 .fit-barra {
-  transition: width 280ms var(--ease-premium);
+  transition: width var(--motion-dur-medium) var(--ease-premium);
 }
 
 /* Apartado 8 — la marca de una serie hecha aparece, sin confeti. */
 @keyframes fitSerieHecha {
-  from { opacity: 0.35; transform: scale(0.6); }
+  from { opacity: var(--motion-opac-subtle); transform: scale(var(--motion-escala-hero)); }
   to { opacity: 1; transform: none; }
 }
 .fit-serie-hecha {
-  animation: fitSerieHecha 160ms var(--ease-premium) backwards;
+  animation: fitSerieHecha var(--motion-dur-fast) var(--ease-premium) backwards;
 }
 
 /* Apartado 10 — la miniatura del ejercicio actual crece y la anterior se
    encoge suavemente, en vez de saltar. */
 .fit-miniatura {
-  transition: width 200ms var(--ease-premium), padding 200ms var(--ease-premium), background-color 200ms var(--ease-premium), border-color 200ms var(--ease-premium);
+  transition: width var(--motion-dur-normal) var(--ease-premium), padding var(--motion-dur-normal) var(--ease-premium), background-color var(--motion-dur-normal) var(--ease-premium), border-color var(--motion-dur-normal) var(--ease-premium);
 }
 
 /* Apartado 9 — cuando el descanso termina, un solo pulso alrededor de la barra. */
@@ -643,7 +839,7 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
   to { box-shadow: 0 0 0 12px transparent; }
 }
 .fit-descanso-fin {
-  animation: fitDescansoFin 300ms var(--ease-premium) backwards;
+  animation: fitDescansoFin var(--motion-dur-medium) var(--ease-premium) backwards;
 }
 
 /* Apartado 13 — el rango actual destaca con un brillo sutil. ⚠️ El hexágono
@@ -657,12 +853,12 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
 /* Apartado 14 — subir de rango: una entrada breve del hexágono nuevo. Ni
    confeti ni explosiones; el texto dice qué ha pasado (apartado 41). */
 @keyframes fitRangoSube {
-  0% { opacity: 0.5; transform: scale(0.9); }
-  60% { opacity: 1; transform: scale(1.04); }
+  0% { opacity: var(--motion-opac-subtle); transform: scale(var(--motion-escala-hero)); }
+  60% { opacity: 1; transform: scale(var(--motion-pulso-sobrepaso)); }
   100% { opacity: 1; transform: none; }
 }
 .fit-rango-sube {
-  animation: fitRangoSube 300ms var(--ease-premium) backwards;
+  animation: fitRangoSube var(--motion-dur-medium) var(--ease-premium) backwards;
 }
 
 /* Apartado 22 — las hojas y los diálogos de Fitness entran desde abajo y el
@@ -673,10 +869,20 @@ html[data-reducir-movimiento='true'] *, html[data-reducir-movimiento='true'] *::
   to { opacity: 1; }
 }
 .fondo-entra {
-  animation: fondoEntra 180ms var(--ease-premium) backwards;
+  animation: fondoEntra var(--motion-dur-normal) var(--ease-premium) backwards;
 }
 .hoja-entra {
-  animation: calendarSheetIn 240ms var(--ease-premium) backwards;
+  animation: calendarSheetIn var(--motion-dur-normal) var(--ease-premium) backwards;
+}
+/* MS F1 — la profundidad de Ultra (apartado 14: *"más profundidad"*). El velo de
+   una hoja desenfoca lo de detrás. ⚠️ Fijo, como material, NUNCA animado (el
+   presupuesto de la F0: un desenfoque animado es lo más caro que hay en un
+   iPhone), y solo en Ultra: en el resto de modos ni se declara, así que no
+   crea una capa de composición que no se usa. Con «Reducir movimiento» el
+   token vale 0. */
+html[data-motion='ultra'] .fondo-entra {
+  -webkit-backdrop-filter: blur(var(--motion-velo-desenfoque));
+  backdrop-filter: blur(var(--motion-velo-desenfoque));
 }
 
 /* FIT F38 (apartados 22 y 23) — una hoja cabe en la pantalla VISIBLE del

@@ -33,6 +33,7 @@ import {
   CAMBIAR_FOTO, CERRAR_COMPARADOR, INVERTIR, PROPORCION_CAJA,
   TOUCH_ACTION_LADO, TOUCH_ACTION_DIVISOR, disposicionDeAncho, seleccionDesdeFoto,
 } from '../lib/comparadorFotos';
+import { transicion } from '../lib/motion';
 
 const ICONOS_MODO = { lado: Columns2, deslizar: SlidersHorizontal };
 const ICONOS_ALINEACION = { centro: AlignVerticalJustifyCenter, arriba: AlignVerticalJustifyStart };
@@ -203,7 +204,7 @@ export function ComparisonImage({ lado, url, zoom: z = null, alineacion: ali, on
             transform: `translate(${Math.min(lim, Math.max(-lim, zoom.x))}%, ${Math.min(lim, Math.max(-lim, zoom.y))}%) scale(${zoom.escala})`,
             /* ⚠️ Con el zoom puesto, **sin transición**: arrastrar tiene que ir
                pegado al dedo. La animación es solo para el salto de escala. */
-            transition: ampliada ? 'none' : 'transform 160ms ease-out',
+            transition: ampliada ? 'none' : transicion('transform', 'fast'),
           }}
         />
       ) : (
