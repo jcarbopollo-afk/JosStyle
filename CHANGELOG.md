@@ -1,5 +1,81 @@
 # CHANGELOG.md
 
+## v3.135.0 — Motion System F5/20: física, gestos, touch y comportamiento táctil
+
+La F5 del Motion System (*"Física, gestos, touch y comportamiento táctil"*, líneas 8405–9145 de
+`especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). Su resultado: *"La interacción táctil debe sentirse directa,
+física, natural y precisa. No quiero una app llena de rebotes."* Las decisiones viven en `src/lib/gestosMotion.js`
+(con los números en `src/lib/umbralesGesto.js`) y lo que toca el DOM, en `src/components/gestosMotion.jsx`.
+
+### La auditoría de los gestos reales (apartado 1)
+
+Lo que JosStyle tiene de verdad, en `AUDITORIA_F5`: el toque en toda la aplicación (la F3 ya responde al
+contacto), **un solo deslizamiento** —pasar de ejercicio en el entrenamiento en vivo (FIT F9)—, el divisor y el
+zoom del comparador de fotos, el selector de color, cuatro deslizadores nativos y el scroll de la página. **Ni
+una hoja se arrastraba**, ni hay mantener pulsado, ni reordenar arrastrando (EH F50: ninguna acción depende de
+un gesto), ni pellizco (C-32), ni tirar para recargar, ni deslizar para volver (C-56).
+
+### 🔓 La tarjeta del ejercicio sigue al dedo (apartados 7-12 y 19)
+
+Antes, pasar de ejercicio solo miraba **cuánto se había movido el dedo al levantarlo**: la tarjeta no se
+movía, y hacían falta 56 px. Ahora (`useDeslizarParaCambiar`):
+- **Sigue al dedo** con `transform` en cuanto el gesto es claramente horizontal (`ejeDeGesto`): el scroll
+  vertical sigue siendo del navegador (`pan-y`), y un gesto que empieza en un botón o un campo no cuenta.
+- **Resiste en el borde**: el primero no tiene anterior y el último no tiene siguiente (`conResistencia`,
+  la fórmula de iOS; nunca sigue linealmente).
+- **Decide con distancia Y velocidad** (`decidirCambio`): un lanzamiento de 30 px en 30 ms cambia; 30 px
+  despacio vuelve; 80 px soltados volviendo deprisa también vuelve (cancelar).
+- **Vuelve con el muelle `responsive`** desde donde esté y con la velocidad que llevaba (apartado 19), y el
+  ejercicio nuevo **entra por el lado hacia el que se deslizó** (`ejercicio-entra-derecha/izquierda`), también
+  con Anterior y Siguiente.
+
+### 🔓 Las hojas se arrastran por su asa (apartados 14-17)
+
+`AsaHoja`, primer hijo de la caja de **las once hojas que salen por abajo**: las cuatro de Fitness, el ＋ de
+Hoy, la Agenda y el Calendario, las tres del Armario y el editor de color y de temas. La hoja sigue al dedo;
+**hacia arriba resiste** (no se despega de su borde); al soltar, `decidirSoltar` la **cierra** si se lanza o
+pasa del 35 % de su altura —siguiendo su inercia, entre `fast` y `normal`, con la curva `exit`— y si no la
+**devuelve con muelle**. Cierra con **la misma función que su botón**. Sin asa en una pantalla ancha
+(`sm:hidden`), fuera de VoiceOver (tiene su botón de cerrar, Escape y tocar fuera) y con su propia zona de gesto
+(`touch-action: none`). 🔓 **La FIT F42 dejó las hojas «sin asa»** porque un asa prometía un gesto que no
+existía: ahora existe, y su declaración se da la vuelta con la fecha (`NO_EN_FIT42`, apartado 38).
+
+### Los umbrales, una sola vez (apartado 10)
+
+`UMBRALES_GESTO`: arranque, proporción del eje, velocidad mínima, de cierre y máxima, distancia de cierre y de
+cambio, resistencia, ventana de la velocidad y reposo. **Una hoja del árbol de imports**, así que la lee la
+FIT F9 sin traerse el motor de movimiento: su `UMBRAL_GESTO_PX` y su `PROPORCION_GESTO` **son** los del motor.
+
+### Reducido (apartado 34)
+
+El dedo **sigue moviendo** lo que arrastra —eso es manipular, no animar—; al soltar no hay muelle ni inercia:
+llega a su sitio al momento. La entrada del ejercicio nuevo se queda en el fundido (su recorrido es un token
+de distancia, que en Reducido vale 0).
+
+### 🐛 Lo que se encontró al construirla
+
+- **Un arrastre nuevo durante la vuelta no seguía al dedo** en la tarjeta del ejercicio: la animación de vuelta
+  mandaba sobre el `transform` hasta acabar. Ahora se cancela y el gesto sigue **desde donde está**.
+- **El muelle tardaba 900 ms en «acabar»** una vuelta de 30 px, porque el reposo del motor era una milésima del
+  recorrido y 0,01 px/s: lo último no se ve, pero cuenta. `muestrearSpring` acepta un `reposo` en las unidades
+  de lo que se mueve, y un gesto usa un cuarto de píxel (`reposoPx`): 300–550 ms. Sin `reposo`, el motor hace
+  exactamente lo de antes.
+- **Un lanzamiento muy rápido puede llegar sin ningún `pointermove`** (el navegador los agrupa): el eje y el
+  recorrido se deciden también con el punto donde se suelta. Lo destapó la sección de la FIT F9 del recorrido,
+  que manda solo `pointerdown` y `pointerup`.
+- **Una hoja que su dueño no cierra** se quedaría fuera de la pantalla con la página bloqueada: si sigue montada
+  después de cerrar, vuelve a su sitio (apartado 37).
+
+### Lo que no se construye (`NO_EN_F5`)
+
+Deslizar desde el borde para volver con la pantalla siguiendo al dedo (**C-56**: solo se pinta la de arriba, y
+el gesto del sistema es la C-53), reordenar arrastrando (la F8), mantener pulsado (EH F50), la transición de
+foco de un campo (C-32), el asa en Imagen personal (congelada, EH F65) y arrastrar una confirmación.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.134.0 — Motion System F4/20: datos dinámicos, cifras, gráficas y estados
 
 La F4 del Motion System (*"Datos dinámicos, listas, gráficas y estados"*, líneas 7587–8404 de

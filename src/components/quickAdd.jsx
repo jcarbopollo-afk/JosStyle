@@ -14,7 +14,7 @@
    estado, la pantalla se pinta perfecta y no funciona (pasó en EH F36 y F37).
    =========================================================================== */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Plus, Check, Undo2, AlertTriangle } from 'lucide-react';
 import { COLORS } from '../tokens';
@@ -24,11 +24,14 @@ import {
   accionesDe, avisoDe, SEGUNDOS_AVISO,
 } from '../lib/accionesHoyAgenda';
 import { Card, Field, TextInput, PrimaryButton } from './ui';
+import { AsaHoja } from './gestosMotion';
 
 /* ── La hoja inferior que comparten todos (apartado 33) ────────────────────
    *"Bottom sheets en móvil… no abrir cinco pantallas para crear una tarea."*
    ⚠️ Y el apartado 36 pide **Escape para cerrar**. */
 function Hoja({ titulo, sub, onCerrar, children }) {
+  /* MS F5 — la hoja se arrastra por su asa para cerrarla, como tocar fuera. */
+  const caja = useRef(null);
   useEffect(() => {
     const alPulsar = (ev) => { if (ev.key === 'Escape') onCerrar(); };
     document.addEventListener('keydown', alPulsar);
@@ -45,10 +48,12 @@ function Hoja({ titulo, sub, onCerrar, children }) {
       aria-label={titulo}
     >
       <div
+        ref={caja}
         className="w-full max-w-md rounded-t-3xl p-5 space-y-4"
         style={{ background: COLORS.surface, paddingBottom: 'calc(var(--safe-bottom) + 1.25rem)' }}
         onClick={(ev) => ev.stopPropagation()}
       >
+        <AsaHoja cajaRef={caja} onCerrar={onCerrar} />
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-base font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{titulo}</p>

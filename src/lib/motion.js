@@ -119,7 +119,7 @@ export const amortiguacionRelativa = (s) => s.amortiguacion / (2 * Math.sqrt(s.r
  * que se queda quieto, con su duración. Es lo que la Web Animations API recibe
  * como fotogramas: un spring de verdad sin una librería.
  */
-export function muestrearSpring(spring, { desde = 0, hasta = 1, velocidad = 0, fps = 60, maxMs = 1200 } = {}) {
+export function muestrearSpring(spring, { desde = 0, hasta = 1, velocidad = 0, fps = 60, maxMs = 1200, reposo = null } = {}) {
   const s = SPRINGS_MOTION[spring] || spring || SPRINGS_MOTION.normal;
   const dt = 1 / fps;
   let x = desde - hasta;
@@ -132,7 +132,10 @@ export function muestrearSpring(spring, { desde = 0, hasta = 1, velocidad = 0, f
     x += v * dt;
     t += dt;
     valores.push(hasta + x);
-    if (Math.abs(x) < 0.001 * Math.max(1, Math.abs(hasta - desde)) && Math.abs(v) < 0.01) break;
+    /* Por defecto, en reposo cuando le queda una milésima del recorrido. Con `reposo` (MS F5), un
+       umbral en las unidades de lo que se mueve: para píxeles, lo que ya no se ve. */
+    if (reposo ? (Math.abs(x) < reposo.distancia && Math.abs(v) < reposo.velocidad)
+      : (Math.abs(x) < 0.001 * Math.max(1, Math.abs(hasta - desde)) && Math.abs(v) < 0.01)) break;
   }
   valores[valores.length - 1] = hasta;
   return { valores, duracionMs: Math.round(t * 1000), pasoMaximo: Math.max(...valores.map((y) => (hasta >= desde ? y : -y))) };

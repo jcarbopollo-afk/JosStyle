@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.135.0 — Motion System F5/20: física, gestos y touch):**
+> La tarjeta del ejercicio en el entrenamiento en vivo **sigue al dedo**, resiste en el primero y en el último,
+> cambia con un lanzamiento corto y rápido y vuelve con muelle si no llega. **Las once hojas que salen por abajo
+> se arrastran por su asa**: hacia arriba resisten, se cierran si se lanzan o pasan del 35 % y si no vuelven.
+> Los umbrales viven en un solo sitio (`UMBRALES_GESTO`). Deslizar para volver sigue declarado (C-56). **La
+> siguiente es la F6** (profundidad, capas, z-index y contexto visual).
+
 > **📅 ACTUALIZACIÓN (v3.134.0 — Motion System F4/20: datos dinámicos, cifras y gráficas):**
 > Las gráficas de Recharts ya obedecen a los modos y a «Reducir movimiento» (se dibujaban 1,5 s por su cuenta) y
 > al cambiar de semana interpolan. Hay un sistema de cifras que cambian (`CifraQueCambia`): la puntuación, el

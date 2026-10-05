@@ -639,6 +639,29 @@ html[data-motion='reducido'] .chevron-gira {
   animation: vacioEntra var(--motion-dur-fast) var(--ease-premium) backwards;
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM · F5 — EL EJERCICIO NUEVO ENTRA POR EL LADO DEL GESTO
+
+   Deslizar la tarjeta a la izquierda (o tocar «Siguiente») trae el siguiente desde
+   la DERECHA, y al revés: la dirección del dedo y la del contenido son la misma
+   (apartado 19). Un recorrido medio y un fundido; en Reducido, solo el fundido.
+   Lo pone `EntrenamientoVivoView` en el contenido de la tarjeta, que se rehace por
+   `key` al cambiar de ejercicio. */
+@keyframes ejercicioEntraDerecha {
+  from { opacity: var(--motion-opac-secondary); transform: translateX(var(--motion-dist-medium)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ejercicioEntraIzquierda {
+  from { opacity: var(--motion-opac-secondary); transform: translateX(calc(-1 * var(--motion-dist-medium))); }
+  to { opacity: 1; transform: none; }
+}
+.ejercicio-entra-derecha {
+  animation: ejercicioEntraDerecha var(--motion-dur-normal) var(--ease-premium) backwards;
+}
+.ejercicio-entra-izquierda {
+  animation: ejercicioEntraIzquierda var(--motion-dur-normal) var(--ease-premium) backwards;
+}
+
 /* MS F3, apartados 24 y 27 — una pestaña elegida y su contenido son UNA acción:
    el color de la pestaña cambia con el mismo token que el fundido del contenido
    (`contenido-cambia`, F2), en vez de saltar mientras lo de debajo se funde. */

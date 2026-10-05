@@ -140,8 +140,10 @@ export function acentoLegible(accent) {
        negro (`CAPAS.escenarioFoto`), como en Fotos del iPhone.
 
    ⚠️ **Sin asa** (apartado 38 la enumera): ninguna hoja de Fitness se
-   arrastra, y un asa promete un gesto. Un control que no hace nada es la
-   regla 8. Se cierran con su botón, tocando fuera o con Escape (F39). */
+   arrastraba, y un asa promete un gesto. Un control que no hace nada es la
+   regla 8. Se cierran con su botón, tocando fuera o con Escape (F39).
+   🔓 **MS F5**: las cuatro que salen por abajo (`HOJA.caja`) se arrastran ya por
+   su asa (`AsaHoja`, src/components/gestosMotion.jsx); el resto sigue igual. */
 
 export const HOJA = {
   velo: 'fixed inset-0 z-50 flex items-end sm:items-center justify-center fondo-entra',
@@ -520,7 +522,7 @@ export const HECHO_F42 = [
 export const NO_EN_FIT42 = [
   { apartado: 25, que: 'Una imagen en cada tarjeta de plan', porque: 'Los planes de la biblioteca (F5) no traen imagen, y un recurso inventado sería la regla 8. La tarjeta lleva su icono de entorno.' },
   { apartado: 17, que: 'Revisar las ilustraciones anatómicas', porque: 'No existen: los campos de anatomía del catálogo valen `null` desde la F2 (*"si los recursos lo permiten"*). Los grupos se dibujan con los iconos de `iconosFitness.jsx`.' },
-  { apartado: 38, que: 'Un asa en las hojas', porque: 'Ninguna hoja se arrastra, y un asa promete ese gesto (regla 8). Se cierran con su botón, tocando fuera o con Escape.' },
+  { apartado: 38, que: 'Un asa en las hojas', porque: 'Ninguna hoja se arrastraba, y un asa promete ese gesto (regla 8). Se cierran con su botón, tocando fuera o con Escape. 🔓 Hasta la MS F5: desde entonces las cuatro hojas que salen por abajo se arrastran por su asa (`AsaHoja`), así que el asa ya no promete nada falso.' },
   { apartado: 53, que: 'Estados `hover` para escritorio', porque: 'Tailwind 3 no los limita a los dispositivos con ratón, así que en el iPhone se quedarían pegados tras tocar —justo lo que el apartado prohíbe—. JosStyle no tiene ni uno.' },
   { apartado: 56, que: 'Probar con brillo bajo, alto y modo noche', porque: 'Es mirar la pantalla del iPhone (R1). Lo que sí se mide es el contraste: el secundario da 5,1:1 o más en los dos temas, y el acento pasa por `acentoLegible`.' },
   { apartado: 62, que: 'Rehacer el comparador con el acento', porque: 'Sus controles van en neutro a propósito (F27): la foto manda. Está en `EXCEPCIONES_PASTILLA`.' },

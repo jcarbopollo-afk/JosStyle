@@ -21,6 +21,7 @@ import React, { useMemo, useState } from 'react';
 import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
 import { ChevronRight, Search, SlidersHorizontal, Repeat } from 'lucide-react';
+import { AsaHoja } from './gestosMotion';
 import { COLORS } from '../tokens';
 import { HOJA, acentoLegible } from '../lib/acabadoFitness';
 import { BotonCerrarHoja, PastillaFiltro as Pastilla } from './piezasFitness';
@@ -457,6 +458,8 @@ export function ExerciseReplacementModal({ abierto = true, onCerrar, ...props })
         style={{ background: COLORS.bg, paddingBottom: HOJA.abajo }}
         onClick={(ev) => ev.stopPropagation()}
       >
+        {/* MS F5 — el asa: arrastrarla mueve la hoja con el dedo y, al soltar, la cierra o la devuelve. */}
+        <AsaHoja cajaRef={caja} onCerrar={onCerrar} />
         <ExerciseReplacement {...props} onCancelar={onCerrar} />
       </div>
     </div>,

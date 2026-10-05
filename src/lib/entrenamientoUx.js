@@ -7,6 +7,7 @@ import {
 } from './ejercicios';
 /* 🔓 FIT F33 — el motor de sustitución, uno para toda la aplicación. */
 import { getExerciseReplacements, NIVELES_VISIBLES, nivelCompatibilidad } from './sustitucion';
+import { UMBRALES_GESTO } from './umbralesGesto';
 
 /* Entrega 4 · Fase 9/45 — «UX avanzada del entrenamiento en vivo».
    ═══════════════════════════════════════════════════════════════════════════
@@ -246,8 +247,13 @@ export function descansoVisible(sesion, ahora = Date.now()) {
    **claramente horizontal**: más largo que el umbral y bastante más ancho que
    alto. Un dedo que baja en diagonal para hacer scroll no cambia de ejercicio. */
 
-export const UMBRAL_GESTO_PX = 56;
-export const PROPORCION_GESTO = 1.5;
+/* 🔓 MS F5 — los dos números son tokens del motor de gestos (`UMBRALES_GESTO`, apartado 10:
+   *"no hardcodear arbitrariamente en múltiples componentes"*), con el mismo valor de siempre.
+   ⚠️ Y la tarjeta ya no decide con esta función: desde la MS F5 sigue al dedo y decide al soltar
+   con distancia Y velocidad (`decidirCambio`, `useDeslizarParaCambiar`). Ésta se queda como la
+   regla sin velocidad —la de la prueba de la F9—, igual que `pausarSesion` (FIT F44). */
+export const UMBRAL_GESTO_PX = UMBRALES_GESTO.distanciaCambio;
+export const PROPORCION_GESTO = UMBRALES_GESTO.proporcionEje;
 
 /** Deslizar a la izquierda lleva al siguiente, como pasar una página. */
 export function direccionDeGesto(dx, dy, { umbral = UMBRAL_GESTO_PX } = {}) {

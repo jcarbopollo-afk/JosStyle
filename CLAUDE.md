@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.134.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.135.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -36,8 +36,8 @@ se te vuelva a restablecer, sigue."* El índice con la línea de cada fase está
 **`docs/13_MOTION_SYSTEM_ORDEN.md`** (el archivo empieza por la F16 y trae la F2 y la F11 repetidas,
 C-51), y **se construye de la F0 a la F20**. **Hechas la F0 (v3.130.0)** —el mapa, la auditoría y el
 plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegación—, la **F3 (v3.133.0)**
-—las microinteracciones— y la **F4 (v3.134.0)** —los datos que cambian—. Lo que vale para cualquier cambio
-a partir de hoy:
+—las microinteracciones—, la **F4 (v3.134.0)** —los datos que cambian— y la **F5 (v3.135.0)** —los gestos—.
+Lo que vale para cualquier cambio a partir de hoy:
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
   `animar(el, 'modalEnter')`; para montar y desmontar, `Presencia`, y para una lista que se reordena,
@@ -111,6 +111,16 @@ a partir de hoy:
 - 🚨 **UNA CIFRA QUE CAMBIA ES `CifraQueCambia`** (F4, `motion.jsx`): `modo="cuenta"` para la principal de una
   pantalla, relevo para el resto. **Nunca cuenta al aparecer**, acaba pintando EXACTAMENTE su `children` (lo lee
   VoiceOver y lo lee el recorrido) y como mucho cuatro cuentan a la vez. La F17 la lleva a todos los paneles.
+- 🚨 **UNA HOJA QUE SALE POR ABAJO LLEVA `<AsaHoja cajaRef={caja} onCerrar={…} />`** (F5, `gestosMotion.jsx`),
+  con la MISMA función que su botón de cerrar; **algo que se desliza para pasar a otro usa
+  `useDeslizarParaCambiar`** con `touch-action: pan-y`. Los umbrales son **`UMBRALES_GESTO`**
+  (`umbralesGesto.js`, una hoja del árbol de imports) y las decisiones —eje, velocidad, resistencia, cerrar o
+  volver— las del motor (`gestosMotion.js`): un gesto nuevo va ahí, nunca a una vista (apartado 38). Mientras el
+  dedo arrastra se mueve el `transform`, nunca un estado de React; en Reducido el dedo sigue moviendo, y al
+  soltar no hay muelle. ⏸ **Deslizar para volver es la C-56** (solo se pinta la pantalla de arriba).
+- 🐛 **UNA ANIMACIÓN DE VUELTA SE CANCELA CUANDO EL DEDO VUELVE A AGARRAR** (F5, apartado 19): si no, manda sobre
+  el `transform` hasta acabar y el dedo no mueve nada. **Y un muelle que mueve píxeles reposa a un cuarto de
+  píxel** (`muestrearSpring(…, { reposo })`): con el reposo genérico una vuelta de 30 px «duraba» 900 ms.
 - 🐛 **`microinteracciones.js` ES DE LA EH F50; LA DEL MOTION SYSTEM ES `microinteraccionesMotion.js`** (F3):
   la fase lo pisó al estrenarse y lo cantaron seis suites. **Antes de crear un archivo, buscar el nombre.**
   Y un `{` seguido de un comentario de bloque rompe el limpiador de comentarios de varias pruebas (E3 F5):
@@ -2089,8 +2099,8 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F5 DEL MOTION SYSTEM** (*"Física, gestos, touch y comportamiento táctil"*,
-   líneas 8405–9145 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F6… hasta la F20, en
+0. 🎬 **LA SIGUIENTE ES LA F6 DEL MOTION SYSTEM** (*"Profundidad, capas, z-index y contexto visual"*,
+   líneas 9146–9922 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F7… hasta la F20, en
    el orden de
    `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
    `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**

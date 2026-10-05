@@ -22,6 +22,7 @@ import React, { useMemo, useState } from 'react';
 import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
 import { History, ChevronRight } from 'lucide-react';
+import { AsaHoja } from './gestosMotion';
 import { COLORS } from '../tokens';
 import { HOJA, acentoLegible } from '../lib/acabadoFitness';
 import { BotonCerrarHoja, OpcionSegmentada } from './piezasFitness';
@@ -320,6 +321,8 @@ export function RankHistory({ fitness, destino, propios = [], perfil = null, acc
         style={{ background: COLORS.surface, minHeight: 0, paddingBottom: HOJA.abajo }}
         onClick={(ev) => ev.stopPropagation()}
       >
+        {/* MS F5 — el asa: arrastrarla mueve la hoja con el dedo y, al soltar, la cierra o la devuelve. */}
+        <AsaHoja cajaRef={caja} onCerrar={onCerrar} />
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[10px] font-bold tracking-wider" style={{ color: COLORS.textMuted }}>HISTORIAL</p>

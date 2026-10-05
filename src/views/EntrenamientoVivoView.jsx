@@ -40,6 +40,7 @@ import {
   ChevronLeft, ChevronRight, Check, Circle, Plus, Minus, X, Timer, Repeat, BookOpen,
   StickyNote, Pause, Play, RotateCcw, Dumbbell, Undo2,
 } from 'lucide-react';
+import { useDeslizarParaCambiar } from '../components/gestosMotion';
 import { COLORS } from '../tokens';
 import { OpcionSegmentada } from '../components/piezasFitness';
 import { acentoLegible } from '../lib/acabadoFitness';
@@ -66,7 +67,7 @@ import {
   iniciarDescanso, pausarDescansoSesion, reanudarDescansoSesion, terminarDescanso,
   sumarDescanso, cambiarDescansoEjercicio, descansoVisible,
   DESCANSOS_RAPIDOS, SUMAS_DESCANSO, DESCANSO_MINIMO, DESCANSO_MAXIMO,
-  direccionDeGesto, tieneDatosRegistrados, AVISO_REEMPLAZAR,
+  tieneDatosRegistrados, AVISO_REEMPLAZAR,
 } from '../lib/entrenamientoUx';
 /* 🔓 FIT F33 — la pantalla de sustitución, la misma que usa el constructor. */
 import { ExerciseReplacement } from '../components/sustitucion';
@@ -850,7 +851,6 @@ export default function EntrenamientoVivoView({
   /* ⚠️ Que el aviso del fin de descanso se emita **una vez por descanso**: el
      reloj se redibuja dos veces por segundo. Se recuerda para QUÉ descanso sonó. */
   const sonadoPara = useRef(null);
-  const inicioGesto = useRef(null);
 
   /* 🔓 FIT F40 — sin tic aquí: lo tienen `RelojSesion` y `DescansoVivo`. */
 
@@ -872,6 +872,21 @@ export default function EntrenamientoVivoView({
   const progreso = useMemo(() => progresoSesion(sesion), [sesion]);
   const total = ejerciciosDeSesion(sesion).length;
   const indice = sesion ? (sesion.actual ?? 0) : 0;
+
+  // 🔓 MS F5 (apartados 7-12 y 19) — la tarjeta del ejercicio SIGUE AL DEDO: se desliza con él,
+  // resiste donde ya no hay más, decide al soltar con distancia Y velocidad (`decidirCambio`) y
+  // vuelve con muelle si no llega. Antes solo miraba la distancia al levantar el dedo. Va aquí,
+  // antes del primer `return` (regla 4), y el ejercicio nuevo entra por el lado del gesto.
+  const zonaGesto = useRef(null);
+  const [entradaDesde, setEntradaDesde] = useState(null);
+  const gestoEjercicio = useDeslizarParaCambiar(zonaGesto, {
+    hayAnterior: indice > 0,
+    haySiguiente: indice < total - 1,
+    alCambiar: (dir) => {
+      setEntradaDesde(dir === 'siguiente' ? 'derecha' : 'izquierda');
+      guardar(dir === 'siguiente' ? siguienteEjercicio(sesion) : anteriorEjercicio(sesion));
+    },
+  });
 
   /* 🐛 FIT F40 (apartado 33: *"el usuario no debe perder notas por cerrar"*) —
      **la nota escrita y cerrada antes del retardo se perdía**: al cerrar el
@@ -976,19 +991,6 @@ export default function EntrenamientoVivoView({
 
   const cerrarPanel = () => { setPanel(null); };
 
-  /* F9 apartado 6 — el gesto, solo en la tarjeta del ejercicio. */
-  const alEmpezarGesto = (ev) => {
-    if (ev.target && ev.target.closest && ev.target.closest('button, input, textarea, select, a')) return;
-    inicioGesto.current = { x: ev.clientX, y: ev.clientY };
-  };
-  const alAcabarGesto = (ev) => {
-    const i = inicioGesto.current;
-    inicioGesto.current = null;
-    if (!i) return;
-    const dir = direccionDeGesto(ev.clientX - i.x, ev.clientY - i.y);
-    if (dir === 'siguiente') guardar(siguienteEjercicio(sesion));
-    else if (dir === 'anterior') guardar(anteriorEjercicio(sesion));
-  };
 
   /* 🚨 F9 apartados 20 y 33 — la cabecera va en TODAS las vistas de la sesión:
      con el tutorial o el selector abiertos, el cronómetro sigue a la vista y
@@ -1121,13 +1123,12 @@ export default function EntrenamientoVivoView({
               vertical al navegador y el horizontal al gesto: así deslizar a los
               lados no se pelea con el scroll. */}
           <div
-            onPointerDown={alEmpezarGesto}
-            onPointerUp={alAcabarGesto}
-            onPointerCancel={() => { inicioGesto.current = null; }}
+            ref={zonaGesto}
+            {...gestoEjercicio}
             style={{ touchAction: 'pan-y' }}
           >
             <Card>
-              <div key={ejercicio.id}>
+              <div key={ejercicio.id} className={entradaDesde ? `ejercicio-entra-${entradaDesde}` : undefined}>
                 <p className="text-xl font-extrabold leading-tight" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
                   {cabecera.nombre}
                 </p>
@@ -1291,7 +1292,7 @@ export default function EntrenamientoVivoView({
           <div className="flex gap-2">
             <GhostBtn
               icon={ChevronLeft}
-              onClick={() => guardar(anteriorEjercicio(sesion))}
+              onClick={() => { setEntradaDesde('izquierda'); guardar(anteriorEjercicio(sesion)); }}
               disabled={indice <= 0}
             >
               Anterior
@@ -1299,7 +1300,7 @@ export default function EntrenamientoVivoView({
             <div className="flex-1" />
             <GhostBtn
               icon={ChevronRight}
-              onClick={() => guardar(siguienteEjercicio(sesion))}
+              onClick={() => { setEntradaDesde('derecha'); guardar(siguienteEjercicio(sesion)); }}
               disabled={indice >= total - 1}
             >
               Siguiente

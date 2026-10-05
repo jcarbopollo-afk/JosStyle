@@ -25,7 +25,7 @@ se ordena es **el trabajo**.
 | **F2** ✅ **v3.132.0** | Navegación, transiciones y continuidad espacial | 6038–6770 | 733 |
 | **F3** ✅ **v3.133.0** | Microinteracciones, componentes y feedback | 6771–7586 | 816 |
 | **F4** ✅ **v3.134.0** | Datos dinámicos, listas, gráficas y estados | 7587–8404 | 818 |
-| **F5** | Física, gestos, touch y comportamiento táctil | 8405–9145 | 741 |
+| **F5** ✅ **v3.135.0** | Física, gestos, touch y comportamiento táctil | 8405–9145 | 741 |
 | **F6** | Profundidad, capas, z-index y contexto visual | 9146–9922 | 777 |
 | **F7** | Continuidad espacial, shared elements y transiciones entre vistas | 9923–10687 | 765 |
 | **F8** | Física, springs, gestos e interacción directa | 10688–11379 | 692 |
@@ -71,3 +71,5 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | La prueba de la F3 | `scripts/test-motion-f3.mjs`, y la sección «MS F3» del recorrido de Chromium |
 | Los datos que cambian: las gráficas gobernadas, el plan de una cifra y su presupuesto | `src/lib/datosMotion.js` (F4), con `CifraQueCambia` y `useAnimacionDeGrafica` en `src/components/motion.jsx` |
 | La prueba de la F4 | `scripts/test-motion-f4.mjs`, y la sección «MS F4» del recorrido de Chromium |
+| Los gestos: los umbrales, el eje, la velocidad, la resistencia, cerrar o volver, y la auditoría de los gestos reales | `src/lib/umbralesGesto.js` (los números, una hoja del árbol de imports) y `src/lib/gestosMotion.js` (F5), con `AsaHoja` y `useDeslizarParaCambiar` en `src/components/gestosMotion.jsx` |
+| La prueba de la F5 | `scripts/test-motion-f5.mjs`, y la sección «MS F5» del recorrido de Chromium |

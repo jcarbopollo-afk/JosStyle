@@ -22,6 +22,7 @@ import React, { useMemo, useState } from 'react';
 import { useDialogoAccesible } from '../components/dialogoAccesible';
 import { createPortal } from 'react-dom';
 import { ChevronRight, Check, Star, Lock, Dumbbell, ClipboardList } from 'lucide-react';
+import { AsaHoja } from '../components/gestosMotion';
 import { COLORS } from '../tokens';
 import { HOJA, acentoLegible } from '../lib/acabadoFitness';
 import { BotonCerrarHoja } from '../components/piezasFitness';
@@ -240,6 +241,8 @@ export function HojaDeRango({ detalle, accent, onCerrar }) {
         style={{ background: COLORS.surface, paddingBottom: HOJA.abajo }}
         onClick={(ev) => ev.stopPropagation()}
       >
+        {/* MS F5 — el asa: arrastrarla mueve la hoja con el dedo y, al soltar, la cierra o la devuelve. */}
+        <AsaHoja cajaRef={caja} onCerrar={onCerrar} />
         <div className="flex items-start gap-4">
           <RankBadge
             rank={detalle.orden}

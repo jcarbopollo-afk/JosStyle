@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, AlertTriangle } from 'lucide-react';
 import { ChevronDespliegue } from './motion';
+import { AsaHoja } from './gestosMotion';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { PASOS_ESCALA } from '../lib/colorEngine';
@@ -67,6 +68,8 @@ export default function TemaBuilder({
 }) {
   const [filaEditando, setFilaEditando] = useState(null); // { tipo: 'principal' | 'estado', key }
   const [estadosAbiertos, setEstadosAbiertos] = useState(false);
+  /* MS F5 — la hoja se arrastra por su asa para cerrarla, como tocar fuera. */
+  const caja = useRef(null);
 
   const valorActualDe = (tipo, key) => (tipo === 'estado' ? COLORS[key] : COLORS[CAMPO_COLORS[key]]);
   const tpValorDe = (tipo, key) => (tipo === 'estado' ? temaPersonalizado.estados[key] : temaPersonalizado[key]);
@@ -137,10 +140,12 @@ export default function TemaBuilder({
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
       <div
+        ref={caja}
         className="w-full max-w-md rounded-t-3xl p-4 max-h-[90vh] overflow-y-auto"
         style={{ background: COLORS.surface, borderTop: `1px solid ${COLORS.border}`, paddingBottom: 28 }}
         onClick={(e) => e.stopPropagation()}
       >
+        <AsaHoja cajaRef={caja} onCerrar={onClose} className="-mt-2 mb-1" />
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Constructor de temas</p>
           <button onClick={onClose} className="p-1.5 rounded-full" style={{ background: COLORS.surface2 }} aria-label="Cerrar">

@@ -1134,6 +1134,32 @@ Y una decisión que se escribe para que no se reabra: **una cifra que se releva 
 nuevo** desde el primer fotograma (lo que se mueve es su llegada), y **una que cuenta acaba pintando
 EXACTAMENTE el texto de siempre**. Así VoiceOver y las pruebas leen el dato, no un número a medias.
 
+### C-56 — ✅ RESUELTA AL CONSTRUIR (Motion System F5, v3.135.0) · Deslizar para volver, la física que el plan dio a la F8 y un asa que la FIT F42 prohibió
+
+La F5 (*"Física, gestos, touch y comportamiento táctil"*) choca con tres cosas ya decididas, y la lectura de
+cada una:
+
+1. **Deslizar desde el borde para volver (apartado 18), con la pantalla siguiendo al dedo**: *"Si la
+   navegación lo permite"*. **No lo permite**: JosStyle navega con una pila de React (NAVO F1) y pinta
+   **solo** la pantalla de arriba (F2: un contenedor por pantalla), así que la de debajo no existe mientras
+   el dedo arrastra; seguir al dedo enseñaría un hueco. Hacerlo exige mantener montada la pantalla anterior
+   y el gesto del sistema (C-53, `history.pushState`), que es de Josué. Se declara en `NO_EN_F5`.
+2. **La física al soltar es de la F8 según `SOLAPES_ROADMAP`** (*"F5: el gesto en sí; F8: la física al
+   soltar"*), y la F5 pide en sus apartados 5, 9, 14 y 17 velocidad, muelles y «seguir el momentum».
+   Lectura que respeta las dos: **la F5 construye lo mínimo que sus apartados piden y lo deja en el motor**
+   —la velocidad de las muestras, `decidirSoltar`, la vuelta con el muelle `responsive` y la salida con
+   inercia—, y la F8 lo amplía (puntos de anclaje, reordenar arrastrando) **sobre las mismas funciones**,
+   sin un segundo motor.
+3. **La FIT F42 dejó las hojas «sin asa»** porque *"un asa promete un gesto"* que no existía (regla 8).
+   **Ahora existe**, así que el asa ya no promete nada falso: la comprobación de la F42 se da la vuelta, no
+   se borra (`NO_EN_FIT42`, apartado 38, lo dice con la fecha). ⚠️ Y las hojas de **Imagen personal** no
+   se tocan: está congelada (EH F65). Tampoco las confirmaciones: una decisión no se tira con un gesto.
+
+Y dos decisiones que se escriben para que no se reabran: **en Reducido el dedo sigue moviendo lo que
+arrastra** (manipular no es animar) y solo desaparecen el muelle y la inercia al soltar; y **un muelle que
+mueve píxeles está en reposo a un cuarto de píxel** (`reposoPx`): con el reposo genérico del motor, una
+vuelta de 30 px seguía animando 900 ms y un arrastre nuevo en ese rato se peleaba con ella.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

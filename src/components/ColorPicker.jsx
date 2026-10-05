@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Star } from 'lucide-react';
 import { LatidoAlMarcar } from './motion';
+import { AsaHoja } from './gestosMotion';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import {
@@ -36,6 +37,8 @@ export default function ColorPicker({
   const hueRef = useRef(null);
   const arrastrandoSquare = useRef(false);
   const arrastrandoHue = useRef(false);
+  /* MS F5 — la hoja se arrastra por su asa para cerrarla, como tocar fuera. */
+  const caja = useRef(null);
   const [pegarError, setPegarError] = useState('');
 
   const { h, s, v } = hexToHsv(hex);
@@ -152,10 +155,12 @@ export default function ColorPicker({
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
       <div
+        ref={caja}
         className="w-full max-w-md rounded-t-3xl p-4 max-h-[90vh] overflow-y-auto"
         style={{ background: COLORS.surface, borderTop: `1px solid ${COLORS.border}`, paddingBottom: 28 }}
         onClick={(e) => e.stopPropagation()}
       >
+        <AsaHoja cajaRef={caja} onCerrar={onClose} className="-mt-2 mb-1" />
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Editor de color</p>
           <button onClick={onClose} className="p-1.5 rounded-full" style={{ background: COLORS.surface2 }} aria-label="Cerrar">

@@ -16,6 +16,7 @@ import React from 'react';
 import { useDialogoAccesible } from './dialogoAccesible';
 import { createPortal } from 'react-dom';
 import { ChevronRight, Info } from 'lucide-react';
+import { AsaHoja } from './gestosMotion';
 import { COLORS } from '../tokens';
 import { HOJA, acentoLegible } from '../lib/acabadoFitness';
 import { BotonCerrarHoja } from './piezasFitness';
@@ -183,6 +184,8 @@ export function RankExplanation({ explicacion, accent, onCerrar, onEntrenar = nu
         }}
         onClick={(ev) => ev.stopPropagation()}
       >
+        {/* MS F5 — el asa: arrastrarla mueve la hoja con el dedo y, al soltar, la cierra o la devuelve. */}
+        <AsaHoja cajaRef={caja} onCerrar={onCerrar} />
         {/* 23 · Rango actual → descripción → progreso → por qué → datos → acciones */}
         <div className="flex items-start gap-3">
           <RankBadge

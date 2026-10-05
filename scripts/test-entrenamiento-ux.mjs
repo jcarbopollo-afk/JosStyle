@@ -289,8 +289,11 @@ ok((VISTA_CODIGO.match(/\{cabeceraSesion\}/g) || []).length >= 3,
   '🚨 La cabecera —cronómetro y Terminar— está en la vista normal, el tutorial Y el reemplazo (apartados 20 y 33)');
 ok(/panel === 'tutorial'[\s\S]{0,200}\{cabeceraSesion\}/.test(VISTA_CODIGO), '…el tutorial se abre SIN abandonar el entrenamiento');
 ok(/touchAction:\s*'pan-y'/.test(VISTA_CODIGO), '🚨 La zona del gesto deja el scroll vertical al navegador (apartado 6)');
-ok(/closest\('button, input, textarea, select, a'\)/.test(VISTA_CODIGO),
-  '⚠️ …y un gesto que empieza sobre un botón o un campo no cuenta');
+/* MS F5 — el gesto se mudó al motor de gestos (`useDeslizarParaCambiar`), y la promesa se muda
+   con él: la vista lo usa y el hook es quien descarta un toque sobre un botón o un campo. */
+ok(/useDeslizarParaCambiar\(/.test(VISTA_CODIGO)
+  && /closest\('button, input, textarea, select, a'\)/.test(sinComentarios(leer('src/components/gestosMotion.jsx'))),
+  '⚠️ …y un gesto que empieza sobre un botón o un campo no cuenta (lo descarta el motor de gestos, MS F5)');
 ok(/<Circle /.test(VISTA_CODIGO) && /<Check size=\{20\}/.test(VISTA_CODIGO),
   '🚨 Pendiente es ○ y hecha es ✓: el estado no depende solo del color (apartado 38)');
 ok(/aria-pressed=\{hecha\}/.test(VISTA_CODIGO), '…y se anuncia como pulsado');

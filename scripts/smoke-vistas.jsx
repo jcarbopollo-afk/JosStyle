@@ -439,6 +439,7 @@ import { crearDocumento } from '../src/lib/documentos.js';
 import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
 import { AvatarPerfil, BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal, AjusteMovimiento } from '../src/views/SettingsView.jsx';
 import { Presencia, ChevronDespliegue, LatidoAlMarcar, CifraQueCambia } from '../src/components/motion.jsx';
+import { AsaHoja } from '../src/components/gestosMotion.jsx';
 import { Switch, PistaInterruptor, ToggleTab, BotonBorrar } from '../src/components/ui.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
@@ -3194,6 +3195,11 @@ const CASOS = [
   ['CifraQueCambia (relevo, sin texto)', CifraQueCambia, () => ({ valor: 4 })],
   ['CifraQueCambia (decimales, por formato)', CifraQueCambia, () => ({ valor: 12.5, modo: 'cuenta', formato: (v) => `${v.toFixed(1)} g` })],
   ['CifraQueCambia (sin dato)', CifraQueCambia, () => ({ valor: null, children: '—' })],
+  /* MS F5 — el asa de una hoja: con su margen por defecto, pegada (las del Armario con foto arriba) y
+     sin caja todavía (el primer render, antes de que el `ref` llegue). */
+  ['AsaHoja (por defecto)', AsaHoja, () => ({ cajaRef: { current: null }, onCerrar: noop })],
+  ['AsaHoja (pegada, sin margen)', AsaHoja, () => ({ cajaRef: { current: null }, onCerrar: noop, className: '' })],
+  ['AsaHoja (sin quien la cierre)', AsaHoja, () => ({ cajaRef: null })],
   ['SettingsView · Avatar con foto', AvatarPerfil, () => ({
     perfil: { ...DEFAULT_PERFIL, foto: `data:image/jpeg;base64,${'A'.repeat(400)}` },
     accent, onCambiar: noop, onQuitar: noop,

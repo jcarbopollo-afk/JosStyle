@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, ChevronLeft, ChevronRight, Loader2, Copy, Check, Layers, CalendarDays, History, List, Sparkles, BarChart3, TrendingUp } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { AsaHoja } from '../components/gestosMotion';
 import { hexToRgba, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedPrendaUrl } from '../lib/supabase';
 import { optimizarImagen, urlFirmada } from '../lib/imagenes';
@@ -246,6 +247,8 @@ function FormularioPrenda({ inicial, accent, guardando, errorFoto, onGuardar, on
    prenda con foto es, en parte, irreversible, y eso es exactamente lo que la regla
    del proyecto reserva para la confirmación. */
 function DetallePrenda({ prenda, outfits, usos, hoyISO, accent, onCerrar, onEditar, onEliminar }) {
+  /* MS F5 — la hoja se arrastra por su asa para cerrarla, como tocar fuera. */
+  const caja = useRef(null);
   const [confirmando, setConfirmando] = useState(false);
   const [verHistorial, setVerHistorial] = useState(false);
   // Apartado 10 de la continuación: no se impide borrar, pero sí se avisa.
@@ -273,10 +276,12 @@ function DetallePrenda({ prenda, outfits, usos, hoyISO, accent, onCerrar, onEdit
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCerrar}>
       <div
+        ref={caja}
         className="w-full max-w-md rounded-3xl overflow-hidden"
         style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, maxHeight: '86vh' }}
         onClick={(e) => e.stopPropagation()}
       >
+        <AsaHoja cajaRef={caja} onCerrar={onCerrar} className="" />
         <div style={{ maxHeight: '86vh', overflowY: 'auto' }}>
           <div className="relative">
             <MiniaturaPrenda prenda={prenda} alto={190} />
@@ -751,6 +756,8 @@ function FormularioOutfit({ inicial, prendas, accent, guardando, errorFoto, foto
 
 /* Detalle del outfit (apartado 16): todo lo que tenga, y editar / duplicar / eliminar. */
 function DetalleOutfit({ outfit, prendas, usos, hoyISO, accent, onCerrar, onEditar, onDuplicar, onEliminar, onFavorito, onAbrirPrenda, onRegistrarUso }) {
+  /* MS F5 — la hoja se arrastra por su asa para cerrarla, como tocar fuera. */
+  const caja = useRef(null);
   const [confirmando, setConfirmando] = useState(false);
   const [verHistorial, setVerHistorial] = useState(false);
   const mios = usosDeOutfit(usos, outfit.id);
@@ -767,10 +774,12 @@ function DetalleOutfit({ outfit, prendas, usos, hoyISO, accent, onCerrar, onEdit
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCerrar}>
       <div
+        ref={caja}
         className="w-full max-w-md rounded-3xl overflow-hidden"
         style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, maxHeight: '86vh' }}
         onClick={(e) => e.stopPropagation()}
       >
+        <AsaHoja cajaRef={caja} onCerrar={onCerrar} className="" />
         <div style={{ maxHeight: '86vh', overflowY: 'auto' }}>
           <div className="flex items-start justify-between gap-3 p-4 pb-2">
             <div className="min-w-0">
@@ -1977,14 +1986,18 @@ export function PanelCalendario({
 
 /* Detalle de un día (apartado 19). */
 function DetalleDia({ fecha, usos, outfits, prendas, accent, onCerrar, onAnadir, onAbrirOutfit, onEditar, onEliminar }) {
+  /* MS F5 — la hoja se arrastra por su asa para cerrarla, como tocar fuera. */
+  const caja = useRef(null);
   const legible = new Date(`${fecha}T00:00:00`).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onCerrar}>
       <div
+        ref={caja}
         className="w-full max-w-md rounded-3xl p-4"
         style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, maxHeight: '86vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
+        <AsaHoja cajaRef={caja} onCerrar={onCerrar} className="-mt-2 mb-1" />
         <div className="flex items-start justify-between gap-3 mb-3">
           <p className="text-lg font-bold capitalize" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{legible}</p>
           <button onClick={onCerrar} className="rounded-full p-1.5 flex-shrink-0" style={{ background: COLORS.surface2 }} aria-label="Cerrar el día">

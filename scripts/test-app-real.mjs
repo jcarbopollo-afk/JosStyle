@@ -12634,6 +12634,200 @@ ok(errores.length === erroresAntes_ms4, `MS F4 — …sin un error en la consola
 almacen.ajustes = ajustesDeAntes_ms4;
 almacen.economia = economiaDeAntes_ms4;
 almacen.sueno = suenoDeAntes_ms4;
+/* ── MS F5 · Física, gestos y touch: seguir al dedo, la velocidad, la resistencia y el asa de una hoja ──
+   Lo que ninguna prueba de Node puede afirmar: que la tarjeta del ejercicio SE MUEVA con el dedo
+   mientras arrastra, que un lanzamiento corto y rápido cambie de ejercicio y uno igual de corto pero
+   lento vuelva con muelle, que en el borde resista, y que una hoja se cierre o vuelva según cómo se
+   suelte. Los gestos se mandan como `PointerEvent` con tiempo real entre muestras: la velocidad sale
+   de ahí. ⚠️ Sufijo `_ms5`. */
+console.log('\n── MS F5 · Física, gestos y touch ──');
+const ajustesDeAntes_ms5 = almacen.ajustes;
+almacen.ajustes = { ...(ajustesDeAntes_ms5 || {}), apariencia: { ...((ajustesDeAntes_ms5 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+const erroresAntes_ms5 = errores.length;
+/* Un arrastre horizontal sobre la zona del ejercicio: `pasos` son [dx, ms de espera antes]. */
+const arrastrar_ms5 = (pasos, esperaFinal = 0) => page.evaluate(async ([pasos, esperaFinal]) => {
+  const zona = [...document.querySelectorAll('div')].find((d) => d.style && d.style.touchAction === 'pan-y');
+  if (!zona) return null;
+  const r = zona.getBoundingClientRect();
+  const x0 = r.left + r.width / 2;
+  const y0 = r.top + Math.min(40, r.height / 2);
+  const ev = (tipo, dx) => zona.dispatchEvent(new PointerEvent(tipo, { bubbles: true, clientX: x0 + dx, clientY: y0, pointerType: 'touch', pointerId: 7 }));
+  const t0 = performance.now();
+  ev('pointerdown', 0);
+  const durante = [];
+  for (const [dx, espera] of pasos) { await new Promise((ok) => setTimeout(ok, espera)); ev('pointermove', dx); durante.push(zona.style.transform); }
+  const ultimo = pasos.length ? pasos[pasos.length - 1][0] : 0;
+  if (esperaFinal) { await new Promise((ok) => setTimeout(ok, esperaFinal)); ev('pointermove', ultimo); }
+  ev('pointerup', ultimo);
+  const ms = Math.round(performance.now() - t0);
+  await new Promise((ok) => setTimeout(ok, 0));
+  return { durante, ms, despues: zona.style.transform, anims: zona.getAnimations().map((a) => Math.round(a.effect.getComputedTiming().duration)) };
+}, [pasos, esperaFinal]);
+const posicion_ms5 = async () => { const m = /Ejercicio (\d+) de (\d+)/i.exec(await ver()); return m ? { n: Number(m[1]), de: Number(m[2]) } : null; };
+const px_ms5 = (t) => { const m = /translate[XY]\((-?[\d.]+)px\)/.exec(t || ''); return m ? Number(m[1]) : 0; };
+
+/* Un entrenamiento en curso de tres ejercicios, en el primero: no depende del día ni de lo que dejaron
+   las secciones de antes (la lección de la FIT F24). */
+const fitnessDeAntes_ms5 = almacen.fitness;
+const hoy_ms5 = new Date().toLocaleDateString('sv-SE');
+almacen.fitness = {
+  ...(fitnessDeAntes_ms5 || {}),
+  sesiones: [{
+    id: 'ms5-vivo', planId: null, nombre: 'Gestos MS F5', fecha: hoy_ms5, estado: 'en_curso',
+    iniciadaEn: Date.now() - 5 * 60000, terminadaEn: null, guardadaEn: null, pausadoMs: 0, actual: 0,
+    visibilidad: 'privado', notas: '', entorno: 'gym',
+    origen: {
+      tipo: 'plantilla', id: null,
+      ejercicios: ['press-banca-barra', 'remo-barra', 'plancha-frontal'].map((exerciseId, i) => {
+        const tiempo = exerciseId === 'plancha-frontal';
+        return {
+          id: `ms5-e${i}`, exerciseId, orden: i, modo: tiempo ? 'tiempo' : 'reps', notas: '', descanso: 90, sustituyeA: null,
+          linea: tiempo ? { series: 2, duracion: 30, tipoCarga: 'corporal' } : { series: 2, repeticiones: 8, peso: 40, tipoCarga: 'externo' },
+          series: [1, 2].map((n) => serieViva_fit33(`ms5-s${i}${n}`, tiempo ? 'tiempo' : 'reps', tiempo ? { duracion: 30 } : { reps: 8, peso: 40 })),
+        };
+      }),
+    },
+  }],
+  planActivo: null,
+};
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(800);
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Continuar entrenamiento'), 'MS F5 — Bienestar → Fitness → el entrenamiento en curso');
+await esperarTexto(/Ejercicio \d+ de \d+/i);
+const p_ms5 = await posicion_ms5();
+ok(p_ms5 && p_ms5.n === 1 && p_ms5.de === 3, `MS F5 — en el primero de sus tres ejercicios (${JSON.stringify(p_ms5)})`);
+
+/* 1 · Lento y corto: la tarjeta sigue al dedo y, al soltar sin llegar, vuelve con muelle. */
+const lento_ms5 = await arrastrar_ms5([[-10, 30], [-20, 30], [-30, 30]], 160);
+ok(lento_ms5 && px_ms5(lento_ms5.durante.at(-1)) === -30,
+  `🚨 MS F5 — mientras arrastra, la tarjeta del ejercicio SIGUE AL DEDO: 30 px de dedo, 30 px de tarjeta (${JSON.stringify(lento_ms5?.durante)}; apartados 7 y 8)`);
+ok(lento_ms5 && lento_ms5.despues === '' && lento_ms5.anims.length === 1 && lento_ms5.anims[0] > 0,
+  `🚨 MS F5 — …al soltar despacio sin llegar al umbral, vuelve CON MUELLE desde donde estaba (${JSON.stringify(lento_ms5 && { despues: lento_ms5.despues, anims: lento_ms5.anims })}; apartados 5 y 17)`);
+await page.waitForTimeout(500);
+ok((await posicion_ms5())?.n === 1, '…y no cambia de ejercicio: arrastrar despacio y soltar es «me lo he pensado»');
+
+/* 2 · En el borde, resiste: el primero no tiene anterior. */
+const borde_ms5 = await arrastrar_ms5([[20, 20], [60, 20], [100, 20]], 160);
+const enBorde_ms5 = borde_ms5 ? px_ms5(borde_ms5.durante.at(-1)) : null;
+ok(enBorde_ms5 !== null && enBorde_ms5 > 10 && enBorde_ms5 < 70,
+  `🚨 MS F5 — en el primer ejercicio, arrastrar hacia el anterior RESISTE: 100 px de dedo mueven ${enBorde_ms5} px (apartados 15 y 16)`);
+await page.waitForTimeout(500);
+ok((await posicion_ms5())?.n === 1, '…y no pasa a ningún sitio');
+
+/* 3 · Cambiar de dirección a medio gesto: responde desde donde está, sin reiniciar (apartado 19). */
+const vuelta_ms5 = await arrastrar_ms5([[-20, 20], [-40, 20], [-10, 20]], 160);
+ok(vuelta_ms5 && px_ms5(vuelta_ms5.durante[1]) === -40 && px_ms5(vuelta_ms5.durante[2]) === -10,
+  `MS F5 — cambiar de dirección a medio gesto sigue al dedo desde donde está (${JSON.stringify(vuelta_ms5?.durante)}; apartado 19)`);
+await page.waitForTimeout(500);
+ok((await posicion_ms5())?.n === 1, '…y soltarlo cerca de donde empezó no cambia nada');
+
+/* 4 · Corto pero rápido: la velocidad decide (antes hacían falta 56 px). */
+/* ⚠️ 45 px en unos 15 ms: por debajo de los 56 px que hacen falta despacio, y con margen de sobra para
+   la velocidad de lanzamiento (0,5 px/ms) aunque la máquina vaya cargada. Con 30 px en 30 ms, la pasada
+   entera llegó a quedarse corta una vez (un `setTimeout` de 10 ms no garantiza 10 ms). */
+const rapido_ms5 = await arrastrar_ms5([[-15, 5], [-30, 5], [-45, 5]]);
+ok(!!rapido_ms5, `MS F5 — un lanzamiento de solo 45 px (${rapido_ms5?.ms} ms de verdad)`);
+const tras_ms5 = await esperarTexto(/Ejercicio 2 de/i);
+ok(/Ejercicio 2 de/i.test(tras_ms5), `🚨 MS F5 — …CAMBIA de ejercicio: un lanzamiento cuenta aunque recorra menos de lo que pide ir despacio (${rapido_ms5?.ms} ms; apartados 9 y 10)`);
+const entra_ms5 = await page.evaluate(() => {
+  const d = document.querySelector('[class*="ejercicio-entra-"]');
+  return d ? { clase: d.className, nombre: getComputedStyle(d).animationName, dura: getComputedStyle(d).animationDuration } : null;
+});
+ok(entra_ms5 && /ejercicio-entra-derecha/.test(entra_ms5.clase) && entra_ms5.nombre === 'ejercicioEntraDerecha' && entra_ms5.dura === '0.22s',
+  `MS F5 — …y el siguiente entra por la derecha, hacia donde se deslizó, en 220 ms (${JSON.stringify(entra_ms5)})`);
+
+/* 5 · Un gesto hacia abajo sigue siendo el scroll: la tarjeta ni se mueve. */
+const scroll_ms5 = await page.evaluate(async () => {
+  const zona = [...document.querySelectorAll('div')].find((d) => d.style && d.style.touchAction === 'pan-y');
+  if (!zona) return null;
+  const r = zona.getBoundingClientRect();
+  const x0 = r.left + r.width / 2, y0 = r.top + 30;
+  const ev = (tipo, dx, dy) => zona.dispatchEvent(new PointerEvent(tipo, { bubbles: true, clientX: x0 + dx, clientY: y0 + dy, pointerType: 'touch', pointerId: 8 }));
+  ev('pointerdown', 0, 0);
+  const durante = [];
+  for (const [dx, dy] of [[2, 20], [4, 60], [6, 120]]) { await new Promise((ok) => setTimeout(ok, 20)); ev('pointermove', dx, dy); durante.push(zona.style.transform); }
+  ev('pointerup', 6, 120);
+  return durante;
+});
+ok(scroll_ms5 && scroll_ms5.every((t) => !t),
+  `🚨 MS F5 — un gesto vertical no mueve la tarjeta: el eje se decide primero y el scroll es del navegador (${JSON.stringify(scroll_ms5)}; apartados 12 y 13)`);
+
+/* 6 · El asa de una hoja: el ＋ de Hoy. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const asa_ms5 = (pasos, esperaFinal = 0) => page.evaluate(async ([pasos, esperaFinal]) => {
+  const asa = [...document.querySelectorAll('[data-asa-hoja]')].find((a) => a.getBoundingClientRect().height > 0);
+  if (!asa) return null;
+  const caja = asa.parentElement;
+  const r = asa.getBoundingClientRect();
+  const x0 = r.left + r.width / 2, y0 = r.top + r.height / 2;
+  const ev = (tipo, dy) => asa.dispatchEvent(new PointerEvent(tipo, { bubbles: true, clientX: x0, clientY: y0 + dy, pointerType: 'touch', pointerId: 9 }));
+  ev('pointerdown', 0);
+  const durante = [];
+  for (const [dy, espera] of pasos) { await new Promise((ok) => setTimeout(ok, espera)); ev('pointermove', dy); durante.push(caja.style.transform); }
+  const ultimo = pasos.length ? pasos[pasos.length - 1][0] : 0;
+  if (esperaFinal) { await new Promise((ok) => setTimeout(ok, esperaFinal)); ev('pointermove', ultimo); }
+  ev('pointerup', ultimo);
+  await new Promise((ok) => setTimeout(ok, 0));
+  return { durante, despues: caja.style.transform, estado: caja.dataset.arrastre, anims: caja.getAnimations().map((a) => Math.round(a.effect.getComputedTiming().duration)), alto: Math.round(caja.getBoundingClientRect().height) };
+}, [pasos, esperaFinal]);
+ok(await pulsar('Añadir') && /Apunte/.test(await esperarTexto(/Apunte/)), 'MS F5 — se abre la hoja del ＋ de Hoy');
+const asaVisible_ms5 = await page.evaluate(() => {
+  const a = [...document.querySelectorAll('[data-asa-hoja]')].find((x) => x.getBoundingClientRect().height > 0);
+  return a ? { oculta: a.getAttribute('aria-hidden'), toque: getComputedStyle(a).touchAction, alto: Math.round(a.getBoundingClientRect().height) } : null;
+});
+ok(asaVisible_ms5 && asaVisible_ms5.oculta === 'true' && asaVisible_ms5.toque === 'none',
+  `MS F5 — en el iPhone la hoja tiene su asa, fuera de VoiceOver (tiene su botón de cerrar) y con su propia zona de gesto (${JSON.stringify(asaVisible_ms5)}; apartado 13)`);
+const h1_ms5 = await asa_ms5([[20, 30], [40, 30], [60, 30]], 160);
+ok(h1_ms5 && px_ms5(h1_ms5.durante.at(-1)) === 60,
+  `🚨 MS F5 — arrastrar el asa mueve la hoja CON el dedo (${JSON.stringify(h1_ms5?.durante)}; apartado 14)`);
+ok(h1_ms5 && h1_ms5.despues === '' && h1_ms5.estado === 'volviendo' && h1_ms5.anims.length === 1,
+  `🚨 MS F5 — …y soltarla despacio antes del 35 % la DEVUELVE con muelle (${JSON.stringify(h1_ms5 && { despues: h1_ms5.despues, estado: h1_ms5.estado, anims: h1_ms5.anims })}; apartado 17)`);
+await page.waitForTimeout(600);
+ok(/Apunte/.test(await ver()), '…y la hoja sigue abierta');
+const h2_ms5 = await asa_ms5([[-40, 30], [-80, 30]], 160);
+const arriba_ms5 = h2_ms5 ? px_ms5(h2_ms5.durante.at(-1)) : null;
+ok(arriba_ms5 !== null && arriba_ms5 < 0 && arriba_ms5 > -50,
+  `🚨 MS F5 — hacia arriba RESISTE: 80 px de dedo mueven ${arriba_ms5} px; la hoja no se despega de su borde (apartados 15 y 16)`);
+await page.waitForTimeout(600);
+const h3_ms5 = await asa_ms5([[15, 10], [30, 10], [45, 10]]);
+ok(h3_ms5 && h3_ms5.estado === 'cerrando',
+  `🚨 MS F5 — un lanzamiento hacia abajo de solo 45 px la CIERRA, siguiendo su inercia (${JSON.stringify(h3_ms5 && { estado: h3_ms5.estado, anims: h3_ms5.anims })}; apartados 14 y 17)`);
+await page.waitForTimeout(700);
+const cerrada_ms5 = await page.evaluate(() => ({ hoja: !!document.querySelector('[role="dialog"][aria-label="Añadir"]'), asas: document.querySelectorAll('[data-asa-hoja]').length }));
+ok(!cerrada_ms5.hoja && cerrada_ms5.asas === 0, `…y la hoja desaparece del todo, como al tocar fuera (${JSON.stringify(cerrada_ms5)})`);
+
+/* 7 · Con «Reducir movimiento»: el dedo la sigue moviendo (es manipular), pero al soltar no hay muelle. */
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+ok(await pulsar('Añadir') && /Apunte/.test(await esperarTexto(/Apunte/)), 'MS F5 — con «Reducir movimiento», otra vez el ＋');
+const h4_ms5 = await asa_ms5([[20, 30], [40, 30]], 160);
+ok(h4_ms5 && px_ms5(h4_ms5.durante.at(-1)) === 40 && h4_ms5.despues === '' && h4_ms5.anims.length === 0 && h4_ms5.estado === 'quieta',
+  `🚨 MS F5 — en Reducido la hoja sigue al dedo, y al soltar vuelve a su sitio AL MOMENTO, sin muelle (${JSON.stringify(h4_ms5)}; apartado 34)`);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(300);
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+/* 8 · En una pantalla ancha la hoja va centrada y no hay asa. */
+await page.setViewportSize({ width: 1280, height: 900 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+ok(await pulsar('Añadir') && /Apunte/.test(await esperarTexto(/Apunte/)), 'MS F5 — en escritorio, el ＋');
+const asaEscritorio_ms5 = await page.evaluate(() => [...document.querySelectorAll('[data-asa-hoja]')].map((a) => getComputedStyle(a).display));
+ok(asaEscritorio_ms5.length >= 1 && asaEscritorio_ms5.every((d) => d === 'none'),
+  `MS F5 — …sin asa: con ratón no se arrastra una hoja (${JSON.stringify(asaEscritorio_ms5)})`);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(300);
+
+ok(errores.length === erroresAntes_ms5, `MS F5 — …sin un error en la consola${errores.length > erroresAntes_ms5 ? `: ${errores.slice(erroresAntes_ms5).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms5;
+almacen.fitness = fitnessDeAntes_ms5;
+
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

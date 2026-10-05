@@ -5,7 +5,7 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**70 elementos**: ✅ Existe 57 · ⚠️ Inconsistente 4 · ⬜ Sin movimiento 9 · 🚨 Fuera de control 0.
+**73 elementos**: ✅ Existe 60 · ⚠️ Inconsistente 4 · ⬜ Sin movimiento 9 · 🚨 Fuera de control 0.
 
 ## Resumen
 
@@ -40,6 +40,7 @@
 | Una hoja de Fitness entra desde abajo | H | 2 · Suave | 220 ms | ⚠️ Inconsistente | F6 |
 | El fondo de una hoja se oscurece | G | 2 · Suave | 220 ms | ✅ Existe | F6 |
 | Hojas del Calendario | H | 2 · Suave | 220 ms | ⚠️ Inconsistente | F6 |
+| Arrastrar una hoja por su asa | H | 2 · Suave | 220 ms | ✅ Existe | F5 |
 | El resto de ventanas y hojas (unas 40 en 18 archivos) | G | 0 · Estático | — | ⬜ Sin movimiento | F6 |
 | El aviso de «añadido» (y los de Fitness) | Q | 2 · Suave | 280 ms | ✅ Existe | F9 |
 | Menús «⋯» y desplegables | I | 0 · Estático | — | ⬜ Sin movimiento | F6 |
@@ -70,7 +71,9 @@
 | El interruptor (la bola) | R | 1 · Micro | 220 ms | ✅ Existe | F3 |
 | El interruptor (la pista), suelto o dentro de una fila | R | 1 · Micro | 220 ms | ✅ Existe | F3 |
 | Deslizadores (`input type=range`) | S | 0 · Estático | — | ✅ Existe | F5 |
-| Deslizar para cambiar de ejercicio | T | 1 · Micro | 220 ms | ✅ Existe | F8 |
+| Deslizar para cambiar de ejercicio | T | 2 · Suave | 220 ms | ✅ Existe | F5 |
+| El ejercicio siguiente entra desde la derecha | T | 1 · Micro | 220 ms | ✅ Existe | F5 |
+| El ejercicio anterior entra desde la izquierda | T | 1 · Micro | 220 ms | ✅ Existe | F5 |
 | El divisor del comparador de fotos | T | 1 · Micro | — | ✅ Existe | F8 |
 | El rebote de la página | U | 1 · Micro | — | ✅ Existe | F5 |
 | Las tarjetas se desvanecen al pasar bajo la cabecera de un área | U | 1 · Micro | 0 ms | ✅ Existe | F10 |
@@ -939,6 +942,36 @@
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+
+#### Arrastrar una hoja por su asa
+
+`asa_hoja` · ✅ Existe · lo trata la **F5**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/gestosMotion.jsx (AsaHoja) · src/lib/gestosMotion.js |
+| Componente | AsaHoja |
+| Clase CSS | — |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Cerrar una hoja con el dedo, como tocar fuera (apartados 14-17). |
+| Estado inicial | En su sitio |
+| Estado final | Fuera por abajo, o de vuelta en su sitio |
+| Entrada | — |
+| Salida | — |
+| Interacción | Arrastrar el asa: la hoja sigue al dedo; hacia arriba, con resistencia (`conResistencia`). Al soltar, `decidirSoltar`: se cierra si se lanza o pasa del 35 % de su altura |
+| Transición | transform directo mientras se arrastra; al soltar, sale con su inercia (entre `fast` y `normal`, curva `exit`) o vuelve con el muelle `responsive` desde donde esté |
+| Duración | 220 ms |
+| Curva | --motion-curva-exit |
+| Spring | responsive |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 2 · Suave |
+| Prioridad | alta |
+| Relación | Las cuatro hojas de Fitness, el ＋ de Hoy, la Agenda y el Calendario, las tres del Armario y el editor de color y de temas. El botón de cerrar, tocar fuera y Escape siguen ahí: el asa es un añadido para el dedo, sin nombre ni foco. |
+| Móvil | Con asa |
+| Escritorio | Sin asa (`sm:hidden`): la hoja va centrada y se cierra con su botón |
+| Movimiento reducido | El dedo la sigue moviendo; al soltar, se cierra o vuelve en su sitio, sin muelle ni inercia. |
 
 ### I · Menús
 
@@ -1926,22 +1959,52 @@
 
 #### Deslizar para cambiar de ejercicio
 
-`cambiar_ejercicio` · ✅ Existe · lo trata la **F8**
+`cambiar_ejercicio` · ✅ Existe · lo trata la **F5**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/views/EntrenamientoVivoView.jsx · src/components/gestosMotion.jsx (useDeslizarParaCambiar) · src/lib/gestosMotion.js |
+| Componente | useDeslizarParaCambiar |
+| Clase CSS | `.fit-miniatura` |
+| @keyframes | — |
+| En ANIMACIONES_HC | `fit_miniatura` |
+| Función | Pasar al ejercicio siguiente o al anterior en el entrenamiento en vivo. |
+| Estado inicial | En su sitio |
+| Estado final | El ejercicio nuevo, entrando por el lado hacia el que se deslizó |
+| Entrada | — |
+| Salida | — |
+| Interacción | Deslizar en horizontal: la tarjeta sigue al dedo desde que el gesto se decide por un eje, resiste donde ya no hay más y, al soltar, decide con distancia Y velocidad (`decidirCambio`) |
+| Transición | transform directo mientras se arrastra (es el dedo); si no cambia, vuelve con el muelle `responsive` desde donde esté (Web Animations API) |
+| Duración | 220 ms |
+| Curva | --ease-premium |
+| Spring | responsive |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 2 · Suave |
+| Prioridad | alta |
+| Relación | MS F5: antes el cambio solo ocurría al soltar y la tarjeta no se movía. `pan-y`: el scroll vertical sigue siendo del navegador. Los umbrales viven en `umbralesGesto.js`, el mismo `distanciaCambio` de la FIT F9. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | El dedo la sigue moviendo (es manipular, no animar); al soltar, vuelve o cambia en su sitio, sin muelle. |
+
+#### El ejercicio siguiente entra desde la derecha
+
+`ejercicio_entra_derecha` · ✅ Existe · lo trata la **F5**
 
 | Campo | Valor |
 |---|---|
 | Ubicación | src/views/EntrenamientoVivoView.jsx · src/index.css |
 | Componente | — |
-| Clase CSS | `.fit-miniatura` |
-| @keyframes | — |
-| En ANIMACIONES_HC | `fit_miniatura` |
-| Función | Pasar al ejercicio siguiente en el entrenamiento en vivo. |
-| Estado inicial | — |
-| Estado final | — |
-| Entrada | — |
+| Clase CSS | `.ejercicio-entra-derecha` |
+| @keyframes | `ejercicioEntraDerecha` |
+| En ANIMACIONES_HC | — |
+| Función | Que pasar al siguiente se lea como avanzar: llega del lado hacia el que se deslizó. |
+| Estado inicial | Medio visible, desplazado a la derecha |
+| Estado final | En su sitio |
+| Entrada | Desliza + fundido |
 | Salida | — |
-| Interacción | Deslizar en horizontal (umbral, `pan-y`) |
-| Transición | width, padding y colores `normal` |
+| Interacción | Deslizar a la izquierda o tocar «Siguiente» |
+| Transición | opacity, transform |
 | Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
@@ -1949,10 +2012,40 @@
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | media |
-| Relación | Sin seguir al dedo: el cambio ocurre al soltar. |
+| Relación | Con `backwards`: no deja un transform puesto (FIT F37). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+| Movimiento reducido | Solo el fundido. |
+
+#### El ejercicio anterior entra desde la izquierda
+
+`ejercicio_entra_izquierda` · ✅ Existe · lo trata la **F5**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/views/EntrenamientoVivoView.jsx · src/index.css |
+| Componente | — |
+| Clase CSS | `.ejercicio-entra-izquierda` |
+| @keyframes | `ejercicioEntraIzquierda` |
+| En ANIMACIONES_HC | — |
+| Función | Lo mismo hacia atrás: volver al anterior llega desde la izquierda. |
+| Estado inicial | Medio visible, desplazado a la izquierda |
+| Estado final | En su sitio |
+| Entrada | Desliza + fundido |
+| Salida | — |
+| Interacción | Deslizar a la derecha o tocar «Anterior» |
+| Transición | opacity, transform |
+| Duración | 220 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | media |
+| Relación | — |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Solo el fundido. |
 
 #### El divisor del comparador de fotos
 

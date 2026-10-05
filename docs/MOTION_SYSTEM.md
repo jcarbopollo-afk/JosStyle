@@ -239,6 +239,24 @@ y sin que las demás retrocedieran, con todo escrito y nada visible.
 🚨 **Nunca al aparecer**: abrir una pantalla no cuenta de 0 al valor. Sin valor anterior, o sin dato (`null`),
 no hay nada que animar. Y en Reducido una cuenta se vuelve relevo (el fundido, sin moverse).
 
+## 8.4 · Cómo responde algo que se arrastra (F5)
+
+*"La interacción táctil debe sentirse directa, física, natural y precisa. No quiero una app llena de rebotes."*
+
+| Si es… | Usa | Cómo se mueve |
+|---|---|---|
+| Una hoja que sale por abajo | `<AsaHoja cajaRef={caja} onCerrar={…} />` como primer hijo de su caja (la misma `onCerrar` que su botón) | Sigue al dedo; hacia arriba resiste; al soltar se cierra si se lanza o pasa del 35 % de su altura —siguiendo su inercia, curva `exit`— y si no vuelve con el muelle `responsive` desde donde esté. Sin asa en una pantalla ancha (`sm:hidden`) |
+| Algo que se desliza en horizontal para pasar a otro (la tarjeta del ejercicio) | `useDeslizarParaCambiar(zonaRef, { hayAnterior, haySiguiente, alCambiar })` y `touch-action: pan-y` en la zona | Sigue al dedo en cuanto el gesto es claramente horizontal; resiste donde no hay más; decide con distancia **y** velocidad; si no cambia, vuelve con muelle |
+| Un umbral (cuánto, qué velocidad) | `UMBRALES_GESTO` (`src/lib/umbralesGesto.js`) | Uno solo para toda la aplicación: arranque, eje, velocidades mínima, de cierre y máxima, distancias, resistencia y reposo |
+| Una decisión de gesto (eje, velocidad, cerrar o volver) | `ejeDeGesto`, `velocidadDeMuestras`, `conResistencia`, `decidirSoltar`, `decidirCambio` (`src/lib/gestosMotion.js`) | Se prueban en Node; ningún componente escribe la suya |
+| Un gesto nuevo | Primero una línea en `AUDITORIA_F5`, y sus decisiones en el motor (apartado 38) | Nunca una solución aislada en una vista |
+
+🚨 **Mientras el dedo arrastra, se mueve el `transform`, nunca un estado de React**, y la animación de
+vuelta se cancela si el dedo vuelve a agarrar (apartado 19). 🚨 **En Reducido el dedo sigue moviendo lo que
+arrastra** —eso es manipular, no animar—, pero al soltar no hay muelle ni inercia: llega a su sitio al momento.
+⚠️ **Un gesto nunca es la única forma**: el asa no tiene nombre ni foco porque la hoja tiene su botón de
+cerrar, Escape y tocar fuera; y la tarjeta del ejercicio tiene Anterior y Siguiente.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en
@@ -253,6 +271,9 @@ no hay nada que animar. Y en Reducido una cuenta se vuelve relevo (el fundido, s
   `useAnimacionDeGrafica`. La navegación tiene su par: la decisión en
   `src/lib/transicionNavegacion.js` (se prueba en Node) y lo que pasa en la página en
   `src/components/navegacionMotion.js`.
+- **Los gestos (F5)** tienen el mismo reparto: los números en `src/lib/umbralesGesto.js` (no importa nada,
+  así que también lo lee Fitness), las decisiones en `src/lib/gestosMotion.js` (Node) y lo que toca el DOM
+  —seguir al dedo con `transform` y soltar con la Web Animations API— en `src/components/gestosMotion.jsx`.
 - **Tailwind**: las clases `transition-*` usan por defecto el token `fast` y `--ease-premium`
   (`tailwind.config.js`), así que también respetan los modos.
 

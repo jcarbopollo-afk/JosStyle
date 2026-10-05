@@ -977,6 +977,11 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f4.mjs >/tmp/jc
 else
   fallo "Fallan los datos dinámicos del Motion System (F4)"; grep '✗' /tmp/jc_motion_f4.log
 fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f5.mjs >/tmp/jc_motion_f5.log 2>&1; then
+  ok "El Motion System, F5: física, gestos y touch — $(grep -c '✓' /tmp/jc_motion_f5.log) comprobaciones"
+else
+  fallo "Fallan los gestos del Motion System (F5)"; grep '✗' /tmp/jc_motion_f5.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else
