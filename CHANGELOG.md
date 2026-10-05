@@ -69,7 +69,11 @@ los documentos dicen la verdad.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos): build de Vite, **22 426
+pruebas unitarias** con Node en **208 suites**, **3760 casos de renderizado**, **11 reglas invariantes** y
+**3041 comprobaciones en Chromium** — **29 238 comprobaciones**. El salto desde la v3.129.1 es la suite
+nueva de la F0 (86 comprobaciones) y su línea en el resumen; el recorrido no cambia, porque esta fase no
+toca ninguna pantalla.
 
 ## v3.129.1 — La franja borrosa de arriba de los hubs, fuera, y el rebote de vuelta
 
