@@ -116,7 +116,9 @@ módulos, Ajustes y el ＋, con más de cien animaciones recogidas y ninguna fue
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.144.0, que es la pasada que
+llevó la F6 a la F14 a `main` de una vez: **23 708 pruebas** con Node en **222 suites**, **3936 casos** de
+renderizado real, **11 reglas invariantes** y **3297 comprobaciones** en Chromium — **30 952 comprobaciones**.
 
 ## v3.143.0 — Motion System F13/20: rendimiento extremo, GPU, frame budget y optimización
 
@@ -160,7 +162,9 @@ vuelva (0 MB de la segunda a la tercera).
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.144.0, que es la pasada que
+llevó la F6 a la F14 a `main` de una vez: **23 708 pruebas** con Node en **222 suites**, **3936 casos** de
+renderizado real, **11 reglas invariantes** y **3297 comprobaciones** en Chromium — **30 952 comprobaciones**.
 
 ## v3.142.0 — Motion System F12/20: accesibilidad, reduced motion, adaptive motion y calidad de experiencia
 
@@ -200,7 +204,9 @@ nueva y un temblor para los errores.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.144.0, que es la pasada que
+llevó la F6 a la F14 a `main` de una vez: **23 708 pruebas** con Node en **222 suites**, **3936 casos** de
+renderizado real, **11 reglas invariantes** y **3297 comprobaciones** en Chromium — **30 952 comprobaciones**.
 
 ## v3.141.0 — Motion System F11/20: orquestación global, coordinación y motion engine avanzado
 
@@ -244,7 +250,9 @@ Un framework o una librería, pasar las animaciones CSS por el orquestador, un e
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.144.0, que es la pasada que
+llevó la F6 a la F14 a `main` de una vez: **23 708 pruebas** con Node en **222 suites**, **3936 casos** de
+renderizado real, **11 reglas invariantes** y **3297 comprobaciones** en Chromium — **30 952 comprobaciones**.
 
 ## v3.140.0 — Motion System F10/20: layout motion, listas y contenido dinámico
 
@@ -297,7 +305,9 @@ contadores de notificaciones y listas virtualizadas.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.144.0, que es la pasada que
+llevó la F6 a la F14 a `main` de una vez: **23 708 pruebas** con Node en **222 suites**, **3936 casos** de
+renderizado real, **11 reglas invariantes** y **3297 comprobaciones** en Chromium — **30 952 comprobaciones**.
 
 ## v3.139.0 — Motion System F9/20: microinteracciones, estados y feedback de interfaz
 
@@ -353,7 +363,9 @@ Temblar un campo, quitar un elemento de una lista con su hueco (F10), los estado
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.144.0, que es la pasada que
+llevó la F6 a la F14 a `main` de una vez: **23 708 pruebas** con Node en **222 suites**, **3936 casos** de
+renderizado real, **11 reglas invariantes** y **3297 comprobaciones** en Chromium — **30 952 comprobaciones**.
 
 ## v3.138.0 — Motion System F8/20: física, muelles, estados del gesto e interacción directa
 
@@ -407,7 +419,9 @@ moda), el pellizco (C-32, de Josué) y un sexto muelle «snappy».
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.144.0, que es la pasada que
+llevó la F6 a la F14 a `main` de una vez: **23 708 pruebas** con Node en **222 suites**, **3936 casos** de
+renderizado real, **11 reglas invariantes** y **3297 comprobaciones** en Chromium — **30 952 comprobaciones**.
 
 ## v3.137.0 — Motion System F7/20: continuidad espacial, elementos compartidos y transiciones entre vistas
 
@@ -458,7 +472,9 @@ de página).
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.144.0, que es la pasada que
+llevó la F6 a la F14 a `main` de una vez: **23 708 pruebas** con Node en **222 suites**, **3936 casos** de
+renderizado real, **11 reglas invariantes** y **3297 comprobaciones** en Chromium — **30 952 comprobaciones**.
 
 ## v3.136.0 — Motion System F6/20: profundidad, capas, z-index y contexto visual
 
@@ -516,7 +532,9 @@ cabecera al compactarse (es transparente, SF2) y oscurecer el fondo además del 
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.144.0, que es la pasada que
+llevó la F6 a la F14 a `main` de una vez: **23 708 pruebas** con Node en **222 suites**, **3936 casos** de
+renderizado real, **11 reglas invariantes** y **3297 comprobaciones** en Chromium — **30 952 comprobaciones**.
 
 ## v3.135.0 — Motion System F5/20: física, gestos, touch y comportamiento táctil
 
@@ -592,7 +610,9 @@ foco de un campo (C-32), el asa en Imagen personal (congelada, EH F65) y arrastr
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.135.0: **22 979 pruebas** con
+Node en **213 suites**, **3864 casos** de renderizado real, **11 reglas invariantes** y **3164 comprobaciones** en
+Chromium — **30 018 comprobaciones**.
 
 ## v3.134.0 — Motion System F4/20: datos dinámicos, cifras, gráficas y estados
 
