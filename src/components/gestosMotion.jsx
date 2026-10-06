@@ -5,6 +5,7 @@ import {
   ejeDeGesto, velocidadDeMuestras, conResistencia, decidirSoltar, decidirCambio,
   vueltaConMuelle, salidaConInercia,
 } from '../lib/gestosMotion';
+import { siguienteEstadoGesto, veloDuranteArrastre, punteroQueCuenta, gestoAbandonado } from '../lib/fisicaMotion';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MOTION SYSTEM · F5 — LAS PIEZAS DE REACT DE LOS GESTOS
@@ -22,6 +23,11 @@ import {
 
 const MAX_MUESTRAS = 12;
 const muestra = (ev) => ({ t: ev.timeStamp || (typeof performance !== 'undefined' ? performance.now() : Date.now()), x: ev.clientX, y: ev.clientY });
+/** MS F8 — ¿sigue apoyado el dedo del gesto? Mientras el elemento tenga capturado su puntero, sí (la
+ *  captura se suelta sola al levantarlo). Un dedo quieto no manda muestras, y sin esto se tomaría por perdido. */
+const capturando = (g) => {
+  try { return !!(g && g.captor && g.id !== undefined && g.captor.hasPointerCapture(g.id)); } catch { return false; }
+};
 
 /**
  * MS F5, apartados 14-17 — EL ASA DE UNA HOJA. Va como primer hijo de la caja de una hoja
@@ -35,11 +41,28 @@ export function AsaHoja({ cajaRef, onCerrar, className = '-mt-3 mb-1' }) {
   const gesto = useRef(null);
 
   const mover = (caja, y) => { caja.style.transform = y ? `translateY(${y}px)` : ''; };
+  /* 🔓 MS F8, apartados 35 y 36 — la hoja está en UN estado de la máquina (`siguienteEstadoGesto`), y
+     es el mismo nombre que lleva escrito en `data-arrastre` desde la F5: un evento que no toca en ese
+     estado no la deja en uno imposible. */
+  const pasar = (caja, evento) => {
+    const estado = siguienteEstadoGesto(caja.dataset.arrastre || 'quieta', evento);
+    if (caja.dataset.arrastre !== estado) caja.dataset.arrastre = estado;
+    return estado;
+  };
+  /* 🔓 MS F8, apartado 16 — el velo responde al gesto: al bajar la hoja se aclara en proporción, y lo
+     de debajo recupera protagonismo. `velo` es la capa (el padre de la caja) y su color de partida. */
+  const aclarar = (g, progreso) => {
+    if (!g.velo || !g.fondo) return;
+    const c = veloDuranteArrastre(g.fondo, progreso);
+    if (c) g.velo.style.backgroundColor = c;
+  };
 
   const empezar = (ev) => {
     const caja = cajaRef && cajaRef.current;
-    if (!caja) return;
-    try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch { /* sin captura, el gesto sigue mientras el dedo esté encima */ }
+    /* MS F8, apartado 34 — un gesto es de UN dedo, y uno a la vez: el segundo no empieza otro. */
+    if (!caja || (gesto.current && !gestoAbandonado(gesto.current, ev, capturando(gesto.current)))) return;
+    const captor = ev.currentTarget;
+    try { captor.setPointerCapture(ev.pointerId); } catch { /* sin captura, el gesto sigue mientras el dedo esté encima */ }
     /* Una vuelta que estaba en marcha se para donde está: se sigue desde ahí (apartado 19). */
     let desde = 0;
     try {
@@ -48,15 +71,22 @@ export function AsaHoja({ cajaRef, onCerrar, className = '-mt-3 mb-1' }) {
       /* La entrada de la capa (F6) también: si el dedo agarra la hoja mientras sube, manda el dedo. */
       (caja.getAnimations ? caja.getAnimations() : []).forEach((a) => { if (a.id === 'asa-hoja' || a.id === 'capa-entra') a.cancel(); });
     } catch { desde = 0; }
+    const velo = caja.parentElement;
+    let fondo = null;
+    try {
+      (velo && velo.getAnimations ? velo.getAnimations() : []).forEach((a) => { if (a.id === 'asa-velo' || a.id === 'capa-velo') a.cancel(); });
+      fondo = velo && velo.dataset.veloOriginal ? velo.dataset.veloOriginal : (velo ? getComputedStyle(velo).backgroundColor : null);
+      if (velo && fondo) velo.dataset.veloOriginal = fondo;
+    } catch { fondo = null; }
     mover(caja, desde);
-    gesto.current = { y0: ev.clientY - desde, x0: ev.clientX, eje: desde ? 'y' : null, muestras: [muestra(ev)], alto: caja.getBoundingClientRect().height || 400, actual: desde };
-    caja.dataset.arrastre = 'arrastrando';
+    gesto.current = { id: ev.pointerId, captor, y0: ev.clientY - desde, x0: ev.clientX, eje: desde ? 'y' : null, muestras: [muestra(ev)], alto: caja.getBoundingClientRect().height || 400, actual: desde, velo, fondo };
+    pasar(caja, 'empezar');
   };
 
   const seguir = (ev) => {
     const g = gesto.current;
     const caja = cajaRef && cajaRef.current;
-    if (!g || !caja) return;
+    if (!g || !caja || !punteroQueCuenta(g, ev)) return;
     g.muestras.push(muestra(ev));
     if (g.muestras.length > MAX_MUESTRAS) g.muestras.shift();
     const dy = ev.clientY - g.y0;
@@ -65,23 +95,33 @@ export function AsaHoja({ cajaRef, onCerrar, className = '-mt-3 mb-1' }) {
     /* Hacia abajo, libre; hacia arriba, con resistencia: la hoja no se despega de su borde. */
     g.actual = conResistencia(dy, { min: 0, tamano: g.alto });
     mover(caja, g.actual);
+    aclarar(g, g.actual / g.alto);
+    /* Si se soltara AHORA, ¿se cerraría? Eso es el umbral (apartado 36). */
+    const { vy } = velocidadDeMuestras(g.muestras);
+    const cerraria = decidirSoltar({ desplazamiento: g.actual, velocidad: vy, tamano: g.alto, sentido: 1 }) === 'cerrar';
+    pasar(caja, cerraria ? 'pasarUmbral' : 'volverDelUmbral');
   };
 
   /* Edge case (apartado 37): si quien la abrió no la cierra —o tarda—, la hoja no puede
      quedarse fuera de la pantalla con la página bloqueada detrás. Pasado un momento, si
      sigue montada, vuelve a su sitio. */
-  const cerrarDeVerdad = (caja) => {
+  const cerrarDeVerdad = (caja, g) => {
+    pasar(caja, 'fin');
     if (onCerrar) onCerrar();
     setTimeout(() => {
-      if (caja.isConnected && caja.dataset.arrastre === 'cerrando') { mover(caja, 0); caja.dataset.arrastre = 'quieta'; }
+      if (caja.isConnected && caja.dataset.arrastre === 'cerrada') {
+        mover(caja, 0);
+        if (g && g.velo && g.fondo) g.velo.style.backgroundColor = g.fondo;
+        pasar(caja, 'recuperar');
+      }
     }, 150);
   };
 
   const soltar = (ev, cancelado = false) => {
     const g = gesto.current;
-    gesto.current = null;
     const caja = cajaRef && cajaRef.current;
-    if (!g || !caja) return;
+    if (!g || !caja || (ev && !punteroQueCuenta(g, ev))) return;
+    gesto.current = null;
     if (ev && !cancelado) {
       g.muestras.push(muestra(ev));
       /* Un lanzamiento muy rápido puede llegar sin ningún `pointermove` en medio (el navegador
@@ -93,27 +133,33 @@ export function AsaHoja({ cajaRef, onCerrar, className = '-mt-3 mb-1' }) {
     const ctx = contextoDelDocumento();
     const resultado = cancelado ? 'volver' : decidirSoltar({ desplazamiento: g.actual, velocidad: vy, tamano: g.alto, sentido: 1 });
     if (resultado === 'cerrar') {
-      caja.dataset.arrastre = 'cerrando';
+      pasar(caja, 'soltarCerrar');
       const hasta = g.alto + 24;
       const { duracionMs } = salidaConInercia({ desde: g.actual, hasta, velocidad: vy, ctx });
       if (duracionMs > 0 && typeof caja.animate === 'function') {
         mover(caja, hasta);
         const a = caja.animate([{ transform: `translateY(${g.actual}px)` }, { transform: `translateY(${hasta}px)` }],
           { duration: duracionMs, easing: CURVAS_MOTION.exit, id: 'asa-hoja' });
-        a.finished.then(() => cerrarDeVerdad(caja), () => {});
+        a.finished.then(() => cerrarDeVerdad(caja, g), () => {});
       } else {
-        cerrarDeVerdad(caja);
+        cerrarDeVerdad(caja, g);
       }
       return;
     }
-    caja.dataset.arrastre = 'volviendo';
+    pasar(caja, cancelado ? 'cancelar' : 'soltarVolver');
     const { valores, duracionMs } = vueltaConMuelle({ desde: g.actual, velocidad: vy, ctx });
     mover(caja, 0);
+    /* El velo vuelve con la hoja, en el mismo tiempo (apartados 16 y 33: nada de un velo a medias). */
+    const veloAhora = g.velo ? g.velo.style.backgroundColor : null;
+    if (g.velo && g.fondo) g.velo.style.backgroundColor = g.fondo;
     if (duracionMs > 0 && typeof caja.animate === 'function' && g.actual) {
       const a = caja.animate(valores.map((v) => ({ transform: `translateY(${v}px)` })), { duration: duracionMs, easing: 'linear', id: 'asa-hoja' });
-      a.finished.then(() => { if (caja.dataset.arrastre === 'volviendo') caja.dataset.arrastre = 'quieta'; }, () => {});
+      if (g.velo && veloAhora && typeof g.velo.animate === 'function') {
+        try { g.velo.animate([{ backgroundColor: veloAhora }, { backgroundColor: g.fondo }], { duration: duracionMs, easing: CURVAS_MOTION.standard, id: 'asa-velo' }); } catch { /* sin animación, el velo ya está en su color */ }
+      }
+      a.finished.then(() => { if (caja.dataset.arrastre === 'volviendo') pasar(caja, 'fin'); }, () => {});
     } else {
-      caja.dataset.arrastre = 'quieta';
+      pasar(caja, 'fin');
     }
   };
 
@@ -147,7 +193,8 @@ export function useDeslizarParaCambiar(zonaRef, { hayAnterior = true, haySiguien
   const onPointerDown = (ev) => {
     if (ev.target && ev.target.closest && ev.target.closest('button, input, textarea, select, a')) return;
     const el = zonaRef.current;
-    if (!el) return;
+    /* MS F8, apartado 34 — un segundo dedo no empieza otro gesto ni corrompe éste. */
+    if (!el || (gesto.current && !gestoAbandonado(gesto.current, ev, capturando(gesto.current)))) return;
     /* Apartado 19 — si la tarjeta todavía vuelve con su muelle, se para DONDE ESTÁ y el gesto nuevo
        sigue desde ahí. Sin cancelarla, la animación mandaría sobre el dedo hasta acabar. */
     let base = 0;
@@ -162,13 +209,13 @@ export function useDeslizarParaCambiar(zonaRef, { hayAnterior = true, haySiguien
   const onPointerMove = (ev) => {
     const g = gesto.current;
     const el = zonaRef.current;
-    if (!g || !el) return;
+    if (!g || !el || !punteroQueCuenta(g, ev)) return;
     g.muestras.push(muestra(ev));
     if (g.muestras.length > MAX_MUESTRAS) g.muestras.shift();
     const dx = ev.clientX - g.x0;
     if (!g.eje) {
       g.eje = ejeDeGesto(dx, ev.clientY - g.y0);
-      if (g.eje === 'x') { try { el.setPointerCapture(g.id); } catch { /* sin captura, el gesto sigue mientras el dedo esté encima */ } el.dataset.deslizando = 'si'; }
+      if (g.eje === 'x') { try { el.setPointerCapture(g.id); g.captor = el; } catch { /* sin captura, el gesto sigue mientras el dedo esté encima */ } el.dataset.deslizando = 'si'; }
     }
     if (g.eje !== 'x') return;
     /* Sin anterior (o sin siguiente), ese lado resiste: no hay nada detrás. */
@@ -177,6 +224,7 @@ export function useDeslizarParaCambiar(zonaRef, { hayAnterior = true, haySiguien
   };
   const terminar = (ev, cancelado) => {
     const g = gesto.current;
+    if (g && ev && !punteroQueCuenta(g, ev)) return;
     gesto.current = null;
     const el = zonaRef.current;
     if (!g || !el) return;

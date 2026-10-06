@@ -163,7 +163,8 @@ ok(/a\.id === 'deslizar-ejercicio'/.test(COMP_LIMPIO) && /a\.id === 'asa-hoja'/.
   '🐛 un gesto nuevo para la vuelta en marcha y sigue DESDE DONDE ESTÁ (apartado 19)');
 ok(/onPointerCancel/.test(COMP_LIMPIO) && (COMP_LIMPIO.match(/cancelado/g) || []).length >= 4,
   'un gesto cancelado por el sistema vuelve: nunca cierra ni cambia (apartado 17, «cancel state»)');
-ok(/caja\.isConnected && caja\.dataset\.arrastre === 'cerrando'/.test(COMP_LIMPIO),
+/* 🔓 MS F8 — el estado al acabar de cerrar es «cerrada» (la máquina de estados de la F8). */
+ok(/caja\.isConnected && caja\.dataset\.arrastre === 'cerrada'/.test(COMP_LIMPIO),
   '🐛 si quien abrió la hoja no la cierra, la hoja vuelve a su sitio: nunca se queda fuera de la pantalla (apartado 37)');
 ok(/if \(!g\.eje\) g\.eje = ejeDeGesto\(ev\.clientX - g\.x0/.test(COMP_LIMPIO) && /if \(!g\.eje\) \{\s*g\.eje = ejeDeGesto\(ev\.clientX - g\.x0/.test(COMP_LIMPIO),
   'un lanzamiento que llega sin ningún `pointermove` en medio se decide con el punto donde se suelta');

@@ -1,5 +1,59 @@
 # CHANGELOG.md
 
+## v3.138.0 — Motion System F8/20: física, muelles, estados del gesto e interacción directa
+
+La F8 del Motion System (*"Física, springs, gestos e interacción directa"*, líneas 10688–11379 de
+`especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). Su frase: *"No quiero una app llena de rebotes. Quiero una app que
+parezca responder físicamente al usuario."* La F5 ya había construido el motor de los gestos, y esta fase **no
+escribe otro**: le pone el orden que pide su enunciado. Vive en `src/lib/fisicaMotion.js` (C-59).
+
+### La jerarquía de muelles, y que ninguno de los que se usan rebote — MEDIDO (apartados 3-8)
+
+`JERARQUIA_MUELLES` dice para qué es cada uno de los cinco muelles de la F1: `responsive` para lo que va pegado al
+dedo (hojas, la tarjeta del ejercicio: **el único que usa hoy la aplicación**), `normal`, `soft` y `heavy` para
+masas que hoy no se arrastran, y `bouncy` **para nada**. ⚠️ El «snappy» del enunciado —interruptores, botones— **no
+es un muelle**: un toque no suelta nada con velocidad y va por tiempo (F3); *"no todo debe ser spring"*. Y que no
+rebote no se decide a ojo: `sobrepasoDe` y `cruces` **muestrean** cada muelle, y los que se usan se pasan como mucho
+medio por ciento. La velocidad sí cuenta (apartado 9): un lanzamiento rápido sale antes que uno lento.
+
+### 🔓 La máquina de estados de un gesto (apartados 33, 35 y 36)
+
+`quieta → arrastrando ⇄ umbral → volviendo / cerrando → quieta / cerrada`, con **los mismos nombres que la hoja lleva
+en `data-arrastre` desde la F5** —no hay una segunda forma de decir lo mismo—. `umbral` es nuevo: el punto en que,
+soltándola ahora, la hoja se cerraría. Agarrarla mientras vuelve o mientras se va es una transición más
+(*"settling → new gesture"*), y ya nadie escribe `data-arrastre` a mano: pasa por `siguienteEstadoGesto`.
+
+### 🔓 El velo responde al dedo (apartado 16)
+
+Al bajar una hoja, su velo **se aclara en proporción** —hasta un 60 %—: lo de debajo recupera protagonismo. Si la
+hoja vuelve, el velo vuelve con ella y en su mismo tiempo; si se cancela, no queda ni un velo a medias.
+
+### 🐛 Un solo dedo (apartado 34)
+
+- **El divisor y el zoom del comparador de fotos (FIT F27) eran un booleano** que cualquier dedo encendía y apagaba:
+  con dos apoyados, el divisor saltaba de uno a otro. Ahora guardan **qué dedo** los lleva (`punteroQueCuenta`).
+- **En la hoja y en la tarjeta del ejercicio, un segundo dedo empezaba otro gesto** encima del primero, y su
+  `pointerup` lo soltaba. Ya no.
+- ⚠️ Y sin el fallo contrario: un dedo que se levanta sin que se le oiga no puede dejar el siguiente gesto
+  bloqueado. Un gesto sin muestras en 600 ms **y sin su puntero capturado** se da por perdido; con la captura, un
+  dedo QUIETO no se confunde con uno que ya no está (`gestoAbandonado`).
+
+### Los puntos hápticos (apartado 22)
+
+Declarados en `PUNTOS_HAPTICOS`, y van por el bus como todo lo demás (el motor de audio ya da un toque en el iPhone
+con el interruptor nativo de iOS 17.4+). Se emiten los que ya sonaban —una serie hecha, el fin de un descanso—; los
+del gesto **no**, porque cerrar una hoja con su botón no suena y un gesto no puede sentirse distinto que el botón
+que hace lo mismo.
+
+### Lo que no se construye (`NO_EN_F8`)
+
+Puntos de anclaje (ninguna hoja tiene dos alturas), magnetismo, cursor y parallax (el enunciado pide no ponerlos por
+moda), el pellizco (C-32, de Josué) y un sexto muelle «snappy».
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.137.0 — Motion System F7/20: continuidad espacial, elementos compartidos y transiciones entre vistas
 
 La F7 del Motion System (*"Continuidad espacial, shared elements y transiciones entre vistas"*, líneas 9923–10687
@@ -248,7 +302,11 @@ falla —hoy un guardado fallido no se deshace en la pantalla, así que no hay n
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos): build de Vite, **22 873
+pruebas unitarias** con Node en **212 suites**, **3852 casos de renderizado real**, **11 reglas invariantes** y
+**3138 comprobaciones en Chromium** — **29 874 comprobaciones**. El salto desde la v3.133.0 son 74 pruebas de Node
+—la suite nueva de los datos que cambian (`test-motion-f4`) y su línea en el resumen—, 16 casos de renderizado y
+la sección «MS F4» del recorrido (12).
 
 ## v3.133.0 — Motion System F3/20: microinteracciones, componentes y feedback
 

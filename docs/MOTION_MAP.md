@@ -5,7 +5,7 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**78 elementos**: ✅ Existe 69 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 7 · 🚨 Fuera de control 0.
+**79 elementos**: ✅ Existe 70 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 7 · 🚨 Fuera de control 0.
 
 ## Resumen
 
@@ -45,6 +45,7 @@
 | El fondo de una hoja se oscurece | G | 2 · Suave | 220 ms | ✅ Existe | F6 |
 | Ventanas del Calendario | G | 2 · Suave | 220 ms | ✅ Existe | F6 |
 | Arrastrar una hoja por su asa | H | 2 · Suave | 220 ms | ✅ Existe | F5 |
+| El velo de una hoja se aclara mientras se arrastra | H | 2 · Suave | 220 ms | ✅ Existe | F8 |
 | Todas las capas: ventanas, hojas, pantallas por encima y visores (unas 40) | G | 2 · Suave | 220 ms | ✅ Existe | F6 |
 | El aviso de «añadido» (y los de Fitness) | Q | 2 · Suave | 280 ms | ✅ Existe | F9 |
 | Menús «⋯» y desplegables | I | 1 · Micro | 220 ms | ✅ Existe | F6 |
@@ -1067,6 +1068,36 @@
 | Móvil | Con asa |
 | Escritorio | Sin asa (`sm:hidden`): la hoja va centrada y se cierra con su botón |
 | Movimiento reducido | El dedo la sigue moviendo; al soltar, se cierra o vuelve en su sitio, sin muelle ni inercia. |
+
+#### El velo de una hoja se aclara mientras se arrastra
+
+`velo_sigue_al_dedo` · ✅ Existe · lo trata la **F8**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/gestosMotion.jsx (AsaHoja) · src/lib/fisicaMotion.js |
+| Componente | AsaHoja |
+| Clase CSS | — |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Que al bajar una hoja lo de debajo recupere protagonismo (apartado 16): responden a la vez la hoja y su velo. |
+| Estado inicial | El velo de la hoja |
+| Estado final | Hasta un 60 % más claro con la hoja abajo del todo (`veloDuranteArrastre`) |
+| Entrada | — |
+| Salida | — |
+| Interacción | Arrastrar el asa |
+| Transición | background-color directo mientras se arrastra (es el dedo); si la hoja vuelve, el velo vuelve con ella y en su mismo tiempo (Web Animations API); si se cierra, se apaga con la salida común de las capas (F6) |
+| Duración | 220 ms |
+| Curva | --ease-premium |
+| Spring | responsive |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 2 · Suave |
+| Prioridad | media |
+| Relación | MS F8. La hoja va por los estados de `siguienteEstadoGesto` —quieta, arrastrando, umbral, volviendo, cerrando, cerrada— escritos en `data-arrastre`, y es de UN dedo (`punteroQueCuenta`): un segundo no la mueve ni la suelta. Si se cancela, no queda ni un transform ni un velo a medias (apartado 33). |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Igual mientras se arrastra (es manipular, no animar); al soltar, sin muelle. |
 
 ### I · Menús
 
@@ -2218,7 +2249,7 @@
 | Estado final | — |
 | Entrada | — |
 | Salida | — |
-| Interacción | Arrastrar: sigue al dedo (requestAnimationFrame) |
+| Interacción | Arrastrar: sigue al dedo (requestAnimationFrame), y es de UN dedo (`punteroQueCuenta`, MS F8): con dos, el divisor ya no salta entre ellos |
 | Transición | Directa, sin animación: es el dedo |
 | Duración | — |
 | Curva | --ease-premium |

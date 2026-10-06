@@ -313,6 +313,47 @@ siempre o un fundido en su sitio. Nunca un destello, un hueco ni un elemento que
 ⚠️ **Si el padre mueve el scroll después de medir** (abrir un detalle de Fitness lo lleva arriba), el viaje se
 corrige en el primer `requestAnimationFrame`, antes de pintar nada.
 
+## 8.7 · Física: muelles, estados de un gesto y un solo dedo (F8)
+
+*"No quiero una app llena de rebotes. Quiero una app que parezca responder físicamente al usuario."* La F5
+construyó el motor de los gestos; la F8 le pone el orden. Vive en `src/lib/fisicaMotion.js`.
+
+**La jerarquía de muelles** (`JERARQUIA_MUELLES`), los mismos cinco de la F1 (`SPRINGS_MOTION`) con su papel:
+
+| Papel | Muelle | Para qué |
+|---|---|---|
+| snappy | **ninguno** | Interruptores, botones, indicadores: un toque no suelta nada con velocidad, va por **tiempo** (F3: `ultraFast` al pulsar, la curva `entrance` al soltar). *"No todo debe ser spring"* (apartado 4) |
+| responsive | `responsive` | Lo que va pegado al dedo: hojas y la tarjeta del ejercicio. **Es el que usa hoy la aplicación** |
+| standard | `normal` | Una tarjeta que se arrastre (hoy ninguna) |
+| soft | `soft` | Una pantalla entera |
+| heavy | `heavy` | Arrastrar y soltar para reordenar (hoy se reordena con flechas) |
+| bouncy | `bouncy` | **Nada**: es el único que rebota, y la pieza que lo quiera tiene que justificarlo (apartado 8) |
+
+🚨 **Ninguno de los que se usan rebota, y se MIDE**: `sobrepasoDe` y `cruces` muestrean el muelle y
+`muelleSinRebote` exige pasarse como mucho `SOBREPASO_MAXIMO` (medio por ciento). La velocidad del dedo **sí
+cuenta** (apartado 9): la vuelta sale con la que traía (`vueltaConMuelle`) y un lanzamiento rápido sale antes que
+uno lento (`salidaConInercia`, entre `fast` y `normal`). Los umbrales siguen en UN sitio: `UMBRALES_GESTO`.
+
+**Los estados de un gesto** (`siguienteEstadoGesto`, apartados 35 y 36), escritos en `data-arrastre`:
+
+`quieta` (IDLE) → `arrastrando` ⇄ `umbral` (si se suelta AHORA, se cierra) → `volviendo` / `cerrando` (SETTLING) →
+`quieta` / `cerrada` (DISMISSED). Agarrar la hoja mientras vuelve o mientras se va es una transición más
+(*"settling → new gesture"*); un evento que no toca en un estado lo deja como está, y un estado desconocido se lee
+como `quieta`. **Nadie escribe `data-arrastre` a mano**: pasa por la máquina.
+
+| Si es… | Usa | Cómo se comporta |
+|---|---|---|
+| El velo de una hoja mientras se arrastra | `veloDuranteArrastre(fondo, progreso)` (ya lo hace `AsaHoja`) | Se aclara en proporción a lo que baja la hoja —hasta un 60 %—: lo de debajo recupera protagonismo (apartado 16). Si la hoja vuelve, el velo vuelve con ella y en su mismo tiempo; si se cierra, se apaga con la salida de las capas (F6) |
+| Un gesto de un dedo | `punteroQueCuenta(gesto, ev)` en cada `pointermove` y `pointerup` | El gesto es del dedo que lo empezó: un segundo ni lo mueve, ni lo suelta, ni empieza otro (apartado 34). Lo usan el asa, deslizar entre ejercicios y el divisor y el zoom del comparador |
+| Un gesto que se pudo perder | `gestoAbandonado(gesto, ev, capturado)` | Sin muestras en `GESTO_ABANDONADO_MS` (600) y sin el puntero capturado, el dedo se levantó donde no se le oyó: el siguiente gesto puede empezar. Un dedo QUIETO sigue capturado y no se le quita |
+| Un punto háptico | `PUNTOS_HAPTICOS`: se emite al bus (`emitir`) y el motor de audio decide | Hoy se emiten los que ya sonaban (serie hecha, fin de un descanso). Los del gesto no: no puede sentirse distinto que el botón que hace lo mismo |
+
+🚨 **Al cancelarse un gesto no queda nada a medias** (apartado 33): ni un `transform`, ni un velo aclarado, ni un
+estado colgado. ⚠️ **Ni anclajes, ni magnetismo, ni parallax** (`NO_EN_F8`): ninguna hoja tiene dos alturas y el
+enunciado pide no ponerlos por moda. 🚨 **En Reducido** el dedo sigue moviendo lo que arrastra —y el velo con él—,
+pero al soltar no hay muelle ni inercia. ⚠️ **Ningún gesto es la única forma** (apartado 39): toda hoja con asa
+tiene su botón de cerrar, y el divisor del comparador se mueve con las flechas.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en

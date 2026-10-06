@@ -69,7 +69,8 @@ function salir(n, siguiente, anterior, padre) {
   const modo = salidaPosible({
     nodos: n.getElementsByTagName('*').length,
     conVideo: !!n.querySelector('video, canvas'),
-    arrastrada: !!(caja && caja.dataset && caja.dataset.arrastre === 'cerrando'),
+    /* Una hoja que se fue arrastrándola (F5) está «cerrando» o ya «cerrada» (la máquina de la F8). */
+    arrastrada: !!(caja && caja.dataset && ['cerrando', 'cerrada'].includes(caja.dataset.arrastre)),
   });
   if (modo === 'ninguna') return;
   const tipo = n.dataset.capa || 'modal';

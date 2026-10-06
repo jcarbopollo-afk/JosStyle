@@ -1205,6 +1205,34 @@ tiene, y pide cosas que otras fases ya reparten:
 3. **El indicador que viaja entre pestañas** (apartado 9) en `ToggleTab`, que usan diez vistas y que se parte en dos
    líneas cuando no cabe (GE F1), es la F10 (el diseño que cambia). La barra de abajo ya lo tiene (F2).
 
+### C-59 — ✅ RESUELTA AL CONSTRUIR (Motion System F8, v3.138.0) · Una F8 que repite la F5, un muelle «snappy» que no es un muelle y una vibración que el iPhone sí da
+
+La F8 (*"Física, springs, gestos e interacción directa"*) vuelve sobre lo que la F5 ya construyó —seguir al dedo,
+la velocidad, la resistencia, cerrar o volver— y pide además cosas que chocan con decisiones ya tomadas:
+
+1. **Rehacer lo de la F5 o ampliarlo.** El apartado 1 pide auditar y el 42 *"no sobreingenierizar"*; `SOLAPES_ROADMAP`
+   ya repartía las dos fases (F5: el gesto en sí; F8: la física al soltar). Lectura que respeta las dos cosas:
+   **no hay un segundo motor de gestos**. La F8 ordena el que hay —la jerarquía de muelles, la máquina de estados
+   escrita en el mismo `data-arrastre` de la F5, el velo que responde al dedo y la regla de un solo dedo— en
+   `src/lib/fisicaMotion.js`, y `AUDITORIA_F8` dice qué hacía cada pieza y qué queda.
+2. **El tier «snappy» del apartado 3 es para interruptores, botones e indicadores**, y el 4 dice *"no todo debe ser
+   spring"*. Son toques: no sueltan nada con velocidad. Se quedan por tiempo (F3) y «snappy» figura en la jerarquía
+   **sin muelle**; un sexto muelle sería una configuración sin nadie que la use (apartado 42).
+3. **"Haptic-ready" (apartado 22) y la vibración.** Mi primer borrador decía que el iPhone no deja vibrar a una web, y
+   no era verdad del todo: el motor de audio ya da un toque con el interruptor nativo de iOS 17.4+ (`vibrar`). Lo
+   que se hace: los puntos hápticos se declaran (`PUNTOS_HAPTICOS`) y van por el bus como todo lo demás; los del
+   gesto **no se emiten**, porque cerrar una hoja con su botón no suena y un gesto no puede sentirse distinto que el
+   botón que hace lo mismo.
+4. **Puntos de anclaje (apartado 14).** Ninguna hoja de JosStyle tiene dos alturas; inventar una media altura sería
+   un control que nadie ha pedido (regla 8). Está en `NO_EN_F8`, con `decidirSoltar` listo para cuando la haya.
+5. 🐛 **Lo que la auditoría encontró**: el divisor y el zoom del comparador de fotos (FIT F27) eran un booleano que
+   cualquier dedo encendía y apagaba —con dos apoyados, el divisor saltaba entre ellos (apartados 34 y 36)—; y en
+   la hoja y en la tarjeta del ejercicio, un segundo dedo empezaba un gesto nuevo encima del primero y su `pointerup`
+   lo soltaba. Arreglados. ⚠️ Y al proteger el gesto había que evitar el fallo contrario: un dedo que se levanta
+   sin que se le oiga no puede dejar el siguiente gesto bloqueado (apartado 33), así que un gesto sin muestras en
+   600 ms **y sin su puntero capturado** se da por perdido —con la captura, un dedo quieto no se confunde con uno
+   que ya no está—.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

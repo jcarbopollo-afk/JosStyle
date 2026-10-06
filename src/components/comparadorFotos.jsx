@@ -34,6 +34,7 @@ import {
   TOUCH_ACTION_LADO, TOUCH_ACTION_DIVISOR, disposicionDeAncho, seleccionDesdeFoto,
 } from '../lib/comparadorFotos';
 import { transicion } from '../lib/motion';
+import { punteroQueCuenta } from '../lib/fisicaMotion';
 
 const ICONOS_MODO = { lado: Columns2, deslizar: SlidersHorizontal };
 const ICONOS_ALINEACION = { centro: AlignVerticalJustifyCenter, arriba: AlignVerticalJustifyStart };
@@ -152,22 +153,24 @@ export function ComparisonImage({ lado, url, zoom: z = null, alineacion: ali, on
   const zoom = z && typeof z === 'object' ? z : { escala: 1, x: 0, y: 0 };
   const ampliada = hayZoom(zoom);
 
+  /* MS F8, apartado 34 — desplazar la imagen ampliada es de UN dedo: el que empezó. Un segundo dedo
+     ni empieza otro arrastre ni mueve éste (saltaría entre los dos), y su `pointerup` no lo termina. */
   const empezar = (ev) => {
-    if (!ampliada || !onMover) return;
+    if (!ampliada || !onMover || arrastre.current) return;
     const t = ev.touches ? ev.touches[0] : ev;
-    arrastre.current = { x: t.clientX, y: t.clientY };
+    arrastre.current = { x: t.clientX, y: t.clientY, id: ev.pointerId };
   };
   const mover = (ev) => {
-    if (!arrastre.current || !onMover) return;
+    if (!arrastre.current || !onMover || !punteroQueCuenta(arrastre.current, ev)) return;
     const t = ev.touches ? ev.touches[0] : ev;
     const caja = ev.currentTarget.getBoundingClientRect();
     if (!caja.width || !caja.height) return;
     const dx = ((t.clientX - arrastre.current.x) / caja.width) * 100;
     const dy = ((t.clientY - arrastre.current.y) / caja.height) * 100;
-    arrastre.current = { x: t.clientX, y: t.clientY };
+    arrastre.current = { x: t.clientX, y: t.clientY, id: arrastre.current.id };
     onMover(dx, dy);
   };
-  const soltar = () => { arrastre.current = null; };
+  const soltar = (ev) => { if (arrastre.current && punteroQueCuenta(arrastre.current, ev)) arrastre.current = null; };
 
   const lim = limiteDesplazamiento(zoom.escala);
   return (
@@ -184,6 +187,7 @@ export function ComparisonImage({ lado, url, zoom: z = null, alineacion: ali, on
       onPointerDown={empezar}
       onPointerMove={mover}
       onPointerUp={soltar}
+      onPointerCancel={soltar}
       onPointerLeave={soltar}
     >
       {lado.fallida ? (
@@ -274,7 +278,10 @@ export function ComparisonSideBySide({ pantalla, urls = {}, onZoom = null, onMov
    con el teclado** (apartado 21). */
 export function ComparisonSlider({ pantalla, urls = {}, onSlider, onFallo = null }) {
   const caja = useRef(null);
-  const arrastrando = useRef(false);
+  /* MS F8, apartados 34 y 36 — el divisor lo lleva UN dedo: aquí se guarda cuál (`null` = nadie), en vez
+     de un booleano que cualquier dedo encendía y apagaba —con dos, el divisor saltaba entre ellos—. */
+  const arrastrando = useRef(null);
+  const suelta = (ev) => { if (arrastrando.current && punteroQueCuenta(arrastrando.current, ev)) arrastrando.current = null; };
   const [izquierda, derecha] = pantalla.lados || [];
 
   const desdeEvento = useCallback((ev) => {
@@ -326,10 +333,11 @@ export function ComparisonSlider({ pantalla, urls = {}, onSlider, onFallo = null
           border: `1px solid ${COLORS.border}`,
           touchAction: TOUCH_ACTION_DIVISOR,
         }}
-        onPointerDown={(ev) => { arrastrando.current = true; desdeEvento(ev); }}
-        onPointerMove={(ev) => { if (arrastrando.current) desdeEvento(ev); }}
-        onPointerUp={() => { arrastrando.current = false; }}
-        onPointerLeave={() => { arrastrando.current = false; }}
+        onPointerDown={(ev) => { if (arrastrando.current) return; arrastrando.current = { id: ev.pointerId }; desdeEvento(ev); }}
+        onPointerMove={(ev) => { if (arrastrando.current && punteroQueCuenta(arrastrando.current, ev)) desdeEvento(ev); }}
+        onPointerUp={suelta}
+        onPointerCancel={suelta}
+        onPointerLeave={suelta}
       >
         <div className="absolute inset-0">{imagen(derecha)}</div>
         {/* La de la izquierda, recortada hasta el divisor. */}

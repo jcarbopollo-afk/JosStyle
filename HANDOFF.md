@@ -2,6 +2,12 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.138.0 — Motion System F8/20: física e interacción directa):**
+> Los gestos ya tenían física (F5); la F8 les pone orden: una **jerarquía de muelles** medida (ninguno de los que se
+> usan rebota), una **máquina de estados** del gesto —con el estado «umbral»— escrita en el mismo `data-arrastre`, el
+> **velo que se aclara** al bajar una hoja, y **un solo dedo**: el divisor del comparador de fotos ya no salta entre
+> dos dedos. **La siguiente es la F9** (microinteracciones, estados y feedback de interfaz).
+
 > **📅 ACTUALIZACIÓN (v3.137.0 — Motion System F7/20: continuidad espacial):**
 > Abrir un módulo desde la portada de su área ya es **entrar en la tarjeta**: la pantalla crece desde ella, con sus
 > esquinas. Al volver, esa tarjeta se posa. El nombre de un ejercicio **viaja** de la biblioteca al título de su

@@ -8148,6 +8148,31 @@ const alBorde_fit27 = await page.evaluate(() => Number(document.querySelector('[
 ok(alBorde_fit27 === 100,
   '🚨 FIT F27 — y llega al borde: sin eso no se puede ver ninguna de las dos entera (apartado 8)');
 
+/* 🔓 MS F8, apartado 34 — el divisor es de UN dedo. Antes era un booleano que encendía cualquier dedo, así
+   que con dos apoyados saltaba de uno a otro. Ahora el segundo ni lo mueve ni lo suelta. */
+const dedos_fit27 = await page.evaluate(async () => {
+  const s = document.querySelector('[role="slider"]');
+  const caja = s && s.closest('.select-none');
+  if (!caja) return null;
+  const r = caja.getBoundingClientRect();
+  const y = r.top + r.height / 2;
+  const valor = () => Number(s.getAttribute('aria-valuenow'));
+  const espera = () => new Promise((ok) => setTimeout(ok, 30));
+  const ev = (tipo, id, fx) => caja.dispatchEvent(new PointerEvent(tipo, { bubbles: true, clientX: r.left + r.width * fx, clientY: y, pointerType: 'touch', pointerId: id }));
+  const v = {};
+  ev('pointerdown', 21, 0.3); await espera(); v.uno = valor();
+  ev('pointerdown', 22, 0.8); await espera(); v.segundoApoya = valor();
+  ev('pointermove', 22, 0.9); await espera(); v.segundoMueve = valor();
+  ev('pointermove', 21, 0.4); await espera(); v.primeroMueve = valor();
+  ev('pointerup', 22, 0.9); ev('pointermove', 21, 0.45); await espera(); v.trasSoltarSegundo = valor();
+  ev('pointerup', 21, 0.45); ev('pointermove', 21, 0.7); await espera(); v.yaSuelto = valor();
+  return v;
+});
+ok(dedos_fit27 && Math.abs(dedos_fit27.uno - 30) <= 1 && dedos_fit27.segundoApoya === dedos_fit27.uno && dedos_fit27.segundoMueve === dedos_fit27.uno,
+  `🐛 MS F8 — un segundo dedo NO mueve el divisor: ni al apoyarse ni al arrastrar (${JSON.stringify(dedos_fit27)}; apartado 34)`);
+ok(dedos_fit27 && Math.abs(dedos_fit27.primeroMueve - 40) <= 1 && Math.abs(dedos_fit27.trasSoltarSegundo - 45) <= 1 && dedos_fit27.yaSuelto === dedos_fit27.trasSoltarSegundo,
+  'MS F8 — …el primero lo sigue llevando aunque el segundo se levante, y al soltar el primero ya no se mueve');
+
 /* Apartado 19 y 31 — ni compartir, ni exportar, ni una palabra de IA. */
 const textoComp_fit27 = await page.evaluate(() => document.body.innerText);
 ok(!/compartir|exportar|descargar|publicar/i.test(textoComp_fit27),
@@ -13088,6 +13113,88 @@ await page.waitForTimeout(300);
 
 ok(errores.length === erroresAntes_ms7, `MS F7 — …sin un error en la consola${errores.length > erroresAntes_ms7 ? `: ${errores.slice(erroresAntes_ms7).join(' | ').slice(0, 200)}` : ''}`);
 almacen.ajustes = ajustesDeAntes_ms7;
+
+/* ── MS F8 · Física e interacción directa: el velo sigue al dedo, los estados del gesto y un solo dedo ──
+   Lo que solo se ve en la página de verdad: que al bajar una hoja su VELO se aclare con ella y vuelva con
+   ella al soltar (apartado 16), que la hoja pase por los estados de la máquina —arrastrando, umbral,
+   volviendo— (apartado 36), que un segundo dedo no la mueva ni la suelte y que un gesto perdido no
+   bloquee el siguiente (apartados 33 y 34). ⚠️ Sufijo `_ms8`. */
+console.log('\n── MS F8 · Física, springs, gestos e interacción directa ──');
+const ajustesDeAntes_ms8 = almacen.ajustes;
+almacen.ajustes = { ...(ajustesDeAntes_ms8 || {}), apariencia: { ...((ajustesDeAntes_ms8 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms8 = errores.length;
+ok(await pulsar('Añadir') && /Apunte/.test(await esperarTexto(/Apunte/)), 'MS F8 — se abre la hoja del ＋ de Hoy');
+await page.waitForTimeout(400);
+/* Mueve la hoja con dedos sintéticos: `pasos` es [tipo, id, dy, espera]; devuelve lo que se ve tras cada uno. */
+const gesto_ms8 = (pasos) => page.evaluate(async (pasos) => {
+  const asa = [...document.querySelectorAll('[data-asa-hoja]')].find((a) => a.getBoundingClientRect().height > 0);
+  if (!asa) return null;
+  const caja = asa.parentElement;
+  const velo = caja.parentElement;
+  const r = asa.getBoundingClientRect();
+  const x0 = r.left + r.width / 2, y0 = r.top + r.height / 2;
+  const alfa = () => { const m = /rgba?\(([^)]+)\)/.exec(getComputedStyle(velo).backgroundColor); const p = m ? m[1].split(/[\s,/]+/).filter(Boolean) : []; return p.length >= 4 ? Number(p[3]) : (p.length ? 1 : null); };
+  const px = () => { const m = /translateY\((-?[\d.]+)px\)/.exec(caja.style.transform || ''); return m ? Math.round(Number(m[1])) : 0; };
+  const fotos = [{ paso: 'antes', alfa: alfa(), y: px(), estado: caja.dataset.arrastre || 'quieta', alto: Math.round(caja.getBoundingClientRect().height) }];
+  for (const [tipo, id, dy, espera] of pasos) {
+    if (espera) await new Promise((ok) => setTimeout(ok, espera));
+    asa.dispatchEvent(new PointerEvent(tipo, { bubbles: true, clientX: x0 + (id === 9 ? 0 : 40), clientY: y0 + dy, pointerType: 'touch', pointerId: id }));
+    fotos.push({ paso: `${tipo}#${id}@${dy}`, alfa: alfa(), y: px(), estado: caja.dataset.arrastre, anims: velo.getAnimations().map((a) => a.id).filter(Boolean) });
+  }
+  return fotos;
+}, pasos);
+
+/* 1 · El velo se aclara en proporción a lo que baja la hoja, y vuelve con ella. */
+const v_ms8 = await gesto_ms8([['pointerdown', 9, 0, 0], ['pointermove', 9, 20, 30], ['pointermove', 9, 40, 30], ['pointermove', 9, 60, 30], ['pointermove', 9, 60, 160], ['pointerup', 9, 60, 0]]);
+const a_ms8 = v_ms8 ? v_ms8.map((f) => f.alfa) : [];
+ok(v_ms8 && a_ms8[0] > 0 && a_ms8[2] < a_ms8[0] && a_ms8[3] < a_ms8[2] && a_ms8[4] < a_ms8[3],
+  `🚨 MS F8 — mientras se baja la hoja, su velo SE ACLARA con ella: lo de debajo recupera protagonismo (${a_ms8.join(' → ')}; apartado 16)`);
+ok(v_ms8 && v_ms8.at(-1).estado === 'volviendo' && v_ms8.at(-1).anims.includes('asa-velo'),
+  `MS F8 — …al soltarla antes del umbral, vuelve, y el velo vuelve con ella (${JSON.stringify(v_ms8 && v_ms8.at(-1))}; apartados 16 y 35)`);
+await page.waitForTimeout(700);
+const tras_ms8 = await page.evaluate(() => {
+  const asa = [...document.querySelectorAll('[data-asa-hoja]')].find((a) => a.getBoundingClientRect().height > 0);
+  const caja = asa && asa.parentElement;
+  return caja ? { estado: caja.dataset.arrastre, transform: caja.style.transform, velo: getComputedStyle(caja.parentElement).backgroundColor } : null;
+});
+const alfaFinal_ms8 = tras_ms8 ? Number((/,\s*([\d.]+)\)$/.exec(tras_ms8.velo) || [])[1]) : null;
+ok(tras_ms8 && tras_ms8.estado === 'quieta' && tras_ms8.transform === '' && Math.abs(alfaFinal_ms8 - a_ms8[0]) < 0.01,
+  `🚨 MS F8 — …y acaba QUIETA, sin un transform residual y con el velo de antes, no uno a medias (${JSON.stringify(tras_ms8)}; apartado 33)`);
+
+/* 2 · Los estados: pasar del umbral sin soltar, volver por encima y soltar. */
+const u_ms8 = await gesto_ms8([['pointerdown', 9, 0, 0], ['pointermove', 9, 100, 60], ['pointermove', 9, 200, 60], ['pointermove', 9, 320, 60], ['pointermove', 9, 320, 200], ['pointermove', 9, 30, 60], ['pointermove', 9, 30, 200], ['pointerup', 9, 30, 0]]);
+const est_ms8 = u_ms8 ? u_ms8.map((f) => f.estado) : [];
+ok(u_ms8 && est_ms8[1] === 'arrastrando' && est_ms8.slice(2, 6).includes('umbral'),
+  `🚨 MS F8 — la hoja pasa por los estados de la máquina: arrastrando y, pasado el punto en que soltarla la cierra, UMBRAL (${est_ms8.join(' → ')}; apartado 36)`);
+ok(u_ms8 && est_ms8[7] === 'arrastrando' && est_ms8[8] === 'volviendo',
+  'MS F8 — …volver por encima la devuelve a arrastrando, y soltarla ahí la deja en su sitio (*"gesture reversal"*)');
+await page.waitForTimeout(700);
+ok(/Apunte/.test(await ver()), '…y la hoja sigue abierta');
+
+/* 3 · Un segundo dedo ni la mueve ni la suelta. */
+const d_ms8 = await gesto_ms8([['pointerdown', 9, 0, 0], ['pointermove', 9, 40, 40], ['pointerdown', 11, 0, 30], ['pointermove', 11, 250, 30], ['pointerup', 11, 250, 30], ['pointermove', 9, 60, 30], ['pointerup', 9, 60, 200]]);
+ok(d_ms8 && d_ms8[3].y === 40 && d_ms8[4].y === 40 && d_ms8[5].y === 40 && ['arrastrando', 'umbral'].includes(d_ms8[5].estado),
+  `🐛 MS F8 — un SEGUNDO dedo no la mueve ni la suelta: el gesto es del que lo empezó (${JSON.stringify(d_ms8 && d_ms8.slice(2, 6).map((f) => [f.paso, f.y, f.estado]))}; apartado 34)`);
+ok(d_ms8 && d_ms8[6].y === 60 && d_ms8.at(-1).estado === 'volviendo',
+  'MS F8 — …el primero la sigue llevando, y al soltarlo vuelve');
+await page.waitForTimeout(700);
+
+/* 4 · Un dedo que se levantó donde no se le oyó no bloquea el siguiente gesto. */
+const p_ms8 = await gesto_ms8([['pointerdown', 9, 0, 0], ['pointermove', 9, 30, 30], ['pointerdown', 12, 0, 800], ['pointermove', 12, 30, 30], ['pointermove', 12, 30, 160], ['pointerup', 12, 30, 0]]);
+/* El dedo nuevo agarra la hoja DONDE ESTÁ (30 px abajo) y la baja 30 más: 60. */
+ok(p_ms8 && ['arrastrando', 'umbral'].includes(p_ms8[3].estado) && p_ms8[4].y === 60 && p_ms8.at(-1).estado === 'volviendo',
+  `🚨 MS F8 — un gesto que se perdió (sin su \`pointerup\`) no deja la hoja bloqueada: el siguiente dedo la agarra (${JSON.stringify(p_ms8 && p_ms8.slice(2).map((f) => [f.paso, f.y, f.estado]))}; apartado 33)`);
+await page.waitForTimeout(700);
+ok(/Apunte/.test(await ver()), '…y la hoja sigue abierta y en su sitio');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(400);
+
+ok(errores.length === erroresAntes_ms8, `MS F8 — …sin un error en la consola${errores.length > erroresAntes_ms8 ? `: ${errores.slice(erroresAntes_ms8).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms8;
 
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
