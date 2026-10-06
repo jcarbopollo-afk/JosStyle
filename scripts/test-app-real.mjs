@@ -337,6 +337,23 @@ const pulsar = async (txt, tope = 6000) => {
    APAREZCA, con un tope; si de verdad no llega, sigue fallando. */
 const eqReal = (a, b, m) => ok(JSON.stringify(a) === JSON.stringify(b), `${m}${JSON.stringify(a) === JSON.stringify(b) ? '' : ` — esperaba ${JSON.stringify(b)}, salió ${JSON.stringify(a)}`}`);
 
+/* 🐛 **MS F6 — una capa que se cierra deja una COPIA INERTE unos 160 ms**
+   (`data-capa-saliendo`), y la F10 hace lo mismo con una fila que se va de una
+   lista (`data-lista-saliendo`). Es `aria-hidden` y no se puede tocar, pero
+   `innerText` la lee: «la explicación se cierra al pasar al historial» salió
+   rojo con la aplicación bien, porque el texto se leyó con la copia todavía
+   fundiéndose. Así que esperar un texto es esperar también a que se vayan las
+   copias, y entonces volver a leer. Una copia que no se fuera nunca dejaría la
+   espera en su tope —y la sección MS F6 la cuenta—, así que no tapa nada. */
+const esperarSinCopias = async (tope = 1500) => {
+  const hasta = Date.now() + tope;
+  let hay = await page.evaluate(() => !!document.querySelector('[data-capa-saliendo], [data-lista-saliendo]'));
+  while (hay && Date.now() < hasta) {
+    await page.waitForTimeout(60);
+    hay = await page.evaluate(() => !!document.querySelector('[data-capa-saliendo], [data-lista-saliendo]'));
+  }
+  return !hay;
+};
 const esperarTexto = async (patron, tope = 8000) => {
   const hasta = Date.now() + tope;
   let texto = await ver();
@@ -344,7 +361,8 @@ const esperarTexto = async (patron, tope = 8000) => {
     await page.waitForTimeout(200);
     texto = await ver();
   }
-  return texto;
+  if (!(await esperarSinCopias())) return texto;
+  return ver();
 };
 
 /* ── 1 · ⚠️ ARRANCA, Y SIN NINGÚN ERROR ────────────────────────────────── */
