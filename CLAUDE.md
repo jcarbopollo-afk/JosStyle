@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.143.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.144.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -40,7 +40,7 @@ plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegac
 **F6 (v3.136.0)** —la profundidad y las capas—, la **F7 (v3.137.0)** —la continuidad espacial—, la **F8
 (v3.138.0)** —la física y la interacción directa—, la **F9 (v3.139.0)** —los estados y el feedback— y la
 **F10 (v3.140.0)** —el diseño que cambia: listas y desplegables— , la **F11 (v3.141.0)** —el orquestador—, la **F12 (v3.142.0)** —la accesibilidad del
-movimiento— y la **F13 (v3.143.0)** —el rendimiento—.
+movimiento—, la **F13 (v3.143.0)** —el rendimiento— y la **F14 (v3.144.0)** —el lenguaje del movimiento: curvas, ritmo y firma—.
 Lo que vale para cualquier cambio a partir de hoy:
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
@@ -180,6 +180,18 @@ Lo que vale para cualquier cambio a partir de hoy:
   cosas lee todas antes de escribir ninguna**. La calidad (`CALIDADES_MOTION`) sale del modo; las rebajas son las que
   se miden, nunca por el aparato (C-64). Medir: `window.__motion.fotogramas` (con la marca de la F11) y la sección
   «MS F13» del recorrido.
+- 🚨 **CADA CURVA TIENE UN PAPEL, Y CADA DURACIÓN UNA TALLA** (F14, `lenguajeMotion.js`): lo que **llega** a su sitio,
+  la estándar (`--ease-premium`); lo que **aparece** en su sitio (hoja, aviso, menú, error, vacío), `entrance`; lo que
+  **sale**, `exit`; lo que **abre y cierra**, `smooth`; los **momentos** (niveles 4 y 5 del mapa), `emphasized`; un
+  reloj, `linear`. La duración cabe en la talla de su nivel (`ESCALA_MOVIMIENTO`), la velocidad que se ve cae entre
+  0,015 y 0,08 px/ms, **lo que se va dura menos que lo que llega**, y **lo equivalente va al mismo ritmo** (las cuatro
+  barras de progreso en `medium`). `auditarLenguaje` lee `index.css` y pone la suite roja con una curva fuera de su
+  papel, un preset que no coincide con su CSS o una pareja al revés. Un desplegable abre en `medium` y cierra en `fast`.
+- 🐛 **DOS HERMANOS CON LA MISMA `key` DEJAN EL VIEJO PUESTO** (F14): los indicadores de Nutrición y su
+  `ListaAnimada` iban los dos por la fecha, y al cambiar de día se leían las cifras de hoy y las de ayer. **Un bloque
+  con `key` por fecha lleva su prefijo.** Y 🐛 **una decisión de llegada se toma UNA vez por navegación**
+  (`continuidadDeLaPantalla` en `App.jsx`): calculada en cada pintado, el primer cambio tras abrir desde una tarjeta
+  volvía a meter `module-enter` y la pantalla entera entraba otra vez.
 - 🐛 **UNA ANIMACIÓN DE VUELTA SE CANCELA CUANDO EL DEDO VUELVE A AGARRAR** (F5, apartado 19): si no, manda sobre
   el `transform` hasta acabar y el dedo no mueve nada. **Y un muelle que mueve píxeles reposa a un cuarto de
   píxel** (`muestrearSpring(…, { reposo })`): con el reposo genérico una vuelta de 30 px «duraba» 900 ms.
@@ -2163,8 +2175,8 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F14 DEL MOTION SYSTEM** (*"Easings, curvas, ritmo, aceleración y lenguaje visual del
-   movimiento"*, líneas 16453–17154 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F15… hasta la F20, en
+0. 🎬 **LA SIGUIENTE ES LA F15 DEL MOTION SYSTEM** (*"Motion responsive, orientación, safe areas y adaptación
+   multidispositivo"*, líneas 17155–17913 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F16… hasta la F20, en
    el orden de
    `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
    `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**

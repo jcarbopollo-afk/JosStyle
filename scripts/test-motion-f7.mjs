@@ -168,6 +168,10 @@ const COMP_L = sinComentarios(COMP);
 ok(/if \(origen && origen\.elemento !== el && !deUnaHermanaQueSigue\)/.test(COMP_L) && /elemento: el \}/.test(COMP_L), '🐛 …y un elemento no sale de su propio origen: con el efecto que se deshace y se rehace (StrictMode) no viajaba a su propio sitio');
 ok(/const deUnaHermanaQueSigue = !!origen && origen\.efimero && !!origen\.elemento && origen\.elemento\.isConnected;/.test(COMP_L),
   '🐛 …ni de la despedida de una HERMANA que sigue en la pantalla (el ensayo de StrictMode con el mismo id dos veces): al volver viajaba más de un nombre');
+ok(/const disparador = el\.parentElement \? el\.parentElement\.closest\('button, a, \[role="button"\]'\) : null;/.test(COMP_L)
+  && /disparador\.addEventListener\('pointerdown', alTocar, true\)/.test(COMP_L) && /disparador\.addEventListener\('click', alTocar, true\)/.test(COMP_L)
+  && /disparador\.removeEventListener\('pointerdown', alTocar, true\)/.test(COMP_L) && /disparador\.removeEventListener\('click', alTocar, true\)/.test(COMP_L),
+  '🐛 MS F14 — …y el toque se apunta desde el BOTÓN que envuelve el nombre (un dedo fuera de las letras no pasaba por él, y con el ejercicio dos veces en pantalla el nombre salía de la copia que no se tocó, a 900 px, y se fundía); el escuchador se quita al irse');
 ok(/apuntarOrigen\(`pantalla:\$\{id\}`, tarjetas\.current\[id\]\);\s*onOpenModulo\(id\);/.test(HUB),
   '🚨 la tarjeta de la portada apunta su rectángulo JUSTO antes de navegar, ya crecida');
 ok(/ref=\{\(el\) => \{ tarjetas\.current\[id\] = el; \}\}/.test(HUB) && /data-modulo=\{id\}/.test(HUB), '…cada tarjeta se guarda por su id');
@@ -178,15 +182,17 @@ const posNav = APP.indexOf('useNavegacionEnLaPagina(pantallaRef');
 const posCont = APP.indexOf('useContenedorDesdeOrigen(pantallaRef');
 const primerReturn = APP.indexOf('if (session === undefined) return');
 ok(posNav > 0 && posCont > posNav && posCont < primerReturn, '🚨 después de poner el scroll arriba (se mide en su sitio) y antes de cualquier `return` (regla 4)');
-ok(/const desdeTarjeta = tipoNav === 'entrar' && hayOrigen\(`pantalla:\$\{tab\}`\) && !contextoDelDocumento\(\)\.reducido && contextoDelDocumento\(\)\.espacial;/.test(APP_L)
+ok(/desde: tipoNav === 'entrar' && hayOrigen\(`pantalla:\$\{tab\}`\) && !contextoDelDocumento\(\)\.reducido && contextoDelDocumento\(\)\.espacial \}/.test(APP_L)
   && /className=\{`outline-none \$\{desdeTarjeta \? '' : claseDeNavegacion\(tipoNav\)\}`\.trim\(\)\}/.test(APP_L),
   '…y entonces la pantalla NO lleva además la entrada desde la derecha: dos movimientos para la misma llegada serían uno de más');
+ok(/const claveContinuidad = `\$\{tab\}\|\$\{claveDeScroll\(pilaNav\)\}\|\$\{tipoNav\}`;/.test(APP_L) && /if \(continuidadDeLaPantalla\.current\.clave !== claveContinuidad\)/.test(APP_L) && /const desdeTarjeta = continuidadDeLaPantalla\.current\.desde;/.test(APP_L),
+  '🐛 MS F14 — …y se decide UNA vez por navegación: el origen se gasta y caduca, y el siguiente pintado (borrar una tarea, escribir) le ponía `module-enter` y la pantalla entera volvía a entrar');
 ok(/setVieneDe\(tipo === 'volver' \? ultimoDePila\(antes\) : null\);/.test(APP_L) && /vieneDe=\{vieneDe\}/.test(APP_L), 'App.jsx sabe de qué pantalla se vuelve y se lo dice a la portada');
 ok(ultimoDePila(['hoy', 'area-vida', 'productividad']) === 'productividad' && ultimoDePila([{ id: 'hoy' }, { id: 'area-gestion' }]) === 'area-gestion',
   '`ultimoDePila` devuelve la pantalla de arriba, con la pila escrita de las dos formas (la raíz siempre está, NAVO F1)');
 ok(tipoDeNavegacion(['hoy', 'area-vida'], ['hoy', 'area-vida', 'productividad']) === 'entrar' && tipoDeNavegacion(['hoy', 'area-vida', 'productividad'], ['hoy', 'area-vida']) === 'volver',
   'entrar en un módulo desde su portada es `entrar` y salir es `volver` (la F2 no cambia)');
-ok(/export function Compartido/.test(COMP) && /onPointerDownCapture=\{apuntar\}/.test(COMP_L) && /return \(\) => \{ apuntarOrigen\(`compartido:\$\{id\}`, el, \{ efimero: true \}\); \};/.test(COMP_L),
+ok(/export function Compartido/.test(COMP) && /onPointerDownCapture=\{apuntar\}/.test(COMP_L) && /return \(\) => \{[\s\S]{0,260}?apuntarOrigen\(`compartido:\$\{id\}`, el, \{ efimero: true \}\);\s*\};/.test(COMP_L),
   '`Compartido` apunta su origen al tocarlo Y al desaparecer: funciona en los dos sentidos (apartados 4 y 6)');
 ok(/animacion\.effect\.setKeyframes\(plan\.keyframes\)/.test(COMP_L) && /requestAnimationFrame/.test(COMP_L), '🐛 si el padre mueve el scroll después de medir, el viaje se corrige antes del primer fotograma');
 ok(!/useState/.test(COMP_L) && !/saveData|app_data/.test(COMP_L), 'no guarda nada ni repinta React: el origen es de la pantalla (EH F40)');

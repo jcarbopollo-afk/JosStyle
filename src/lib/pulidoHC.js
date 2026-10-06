@@ -163,12 +163,12 @@ export const ANIMACIONES_HC = [
      declarada existe de verdad en el CSS: una animación declarada y no escrita es
      un catálogo que miente, y ya pasó con `tarea-hecha` y `aviso-entra`. */
   { id: 'habito_hecho', apartado: 16, nombre: 'Completar un hábito', ms: 280, clase: 'habito-hecho' },
-  { id: 'progreso_dia', apartado: 16, nombre: 'La barra del progreso del día', ms: 340, clase: 'barra-progreso' },
+  { id: 'progreso_dia', apartado: 16, nombre: 'La barra del progreso del día', ms: 280, clase: 'barra-progreso' },
   /* E3 F25 (PR F3) — el aro del temporizador. Entra aquí por lo mismo: la prueba
      de la E3 F14 recorre esta lista y comprueba que cada clase existe en el CSS. */
   { id: 'aro_pomodoro', apartado: 16, nombre: 'El aro del temporizador', ms: 280, clase: 'aro-pomodoro' },
   /* E3 F33 (NU F1) — el progreso de los indicadores de Nutrición, por lo mismo. */
-  { id: 'progreso_nutricion', apartado: 16, nombre: 'El progreso de un macro', ms: 420, clase: 'nu-progreso' },
+  { id: 'progreso_nutricion', apartado: 16, nombre: 'El progreso de un macro', ms: 280, clase: 'nu-progreso' },
   { id: 'rutina_fin', apartado: 16, nombre: 'Terminar una rutina', ms: 420, clase: 'rutina-fin' },
   /* FIT F8 — la marca de la pantalla de éxito. Su apartado 31 pide *"una
      microanimación elegante"* y a la vez *"no quiero confeti exagerado ni

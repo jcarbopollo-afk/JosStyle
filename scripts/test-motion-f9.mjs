@@ -74,8 +74,8 @@ ok(/\.campo\[aria-invalid='true'\] \{\s*border-color: var\(--color-negativo, cur
 ok(['TextInput', 'Textarea', 'SelectInput', 'Select'].every((c) => new RegExp(`(?:function|const) ${c}[\\s\\S]{0,600}className=[{"\`]*\\s*\`?campo `).test(UI)), 'los cuatro campos de `ui.jsx` llevan `campo`');
 ok(!/font-size|fontSize/.test((CSS.match(/\.campo[^{]*\{[^}]*\}/g) || []).join('')), '⚠️ …sin tocar la letra ni su tamaño: eso es la C-32, de Josué');
 ok(/@keyframes campoMensajeEntra \{\s*from \{ opacity: 0; transform: translateY\(calc\(-1 \* var\(--motion-dist-micro\)\)\); \}/.test(CSS), 'el error de un campo baja un poco desde él (`--motion-dist-micro`: 0 en Reducido)');
-ok(/\.campo-mensaje-entra \{\s*animation: campoMensajeEntra var\(--motion-dur-fast\) var\(--ease-premium\) backwards;/.test(CSS), '…en `fast`, con `backwards`');
-ok(/\.aviso-entra \{\s*animation: avisoEntra var\(--motion-dur-medium\) var\(--ease-premium\) backwards;/.test(CSS), '🐛 la entrada del aviso termina con `backwards`, no con `both` (la lección de la F3)');
+ok(/\.campo-mensaje-entra \{\s*animation: campoMensajeEntra var\(--motion-dur-fast\) var\(--motion-curva-entrance\) backwards;/.test(CSS), '…en `fast`, con `backwards` (y desde la MS F14, con la curva de lo que aparece)');
+ok(/\.aviso-entra \{\s*animation: avisoEntra var\(--motion-dur-medium\) var\(--motion-curva-entrance\) backwards;/.test(CSS), '🐛 la entrada del aviso termina con `backwards`, no con `both` (la lección de la F3)');
 ok(TIEMPOS_F9.every((t) => DURACIONES_MOTION[t.token] !== undefined && t.porque), 'cada tiempo de la fase es un token del motor, con su porqué (apartado 45)');
 
 console.log('\n── 4. El acento en el documento, para las hojas ──');

@@ -150,8 +150,8 @@ ok(/aria-label="Día anterior"/.test(VISTA) && /aria-label="Día siguiente"/.tes
 ok(/aria-label={calendarioAbierto \? /.test(VISTA) || /Elegir una fecha/.test(VISTA),
   '⚠️ y el acceso al calendario');
 ok(VISTA.includes('Volver a hoy'), '⚠️ con la vuelta a HOY de un toque (apartado 12)');
-ok(/key={fecha}/.test(VISTA),
-  '🚨 y al cambiar de día se repite la cascada de entrada: transición suave, sin recargar nada (apartado 11)');
+ok(/key=\{`indicadores-\$\{fecha\}`\}/.test(VISTA) && /ListaAnimada key=\{`comidas-\$\{fecha\}`\}/.test(VISTA),
+  '🚨 y al cambiar de día se repite la cascada de entrada: transición suave, sin recargar nada (apartado 11) — cada bloque con SU clave de fecha: dos hermanas con la misma dejaban las cifras de hoy puestas (MS F14)');
 ok(!/window\.location|location\.reload/.test(CODIGO_VISTA),
   '⚠️ y ni una recarga de página');
 ok(/aria-current={.*\? 'date'/.test(VISTA),

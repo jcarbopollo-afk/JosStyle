@@ -1,5 +1,69 @@
 # CHANGELOG.md
 
+## v3.144.0 — Motion System F14/20: easings, curvas, ritmo, aceleración y lenguaje visual del movimiento
+
+La F14 del Motion System (*"Easings, curvas, ritmo, aceleración y lenguaje visual del movimiento"*, líneas
+16453–17154 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). *"Dos interfaces pueden utilizar 300 ms y parecer
+completamente diferentes."* Los tokens eran de la F1; lo que faltaba era la gramática. Vive en
+`src/lib/lenguajeMotion.js`, y no tiene ni un valor propio: todo son ids de los tokens de la F1 (apartado 51).
+
+### El lenguaje (apartados 1-45)
+
+- **Cada curva tiene un papel** (`ROLES_MOTION`): lo que **llega** con la estándar (`--ease-premium`), lo que
+  **aparece** con `entrance`, lo que **sale** con `exit`, lo que **abre y cierra** con `smooth`, los **momentos** con
+  `emphasized` y los relojes con `linear`. El papel de cada animación lo dice su línea del `MOTION_MAP` (categoría y
+  nivel), con las excepciones escritas y su motivo.
+- **La escala por tallas** (`ESCALA_MOVIMIENTO`): XS a XL, una por nivel del mapa, con las duraciones que le caben y
+  cuánto se desplaza como mucho.
+- **La velocidad que se ve** (`velocidadesPercibidas`): todas las entradas que se desplazan entre 0,018 y 0,071 px/ms;
+  el «+1» de una racha va más despacio a propósito.
+- **Las parejas y lo equivalente**: lo que se va dura menos y acelera hacia fuera; volver dura menos que entrar;
+  desplegar `medium` y plegar `fast`; las cuatro barras de progreso, las dos hojas y lo pequeño que aparece, cada grupo
+  a su mismo ritmo.
+- **La firma y la temperatura** (`FIRMA_MOTION`, `TEMPERATURA_MOTION`): preciso, premium y natural; ni mecánico ni de
+  dibujos; un solo momento de firma.
+- **El lenguaje de capas, navegación y gestos**, escrito pieza a pieza sobre lo que ya construyeron la F2, F5, F6, F8,
+  F9 y F11.
+
+### Lo que la auditoría encontró y se aplicó (apartados 46, 47 y 53)
+
+- 🐛 **Las barras de progreso iban a tres ritmos** (420, 340, 420 y 280 ms): las cuatro en `medium`. El mapa y el
+  catálogo de la E3 F14 lo dicen igual.
+- 🐛 **Abrir y cerrar un desplegable eran lo mismo al revés**, y el CSS no seguía a sus presets: abre en `medium`,
+  cierra en `fast`, los dos con `smooth`; el respaldo de `Plegable` espera lo suyo en cada sentido.
+- 🐛 **Los momentos no usaban su curva** y el preset de subir de rango decía `momento` mientras el CSS duraba `medium`:
+  `emphasized`, y el preset dice lo que hace.
+- **Lo que aparece en su sitio llegaba como si viniera de lejos**: hojas, avisos, mensajes de error, vacíos y
+  desplegables con `entrance`, como ya hacían las capas de la F6. El chevron gira con `smooth`, como su desplegable.
+- 🔓 **C-65**: la FIT F37 pedía «una sola curva»; la F14 pide una jerarquía. Su comprobación evoluciona a «los tokens de
+  curva»: un `ease-out` escrito a mano la sigue poniendo roja.
+
+`auditarLenguaje({ css })` lee `index.css` y sale limpia; `scripts/test-motion-f14.mjs` la pone roja con un fallo
+inventado de cada tipo. La sección «MS F14» del recorrido lee en Chromium la curva de verdad de cada clase, abre y
+cierra el Historial de Salud (280 y 160 ms) y hace la **pasada global** del apartado 48: las tres áreas, cuatro
+módulos, Ajustes y el ＋, con más de cien animaciones recogidas y ninguna fuera de los tokens.
+
+### 🐛 Lo que destapó la regresión completa (apartado 55)
+
+- **Nutrición dejaba las cifras de hoy puestas al cambiar de día** (MS F10): los indicadores y la lista de comidas eran
+  dos bloques hermanos con la misma clave (la fecha), y React mantenía el de hoy al lado del de ayer: se leían 1050 y
+  900 a la vez. Cada bloque lleva ahora su propia clave.
+- **La pantalla volvía a entrar desde la derecha al primer cambio** después de abrirse desde su tarjeta (MS F7): la
+  decisión «nace de su tarjeta» se recalculaba en cada pintado, y en cuanto el origen se gastaba el contenedor recibía
+  `module-enter`. Borrar una tarea, escribir en un campo… Ahora se decide una vez por navegación.
+- **El nombre de un ejercicio salía de la copia que no se tocó** (MS F7): con el mismo ejercicio en «Recientes» y en la
+  lista, un toque fuera de las letras no apuntaba el origen y ganaba la última copia en irse —a 900 px—, así que el
+  nombre se fundía en vez de viajar. El toque se apunta desde el botón que lo envuelve.
+- **El aviso de navegación hablaba al abrir la aplicación** en desarrollo (MS F12): el doble montaje de `StrictMode`
+  gastaba la marca de «primera vez». Ahora compara con la última pantalla anunciada.
+- Dos comprobaciones del recorrido dependían del tiempo y se reescribieron para medir lo que prometen: la de agarrar
+  una hoja mientras sube (MS F11: se para donde se ve y el dedo sigue desde ahí) y la de la fila que sube al borrar
+  (MS F10: el salto se mide en la maqueta, con `offsetTop`, y se comprueba que la pantalla no se mueve).
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.143.0 — Motion System F13/20: rendimiento extremo, GPU, frame budget y optimización
 
 La F13 del Motion System (*"Rendimiento extremo, GPU, frame budget y optimización del Motion System"*, líneas

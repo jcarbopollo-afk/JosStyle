@@ -186,11 +186,11 @@ ok(/tomarControl\(caja, \['transform'\], 'gestos'\)/.test(ASA), 'si el dedo agar
 console.log('\n── 8. La hoja, el menú y el CSS ──');
 
 ok(/@keyframes hojaSubeDelBorde \{\s*from \{ opacity: var\(--hoja-opacidad-inicial\); transform: translateY\(var\(--hoja-recorrido\)\); \}/.test(CSS)
-  && /\[data-capa='hoja'\] > \.hoja-entra \{\s*animation: hojaSubeDelBorde var\(--motion-dur-normal\) var\(--ease-premium\) backwards;/.test(CSS),
-  '🚨 una hoja de Fitness sube desde su borde cuando ES una hoja (el iPhone), con su duración y su curva de siempre');
+  && /\[data-capa='hoja'\] > \.hoja-entra \{\s*animation: hojaSubeDelBorde var\(--motion-dur-normal\) var\(--motion-curva-entrance\) backwards;/.test(CSS),
+  '🚨 una hoja de Fitness sube desde su borde cuando ES una hoja (el iPhone), con su duración y la curva de lo que aparece (`entrance`, MS F14)');
 ok((CSS.match(/--hoja-recorrido: 0%;/g) || []).length === 2 && (CSS.match(/--hoja-opacidad-inicial: 0;/g) || []).length === 2,
   '…y en Reducido —el de Ajustes y el del iPhone— no se desplaza: se funde');
-ok(/\.calendar-sheet \{[\s\S]{0,300}animation: calendarSheetIn var\(--motion-dur-normal\) var\(--ease-premium\) backwards;/.test(CSS),
+ok(/\.calendar-sheet \{[\s\S]{0,300}animation: calendarSheetIn var\(--motion-dur-normal\) var\(--motion-curva-entrance\) backwards;/.test(CSS),
   '🐛 las ventanas del Calendario terminan con `backwards`: el `both` dejaba un `transform` puesto');
 ok(/\.menu-entra \{\s*animation: menuEntra var\(--motion-dur-fast\) var\(--motion-curva-entrance\) backwards;/.test(CSS), 'un menú que nace de su botón: corto y discreto (apartados 12 y 14)');
 const UI = leer('src/components/ui.jsx');

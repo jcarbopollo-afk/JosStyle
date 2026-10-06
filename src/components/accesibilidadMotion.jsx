@@ -13,9 +13,15 @@ import { Loader2 } from 'lucide-react';
    ═══════════════════════════════════════════════════════════════════════════ */
 export function AnuncioDeNavegacion({ nombre, clave }) {
   const [texto, setTexto] = useState('');
-  const primera = useRef(true);
+  /* 🐛 MS F14 — se compara con la ÚLTIMA pantalla anunciada, no con «¿es la primera vez?». En
+     desarrollo, `StrictMode` monta, deshace y vuelve a montar cada efecto: la marca de «primera vez»
+     ya estaba gastada en la segunda pasada, y al abrir la aplicación se anunciaba «Inicio» (60 ms
+     después, así que la prueba lo veía o no según lo deprisa que leyera). Con la clave, abrir no
+     habla nunca, y cambiar de pantalla, siempre. */
+  const anunciada = useRef(clave);
   useEffect(() => {
-    if (primera.current) { primera.current = false; return undefined; }
+    if (anunciada.current === clave) return undefined;
+    anunciada.current = clave;
     /* Se vacía y se vuelve a escribir: con el mismo nombre dos veces seguidas, un lector de
        pantalla no anunciaría el segundo cambio. */
     setTexto('');

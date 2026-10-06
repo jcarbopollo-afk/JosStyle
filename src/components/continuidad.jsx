@@ -101,10 +101,26 @@ export function Compartido({ id, forma = 'texto', as: Etiqueta = 'span', classNa
         });
       }
     }
+    /* 🐛 MS F14 — el toque se apunta desde el BOTÓN que lo envuelve, no solo desde el nombre. Un dedo
+       que toca la tarjeta fuera de las letras (o un `click()` sobre el botón) no pasa por el `span`, y con
+       el mismo ejercicio dos veces en la pantalla («Recientes» y la lista) el origen lo decidía el orden
+       en que se iban las dos copias: el nombre salía de la que no se tocó, a 900 px, y se fundía. */
+    const disparador = el.parentElement ? el.parentElement.closest('button, a, [role="button"]') : null;
+    const alTocar = () => apuntarOrigen(`compartido:${id}`, el);
+    if (disparador) {
+      disparador.addEventListener('pointerdown', alTocar, true);
+      disparador.addEventListener('click', alTocar, true);
+    }
     /* Al desaparecer (la lista se va y llega el detalle), apunta dónde estaba. React llama a esto
        ANTES de quitar el nodo, así que todavía se puede medir. Y es EFÍMERO: vale para lo que llega
        en este mismo cambio; si no, los veinte nombres de una lista viajarían al volver. */
-    return () => { apuntarOrigen(`compartido:${id}`, el, { efimero: true }); };
+    return () => {
+      if (disparador) {
+        disparador.removeEventListener('pointerdown', alTocar, true);
+        disparador.removeEventListener('click', alTocar, true);
+      }
+      apuntarOrigen(`compartido:${id}`, el, { efimero: true });
+    };
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
   const apuntar = () => apuntarOrigen(`compartido:${id}`, ref.current);
   return (

@@ -1022,6 +1022,11 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f13.mjs >/tmp/j
 else
   fallo "Falla el rendimiento del Motion System (F13)"; grep '✗' /tmp/jc_motion_f13.log
 fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f14.mjs >/tmp/jc_motion_f14.log 2>&1; then
+  ok "El Motion System, F14: el lenguaje del movimiento —cada curva con su papel, cada duración en su talla, las parejas y lo equivalente al mismo ritmo— — $(grep -c '✓' /tmp/jc_motion_f14.log) comprobaciones"
+else
+  fallo "Falla el lenguaje del movimiento del Motion System (F14)"; grep '✗' /tmp/jc_motion_f14.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

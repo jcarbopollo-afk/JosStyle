@@ -169,14 +169,14 @@ ok(/translate\(\$\{dx\}px, \$\{dy\}px\)/.test(COMP_L) && !/\b(top|left|height|wi
 ok(/useState\(abierto \? 'abierto' : 'cerrado'\)/.test(COMP_L) && /if \(estado === 'cerrado'\) return null;/.test(COMP_L), '🚨 `Plegable`: abierto al nacer no se anima, y cerrado no está en la página');
 ok(/\(ctx\.apagado \|\| !ctx\.espacial\) \? 'cerrado' : 'cerrando'/.test(COMP_L), '…en Reducido (o sin movimiento) se cierra de una vez: no hay nada que esperar');
 ok(/dentro\.setAttribute\('inert', ''\)/.test(COMP_L) && !/\sinert=\{/.test(COMP_L), '…mientras se cierra, lo de dentro es `inert`, puesto por el DOM (React 18 no conoce la prop: avisaría en la consola)');
-ok(/setTimeout\(terminar, duracionMs\('normal', ctx\) \+ 80\)/.test(COMP_L) && /propertyName === 'grid-template-rows'/.test(COMP_L), '…y termina con su transición o, si no llega (pestaña oculta), por reloj');
+ok(/setTimeout\(terminar, duracionMs\(estado === 'abriendo' \? 'medium' : 'fast', ctx\) \+ 80\)/.test(COMP_L) && /propertyName === 'grid-template-rows'/.test(COMP_L), '…y termina con su transición o, si no llega (pestaña oculta), por reloj (desde la MS F14, lo de abrir y lo de cerrar)');
 ok(/typeof children === 'function' \? children\(\) : children/.test(COMP_L), '…y lo de dentro puede ir como función: cerrado no se calcula, como hacía `{x && …}`');
 ok(/className=\{`despliegue-entra \$\{className\}`\.trim\(\)\}/.test(COMP_L), '…y lo de dentro sigue entrando con `despliegue-entra` (F3)');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 6. El CSS ──');
 
-ok(/\.plegable\s*\{\s*display:\s*grid;\s*transition:\s*grid-template-rows var\(--motion-dur-normal\) var\(--ease-premium\);/.test(CSS_LIMPIO), '`.plegable` cambia de altura con `grid-template-rows`, en `normal` y con la curva de siempre (ni una altura escrita a mano)');
+ok(/\.plegable\s*\{\s*display:\s*grid;\s*transition:\s*grid-template-rows var\(--motion-dur-fast\) var\(--motion-curva-smooth\);/.test(CSS_LIMPIO) && /\.plegable\[data-plegable='abriendo'\]\s*\{\s*transition-duration:\s*var\(--motion-dur-medium\);/.test(CSS_LIMPIO), '`.plegable` cambia de altura con `grid-template-rows` (ni una altura escrita a mano): desde la MS F14 abre en `medium` y cierra en `fast`, con la curva simétrica');
 ok(/\.plegable > \.plegable-dentro\s*\{\s*min-height:\s*0;\s*overflow:\s*hidden;/.test(CSS_LIMPIO), '🚨 …con `min-height: 0`: sin él, Safari no encoge la fila (SC F1)');
 ok(/\.plegable\[data-plegable='abierto'\] > \.plegable-dentro\s*\{\s*overflow:\s*visible;/.test(CSS_LIMPIO), '…y quieto no recorta: un halo de foco no se corta');
 ok(/html\[data-motion='reducido'\] \.plegable\s*\{\s*transition-property:\s*none;/.test(CSS_LIMPIO) && /@media \(prefers-reduced-motion: reduce\)\s*\{\s*html:not\(\[data-motion='off'\]\) \.plegable\s*\{\s*transition-property:\s*none;/.test(CSS_LIMPIO), '🚨 en Reducido —el de Ajustes y el del iPhone— la altura cambia sin animarse');

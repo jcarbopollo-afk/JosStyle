@@ -440,6 +440,11 @@ export default function App() {
   const [tipoNav, setTipoNav] = useState('seccion');
   const pilaNavRef = useRef(pilaNav);
   const pantallaRef = useRef(null);
+  /* 🐛 MS F14 — si la pantalla nació de su tarjeta (MS F7) se decide UNA vez por navegación, no en cada
+     pintado: el origen se gasta al animar y caduca a los 700 ms, así que el siguiente pintado —borrar
+     una tarea, escribir en un campo, cualquier cosa— le ponía `module-enter` y la pantalla entera
+     volvía a entrar desde la derecha. Regla 4: aquí arriba. */
+  const continuidadDeLaPantalla = useRef({ clave: null, desde: false });
   /* 🎬 MS F7 — al volver, de qué pantalla se viene: la portada de un área hace que su tarjeta se pose. */
   const [vieneDe, setVieneDe] = useState(null);
   const navegarA = (calcular, principal) => {
@@ -3538,7 +3543,11 @@ export default function App() {
        derecha (`module-enter`): serían dos movimientos para la misma llegada. Solo se pregunta (sin
        gastar el origen): lo gasta `useContenedorDesdeOrigen` al animar. En Reducido no hay recorte, y
        entonces sí la entrada de siempre, que ya es un fundido. */
-    const desdeTarjeta = tipoNav === 'entrar' && hayOrigen(`pantalla:${tab}`) && !contextoDelDocumento().reducido && contextoDelDocumento().espacial;
+    const claveContinuidad = `${tab}|${claveDeScroll(pilaNav)}|${tipoNav}`;
+    if (continuidadDeLaPantalla.current.clave !== claveContinuidad) {
+      continuidadDeLaPantalla.current = { clave: claveContinuidad, desde: tipoNav === 'entrar' && hayOrigen(`pantalla:${tab}`) && !contextoDelDocumento().reducido && contextoDelDocumento().espacial };
+    }
+    const desdeTarjeta = continuidadDeLaPantalla.current.desde;
     const nombrePantalla = tab === RAIZ_NAV ? 'Inicio'
       : (AREAS_NAV.find((a) => a.id === tab)?.label || MORE_NAV.find((m) => m.id === tab)?.label || 'esta pantalla');
     const protegido = (

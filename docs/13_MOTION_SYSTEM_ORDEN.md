@@ -34,7 +34,7 @@ se ordena es **el trabajo**.
 | **F11** ✅ **v3.141.0** | Orquestación global, coordinación y motion engine avanzado | 13290–14127 | 838 |
 | **F12** ✅ **v3.142.0** | Accesibilidad, reduced motion, adaptive motion y calidad de experiencia | 14966–15717 | 752 |
 | **F13** ✅ **v3.143.0** | Rendimiento extremo, GPU, frame budget y optimización | 15718–16452 | 735 |
-| **F14** | Easings, curvas, ritmo, aceleración y lenguaje visual del movimiento | 16453–17154 | 702 |
+| **F14** ✅ **v3.144.0** | Easings, curvas, ritmo, aceleración y lenguaje visual del movimiento | 16453–17154 | 702 |
 | **F15** | Motion responsive, orientación, safe areas y multidispositivo | 17155–17913 | 759 |
 | **F16** | Estados de sistema, loading, error, offline, sync y transiciones asíncronas | 1–759 | 759 |
 | **F17** | Motion de datos, dashboard, métricas, gráficas y visualización | 760–1458 | 699 |
@@ -89,3 +89,5 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | La prueba de la F12 | `scripts/test-motion-f12.mjs`, y la sección «MS F12» del recorrido de Chromium |
 | El rendimiento del movimiento: el presupuesto de un fotograma, el coste de cada propiedad, lo caro declarado, la auditoría, la calidad adaptativa y el monitor de fotogramas | `src/lib/rendimientoMotion.js` (F13), con la sombra que se funde en `index.css`, el fundido que lee antes de escribir (`fundidoBajoCabecera.js`) y los orígenes que caducan (`continuidad.js`) |
 | La prueba de la F13 | `scripts/test-motion-f13.mjs`, y la sección «MS F13» del recorrido de Chromium (pintados, recálculos y memoria medidos) |
+| El lenguaje del movimiento: la curva de cada papel, la escala por tallas, la velocidad que se ve, las parejas y lo equivalente, y la auditoría que lo lee del CSS | `src/lib/lenguajeMotion.js` (F14), aplicado en `index.css`, `PRESETS_MOTION`, el `MOTION_MAP` y `Plegable` |
+| La prueba de la F14 | `scripts/test-motion-f14.mjs`, y la sección «MS F14» del recorrido de Chromium (las curvas de verdad, el Historial que abre y cierra, la pasada global) |

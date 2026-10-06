@@ -64,7 +64,7 @@
 | Una cifra que baja | K | 1 · Micro | 220 ms | ✅ Existe | F4 |
 | Un estado vacío | K | 1 · Micro | 160 ms | ✅ Existe | F4 |
 | Gráficas propias en SVG (Fitness, Sueño) | K | 0 · Estático | — | ⬜ Sin movimiento | F17 |
-| Barras de progreso con su clase (Hoy, Biblioteca, Nutrición, Fitness) | L | 3 · Protagonista | 340 ms | ⚠️ Inconsistente | F17 |
+| Barras de progreso con su clase (Hoy, Biblioteca, Nutrición, Fitness) | L | 3 · Protagonista | 280 ms | ⚠️ Inconsistente | F17 |
 | Barras de progreso escritas en la vista (Objetivos, Productividad, Rachas, Bienestar digital) | L | 3 · Protagonista | 340 ms | ⚠️ Inconsistente | F17 |
 | El aro de progreso de `ui.jsx` | L | 3 · Protagonista | 420 ms | ✅ Existe | F17 |
 | El aro del temporizador | L | 2 · Suave | 280 ms | ✅ Existe | F17 |
@@ -89,8 +89,8 @@
 | Las tarjetas se desvanecen al pasar bajo la cabecera de un área | U | 1 · Micro | 0 ms | ✅ Existe | F10 |
 | Reordenar (flechas en lugar de arrastrar) | V | 2 · Suave | 220 ms | ✅ Existe | F10 |
 | Cambiar de mes en el Calendario | W | 2 · Suave | 220 ms | ✅ Existe | F10 |
-| El progreso de un libro | W | 3 · Protagonista | 420 ms | ✅ Existe | F17 |
-| El progreso de un macro | W | 3 · Protagonista | 420 ms | ✅ Existe | F17 |
+| El progreso de un libro | W | 3 · Protagonista | 280 ms | ✅ Existe | F17 |
+| El progreso de un macro | W | 3 · Protagonista | 280 ms | ✅ Existe | F17 |
 | Una barra de progreso de Fitness | W | 3 · Protagonista | 280 ms | ✅ Existe | F17 |
 | La muestra de «Ver cómo se mueve» en Ajustes | R | 3 · Protagonista | 420 ms | ✅ Existe | F1 |
 | Todo lo que se añada a partir de hoy | X | 0 · Estático | — | ✅ Existe | F0 |
@@ -482,7 +482,7 @@
 | Interacción | Tocar |
 | Transición | transform `normal` con la curva de JosStyle |
 | Duración | 220 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-smooth |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -512,7 +512,7 @@
 | Interacción | — |
 | Transición | opacity, transform |
 | Duración | 160 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-entrance |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -572,7 +572,7 @@
 | Interacción | — |
 | Transición | grid-template-rows |
 | Duración | 220 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-smooth |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -1000,7 +1000,7 @@
 | Interacción | — |
 | Transición | — |
 | Duración | 220 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-entrance |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -1062,7 +1062,7 @@
 | Interacción | — |
 | Transición | — |
 | Duración | 220 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-entrance |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -1092,7 +1092,7 @@
 | Interacción | — |
 | Transición | transform |
 | Duración | 220 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-entrance |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -1184,7 +1184,7 @@
 | Interacción | — |
 | Transición | — |
 | Duración | 220 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-entrance |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -1518,7 +1518,7 @@
 | Interacción | — |
 | Transición | opacity, transform |
 | Duración | 160 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-entrance |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -1579,7 +1579,7 @@
 | Salida | — |
 | Interacción | — |
 | Transición | width |
-| Duración | 340 ms |
+| Duración | 280 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -1858,7 +1858,7 @@
 | Interacción | Guardar con algo que no vale |
 | Transición | opacity, transform |
 | Duración | 160 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-entrance |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -1920,7 +1920,7 @@
 | Interacción | — |
 | Transición | — |
 | Duración | 280 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-entrance |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -2070,7 +2070,7 @@
 | Interacción | — |
 | Transición | — |
 | Duración | 280 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-emphasized |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -2100,7 +2100,7 @@
 | Interacción | — |
 | Transición | — |
 | Duración | 620 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-emphasized |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -2130,7 +2130,7 @@
 | Interacción | — |
 | Transición | — |
 | Duración | 900 ms |
-| Curva | --ease-premium |
+| Curva | --motion-curva-emphasized |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
@@ -2531,7 +2531,7 @@
 | Salida | — |
 | Interacción | — |
 | Transición | width |
-| Duración | 420 ms |
+| Duración | 280 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
@@ -2561,7 +2561,7 @@
 | Salida | — |
 | Interacción | — |
 | Transición | width |
-| Duración | 420 ms |
+| Duración | 280 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |

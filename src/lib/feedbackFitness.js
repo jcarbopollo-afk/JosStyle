@@ -87,11 +87,14 @@ export function duracionEnCss(css, clase) {
   return ms.length ? Math.max(...ms) : null;
 }
 
-/** ¿Usa la clase la curva de la aplicación en todas sus animaciones? */
+/** ¿Usa la clase la curva de la aplicación en todas sus animaciones? 🔓 MS F14 — la «curva de la
+ *  aplicación» es desde el Motion System una FAMILIA (`--ease-premium` y las `--motion-curva-*` del
+ *  motor, cada una con su papel: subir de rango es un momento, y su curva es `emphasized`). Lo que esta
+ *  regla prohibía —una curva propia, escrita a mano— sigue prohibido. */
 export function usaLaCurva(css, clase) {
   const decl = reglasDeClase(css, clase)
     .flatMap((r) => [...r.cuerpo.matchAll(/(?:animation|transition)\s*:[^;]*/g)].map((d) => d[0]));
-  return decl.length > 0 && decl.every((d) => d.includes(CURVA_FIT));
+  return decl.length > 0 && decl.every((d) => d.includes(CURVA_FIT) || /var\(--motion-curva-[a-z]+\)/.test(d));
 }
 
 /** 🚨 `both` o `forwards` dejan puesto el `transform` del último fotograma, y

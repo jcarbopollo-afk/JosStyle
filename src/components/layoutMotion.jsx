@@ -266,7 +266,8 @@ export function Plegable({ abierto, className = '', style, children, ...resto })
     const ctx = contextoDelDocumento();
     const fin = estado === 'abriendo' ? 'abierto' : 'cerrado';
     const terminar = () => setEstado((e) => (e === estado ? fin : e));
-    const t = setTimeout(terminar, duracionMs('normal', ctx) + 80);
+    /* MS F14 — abrir dura `medium` y cerrar `fast` (index.css, `.plegable`): el respaldo espera lo suyo. */
+    const t = setTimeout(terminar, duracionMs(estado === 'abriendo' ? 'medium' : 'fast', ctx) + 80);
     const el = caja.current;
     const alAcabar = (ev) => { if (ev.target === el && ev.propertyName === 'grid-template-rows') terminar(); };
     if (el) el.addEventListener('transitionend', alAcabar);

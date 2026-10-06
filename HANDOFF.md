@@ -2,6 +2,15 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.144.0 — Motion System F14/20: el lenguaje del movimiento):**
+> Cada curva tiene ya un papel: lo que **llega** a su sitio con la deceleración de la marca, lo que **aparece** (una
+> hoja, un aviso, un error) llega deprisa y se posa, lo que **sale** acelera hacia fuera, un desplegable **abre** en
+> 280 ms y **cierra** en 160, y los **momentos** (subir de rango, la racha) tienen su énfasis. Las cuatro barras de
+> progreso van al mismo ritmo. Y la regresión destapó tres fallos de fases anteriores, arreglados: en Nutrición las
+> cifras de hoy se quedaban puestas al cambiar de día, una pantalla abierta desde su tarjeta **volvía a entrar** al
+> primer cambio, y el nombre de un ejercicio salía de la copia equivocada. **La siguiente es la F15** (responsive,
+> orientación y safe areas).
+
 > **📅 ACTUALIZACIÓN (v3.143.0 — Motion System F13/20: rendimiento):**
 > Se ha MEDIDO el movimiento en Chromium y se ha arreglado lo caro sin quitar ninguna animación: pulsar una tarjeta de
 > la portada ya no repinta su sombra en cada fotograma (de 24 pintados a 6), desplazar una portada bajo su cabecera

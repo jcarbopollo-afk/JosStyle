@@ -534,7 +534,7 @@ export const PRESETS_MOTION = {
   cardExit: { que: 'Una tarjeta se va', duracion: 'normal', curva: 'exit', hasta: { opacidad: 'hidden', escala: 'subtle' } },
   modalEnter: { que: 'Una ventana aparece', duracion: 'normal', curva: 'entrance', desde: { opacidad: 'hidden', y: 'small', escala: 'micro' } },
   modalExit: { que: 'Una ventana se cierra', duracion: 'fast', curva: 'exit', hasta: { opacidad: 'hidden', y: 'small', escala: 'micro' } },
-  sheetEnter: { que: 'Una hoja sube', clase: 'hoja-entra', duracion: 'normal', curva: 'standard', desde: { opacidad: 'hidden', y: 'medium', escala: 'micro' } },
+  sheetEnter: { que: 'Una hoja sube', clase: 'hoja-entra', duracion: 'normal', curva: 'entrance', desde: { opacidad: 'hidden', y: 'medium', escala: 'micro' } },
   sheetExit: { que: 'Una hoja baja', duracion: 'fast', curva: 'exit', hasta: { opacidad: 'hidden', y: 'large' } },
   listReveal: { que: 'Una lista entra en cascada', clase: 'hub-card', duracion: 'cinematic', curva: 'standard', escalonado: true, desde: { opacidad: 'hidden', y: 'medium', escala: 'subtle' } },
   success: { que: 'Algo ha salido bien', clase: 'exito-entra', duracion: 'medium', curva: 'standard', desde: { opacidad: 'hidden', escala: 'hero' } },
@@ -547,10 +547,10 @@ export const PRESETS_MOTION = {
   expand: { que: 'Abrir un desplegable', duracion: 'medium', curva: 'smooth', acordeon: true },
   collapse: { que: 'Cerrar un desplegable', duracion: 'fast', curva: 'smooth', acordeon: true },
   dataChange: { que: 'Una cifra cambia', duracion: 'normal', curva: 'standard', desde: { opacidad: 'secondary', y: 'micro' } },
-  heroReveal: { que: 'Un momento importante', clase: 'fit-rango-sube', duracion: 'momento', curva: 'emphasized', desde: { opacidad: 'subtle', escala: 'hero' }, sobrepaso: true },
+  heroReveal: { que: 'Un momento importante', clase: 'fit-rango-sube', duracion: 'medium', curva: 'emphasized', desde: { opacidad: 'subtle', escala: 'hero' }, sobrepaso: true },
   /* MS F9, apartado 33 — un aviso entra (`aviso-entra`, CSS) y SE VA por donde vino: hacia abajo, en
      `fast` y con la curva de salida. Antes desaparecía de golpe. */
-  toastEnter: { que: 'Un aviso aparece', clase: 'aviso-entra', duracion: 'medium', curva: 'standard', desde: { opacidad: 'hidden', y: 'small' } },
+  toastEnter: { que: 'Un aviso aparece', clase: 'aviso-entra', duracion: 'medium', curva: 'entrance', desde: { opacidad: 'hidden', y: 'small' } },
   toastExit: { que: 'Un aviso se va', duracion: 'fast', curva: 'exit', hasta: { opacidad: 'hidden', y: 'small' } },
 };
 

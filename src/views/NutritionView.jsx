@@ -1326,9 +1326,13 @@ function ComidasTab({ comidas, nutricion, perfil, onAdd, onAddFavorito, onDelete
           el ancho de cada tarjeta baja: en un iPhone pequeño, el separador de
           antes dejaba las cifras demasiado justas.
 
-          ⚠️ `key={fecha}` repite la cascada de entrada al cambiar de día
-          (apartado 11 de la F2): transición suave, sin recargar nada. */}
-      <div className="space-y-2.5" key={fecha}>
+          ⚠️ La `key` con la fecha repite la cascada de entrada al cambiar de día
+          (apartado 11 de la F2): transición suave, sin recargar nada.
+          🐛 MS F14 — y lleva su prefijo: la lista de comidas de abajo (MS F10)
+          también va por fecha, y dos hermanas con la MISMA clave hacían que React
+          dejara las cifras de hoy puestas al cambiar de día (se leían 1050 y 900
+          a la vez). Cada bloque, su propia clave. */}
+      <div className="space-y-2.5" key={`indicadores-${fecha}`}>
         <Indicador dato={principal} accent={accent} principal indice={0} />
         <div className={`grid gap-2 ${macros.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
           {macros.map((m, i) => <Indicador key={m.id} dato={m} accent={accent} indice={i + 1} />)}
@@ -1369,7 +1373,7 @@ function ComidasTab({ comidas, nutricion, perfil, onAdd, onAddFavorito, onDelete
           MS F10 — añadir, borrar o repetir una comida, o abrir el formulario de un
           momento, ya no hace saltar los de debajo: se recolocan. Con `key` en la
           fecha, cambiar de día es otra lista (apartado 14), no una mutación. */}
-      <ListaAnimada key={fecha} className="space-y-2.5">
+      <ListaAnimada key={`comidas-${fecha}`} className="space-y-2.5">
         {MOMENTOS.map((m, i) => (
           <MomentoDelDia
             key={m.id}

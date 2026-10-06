@@ -13415,14 +13415,21 @@ const borrar_ms10 = await page.evaluate(async () => {
   const b = [...document.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === 'Eliminar Tarea B diez');
   if (!c || !b || !fila('t-t10B')) return null;
   const topAntes = c.getBoundingClientRect().top;
+  const offAntes = c.offsetTop;
   b.click();
   await new Promise((ok) => setTimeout(ok, 0));
   const copia = document.querySelector('[data-lista-saliendo]');
   const c2 = fila('t-t10C');
+  /* 🐛 MS F14 — lo de ALREDEDOR no se mueve: ningún antepasado de la fila con una animación (la pantalla
+     entera volvía a entrar al borrar, porque su clase de llegada se recalculaba en cada pintado). */
+  const ancestrosMoviendose = [];
+  for (let n = c2 ? c2.parentElement : null; n && n !== document.body; n = n.parentElement) {
+    if (n.getAnimations().some((a) => a.playState === 'running')) ancestrosMoviendose.push((n.className || n.tagName).toString().slice(0, 40));
+  }
   const mov = c2 ? c2.getAnimations().map((a) => ({ desde: a.effect.getKeyframes()[0].transform, retraso: a.effect.getTiming().delay, dura: a.effect.getTiming().duration })) : [];
   const fuera = copia ? copia.getAnimations().map((a) => ({ hasta: a.effect.getKeyframes().at(-1).opacity, dura: a.effect.getTiming().duration })) : [];
   const r = {
-    sigue: !!fila('t-t10B'), mismaFila: c2 === c, salto: Math.round(topAntes - (c2 ? c2.getBoundingClientRect().top : topAntes)),
+    sigue: !!fila('t-t10B'), mismaFila: c2 === c, salto: c2 ? offAntes - c2.offsetTop : 0, visual: Math.round(topAntes - (c2 ? c2.getBoundingClientRect().top : topAntes)), ancestrosMoviendose,
     copia: copia ? { texto: copia.innerText.includes('Tarea B diez'), oculta: copia.getAttribute('aria-hidden'), inerte: copia.inert, conId: !!copia.querySelector('[id], [data-flip-id]') || !!copia.id, toques: getComputedStyle(copia).pointerEvents } : null,
     mov, fuera,
   };
@@ -13435,8 +13442,13 @@ ok(borrar_ms10 && !borrar_ms10.sigue && borrar_ms10.copia && borrar_ms10.copia.t
 ok(borrar_ms10 && borrar_ms10.fuera.length === 1 && Number(borrar_ms10.fuera[0].hasta) === 0 && borrar_ms10.fuera[0].dura === 160,
   `MS F10 — …que se desvanece en \`fast\` (${JSON.stringify(borrar_ms10 && borrar_ms10.fuera)})`);
 const subida_ms10 = borrar_ms10 && borrar_ms10.mov[0] ? Number((/translate\(0px, (-?[\d.]+)px\)/.exec(borrar_ms10.mov[0].desde || '') || [])[1]) : NaN;
+/* ⚠️ MS F14 — el salto se mide con `offsetTop` (el sitio en la maqueta, sin transformaciones): con
+   `getBoundingClientRect` dependía de si Chromium ya había aplicado la animación al leerlo, y la
+   pantalla que volvía a entrar escondió en ese número un fallo de verdad (lo de abajo). */
 ok(borrar_ms10 && borrar_ms10.mismaFila && borrar_ms10.salto > 20 && borrar_ms10.mov.length === 1 && Math.abs(subida_ms10 - borrar_ms10.salto) <= 1 && borrar_ms10.mov[0].retraso === 80 && borrar_ms10.mov[0].dura === 220,
   `🚨 MS F10 — …y la de debajo SUBE desde donde estaba (${borrar_ms10 && borrar_ms10.salto} px), cuando la otra ya ha empezado a irse, en vez de saltar (${JSON.stringify(borrar_ms10 && borrar_ms10.mov)}; apartados 2 y 11)`);
+ok(borrar_ms10 && borrar_ms10.ancestrosMoviendose.length === 0 && Math.abs(borrar_ms10.visual) <= Math.abs(borrar_ms10.salto),
+  `🐛 MS F14 — …y la PANTALLA no vuelve a entrar al borrar: ningún contenedor de la fila se mueve (${JSON.stringify(borrar_ms10 && { moviendose: borrar_ms10.ancestrosMoviendose, visual: borrar_ms10.visual })}; antes, abrir Tareas desde su tarjeta y borrar una le ponía \`module-enter\` a toda la pantalla)`);
 ok(borrar_ms10 && borrar_ms10.despues.copias === 0 && borrar_ms10.despues.enMarcha === 0,
   `MS F10 — …y después no queda nada: ni la copia ni una animación (${JSON.stringify(borrar_ms10 && borrar_ms10.despues)})`);
 ok(/Tarea C diez/.test(await ver()) && !/Tarea B diez/.test(await esperarTexto(/Tarea C diez/)), 'MS F10 — …y la tarea borrada ya no está en la página');
@@ -13496,8 +13508,8 @@ const plegar_ms10 = (etiqueta) => page.evaluate(async (et) => {
   return r;
 }, etiqueta);
 const abre_ms10 = await plegar_ms10('Desplegar Historial');
-ok(abre_ms10 && /abriendo|montado/.test(abre_ms10.estado0 || '') && /grid-template-rows 0\.22s/.test(abre_ms10.transicion || '') && abre_ms10.estadoFin === 'abierto' && abre_ms10.altoFin > 20 && abre_ms10.alto110 > 0 && abre_ms10.alto110 < abre_ms10.altoFin,
-  `🚨 MS F10 — al desplegar, la altura CRECE (${abre_ms10 && `${abre_ms10.alto0} → ${abre_ms10.alto110} → ${abre_ms10.altoFin} px`}, \`grid-template-rows\` en \`normal\`): lo de debajo baja con ella (${JSON.stringify(abre_ms10 && { estado0: abre_ms10.estado0, transicion: abre_ms10.transicion })}; apartados 17 y 18)`);
+ok(abre_ms10 && /abriendo|montado/.test(abre_ms10.estado0 || '') && /grid-template-rows 0\.28s/.test(abre_ms10.transicion || '') && abre_ms10.estadoFin === 'abierto' && abre_ms10.altoFin > 20 && abre_ms10.alto110 > 0 && abre_ms10.alto110 < abre_ms10.altoFin,
+  `🚨 MS F10 — al desplegar, la altura CRECE (${abre_ms10 && `${abre_ms10.alto0} → ${abre_ms10.alto110} → ${abre_ms10.altoFin} px`}, \`grid-template-rows\` en \`medium\`: desde la MS F14 se abre más despacio de lo que se cierra): lo de debajo baja con ella (${JSON.stringify(abre_ms10 && { estado0: abre_ms10.estado0, transicion: abre_ms10.transicion })}; apartados 17 y 18)`);
 const cierra_ms10 = await plegar_ms10('Plegar Historial');
 ok(cierra_ms10 && cierra_ms10.estado0 === 'cerrando' && cierra_ms10.inerte0 && cierra_ms10.oculto0 === 'true' && cierra_ms10.alto110 > 0 && cierra_ms10.alto110 < cierra_ms10.alto0 && cierra_ms10.estadoFin === null && cierra_ms10.altoFin === 0,
   `🚨 MS F10 — al plegar, se ENCOGE (${cierra_ms10 && `${cierra_ms10.alto0} → ${cierra_ms10.alto110} → ${cierra_ms10.altoFin} px`}) con lo de dentro inerte y fuera del lector de pantalla, y DESPUÉS se desmonta: lo de debajo sube con ella, no de un salto (${JSON.stringify(cierra_ms10 && { estado0: cierra_ms10.estado0, inerte: cierra_ms10.inerte0, estadoFin: cierra_ms10.estadoFin })}; C-54)`);
@@ -13558,18 +13570,25 @@ const agarre_ms11 = await page.evaluate(async () => {
   const r = asa.getBoundingClientRect();
   const x0 = r.left + r.width / 2;
   const y0 = r.top + r.height / 2;
+  const yDe = () => { const t = getComputedStyle(caja).transform; return new DOMMatrix(t === 'none' ? undefined : t).m42; };
+  const visto = yDe();
   asa.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x0, clientY: y0, pointerType: 'touch', pointerId: 21 }));
+  const alAgarrar = yDe();
   const trasAgarrar = caja.getAnimations().filter((a) => a.playState === 'running').map((a) => a.id);
   asa.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: x0, clientY: y0 + 50, pointerType: 'touch', pointerId: 21 }));
-  const y = new DOMMatrix(getComputedStyle(caja).transform === 'none' ? undefined : getComputedStyle(caja).transform).m42;
+  const y = yDe();
   asa.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x0, clientY: y0 + 50, pointerType: 'touch', pointerId: 21 }));
   const diario = window.__motion.diario();
-  return { entrando, marca, trasAgarrar, y: Math.round(y), interrumpe: diario.filter((e) => e.tipo === 'MOTION_INTERRUPT').map((e) => `${e.sistema}>${e.motivo}`) };
+  return { entrando, marca, trasAgarrar, visto: Math.round(visto), alAgarrar: Math.round(alAgarrar), y: Math.round(y), interrumpe: diario.filter((e) => e.tipo === 'MOTION_INTERRUPT').map((e) => `${e.sistema}>${e.motivo}`) };
 });
 ok(agarre_ms11 && agarre_ms11.entrando.includes('capa-entra') && /^profundidad·navegacion·capas$/.test(agarre_ms11.marca || ''),
   `MS F11 — la hoja del ＋ está SUBIENDO, y la consola dice de quién es ese movimiento (${JSON.stringify(agarre_ms11 && { entrando: agarre_ms11.entrando, marca: agarre_ms11.marca })}; apartado 37)`);
-ok(agarre_ms11 && agarre_ms11.trasAgarrar.length === 0 && agarre_ms11.interrumpe.includes('profundidad>el_dedo') && Math.abs(agarre_ms11.y - 50) <= 2,
-  `🚨 MS F11 — al agarrarla mientras sube, la entrada se PARA DONDE SE VE y la caja sigue al dedo (${agarre_ms11 && agarre_ms11.y} px de 50): manda el dedo, sea cual sea la prioridad de lo que se movía (${JSON.stringify(agarre_ms11 && { trasAgarrar: agarre_ms11.trasAgarrar, interrumpe: agarre_ms11.interrumpe })}; apartado 14)`);
+/* 🐛 MS F14 — la comprobación esperaba la caja en 50 px exactos, o sea, que la entrada ya hubiera
+   llegado al agarrarla: dependía de lo deprisa que corrieran tres fotogramas. Lo que promete la F11
+   es que se para DONDE SE VE y el dedo sigue DESDE AHÍ: la caja queda en su sitio de ese instante y
+   luego baja lo mismo que el dedo, esté donde esté la entrada. */
+ok(agarre_ms11 && agarre_ms11.trasAgarrar.length === 0 && agarre_ms11.interrumpe.includes('profundidad>el_dedo') && Math.abs(agarre_ms11.alAgarrar - agarre_ms11.visto) <= 2 && Math.abs(agarre_ms11.y - (agarre_ms11.visto + 50)) <= 2,
+  `🚨 MS F11 — al agarrarla mientras sube, la entrada se PARA DONDE SE VE (${agarre_ms11 && agarre_ms11.visto} px → ${agarre_ms11 && agarre_ms11.alAgarrar} px al agarrar) y la caja sigue al dedo desde ahí (${agarre_ms11 && agarre_ms11.y} px tras bajar 50): manda el dedo, sea cual sea la prioridad de lo que se movía (${JSON.stringify(agarre_ms11 && { trasAgarrar: agarre_ms11.trasAgarrar, interrumpe: agarre_ms11.interrumpe })}; apartado 14)`);
 await page.waitForTimeout(700);
 await page.keyboard.press('Escape');
 await page.waitForTimeout(700);
@@ -13961,6 +13980,139 @@ await page.evaluate(() => { try { localStorage.removeItem('josstyle:motion-debug
 ok(errores.length === erroresAntes_ms13, `MS F13 — …sin un error en la consola${errores.length > erroresAntes_ms13 ? `: ${errores.slice(erroresAntes_ms13).join(' | ').slice(0, 200)}` : ''}`);
 await cdp_ms13.detach().catch(() => {});
 almacen.ajustes = ajustesDeAntes_ms13;
+
+/* ── MS F14 · El lenguaje del movimiento: cada cosa con su curva, a su ritmo, y toda la aplicación igual ──
+   Lo que solo se puede leer en el navegador: la curva y la duración que DE VERDAD le quedan a cada clase
+   con la hoja de estilos entera aplicada (los momentos con `emphasized`, lo que aparece con `entrance`, lo
+   que llega con la estándar), que volver dure menos que entrar, que las cuatro barras de progreso avancen
+   igual, que un desplegable de verdad (Salud física → Historial) se abra en `medium` y se cierre en `fast`
+   con la curva simétrica, que la velocidad «Lenta» estire todo SIN cambiar el ritmo entre abrir y cerrar,
+   y la pasada global del apartado 48: recorrer la aplicación recogiendo cada animación que se mueve, y que
+   ninguna use una curva que no sea un token. Sufijo `_ms14`. */
+console.log('\n── MS F14 · Easings, curvas, ritmo, aceleración y lenguaje visual del movimiento ──');
+const ajustesDeAntes_ms14 = almacen.ajustes;
+almacen.ajustes = { ...(ajustesDeAntes_ms14 || {}), apariencia: { ...((ajustesDeAntes_ms14 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 375, height: 667 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms14 = errores.length;
+const CURVAS_ms14 = {
+  standard: 'cubic-bezier(0.32, 0.72, 0, 1)', smooth: 'cubic-bezier(0.45, 0, 0.2, 1)', entrance: 'cubic-bezier(0.16, 1, 0.3, 1)',
+  exit: 'cubic-bezier(0.4, 0, 1, 1)', emphasized: 'cubic-bezier(0.2, 0, 0, 1)',
+};
+
+/* 1 · Lo que le queda a cada clase, leído del navegador. */
+const sondas_ms14 = await page.evaluate(() => {
+  const caja = document.createElement('div');
+  caja.style.cssText = 'position:fixed;left:-9999px;top:0;width:200px;';
+  document.body.appendChild(caja);
+  const leer = (clase, attrs = {}) => {
+    const el = document.createElement('div');
+    el.className = clase;
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    caja.appendChild(el);
+    const cs = getComputedStyle(el);
+    const r = { anim: cs.animationTimingFunction, animDur: cs.animationDuration, trans: cs.transitionTimingFunction, transDur: cs.transitionDuration, transProp: cs.transitionProperty };
+    el.remove();
+    return r;
+  };
+  const clases = ['fuego-sube', 'racha-mas-uno', 'fit-rango-sube', 'hoja-entra', 'aviso-entra', 'despliegue-entra', 'vacio-entra', 'campo-mensaje-entra', 'menu-entra',
+    'module-enter', 'nav-vuelve', 'nav-seccion', 'fit-entra', 'cifra-sube', 'barra-progreso', 'progreso-libro', 'nu-progreso', 'fit-barra', 'chevron-gira', 'plegable'];
+  const out = Object.fromEntries(clases.map((c) => [c, leer(c)]));
+  out.plegableAbriendo = leer('plegable', { 'data-plegable': 'abriendo' });
+  out.plegableCerrando = leer('plegable', { 'data-plegable': 'cerrando' });
+  const html = document.documentElement;
+  const velAntes = html.getAttribute('data-velocidad');
+  html.setAttribute('data-velocidad', 'lenta');
+  out.lenta = { entrar: leer('module-enter').animDur, volver: leer('nav-vuelve').animDur, abrir: leer('plegable', { 'data-plegable': 'abriendo' }).transDur, cerrar: leer('plegable', { 'data-plegable': 'cerrando' }).transDur };
+  if (velAntes === null) html.removeAttribute('data-velocidad'); else html.setAttribute('data-velocidad', velAntes);
+  caja.remove();
+  return out;
+});
+const s_ms14 = sondas_ms14;
+const seg_ms14 = (v) => parseFloat(String(v || '').split(',')[0]);
+ok(['fuego-sube', 'racha-mas-uno', 'fit-rango-sube'].every((c) => s_ms14[c].anim === CURVAS_ms14.emphasized),
+  `🚨 MS F14 — los MOMENTOS (la llama, el «+1» y subir de rango) usan \`emphasized\`, la curva que la F1 creó para eso (${['fuego-sube', 'racha-mas-uno', 'fit-rango-sube'].map((c) => `${c}: ${s_ms14[c].anim}`).join(' · ')}; apartados 25 y 45)`);
+ok(['hoja-entra', 'aviso-entra', 'despliegue-entra', 'vacio-entra', 'campo-mensaje-entra', 'menu-entra'].every((c) => s_ms14[c].anim === CURVAS_ms14.entrance),
+  `🚨 MS F14 — lo que APARECE en su sitio (una hoja, un aviso, un desplegable, un vacío, un mensaje de error, un menú) llega deprisa y se posa con \`entrance\` (${['hoja-entra', 'aviso-entra', 'despliegue-entra', 'vacio-entra', 'campo-mensaje-entra', 'menu-entra'].map((c) => `${c}: ${s_ms14[c].anim}`).join(' · ')}; apartados 4 y 33-37)`);
+ok(['module-enter', 'nav-vuelve', 'nav-seccion', 'fit-entra', 'cifra-sube'].every((c) => s_ms14[c].anim === CURVAS_ms14.standard),
+  `MS F14 — lo que LLEGA a su sitio (una pantalla, volver, una sección, una cifra) sigue con la deceleración de la marca, \`--ease-premium\` (${['module-enter', 'nav-vuelve', 'nav-seccion', 'fit-entra', 'cifra-sube'].map((c) => `${c}: ${s_ms14[c].anim}`).join(' · ')}; apartados 3 y 45)`);
+ok(seg_ms14(s_ms14['nav-vuelve'].animDur) < seg_ms14(s_ms14['module-enter'].animDur) && seg_ms14(s_ms14['nav-seccion'].animDur) === seg_ms14(s_ms14['nav-vuelve'].animDur),
+  `🚨 MS F14 — volver es MÁS CORTO que entrar (${s_ms14['nav-vuelve'].animDur} frente a ${s_ms14['module-enter'].animDur}), y volver y cambiar de sección van al mismo ritmo (apartados 38 y 39)`);
+const barras_ms14 = ['barra-progreso', 'progreso-libro', 'nu-progreso', 'fit-barra'].map((c) => `${c}: ${s_ms14[c].transDur}`);
+ok(['barra-progreso', 'progreso-libro', 'nu-progreso', 'fit-barra'].every((c) => seg_ms14(s_ms14[c].transDur) === 0.28 && s_ms14[c].trans.startsWith(CURVAS_ms14.standard)),
+  `🐛 MS F14 — las CUATRO barras de progreso (el día, los libros, Nutrición y Fitness) avanzan a la misma velocidad, 280 ms con la misma curva: antes iban a 340, 420, 420 y 280 (${barras_ms14.join(' · ')}; apartado 8)`);
+ok(s_ms14.plegableAbriendo.transDur === '0.28s' && s_ms14.plegableCerrando.transDur === '0.16s' && s_ms14.plegableAbriendo.trans === CURVAS_ms14.smooth && s_ms14.plegableCerrando.trans === CURVAS_ms14.smooth && s_ms14['chevron-gira'].trans === CURVAS_ms14.smooth,
+  `🐛 MS F14 — un desplegable se ABRE en \`medium\` y se CIERRA en \`fast\`, los dos con la curva simétrica, como su chevron (abrir ${s_ms14.plegableAbriendo.transDur}, cerrar ${s_ms14.plegableCerrando.transDur}, ${s_ms14.plegableAbriendo.trans}; apartados 6 y 42)`);
+const l_ms14 = s_ms14.lenta;
+ok(seg_ms14(l_ms14.entrar) > seg_ms14(s_ms14['module-enter'].animDur) && Math.abs(seg_ms14(l_ms14.abrir) / seg_ms14(l_ms14.cerrar) - 0.28 / 0.16) < 0.03 && seg_ms14(l_ms14.volver) < seg_ms14(l_ms14.entrar),
+  `MS F14 — la velocidad «Lenta» estira el tiempo y NO el ritmo: abrir sigue siendo ${(0.28 / 0.16).toFixed(2)} veces cerrar y volver sigue siendo más corto que entrar (${JSON.stringify(l_ms14)}; apartados 16 y 17)`);
+
+/* 2 · Un desplegable de verdad: Salud física → Historial. */
+ok(await pulsar('Bienestar') && await pulsar('Salud física') && /Historial/i.test(await esperarTexto(/Historial/i)), 'MS F14 — Bienestar → Salud física');
+await page.waitForTimeout(400);
+const desplegar_ms14 = (etiqueta) => page.evaluate(async (et) => {
+  const b = [...document.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === et);
+  if (!b) return null;
+  b.click();
+  await new Promise((ok) => setTimeout(ok, 0));
+  const c = b.parentElement.querySelector(':scope > .plegable');
+  const r = c ? { estado: c.dataset.plegable, dura: getComputedStyle(c).transitionDuration, curva: getComputedStyle(c).transitionTimingFunction } : { estado: null };
+  await new Promise((ok) => setTimeout(ok, 520));
+  return r;
+}, etiqueta);
+const abre_ms14 = await desplegar_ms14('Desplegar Historial');
+const cierra_ms14 = await desplegar_ms14('Plegar Historial');
+ok(abre_ms14 && abre_ms14.estado === 'abriendo' && abre_ms14.dura === '0.28s' && abre_ms14.curva === CURVAS_ms14.smooth && cierra_ms14 && cierra_ms14.estado === 'cerrando' && cierra_ms14.dura === '0.16s' && cierra_ms14.curva === CURVAS_ms14.smooth,
+  `🚨 MS F14 — el Historial de Salud se abre en 280 ms y se cierra en 160, con la misma curva de ida y vuelta: lo que se quita no hace esperar (${JSON.stringify({ abre: abre_ms14, cierra: cierra_ms14 })}; apartados 5, 6 y 42)`);
+
+/* 3 · La pasada global (apartado 48): todo lo que se mueve mientras se recorre la aplicación, con su curva. */
+await page.evaluate(() => {
+  const vistas = new WeakSet();
+  const r = { animaciones: 0, curvas: {}, ajenas: [] };
+  window.__lenguaje_ms14 = r;
+  window.__lenguajeSigue_ms14 = true;
+  const apuntar = (curva, quien) => {
+    if (!curva || curva === 'linear' || /^linear\(/.test(curva)) { r.curvas.linear = (r.curvas.linear || 0) + 1; return; }
+    r.curvas[curva] = (r.curvas[curva] || 0) + 1;
+    if (!/^cubic-bezier\(/.test(curva) && r.ajenas.length < 8) r.ajenas.push(`${quien}: ${curva}`);
+  };
+  const paso = () => {
+    document.getAnimations().forEach((a) => {
+      if (vistas.has(a)) return;
+      vistas.add(a);
+      r.animaciones += 1;
+      const quien = a.animationName || a.transitionProperty || a.id || 'waapi';
+      const enTiempo = a.effect && a.effect.getTiming ? a.effect.getTiming().easing : null;
+      const enFotogramas = a.effect && a.effect.getKeyframes ? [...new Set(a.effect.getKeyframes().map((k) => k.easing).filter(Boolean))] : [];
+      const propias = [enTiempo, ...enFotogramas].filter((c) => c && c !== 'linear');
+      if (!propias.length) apuntar('linear', quien); else propias.forEach((c) => apuntar(c, quien));
+    });
+    if (window.__lenguajeSigue_ms14) requestAnimationFrame(paso);
+  };
+  requestAnimationFrame(paso);
+});
+const recorrido_ms14 = [];
+for (const [desde, a] of [['Inicio', 'Vida'], ['Vida', 'Productividad'], ['Productividad', 'Gestión'], ['Gestión', 'Organización'], ['Organización', 'Tareas'], ['Tareas', 'Bienestar'], ['Bienestar', 'Sueño'], ['Sueño', 'Ajustes']]) {
+  recorrido_ms14.push(`${desde}→${a}:${await pulsar(a) ? 'sí' : 'no'}`);
+  await page.waitForTimeout(450);
+}
+const anadir_ms14 = await pulsar('Inicio') && await pulsar('Añadir');
+await page.waitForTimeout(500);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(500);
+const lenguaje_ms14 = await page.evaluate(() => { window.__lenguajeSigue_ms14 = false; return window.__lenguaje_ms14; });
+const permitidas_ms14 = new Set(Object.values(CURVAS_ms14).map((c) => c.replace(/\s/g, '')));
+const fuera_ms14 = Object.keys((lenguaje_ms14 && lenguaje_ms14.curvas) || {}).filter((c) => c !== 'linear' && !permitidas_ms14.has(c.replace(/\s/g, '')));
+ok(recorrido_ms14.every((x) => x.endsWith('sí')) && anadir_ms14, `MS F14 — el recorrido de la pasada global pasa por las tres áreas, cuatro módulos, Ajustes y el ＋ (${recorrido_ms14.join(' ')})`);
+ok(lenguaje_ms14 && lenguaje_ms14.animaciones >= 15 && fuera_ms14.length === 0 && !lenguaje_ms14.ajenas.length,
+  `🚨 MS F14 — en toda la vuelta, ${lenguaje_ms14 && lenguaje_ms14.animaciones} animaciones y ni una con una curva que no sea un token: ni un \`ease\`, ni un \`ease-in-out\`, ni una curva a mano (${JSON.stringify(lenguaje_ms14 && { curvas: lenguaje_ms14.curvas, fuera: fuera_ms14, ajenas: lenguaje_ms14.ajenas })}; apartados 2, 46 y 48)`);
+ok(lenguaje_ms14 && [CURVAS_ms14.standard, CURVAS_ms14.entrance].every((c) => lenguaje_ms14.curvas[c] > 0),
+  `MS F14 — …y en la vuelta se ven las dos voces del sistema: lo que llega (la estándar) y lo que aparece (\`entrance\`) (${JSON.stringify(lenguaje_ms14 && lenguaje_ms14.curvas)})`);
+
+ok(errores.length === erroresAntes_ms14, `MS F14 — …sin un error en la consola${errores.length > erroresAntes_ms14 ? `: ${errores.slice(erroresAntes_ms14).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms14;
 
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });

@@ -514,6 +514,95 @@ pueda interrumpir (el orquestador, `resolverConflicto`) y que se limpie (`audita
 revisa antes de entrar. Lo que se miró y está bien está en `REVISADO_Y_BIEN_F13`; lo que no se hace (typecheck y
 lint, listas virtuales, capas forzadas, un ajuste de calidad, rebajar por el aparato), en `NO_EN_F13`.
 
+## 8.13 · El lenguaje del movimiento: curvas, ritmo y firma (F14)
+
+*"Dos interfaces pueden utilizar 300 ms y parecer completamente diferentes."* Los tokens existían desde la F1; lo
+que faltaba era la **gramática**: qué curva le toca a qué papel, qué duración a qué talla, que abrir y cerrar no
+sean lo mismo al revés y que lo equivalente vaya al mismo ritmo. Vive en `src/lib/lenguajeMotion.js`, y **no tiene
+ni un valor propio**: todo son ids de los tokens de la F1 (apartado 51).
+
+**La filosofía y la firma** (`TEMPERATURA_MOTION`, `FIRMA_MOTION`): **preciso, premium y natural**. Ni mecánico
+(`linear` solo para relojes y bucles) ni de dibujos (ningún muelle que se use rebota; una superficie no pasa de
+1,03). Y no es una landing page: el movimiento sirve para entender, orientarse, tocar y seguir el hilo. Lo que hace
+que se reconozca: una deceleración larga y suave (`--ease-premium`), distancias cortas (4-24 px), escalas
+contenidas, volver más corto que entrar, salidas que no se quedan mirando, una cascada que no hace esperar, sombras
+que se funden y **un solo momento de firma** (el «+1» de una racha).
+
+**Las curvas tienen papel** (`ROLES_MOTION`): una curva, un significado.
+
+| Papel | Curva | Qué |
+|---|---|---|
+| Llega | `standard` (`--ease-premium`) | Algo se mueve a su sitio con relación espacial: una pantalla, volver, una tarjeta, una cifra, una fila que se recoloca, lo que responde al dedo |
+| Aparece | `entrance` | Algo aparece en su sitio sin venir de otro: una hoja, una ventana, un menú, un aviso, un mensaje de error, un vacío, el contenido de un desplegable. Llega deprisa y se posa |
+| Sale | `exit` | Algo se va: arranca suave y sale sin frenar. Nunca la curva de su entrada |
+| Abre y cierra | `smooth` | Lo que va y vuelve en su sitio: un desplegable y su chevron. Simétrica |
+| Momento | `emphasized` | Algo importante acaba de pasar: los niveles Momento y Firma del mapa (subir de rango, la llama, el «+1») |
+| Ritmo | `linear` | Relojes y bucles (el aro del Pomodoro): frenar mentiría |
+
+El papel de cada animación lo dice su línea del `MOTION_MAP` (`rolDe`): las categorías de capas, hojas, menús y
+avisos **aparecen**, los niveles 4 y 5 son **momentos** y el resto **llega**. Las excepciones van con su motivo en
+`ROL_POR_CLASE`, y las tres clases que usan dos curvas a propósito (una por propiedad), en `CURVAS_DOBLES`.
+
+**La escala** (`ESCALA_MOVIMIENTO`, apartados 16-18): cinco tallas, una por nivel del mapa, cada una con las
+duraciones que le caben y cuánto se desplaza como mucho.
+
+| Talla | Nivel | Duraciones | Distancia máxima |
+|---|---|---|---|
+| XS · Micro | 1 | `ultraFast`, `fast`, `normal` | `small` |
+| SM · Suave | 2 | `fast` … `slow` | `large` |
+| MD · Protagonista | 3 | `normal` … `cinematic` | `large` |
+| LG · Momento | 4 | `medium` … `momento` | `hero` |
+| XL · Firma | 5 | `firma` | `hero` |
+
+**La velocidad que se ve** (`velocidadesPercibidas`, `BANDA_VELOCIDAD`, apartados 7 y 8): lo que el ojo compara son
+los píxeles por milisegundo. Todas las entradas que se desplazan están entre **0,015 y 0,08 px/ms** (de 0,018, una
+cifra que asoma 4 px, a 0,071, una pantalla que entra 24 px); el «+1» va más despacio **a propósito**
+(`VELOCIDAD_A_PROPOSITO`).
+
+**Entrar y salir, abrir y cerrar** (`PAREJAS`, apartados 4-6, 39 y 42): lo que se va **dura lo mismo o menos** que lo
+que llega y acelera hacia fuera (`exit`); volver dura menos que entrar y sin escala; desplegar es `medium` y plegar
+`fast`, los dos con `smooth`. Y lo **equivalente va al mismo ritmo** (`EQUIVALENTES`): las cuatro barras de progreso
+(el día, los libros, Nutrición y Fitness) en `medium`, las dos hojas en `normal`, volver y cambiar de sección en
+`normal`, y lo pequeño que aparece en su sitio en `fast`.
+
+**El lenguaje de cada capa, de la navegación y de los gestos** (`LENGUAJE_CAPAS`, `LENGUAJE_NAVEGACION`,
+`LENGUAJE_GESTOS`): una ventana aparece casi en su sitio y se va en `fast`; una hoja es física y pegada al borde; un
+menú es más ligero que una ventana (`fast`, 4 px, sin velo); un aviso aparece, dice y se va sin robar atención; no hay
+tooltips (sin puntero que se pose). Raíz con un fundido, dentro de una pantalla `contentChange`, detalle desde la
+derecha, volver desde la izquierda, y una hoja se apila encima. En un gesto, la velocidad del dedo decide, nada
+rebota, el dedo para lo que se mueve donde se ve, y todo se puede deshacer a medias.
+
+**Lo que la auditoría encontró y se corrigió** (`CORREGIDO_F14`, apartados 47 y 53):
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| Las barras de progreso | 420, 340, 420 y 280 ms | Las cuatro en `medium` (280) |
+| Abrir y cerrar un desplegable | `normal` y la estándar en los dos sentidos (aunque `PRESETS_MOTION` decía otra cosa) | Abre en `medium`, cierra en `fast`, los dos con `smooth`; el respaldo de `Plegable` espera lo suyo |
+| Los momentos | La estándar; el preset de subir de rango decía `momento` y el CSS duraba `medium` | `emphasized`, y el preset dice lo que hace el CSS |
+| Lo que aparece en su sitio | Hojas, avisos, mensajes de error, vacíos y desplegables con la estándar | `entrance` (como ya hacían las capas de la F6), y los presets de hoja y de aviso también |
+| El chevron | La estándar | `smooth`, la de su desplegable |
+
+Y la regresión completa destapó tres fallos de fases anteriores, arreglados en su causa: **dos bloques hermanos de
+Nutrición con la misma clave** (las cifras de hoy se quedaban puestas al cambiar de día, MS F10), **la pantalla que
+volvía a entrar** al primer cambio después de abrirse desde su tarjeta (la decisión de la F7 se recalculaba en cada
+pintado y ahora se toma una vez por navegación) y **el nombre de un ejercicio que salía de la copia que no se tocó**
+(el toque se apunta desde el botón que lo envuelve, F7). Y el aviso de navegación de la F12 ya no habla al abrir la
+aplicación con el doble montaje de `StrictMode`.
+
+`auditarLenguaje({ css })` lee `index.css` y devuelve, con la clase y lo que esperaba, cada curva fuera de su papel,
+cada línea del mapa que dice otra curva, cada duración fuera de su talla, cada preset que no coincide con su CSS,
+cada pareja al revés, cada grupo de equivalentes a distinto ritmo y cada velocidad fuera de la banda. Hoy sale
+limpia, y `scripts/test-motion-f14.mjs` la pone roja con un fallo inventado de cada tipo. La sección «MS F14» del
+recorrido lee en Chromium la curva que le queda de verdad a cada clase, abre y cierra el Historial de Salud, y hace la
+**pasada global** del apartado 48: recorre las tres áreas, cuatro módulos, Ajustes y el ＋ recogiendo cada animación
+que se mueve, y ninguna puede usar una curva que no sea un token.
+
+**Regla permanente (apartado 56):** toda animación nueva pertenece a este lenguaje. Su curva sale de su papel, su
+duración de su talla y su velocidad cae en la banda; si es la mitad de una pareja, la vuelta no dura más que la ida;
+si hace lo mismo que otra, va a su ritmo. **No se inventa un valor aislado**: si falta un token, se crea con nombre en
+`motion.js` y en `index.css` a la vez. Lo que se miró y está bien está en `REVISADO_Y_BIEN_F14`; lo que no se hace
+(parallax, tooltips, un muelle en cada cosa, tokens de más), en `NO_EN_F14`.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en

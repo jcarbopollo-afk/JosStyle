@@ -1359,6 +1359,25 @@ desenfoque del velo) y se retiró antes de subirla al chocar con la F12; queda e
 tarjeta (un recálculo forzado por tarjeta en cada fotograma de scroll), y el registro de orígenes de la F7 guardaba el
 nodo desmontado de cada nombre de la biblioteca para siempre.
 
+### C-65 — ✅ RESUELTA AL CONSTRUIR (Motion System F14, v3.144.0) · «Una sola curva» de la FIT F37 contra la jerarquía de curvas de la F14
+
+La FIT F37 (apartado 2) dejó escrita una regla para Fitness: *una sola curva*, `--ease-premium`, y su auditoría
+(`auditarMovimiento`, casilla `una_sola_curva`) se ponía roja con cualquier otra. La F14 pide lo contrario en apariencia
+(apartado 3): *"crear una jerarquía semántica"* de curvas —entrada, salida, énfasis, lo que va y vuelve—, y
+(apartado 53) *"si descubres que una abstracción anterior debe evolucionar: hazlo"*.
+
+**La lectura que respeta las dos:** lo que la F37 protegía era que nadie escribiera una curva a mano (`ease-out`, un
+`cubic-bezier` suelto). La F14 no la rompe: sigue sin haber una sola curva fuera de los tokens, y la jerarquía son
+**los mismos seis tokens de la F1**, cada uno con un papel. La casilla de la F37 evoluciona de «solo
+`--ease-premium`» a «solo los tokens de curva» (`var(--motion-curva-*)` o `--ease-premium`), y se comprueba que un
+`ease-out` a mano la sigue poniendo roja.
+
+🐛 **Lo que destapó la regresión completa de la fase** (y se arregló en su causa): dos bloques hermanos de Nutrición con
+la misma clave dejaban las cifras de hoy puestas al cambiar de día (MS F10); la pantalla abierta desde su tarjeta
+volvía a entrar desde la derecha al primer cambio (MS F7, la decisión se recalculaba en cada pintado); el nombre de un
+ejercicio salía de la copia que no se tocó cuando estaba dos veces en la pantalla (MS F7); y el aviso de navegación
+hablaba al abrir la aplicación con el doble montaje de `StrictMode` (MS F12).
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

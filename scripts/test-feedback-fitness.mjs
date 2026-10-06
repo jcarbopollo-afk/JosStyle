@@ -98,9 +98,9 @@ ok(duracionEnCss('.fit-entra-otra { animation: a 999ms; }', 'fit-entra') === nul
    centrada, sigue usando los fotogramas del Calendario; en el iPhone, donde es una HOJA pegada a su
    borde, sube desde él (`hojaSubeDelBorde`). Dos reglas, la misma duración y la misma curva. */
 ok(reglasDeClase(CSS, 'hoja-entra').length === 2 && /calendarSheetIn/.test(reglasDeClase(CSS, 'hoja-entra')[0].cuerpo)
-  && /hojaSubeDelBorde var\(--motion-dur-normal\) var\(--ease-premium\) backwards/.test(reglasDeClase(CSS, 'hoja-entra')[1].cuerpo)
+  && /hojaSubeDelBorde var\(--motion-dur-normal\) var\(--motion-curva-entrance\) backwards/.test(reglasDeClase(CSS, 'hoja-entra')[1].cuerpo)
   && /\[data-capa='hoja'\]/.test(reglasDeClase(CSS, 'hoja-entra')[1].selector),
-  '🔓 Las hojas usan los fotogramas del Calendario donde son una ventana, y suben desde su borde donde son una hoja (MS F6)');
+  '🔓 Las hojas usan los fotogramas del Calendario donde son una ventana, y suben desde su borde donde son una hoja (MS F6), con la curva de lo que aparece (MS F14)');
 ok(usaLaCurva(CSS, 'fit-entra') && !usaLaCurva('.y { transition: width 200ms linear; }', 'y'), 'Se sabe si una clase usa la curva de la aplicación');
 ok(!dejaRastro(CSS, 'fit-rango-sube') && dejaRastro('.z { animation: q 200ms ease both; }', 'z'),
   '🚨 …y si deja un `transform` puesto al terminar (`both`), que rompería los `fixed` de dentro');

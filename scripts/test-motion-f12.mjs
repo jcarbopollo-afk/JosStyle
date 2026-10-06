@@ -160,7 +160,7 @@ console.log('\n── 9. VoiceOver y la navegación (apartados 9 y 26) ──');
   ok(/<AnuncioDeNavegacion nombre=\{nombrePantalla\} clave=\{claveDeScroll\(pilaNav\)\} \/>/.test(A), '🐛 un aviso dice a dónde se ha llegado al navegar: antes, cambiar de pestaña dejaba la pantalla nueva en silencio');
   ok(/role="region" aria-label=\{nombrePantalla\}/.test(A), '…y el contenedor de la pantalla tiene su nombre: es lo que lee VoiceOver cuando la navegación le da el foco (F2)');
   ok(/aria-live="polite"/.test(G) && /aria-atomic="true"/.test(G) && /className="sr-only"/.test(G), '…un aviso educado, invisible y completo');
-  ok(/if \(primera\.current\) \{ primera\.current = false; return undefined; \}/.test(G), '…que no habla al abrir la aplicación (ya se lee la pantalla entera)');
+  ok(/const anunciada = useRef\(clave\)/.test(G) && /if \(anunciada\.current === clave\) return undefined;/.test(G) && !/primera\.current = false/.test(G), '…que no habla al abrir la aplicación (ya se lee la pantalla entera), tampoco con el doble montaje de `StrictMode` (MS F14): compara con la última pantalla anunciada');
   ok(A.indexOf('<AnuncioDeNavegacion') < A.indexOf('<div key={tab} ref={pantallaRef}'), '…y va FUERA del contenedor con `key`: sobrevive al cambio de pantalla');
 }
 
