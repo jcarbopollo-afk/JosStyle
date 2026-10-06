@@ -59,6 +59,7 @@ import ColorPicker from '../components/ColorPicker';
 import TemaBuilder from '../components/TemaBuilder';
 import GestionTemas from '../components/GestionTemas';
 import { desenfoque } from '../lib/profundidad';
+import { Plegable } from '../components/layoutMotion';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Fase A1 — Ajustes: arquitectura general (Entrega 1 de la especificación
@@ -1446,7 +1447,7 @@ function Seccion({ titulo, sub, icono: Icono, accent, defecto = false, children 
         </span>
         <ChevronDespliegue abierto={abierta} cerrado="derecha" alAbrir="arriba" size={15} style={{ color: COLORS.textMuted }} />
       </button>
-      {abierta && <div className="despliegue-entra mt-3 space-y-4">{children}</div>}
+      <Plegable abierto={abierta}>{() => <div className="mt-3 space-y-4">{children}</div>}</Plegable>
     </Card>
   );
 }

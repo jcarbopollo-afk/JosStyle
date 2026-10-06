@@ -1,5 +1,58 @@
 # CHANGELOG.md
 
+## v3.140.0 — Motion System F10/20: layout motion, listas y contenido dinámico
+
+La F10 del Motion System (*"Layout motion, scroll, listas y contenido dinámico"*, líneas 12128–12784 de
+`especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). Su frase: *"El layout puede cambiar. La percepción del usuario no
+debe romperse."* La F1 dejó la pieza (`flip`, `useFlip`) y nadie la usaba: borrar una tarea hacía saltar las de
+debajo y cerrar un desplegable subía lo de abajo de golpe. El plan vive en `src/lib/layoutMotion.js` y las piezas en
+`src/components/layoutMotion.jsx` (C-61).
+
+### 🔓 Una lista que no salta (apartados 2, 3 y 10-14)
+
+`ListaAnimada` mide cada fila **justo antes** de un cambio (`getSnapshotBeforeUpdate`) y justo después, y
+`planDeLista` decide qué se recoloca, qué entra y qué sale. Lo que entra se funde y sube un poco; lo que sale deja una
+**copia inerte** —`aria-hidden`, sin ids, sin toques— que se desvanece en `fast`; lo demás se recoloca en `normal`
+cuando la copia ya ha empezado a irse. Un cambio a mitad de otro sale desde donde se ve la fila en ese momento. Con un
+presupuesto (`PRESUPUESTO_LAYOUT`): por encima de 24 filas a la vez, un fundido de la lista entera; un filtro que
+quita más de seis no deja copias. Cableada en Tareas, la agenda de un día, las comidas, los temas de una asignatura,
+los pasos de una rutina, los ejercicios de una plantilla, los apartados de Imagen personal y el buscador. Cada fila
+lleva su **id** (`data-flip-id`), nunca el índice: en la agenda, un elemento sin id no se anima.
+
+### 🔓 Un desplegable que crece y se encoge (apartados 17, 18 y 28; C-54)
+
+`Plegable` cambia la altura con `grid-template-rows` (la técnica de los acordeones de Inicio, sin alturas a mano y
+con `min-height: 0` para Safari) y, al cerrarse, se encoge **y después** se desmonta, con lo de dentro `inert`
+mientras tanto. Los veinte desplegables de la F3 pasan por él; lo de dentro va como función, así que cerrado no se
+calcula. En Reducido la altura cambia sin animarse.
+
+### 🔓 Las fuentes y las imágenes (apartados 5 y 6)
+
+Manrope e Inter se piden mientras se cargan los datos (`useFuentesListas`, con un tope de 800 ms): el primer Hoy ya
+no cambia de ancho al llegar la fuente. 🐛 El tutorial de un ejercicio no reservaba su hueco (medía 0 hasta cargar):
+ahora es 16:9. `auditarLayout` caza un desplegable que se monte de golpe y una imagen sin hueco.
+
+### 🐛 Lo que la F10 destapó de fases anteriores
+
+- **F7**: al volver a la biblioteca «viajaban» los veinte nombres de ejercicio a su propio sitio. Una sonda en
+  Chromium lo aclaró: `StrictMode` deshace y rehace cada efecto sobre el mismo nodo, y la despedida apuntaba un
+  origen que la vuelta tomaba. Un origen dice ahora qué elemento lo dejó, nadie sale del suyo, y el de una despedida
+  dura solo ese cambio (`TTL_EFIMERO_MS`).
+- **F6**: «la explicación se cierra al pasar al historial» salía roja porque el recorrido leía la copia inerte de la
+  capa que se cerraba. `esperarTexto` espera ahora a que se vayan las copias, y `pulsar` no pulsa nada inerte.
+- **F7 y F9**: cuatro comprobaciones del recorrido —nunca ejecutadas hasta ahora— medían a mitad de una transición o
+  comparaban formatos distintos (`inset(0px)` simplificado, un `rgb()` contra un hex). La aplicación estaba bien.
+
+### Lo que no se construye (`NO_EN_F10`)
+
+Un indicador que viaje entre las pestañas de dentro (son pastillas separadas que se parten en dos líneas, C-61), una
+cabecera que se compacta (no hay ninguna), datos en tiempo real, el esqueleto que se funde con el contenido (F16),
+contadores de notificaciones y listas virtualizadas.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.139.0 — Motion System F9/20: microinteracciones, estados y feedback de interfaz
 
 La F9 del Motion System (*"Microinteracciones, estados y feedback de interfaz"*, líneas 11380–12127 de

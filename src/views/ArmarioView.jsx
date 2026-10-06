@@ -32,6 +32,7 @@ import {
   Card, SectionTitle, Field, TextInput, Textarea, PrimaryButton, GhostBtn, EmptyHint, SelectInput, ToggleTab, BotonBorrar,
 } from '../components/ui';
 import { CambioDeContenido, ChevronDespliegue, LatidoAlMarcar } from '../components/motion';
+import { Plegable } from '../components/layoutMotion';
 
 /* ---------- Miniatura ----------
    Apartado 6: "nunca dejar un enorme espacio vacío por no tener imagen". Sin foto se
@@ -185,8 +186,8 @@ function FormularioPrenda({ inicial, accent, guardando, errorFoto, onGuardar, on
         <ChevronDespliegue abierto={masInfo} size={13} /> Más información
       </button>
 
-      {masInfo && (
-        <div className="despliegue-entra" style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
+      <Plegable abierto={masInfo}>{() => (
+        <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Marca"><TextInput value={form.marca} onChange={(e) => set('marca', e.target.value)} placeholder="Nike, Zara…" /></Field>
             <Field label="Talla"><TextInput value={form.talla} onChange={(e) => set('talla', e.target.value)} placeholder="M, 42…" /></Field>
@@ -222,7 +223,7 @@ function FormularioPrenda({ inicial, accent, guardando, errorFoto, onGuardar, on
             {form.favorita ? 'Es una de tus favoritas' : 'Marcar como favorita'}
           </button>
         </div>
-      )}
+      )}</Plegable>
 
       <div className="flex gap-2">
         {/* MS F9 — mientras guarda, el botón dice «Guardando…» en su sitio y no se apaga: está trabajando. */}
@@ -333,14 +334,14 @@ function DetallePrenda({ prenda, outfits, usos, hoyISO, accent, onCerrar, onEdit
                   <ChevronDespliegue abierto={verHistorial} size={13} />
                   <History size={12} /> Historial de uso
                 </button>
-                {verHistorial && (
-                  <div className="despliegue-entra mt-2">
+                <Plegable abierto={verHistorial}>{() => (
+                  <div className="mt-2">
                     <HistorialDeUso
                       usosFiltrados={mios} outfits={outfits} prendas={[prenda]} accent={accent} hoyISO={hoyISO}
                       vacioTexto="Todavía no hay datos de uso."
                     />
                   </div>
-                )}
+                )}</Plegable>
               </>
             )}
 
@@ -706,8 +707,8 @@ function FormularioOutfit({ inicial, prendas, accent, guardando, errorFoto, foto
         <ChevronDespliegue abierto={masInfo} size={13} /> Más información
       </button>
 
-      {masInfo && (
-        <div className="despliegue-entra" style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
+      <Plegable abierto={masInfo}>{() => (
+        <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Ocasión">
               <SelectInput value={form.ocasion} onChange={(e) => set('ocasion', e.target.value)}>
@@ -741,7 +742,7 @@ function FormularioOutfit({ inicial, prendas, accent, guardando, errorFoto, foto
             {form.favorito ? 'Es uno de tus favoritos' : 'Marcar como favorito'}
           </button>
         </div>
-      )}
+      )}</Plegable>
 
       <div className="flex gap-2">
         <PrimaryButton accent={accent} onClick={() => onGuardar(form)} disabled={!puedeGuardar && !guardando} estado={guardando ? 'cargando' : 'reposo'}>
@@ -854,14 +855,14 @@ function DetalleOutfit({ outfit, prendas, usos, hoyISO, accent, onCerrar, onEdit
               <ChevronDespliegue abierto={verHistorial} size={13} />
               <History size={12} /> Historial de uso
             </button>
-            {verHistorial && (
-              <div className="despliegue-entra mt-2">
+            <Plegable abierto={verHistorial}>{() => (
+              <div className="mt-2">
                 <HistorialDeUso
                   usosFiltrados={mios} outfits={[outfit]} prendas={prendas} accent={accent} hoyISO={hoyISO}
                   vacioTexto="Todavía no has registrado este outfit."
                 />
               </div>
-            )}
+            )}</Plegable>
 
             <div className="flex gap-2 mt-4">
               <PrimaryButton accent={accent} onClick={() => onEditar(outfit)} icon={Pencil}>Editar</PrimaryButton>
@@ -955,8 +956,8 @@ function FormularioUso({ inicial, outfits, prendas, accent, onGuardar, onCancela
         <ChevronDespliegue abierto={masInfo} size={13} /> Más información
       </button>
 
-      {masInfo && (
-        <div className="despliegue-entra" style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
+      <Plegable abierto={masInfo}>{() => (
+        <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '0.75rem' }}>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Lugar"><TextInput value={form.lugar} onChange={(e) => set('lugar', e.target.value)} placeholder="Instituto, casa…" /></Field>
             <Field label="Ocasión">
@@ -974,7 +975,7 @@ function FormularioUso({ inicial, outfits, prendas, accent, onGuardar, onCancela
           </Field>
           <Field label="Notas"><Textarea value={form.notas} onChange={(e) => set('notas', e.target.value)} rows={2} placeholder="Hacía bastante calor…" /></Field>
         </div>
-      )}
+      )}</Plegable>
 
       <div className="flex gap-2">
         <PrimaryButton accent={accent} onClick={() => onGuardar(form)} disabled={!puedeGuardar}>
@@ -2092,7 +2093,7 @@ function Bloque({ titulo, icono: Icono, accent, defecto = false, children }) {
         </span>
         <ChevronDespliegue abierto={abierto} size={15} style={{ color: COLORS.textMuted }} />
       </button>
-      {abierto && <div className="despliegue-entra mt-3">{children}</div>}
+      <Plegable abierto={abierto}>{() => <div className="mt-3">{children}</div>}</Plegable>
     </Card>
   );
 }

@@ -143,6 +143,7 @@ import { hayOrigen } from './lib/continuidad';
 import { useContenedorDesdeOrigen } from './components/continuidad';
 import { useNavegacionEnLaPagina } from './components/navegacionMotion';
 import { useCapasMotion } from './components/capasMotion';
+import { useFuentesListas } from './components/layoutMotion';
 import { AreaSegura } from './components/areaSegura';
 import SettingsView from './views/SettingsView';
 import { construirIndice } from './lib/indiceBusqueda';
@@ -1081,9 +1082,15 @@ export default function App() {
     return ultima ? { peso: Number(ultima.peso) } : null;
   }, [salud.medidas]);
 
+  /* MS F10, apartado 6 — las fuentes se piden MIENTRAS se cargan los datos y la
+     aplicación no se pinta hasta que están (o hasta un tope). Si no, la pantalla de
+     carga no tiene texto, nadie las pide, y el primer Hoy cambia de ancho al llegar
+     Manrope. Es un hook: va antes de los `return` (regla 4). */
+  const fuentesListas = useFuentesListas();
+
   if (session === undefined) return <LoadingScreen />;
   if (!session) return <Auth />;
-  if (!loaded) return <LoadingScreen />;
+  if (!loaded || !fuentesListas) return <LoadingScreen />;
 
   const uidUser = session.user.id;
 

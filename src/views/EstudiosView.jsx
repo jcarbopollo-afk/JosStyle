@@ -45,6 +45,7 @@ import {
   proximoDeAsignatura, proximoDeApp, rutaDeFecha,
 } from '../lib/cierreEstudios';
 import { Card, SectionTitle, Field, TextInput, SelectInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel, TextoDeBoton } from '../components/ui';
+import { Plegable, ListaAnimada } from '../components/layoutMotion';
 
 function diasHasta(fechaISO) {
   return Math.ceil((new Date(fechaISO + 'T00:00:00').getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -206,8 +207,8 @@ function ExamenItem({ examen, onUpdate, onDelete, accent, forzarAbierta, onFocoC
         <ChevronDespliegue abierto={abierto} size={16} style={{ color: COLORS.textMuted }} />
       </button>
 
-      {abierto && (
-        <div className="despliegue-entra">
+      <Plegable abierto={abierto}>{() => (
+        <div>
           {dias < 0 && !examen.notaObtenida && (
             <div className="mt-3">
               <Field label="Nota obtenida (opcional, ya pasó el examen)">
@@ -218,7 +219,7 @@ function ExamenItem({ examen, onUpdate, onDelete, accent, forzarAbierta, onFocoC
           <PlanRepaso examen={examen} onUpdatePlan={(plan) => onUpdate({ ...examen, planRepaso: plan })} accent={accent} />
           <button onClick={() => onDelete(examen.id)} className="text-xs mt-3" style={{ color: COLORS.negative }}>Borrar examen</button>
         </div>
-      )}
+      )}</Plegable>
     </Card>
   );
 }
@@ -1421,26 +1422,30 @@ export default function EstudiosView({ estudios, horarioTop = null, sueno, onAdd
               {temas.length === 0 && !formTema && (
                 <EmptyHint text="Todavía no has añadido ningún tema. Organiza aquí el temario de la asignatura." />
               )}
-              <div className="space-y-1.5">
+              {/* MS F10 — subir o bajar un tema lo hace VIAJAR a su sitio, y el que le
+                  cede el sitio también (apartado 12); borrarlo cierra el hueco. */}
+              <ListaAnimada className="space-y-1.5">
                 {temas.map((t, i) => (
-                  formTema === t.id ? (
+                  <div key={t.id} data-flip-id={`tema-${t.id}`}>
+                  {formTema === t.id ? (
                     <FormTema
-                      key={t.id} accent={accent} inicial={t}
+                      accent={accent} inicial={t}
                       onGuardar={(datos) => { onUpdateTemas(editarTema(estudios.temas || [], t.id, datos)); setFormTema(null); }}
                       onCerrar={() => setFormTema(null)}
                     />
                   ) : (
                     <FilaTema
-                      key={t.id} tema={t} primero={i === 0} ultimo={i === temas.length - 1} accent={accent}
+                      tema={t} primero={i === 0} ultimo={i === temas.length - 1} accent={accent}
                       onAvanzar={() => onUpdateTemas(avanzarTema(estudios.temas || [], t.id))}
                       onEditar={() => setFormTema(t.id)}
                       onSubir={() => onUpdateTemas(moverTema(estudios.temas || [], asig.id, t.id, 'arriba'))}
                       onBajar={() => onUpdateTemas(moverTema(estudios.temas || [], asig.id, t.id, 'abajo'))}
                       onEliminar={() => onDeleteTema(t.id)}
                     />
-                  )
+                  )}
+                  </div>
                 ))}
-              </div>
+              </ListaAnimada>
               {formTema === 'nuevo' ? (
                 <FormTema
                   accent={accent}

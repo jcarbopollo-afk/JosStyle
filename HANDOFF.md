@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.140.0 — Motion System F10/20: el diseño que cambia):**
+> Las listas ya no saltan: al borrar una tarea se va **desvaneciéndose** y las de debajo **suben** desde donde
+> estaban; al reordenar los pasos de una rutina, las filas **viajan** a su sitio (`ListaAnimada`). Los veinte
+> desplegables **crecen y se encogen** antes de desmontarse (`Plegable`), y las fuentes se piden mientras carga la
+> aplicación. Y destapó un fallo de la F7 (los veinte nombres de la biblioteca «viajaban» al volver) y tres
+> comprobaciones del recorrido que medían a destiempo. **La siguiente es la F11.**
+
 > **📅 ACTUALIZACIÓN (v3.139.0 — Motion System F9/20: estados y feedback de interfaz):**
 > Un botón que espera ya no parece roto: con `estado="cargando"` dice «Guardando…» **en su sitio**, sin cambiar de
 > ancho ni apagarse, y el toque no repite la acción. Un **campo enfocado se nota** (antes no cambiaba nada: el

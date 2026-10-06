@@ -30,7 +30,7 @@ se ordena es **el trabajo**.
 | **F7** ✅ **v3.137.0** | Continuidad espacial, shared elements y transiciones entre vistas | 9923–10687 | 765 |
 | **F8** ✅ **v3.138.0** | Física, springs, gestos e interacción directa | 10688–11379 | 692 |
 | **F9** ✅ **v3.139.0** | Microinteracciones, estados y feedback de interfaz | 11380–12127 | 748 |
-| **F10** | Layout motion, scroll, listas y contenido dinámico | 12128–12784 | 657 |
+| **F10** ✅ **v3.140.0** | Layout motion, scroll, listas y contenido dinámico | 12128–12784 | 657 |
 | **F11** | Orquestación global, coordinación y motion engine avanzado | 13290–14127 | 838 |
 | **F12** | Accesibilidad, reduced motion, adaptive motion y calidad de experiencia | 14966–15717 | 752 |
 | **F13** | Rendimiento extremo, GPU, frame budget y optimización | 15718–16452 | 735 |
@@ -81,3 +81,5 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | La prueba de la F8 | `scripts/test-motion-f8.mjs`, la sección «MS F8» del recorrido de Chromium y el divisor con dos dedos de la «FIT F27» |
 | Los estados: el catálogo de estados de un componente, el botón que carga, el campo enfocado y con error, el aviso que sale y el barrido de lo que no puede volver | `src/lib/estadosInteraccion.js` (F9), con `TextoDeBoton`, `MensajeDeCampo` y el `estado` de `PrimaryButton` / `GhostBtn` en `src/components/ui.jsx` |
 | La prueba de la F9 | `scripts/test-motion-f9.mjs`, y la sección «MS F9» del recorrido de Chromium |
+| El diseño que cambia: el plan de una lista (qué entra, sale y se recoloca), su presupuesto, otro ancho, las fuentes y lo que no puede volver | `src/lib/layoutMotion.js` (F10), con `ListaAnimada`, `Plegable` y `useFuentesListas` en `src/components/layoutMotion.jsx` |
+| La prueba de la F10 | `scripts/test-motion-f10.mjs`, y la sección «MS F10» del recorrido de Chromium |

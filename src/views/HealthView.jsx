@@ -17,6 +17,7 @@ import {
   EmptyHint, AIPanel, PinGate, TextoDeBoton,
 } from '../components/ui';
 import { escalonado } from '../lib/motion';
+import { Plegable } from '../components/layoutMotion';
 
 /* Entrega 3 · Fase 30 (BN) — «Rediseño y reorganización del apartado Bienestar».
    ═══════════════════════════════════════════════════════════════════════════
@@ -68,7 +69,7 @@ function SeccionBN({ seccion, resumen, abierta, onAlternar, accent, indice, chil
         </span>
         <ChevronDespliegue abierto={abierta} cerrado="derecha" alAbrir="abajo" size={18} style={{ color: COLORS.textMuted }} />
       </button>
-      {abierta && <div className="despliegue-entra px-4 pb-4 space-y-4">{children}</div>}
+      <Plegable abierto={abierta}>{() => <div className="px-4 pb-4 space-y-4">{children}</div>}</Plegable>
     </div>
   );
 }

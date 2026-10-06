@@ -4,6 +4,7 @@ import { COLORS, TIPOS_SERVICIO_FE, TIPOS_EVENTO_FE, PLAZOS_OBJETIVO } from '../
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
 import { CambioDeContenido, ChevronDespliegue } from '../components/motion';
+import { Plegable } from '../components/layoutMotion';
 
 // Instrucción de seguridad para cualquier AIPanel de este módulo: AIPanel usa el mismo
 // AI_SYSTEM general de la app (ui.jsx), así que la restricción doctrinal va dentro del propio
@@ -154,14 +155,14 @@ function DiarioFeCard({ entrada, accent, onDelete }) {
         </div>
         <ChevronDespliegue abierto={abierta} size={16} style={{ color: COLORS.textMuted }} />
       </button>
-      {abierta && (
-        <div className="despliegue-entra mt-3 pt-3 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+      <Plegable abierto={abierta}>{() => (
+        <div className="mt-3 pt-3 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           <p className="text-sm leading-relaxed" style={{ color: COLORS.text }}>{entrada.texto}</p>
           <button onClick={() => onDelete(entrada.id)} className="flex items-center gap-1.5 text-xs font-medium pt-1" style={{ color: COLORS.textMuted }}>
             <Trash2 size={13} /> Eliminar entrada
           </button>
         </div>
-      )}
+      )}</Plegable>
     </Card>
   );
 }

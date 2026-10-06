@@ -4,6 +4,7 @@ import { ChevronDespliegue } from '../components/motion';
 import { COLORS, ESTADOS_ANIMO } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, Textarea, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
+import { Plegable } from '../components/layoutMotion';
 
 const FORM_VACIO = { animo: 3, comoMeSiento: '', queHeAprendido: '', queMejorareManana: '' };
 
@@ -41,8 +42,8 @@ function EntradaCard({ entrada, accent, onDelete }) {
         </div>
         <ChevronDespliegue abierto={abierta} size={16} style={{ color: COLORS.textMuted }} />
       </button>
-      {abierta && (
-        <div className="despliegue-entra mt-3 pt-3 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+      <Plegable abierto={abierta}>{() => (
+        <div className="mt-3 pt-3 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           {entrada.comoMeSiento && (
             <div>
               <p className="text-[11px] font-semibold mb-0.5" style={{ color: COLORS.textMuted }}>CÓMO ME HE SENTIDO</p>
@@ -65,7 +66,7 @@ function EntradaCard({ entrada, accent, onDelete }) {
             <Trash2 size={13} /> Eliminar entrada
           </button>
         </div>
-      )}
+      )}</Plegable>
     </Card>
   );
 }

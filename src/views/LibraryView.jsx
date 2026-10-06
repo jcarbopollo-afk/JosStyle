@@ -70,6 +70,7 @@ import {
 } from '../lib/libros';
 import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, GhostBtn, EmptyHint, BotonBorrar, BotonBorrarDefinitivo, TextoDeBoton } from '../components/ui';
 import { escalonado, transicion } from '../lib/motion';
+import { Plegable } from '../components/layoutMotion';
 
 // Fase 11 — Biblioteca: PDFs, vídeos, fotos, apuntes y enlaces conviven en un único listado
 // buscable. Los tres tipos de archivo comparten forma { id, tipo, path, titulo, fecha } +
@@ -2577,8 +2578,8 @@ export function PantallaDocumentos({
               </p>
               <ChevronDespliegue abierto={verArchivos} size={15} style={{ color: COLORS.textMuted }} />
             </button>
-            {verArchivos && (
-              <div className="despliegue-entra mt-2 space-y-2">
+            <Plegable abierto={verArchivos}>{() => (
+              <div className="mt-2 space-y-2">
                 <Field label="Qué vas a subir">
                   <Select aria-label="Tipo de archivo" value={tipoArchivo} onChange={(e) => setTipoArchivo(e.target.value)}>
                     <option value="pdf">PDF</option>
@@ -2604,7 +2605,7 @@ export function PantallaDocumentos({
                   />
                 ))}
               </div>
-            )}
+            )}</Plegable>
           </Card>
 
           <p className="text-[11px] leading-snug" style={{ color: COLORS.textMuted }}>
@@ -2701,8 +2702,8 @@ export function AnadirAColeccion({ colecciones, tipo, id, accent, onAlternar }) 
         <ChevronDespliegue abierto={abierto} size={12} />
       </button>
 
-      {abierto && (
-        <div className="despliegue-entra mt-2 space-y-1">
+      <Plegable abierto={abierto}>{() => (
+        <div className="mt-2 space-y-1">
           {ordenadas.map((c) => {
             const marcada = contieneElemento(c, tipo, id);
             const Icono = iconoDeColeccion(c.icono);
@@ -2732,7 +2733,7 @@ export function AnadirAColeccion({ colecciones, tipo, id, accent, onAlternar }) 
             Quitarlo de una colección no lo elimina de tu biblioteca.
           </p>
         </div>
-      )}
+      )}</Plegable>
     </div>
   );
 }

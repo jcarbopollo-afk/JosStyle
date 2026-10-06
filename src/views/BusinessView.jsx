@@ -4,6 +4,7 @@ import { ChevronDespliegue } from '../components/motion';
 import { COLORS, ESTADOS_NEGOCIO } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
+import { Plegable } from '../components/layoutMotion';
 
 // Fase 7 — módulo deliberadamente simple (petición explícita de Josué): una lista de proyectos,
 // sin sub-listas de movimientos. Ingresos/gastos son totales que se editan a mano, no un libro
@@ -23,8 +24,8 @@ function ProyectoCard({ proyecto, onUpdate, onDelete, accent }) {
         <ChevronDespliegue abierto={abierto} size={16} style={{ color: COLORS.textMuted }} />
       </button>
 
-      {abierto && (
-        <div className="despliegue-entra mt-3 space-y-3">
+      <Plegable abierto={abierto}>{() => (
+        <div className="mt-3 space-y-3">
           <Field label="Estado">
             <Select value={proyecto.estado} onChange={(e) => onUpdate({ ...proyecto, estado: e.target.value })}>
               {ESTADOS_NEGOCIO.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -46,7 +47,7 @@ function ProyectoCard({ proyecto, onUpdate, onDelete, accent }) {
           </p>
           <button onClick={() => onDelete(proyecto.id)} className="text-xs" style={{ color: COLORS.negative }}>Borrar proyecto</button>
         </div>
-      )}
+      )}</Plegable>
     </Card>
   );
 }

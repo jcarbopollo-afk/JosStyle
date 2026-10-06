@@ -377,9 +377,11 @@ export function ExerciseTutorial({ tutorial, nombre = '' }) {
           <p className="text-xs" style={{ color: COLORS.textMuted }}>{TUTORIAL_ROTO}</p>
         ) : tutorial.tipo === 'video' ? (
           // eslint-disable-next-line jsx-a11y/media-has-caption
-          <video src={tutorial.src} controls playsInline className="w-full rounded-xl" aria-label={`Tutorial: ${nombre}`} onError={() => setRoto(true)} />
+          /* MS F10, apartado 5 — el hueco se reserva (16:9) antes de que llegue: sin él,
+             la tarjeta medía 0 y al cargar empujaba toda la ficha hacia abajo. */
+          <video src={tutorial.src} controls playsInline className="w-full aspect-video object-contain rounded-xl" style={{ background: COLORS.surface2 }} aria-label={`Tutorial: ${nombre}`} onError={() => setRoto(true)} />
         ) : (
-          <img src={tutorial.src} alt={`Tutorial: ${nombre}`} className="w-full rounded-xl" onError={() => setRoto(true)} />
+          <img src={tutorial.src} alt={`Tutorial: ${nombre}`} className="w-full aspect-video object-contain rounded-xl" style={{ background: COLORS.surface2 }} onError={() => setRoto(true)} />
         )}
       </Card>
     </div>

@@ -5,7 +5,7 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**82 elementos**: ✅ Existe 74 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 6 · 🚨 Fuera de control 0.
+**83 elementos**: ✅ Existe 77 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 4 · 🚨 Fuera de control 0.
 
 ## Resumen
 
@@ -57,7 +57,8 @@
 | Completar un hábito | J | 2 · Suave | 280 ms | ✅ Existe | F9 |
 | Terminar una rutina | Q | 3 · Protagonista | 420 ms | ✅ Existe | F9 |
 | Marcar una serie | J | 1 · Micro | 160 ms | ✅ Existe | F9 |
-| Borrar o añadir un elemento de una lista | J | 0 · Estático | — | ⬜ Sin movimiento | F10 |
+| Borrar, añadir, completar o filtrar en una lista | J | 2 · Suave | 220 ms | ✅ Existe | F10 |
+| Lo que se abre y se cierra en su sitio (Plegable) | C | 2 · Suave | 220 ms | ✅ Existe | F10 |
 | Gráficas de Recharts (Salud, Nutrición, Sueño) | K | 3 · Protagonista | 420 ms | ✅ Existe | F4 |
 | Una cifra que sube | K | 1 · Micro | 220 ms | ✅ Existe | F4 |
 | Una cifra que baja | K | 1 · Micro | 220 ms | ✅ Existe | F4 |
@@ -86,7 +87,7 @@
 | El divisor del comparador de fotos | T | 1 · Micro | — | ✅ Existe | F8 |
 | El rebote de la página | U | 1 · Micro | — | ✅ Existe | F5 |
 | Las tarjetas se desvanecen al pasar bajo la cabecera de un área | U | 1 · Micro | 0 ms | ✅ Existe | F10 |
-| Reordenar (flechas en lugar de arrastrar) | V | 0 · Estático | — | ⬜ Sin movimiento | F10 |
+| Reordenar (flechas en lugar de arrastrar) | V | 2 · Suave | 220 ms | ✅ Existe | F10 |
 | Cambiar de mes en el Calendario | W | 2 · Suave | 220 ms | ✅ Existe | F10 |
 | El progreso de un libro | W | 3 · Protagonista | 420 ms | ✅ Existe | F17 |
 | El progreso de un macro | W | 3 · Protagonista | 420 ms | ✅ Existe | F17 |
@@ -551,6 +552,36 @@
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Igual: ya es solo color. |
+
+#### Lo que se abre y se cierra en su sitio (Plegable)
+
+`plegable` · ✅ Existe · lo trata la **F10**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/index.css · src/components/layoutMotion.jsx (Plegable) · los veinte desplegables con ChevronDespliegue |
+| Componente | Plegable |
+| Clase CSS | `.plegable` |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Que lo de debajo se mueva con la altura en vez de saltar al cerrar (C-54, apartados 17, 18 y 28). |
+| Estado inicial | grid-template-rows 0fr |
+| Estado final | 1fr |
+| Entrada | Crece mientras lo de dentro entra con `despliegue-entra` |
+| Salida | Se encoge y después se desmonta |
+| Interacción | — |
+| Transición | grid-template-rows |
+| Duración | 220 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 2 · Suave |
+| Prioridad | media |
+| Relación | La técnica de los acordeones de Inicio (SC F1), con `min-height: 0` para Safari. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Cambia de altura sin animarse. |
 
 ### D · Tarjetas
 
@@ -1346,35 +1377,35 @@
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
-#### Borrar o añadir un elemento de una lista
+#### Borrar, añadir, completar o filtrar en una lista
 
-`borrar_elemento` · ⬜ Sin movimiento · lo trata la **F10**
+`borrar_elemento` · ✅ Existe · lo trata la **F10**
 
 | Campo | Valor |
 |---|---|
-| Ubicación | Toda la aplicación |
-| Componente | — |
+| Ubicación | src/components/layoutMotion.jsx (ListaAnimada) · src/lib/layoutMotion.js · Tareas, la agenda de un día, las comidas, los resultados del buscador |
+| Componente | ListaAnimada |
 | Clase CSS | — |
 | @keyframes | — |
 | En ANIMACIONES_HC | — |
-| Función | Lo que se va a la papelera y lo que se crea. |
+| Función | Que la lista no salte: lo que entra aparece en su sitio, lo que sale se va y lo demás se recoloca (apartados 10, 11 y 13). |
 | Estado inicial | — |
 | Estado final | — |
-| Entrada | Ninguna |
-| Salida | Ninguna: la lista salta |
+| Entrada | Fundido y un leve ascenso (`normal`, curva de entrada) |
+| Salida | Una copia inerte que se desvanece (`fast`, curva de salida); lo demás se recoloca con FLIP (`normal`) cuando empieza a irse |
 | Interacción | — |
-| Transición | — |
-| Duración | — |
+| Transición | transform, opacity (Web Animations) |
+| Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
-| Intensidad | 0 · Estático |
+| Intensidad | 2 · Suave |
 | Prioridad | alta |
-| Relación | — |
+| Relación | Con un presupuesto (`PRESUPUESTO_LAYOUT`): por encima, un fundido de la lista entera. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+| Movimiento reducido | Lo que entra y lo que sale se funden en su sitio; lo demás se coloca sin viajar. |
 
 ### K · Gráficas
 
@@ -2422,12 +2453,12 @@
 
 #### Reordenar (flechas en lugar de arrastrar)
 
-`reordenar` · ⬜ Sin movimiento · lo trata la **F10**
+`reordenar` · ✅ Existe · lo trata la **F10**
 
 | Campo | Valor |
 |---|---|
-| Ubicación | Pantalla principal, Imagen personal |
-| Componente | — |
+| Ubicación | Los temas de una asignatura, los pasos de una rutina, los ejercicios de una plantilla, los apartados de Imagen personal (ListaAnimada) |
+| Componente | ListaAnimada |
 | Clase CSS | — |
 | @keyframes | — |
 | En ANIMACIONES_HC | — |
@@ -2437,18 +2468,18 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | Flechas: el arrastre sería un segundo mecanismo (EH F50) |
-| Transición | Ninguna: salta a su sitio nuevo |
-| Duración | — |
+| Transición | La fila VIAJA de su sitio al nuevo y la que cede el sitio, también (FLIP, `normal`): A B C D → A C D B (apartado 12) |
+| Duración | 220 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
-| Intensidad | 0 · Estático |
+| Intensidad | 2 · Suave |
 | Prioridad | media |
 | Relación | — |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+| Movimiento reducido | Se coloca sin viajar. |
 
 ### W · Elementos dinámicos
 

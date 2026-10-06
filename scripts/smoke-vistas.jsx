@@ -439,6 +439,7 @@ import { crearDocumento } from '../src/lib/documentos.js';
 import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
 import { AvatarPerfil, BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal, AjusteMovimiento } from '../src/views/SettingsView.jsx';
 import { Presencia, ChevronDespliegue, LatidoAlMarcar, CifraQueCambia } from '../src/components/motion.jsx';
+import { ListaAnimada, Plegable } from '../src/components/layoutMotion.jsx';
 import { AsaHoja } from '../src/components/gestosMotion.jsx';
 import { Switch, PistaInterruptor, ToggleTab, BotonBorrar, PrimaryButton, GhostBtn, TextoDeBoton, MensajeDeCampo, TextInput, Textarea } from '../src/components/ui.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
@@ -3210,6 +3211,12 @@ const CASOS = [
   ['MensajeDeCampo (bien)', MensajeDeCampo, () => ({ tipo: 'exito', children: 'Guardado.' })],
   ['TextInput (con un error)', TextInput, () => ({ value: '25:99', onChange: noop, 'aria-invalid': true, 'aria-describedby': 'm1' })],
   ['Textarea (campo)', Textarea, () => ({ value: 'Una nota', onChange: noop })],
+  /* MS F10 — una lista que anima su diseño (como `div` y como `ul`, con bloques) y un desplegable abierto,
+     con lo de dentro como nodos y como función. Cerrado no pinta nada a propósito: no entra aquí. */
+  ['ListaAnimada (filas con su id)', ListaAnimada, () => ({ className: 'space-y-2', children: ['a', 'b', 'c'].map((id) => <div key={id} data-flip-id={`t-${id}`}>Tarea {id}</div>) })],
+  ['ListaAnimada (como lista, con un bloque)', ListaAnimada, () => ({ as: 'ul', children: <li data-flip-id="s-hoy"><span data-flip-id="t-1">Una tarea</span></li> })],
+  ['Plegable (abierto)', Plegable, () => ({ abierto: true, className: 'mt-2', children: <p>Lo de dentro</p> })],
+  ['Plegable (abierto, lo de dentro como función)', Plegable, () => ({ abierto: true, children: () => <p>Calculado al abrir</p> })],
   /* MS F5 — el asa de una hoja: con su margen por defecto, pegada (las del Armario con foto arriba) y
      sin caja todavía (el primer render, antes de que el `ref` llegue). */
   ['AsaHoja (por defecto)', AsaHoja, () => ({ cajaRef: { current: null }, onCerrar: noop })],

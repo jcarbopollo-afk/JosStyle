@@ -616,15 +616,48 @@ html[data-motion='reducido'] .chevron-gira {
 /* MS F3, apartado 14 — lo que se despliega aparece, no se planta. Un fundido
    corto y un leve descenso desde el borde que lo abrió; en Reducido, solo el
    fundido (el token de distancia vale 0). Lo lleva el contenido de los
-   desplegables que abren con `ChevronDespliegue`. Cerrar se queda instantáneo:
-   que el resto de la pantalla se recoloque con suavidad es la F10 (el diseño
-   que cambia, C-54). */
+   desplegables que abren con `ChevronDespliegue`. Desde la F10 va dentro de
+   `Plegable`, que además cambia la altura al abrir y al cerrar (C-54). */
 @keyframes despliegueEntra {
   from { opacity: 0; transform: translateY(calc(-1 * var(--motion-dist-micro))); }
   to { opacity: 1; transform: none; }
 }
 .despliegue-entra {
   animation: despliegueEntra var(--motion-dur-fast) var(--ease-premium) backwards;
+}
+
+/* MS F10, apartados 17, 18 y 28 — `Plegable` (src/components/layoutMotion.jsx):
+   lo que se abre y se cierra en su sitio cambia de ALTURA, y lo de debajo se
+   mueve con ella. `grid-template-rows` 0fr ↔ 1fr, la técnica de los acordeones
+   de Inicio (SC F1): ni una altura escrita a mano. `min-height: 0` es lo que
+   deja a Safari encoger la fila (SC F1). Mientras se mueve recorta; quieto
+   (`abierto`) no, para no cortar un halo de foco ni una sombra. En Reducido la
+   altura cambia sin animarse: crecer empuja lo de debajo, y eso es un
+   desplazamiento. */
+.plegable {
+  display: grid;
+  transition: grid-template-rows var(--motion-dur-normal) var(--ease-premium);
+}
+.plegable > .plegable-dentro {
+  min-height: 0;
+  overflow: hidden;
+}
+.plegable[data-plegable='abierto'] > .plegable-dentro {
+  overflow: visible;
+}
+html[data-motion='reducido'] .plegable {
+  transition-property: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='off']) .plegable {
+    transition-property: none;
+  }
+}
+
+/* MS F10 — `ListaAnimada`: la copia de lo que sale se coloca encima de donde
+   estaba, así que la lista es su caja de referencia. */
+.lista-animada {
+  position: relative;
 }
 
 /* ════════════════════════════════════════════════════════════════════════════

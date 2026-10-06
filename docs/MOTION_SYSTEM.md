@@ -373,6 +373,29 @@ las hojas son portales sobre el `body`, y el borde de foco de un campo dentro de
 no hace —quitar un elemento de una lista con su hueco, los estados del sistema, los contadores, una bandeja de
 notificaciones— está en `NO_EN_F9` con la fase que lo hace.
 
+## 8.9 · El diseño que cambia: listas, desplegables y lo que carga (F10)
+
+*"El layout puede cambiar. La percepción del usuario no debe romperse."* Borrar una tarea hacía saltar
+las de debajo y cerrar un desplegable subía lo de abajo de golpe (`listas_que_saltan`, C-54). El plan
+—qué entra, qué sale, qué se recoloca, con un presupuesto— lo decide `src/lib/layoutMotion.js`; las
+piezas son `ListaAnimada` y `Plegable` (`src/components/layoutMotion.jsx`).
+
+| Si es… | Usa | Cómo se comporta |
+|---|---|---|
+| Una lista que él edita (añadir, borrar, completar, reordenar, filtrar) | `<ListaAnimada>` y `data-flip-id` con el **id** en cada fila (o en su envoltorio), **nunca el índice** | Mide justo antes y justo después de cada cambio (FLIP). Lo que entra se funde y sube un poco; lo que sale deja una **copia inerte** (`aria-hidden`, sin ids) que se desvanece en `fast`; lo demás se recoloca en `normal` cuando la copia ya ha empezado a irse. Por encima de `PRESUPUESTO_LAYOUT.maxAnimados`, un fundido de la lista entera |
+| Bloques que agrupan filas (las secciones de Tareas, la agenda de un día) | `data-flip-id` también en el bloque | La fila se mide dentro de su bloque: no se mueve dos veces. Lo que cambia de bloque sale de uno y entra en el otro |
+| Algo que se abre y se cierra en su sitio | `<Plegable abierto={x}>{() => …}</Plegable>` | La altura crece y decrece (`grid-template-rows`, sin alturas a mano) y **después** se desmonta; mientras se cierra, lo de dentro es `inert`. Lo de dentro como función: cerrado no se calcula |
+| Una imagen | Su hueco: alto, `aspect-…` o `width`/`height` | Al cargar no empuja nada. `imagenesSinHueco` caza la que nazca sin él |
+| Una pantalla entera, un reloj, una cifra que se actualiza | Nada de esto | Una pantalla es la F2; una cifra, la F4 |
+
+🚨 **Reducido**: lo que entra y lo que sale se funden en su sitio, lo demás **se coloca sin viajar** y un
+desplegable cambia de altura sin animarse. **Otro ancho** (girar el iPhone, el teclado) no anima nada.
+⚠️ **Las fuentes se piden mientras cargan los datos** (`useFuentesListas`, con un tope de 800 ms): el primer
+Hoy ya no cambia de ancho al llegar Manrope. ⚠️ **Un desplegable nuevo con `{x && <div className="despliegue-entra…">}`
+pone la suite roja** (`auditarLayout`): es `Plegable`. Lo que la F10 no hace —un indicador que viaja entre
+las pestañas de dentro (C-61), una cabecera que se compacta, datos en tiempo real, el esqueleto que se funde
+con el contenido (F16)— está en `NO_EN_F10` con su motivo.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en

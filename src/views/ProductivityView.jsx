@@ -91,6 +91,7 @@ import {
 } from '../lib/integracionPR';
 import ObjectivesView from './ObjectivesView';
 import { escalonado, transicion } from '../lib/motion';
+import { ListaAnimada } from '../components/layoutMotion';
 
 /* ---------- Hábitos ---------- */
 // RA Fase 1 — la racha ya no se guarda: se deriva del historial con el motor de
@@ -778,10 +779,12 @@ function EditorPasos({ rutina, accent, onGuardar }) {
           Todavía no tiene pasos. El orden es lo que convierte una lista en un flujo.
         </p>
       )}
+      {/* MS F10 — subir o bajar un paso lo hace VIAJAR a su sitio (apartado 12). */}
+      <ListaAnimada>
       {rutina.pasos.map((p, i) => {
         const t = tipoPaso(p.tipo);
         return (
-          <div key={p.id} className="flex items-center gap-2 py-1.5">
+          <div key={p.id} data-flip-id={`paso-${p.id}`} className="flex items-center gap-2 py-1.5">
             <span className="text-xs w-5 shrink-0" style={{ color: COLORS.textMuted }}>{i + 1}.</span>
             <div className="flex-1 min-w-0">
               <p className="text-sm truncate" style={{ color: COLORS.text }}>
@@ -814,6 +817,7 @@ function EditorPasos({ rutina, accent, onGuardar }) {
           </div>
         );
       })}
+      </ListaAnimada>
 
       <div className="mt-3 space-y-2">
         <TextInput
@@ -1583,7 +1587,7 @@ function TarjetaTarea({ tarea, hoy, accent, onCompletar, onAbrir, onConcentrarse
 function SeccionTareas({ seccion, tareas, hoy, accent, abierta, onAlternar, ...resto }) {
   if (!tareas.length) return null;
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-flip-id={`s-${seccion.id}`}>
       <button
         onClick={onAlternar}
         className="w-full flex items-center justify-between toque-44"
@@ -1595,7 +1599,9 @@ function SeccionTareas({ seccion, tareas, hoy, accent, abierta, onAlternar, ...r
         <ChevronDespliegue abierto={abierta} size={14} style={{ color: COLORS.textMuted }} />
       </button>
       {abierta && tareas.map((t) => (
-        <TarjetaTarea key={t.id} tarea={t} hoy={hoy} accent={accent} {...resto} />
+        <div key={t.id} data-flip-id={`t-${t.id}`}>
+          <TarjetaTarea tarea={t} hoy={hoy} accent={accent} {...resto} />
+        </div>
       ))}
     </div>
   );
@@ -1930,6 +1936,10 @@ export function TareasTab({ tareas, onAdd, onUpdate, onToggle, onDelete, onConce
         </>
       )}
 
+      {/* MS F10 — completar, borrar o plegar una sección ya no hace saltar la lista:
+          lo que sale se va, lo que entra aparece y lo demás se recoloca. Cada
+          sección es un bloque (`s-…`) y cada tarea se mide dentro de la suya. */}
+      <ListaAnimada className="space-y-3">
       {SECCIONES_TAREAS.map((s) => (
         <SeccionTareas
           key={s.id}
@@ -1948,6 +1958,7 @@ export function TareasTab({ tareas, onAdd, onUpdate, onToggle, onDelete, onConce
           destacada={false}
         />
       ))}
+      </ListaAnimada>
 
       {/* ESTADÍSTICAS BÁSICAS — se cuentan en el momento; no se guarda ni una
           cifra (E3 F13). Sin nada que completar hoy no hay porcentaje. */}

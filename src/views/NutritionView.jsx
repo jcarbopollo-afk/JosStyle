@@ -60,6 +60,7 @@ import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, Ghost
 import BarcodeScanner from '../components/BarcodeScanner';
 import { CambioDeContenido, LatidoAlMarcar, useAnimacionDeGrafica, CifraQueCambia } from '../components/motion';
 import { escalonado } from '../lib/motion';
+import { ListaAnimada } from '../components/layoutMotion';
 
 const emptyForm = () => ({ nombre: '', calorias: '', proteinas: '', carbohidratos: '', grasas: '', fibra: '' });
 const round1 = (v) => Math.round((v || 0) * 10) / 10;
@@ -985,6 +986,7 @@ function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha
   return (
     <div
       className="hub-card rounded-2xl overflow-hidden"
+      data-flip-id={`mom-${mom.id}`}
       style={{ ...escalonado(indice), background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
     >
       <div className="flex items-center gap-2 p-3.5">
@@ -1008,11 +1010,13 @@ function MomentoDelDia({ mom, comidas, abierto, onAbrir, onCerrar, accent, fecha
       {comidas.length > 0 && (
         <div className="px-2.5 pb-3 space-y-0.5">
           {comidas.map((c) => (
-            <AlimentoRegistrado
-              key={c.id} comida={c} accent={accent}
-              onActualizar={onActualizarComida} onEliminar={onDeleteComida}
-              onRepetir={onRepetirComida}
-            />
+            <div key={c.id} data-flip-id={`c-${c.id}`}>
+              <AlimentoRegistrado
+                comida={c} accent={accent}
+                onActualizar={onActualizarComida} onEliminar={onDeleteComida}
+                onRepetir={onRepetirComida}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -1361,8 +1365,11 @@ function ComidasTab({ comidas, nutricion, perfil, onAdd, onAddFavorito, onDelete
         </Card>
       )}
 
-      {/* Apartado 6 — la zona de comidas, con los cinco momentos. */}
-      <div className="space-y-2.5">
+      {/* Apartado 6 — la zona de comidas, con los cinco momentos.
+          MS F10 — añadir, borrar o repetir una comida, o abrir el formulario de un
+          momento, ya no hace saltar los de debajo: se recolocan. Con `key` en la
+          fecha, cambiar de día es otra lista (apartado 14), no una mutación. */}
+      <ListaAnimada key={fecha} className="space-y-2.5">
         {MOMENTOS.map((m, i) => (
           <MomentoDelDia
             key={m.id}
@@ -1388,7 +1395,7 @@ function ComidasTab({ comidas, nutricion, perfil, onAdd, onAddFavorito, onDelete
             indice={i}
           />
         ))}
-      </div>
+      </ListaAnimada>
     </div>
   );
 }

@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.139.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.140.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -38,7 +38,8 @@ C-51), y **se construye de la F0 a la F20**. **Hechas la F0 (v3.130.0)** —el m
 plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegación—, la **F3 (v3.133.0)**
 —las microinteracciones—, la **F4 (v3.134.0)** —los datos que cambian—, la **F5 (v3.135.0)** —los gestos—, la
 **F6 (v3.136.0)** —la profundidad y las capas—, la **F7 (v3.137.0)** —la continuidad espacial—, la **F8
-(v3.138.0)** —la física y la interacción directa— y la **F9 (v3.139.0)** —los estados y el feedback—.
+(v3.138.0)** —la física y la interacción directa—, la **F9 (v3.139.0)** —los estados y el feedback— y la
+**F10 (v3.140.0)** —el diseño que cambia: listas y desplegables—.
 Lo que vale para cualquier cambio a partir de hoy:
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
@@ -148,6 +149,15 @@ Lo que vale para cualquier cambio a partir de hoy:
   lo pone la clase `campo` (el borde al acento: ni un píxel de letra cambia, C-32). ⚠️ **`AvisoAccion` se monta
   SIEMPRE** (con `accion` vacía) para que pueda salir (`toastExit`), y **`--accent` vive también en
   `documentElement`**: las hojas son portales y no lo heredaban del `div` de la aplicación.
+- 🚨 **UNA LISTA QUE ÉL EDITA ES `<ListaAnimada>`, Y CADA FILA LLEVA `data-flip-id` CON SU ID, NUNCA EL ÍNDICE** (F10,
+  `layoutMotion.js` y `layoutMotion.jsx`): lo que entra se funde, lo que sale deja una **copia inerte**
+  (`data-lista-saliendo`, sin ids, `aria-hidden`) y lo demás se recoloca con FLIP; un bloque que agrupa filas lleva
+  también su `data-flip-id`. **Algo que se abre y se cierra en su sitio es `<Plegable abierto>{() => …}</Plegable>`**:
+  crece y se encoge antes de desmontarse, y `{x && <div className="despliegue-entra…">}` pone la suite roja
+  (`auditarLayout`, que caza también una imagen sin su hueco). ⚠️ **El recorrido espera a las copias** que se van
+  (`esperarTexto`) y `pulsar` no pulsa nada inerte. 🐛 **Y un origen de la F7 dice qué elemento lo dejó**: con
+  `StrictMode` cada efecto se deshace y se rehace sobre el mismo nodo, y los veinte nombres de la biblioteca «viajaban»
+  a su propio sitio.
 - 🐛 **UNA ANIMACIÓN DE VUELTA SE CANCELA CUANDO EL DEDO VUELVE A AGARRAR** (F5, apartado 19): si no, manda sobre
   el `transform` hasta acabar y el dedo no mueve nada. **Y un muelle que mueve píxeles reposa a un cuarto de
   píxel** (`muestrearSpring(…, { reposo })`): con el reposo genérico una vuelta de 30 px «duraba» 900 ms.
@@ -2131,8 +2141,8 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F10 DEL MOTION SYSTEM** (*"Layout motion, scroll, listas y contenido dinámico"*, líneas
-   12128–12784 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F11… hasta la F20, en
+0. 🎬 **LA SIGUIENTE ES LA F11 DEL MOTION SYSTEM** (*"Orquestación global, coordinación y motion engine avanzado"*,
+   líneas 13290–14127 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F12… hasta la F20, en
    el orden de
    `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
    `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**

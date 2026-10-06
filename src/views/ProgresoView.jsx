@@ -72,6 +72,7 @@ import {
 import { RankHistory } from '../components/historialRango';
 import { PROPS_CAMPO_NUMERICO, PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
 import { decimal } from '../lib/numerosFitness';
+import { Plegable } from '../components/layoutMotion';
 
 /** Una sola lista vacía para quien no tiene ejercicios propios (FIT F44). */
 const SIN_PROPIOS = [];
@@ -311,8 +312,8 @@ function FilaHistoria({ fila, accent, abierta, onAlternar, onVerSesion }) {
         <span className="text-sm font-bold tabular-nums" style={{ color: COLORS.text }}>{fila.resumen}</span>
         <ChevronDespliegue abierto={abierta} size={16} style={{ color: COLORS.textMuted }} />
       </button>
-      {abierta && (
-        <div className="despliegue-entra pb-2.5 space-y-0.5">
+      <Plegable abierto={abierta}>{() => (
+        <div className="pb-2.5 space-y-0.5">
           {fila.series.map((s) => (
             <p key={s} className="text-xs tabular-nums" style={{ color: COLORS.text }}>{s}</p>
           ))}
@@ -325,7 +326,7 @@ function FilaHistoria({ fila, accent, abierta, onAlternar, onVerSesion }) {
             </button>
           )}
         </div>
-      )}
+      )}</Plegable>
     </div>
   );
 }

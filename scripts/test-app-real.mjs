@@ -13383,6 +13383,136 @@ ok(errores.length === erroresAntes_ms9, `MS F9 — …sin un error en la consola
 almacen.ajustes = ajustesDeAntes_ms9;
 almacen.armario = armarioDeAntes_ms9;
 
+/* ── MS F10 · El diseño que cambia: una lista que no salta, una fila que viaja y un desplegable que crece ──
+   Lo que solo se ve en la página de verdad: que al borrar una tarea su COPIA se vaya inerte y las de
+   debajo suban desde donde estaban (no de un salto), que al bajar un paso de una rutina las dos filas
+   viajen y en Reducido se coloquen sin viajar, que un desplegable crezca y al cerrarse se encoja ANTES
+   de desmontarse —con lo de dentro inerte mientras tanto—, y que cambiar el tamaño de la ventana no
+   arranque ni una animación. Todo se mide en el MISMO turno en que React aplica el cambio (la lección de
+   la F2). ⚠️ Sufijo `_ms10`. */
+console.log('\n── MS F10 · Layout motion, listas y contenido dinámico ──');
+const ajustesDeAntes_ms10 = almacen.ajustes;
+const prodDeAntes_ms10 = almacen.productividad;
+almacen.ajustes = { ...(ajustesDeAntes_ms10 || {}), apariencia: { ...((ajustesDeAntes_ms10 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+const hoy_ms10 = new Date().toLocaleDateString('sv-SE');
+almacen.productividad = {
+  tareas: ['A', 'B', 'C', 'D'].map((l) => ({ id: `t10${l}`, texto: `Tarea ${l} diez`, fecha: hoy_ms10, hecha: false })),
+  habitos: [], metas: [], pomodoros: {}, pomodoroSesiones: [], apuntes: [], rutinaEjecuciones: [], rutinaEnCurso: null,
+  rutinas: [{ id: 'r_ms10', nombre: 'Rutina diez', pasos: [{ id: 'pa10', texto: 'Paso uno' }, { id: 'pb10', texto: 'Paso dos' }, { id: 'pc10', texto: 'Paso tres' }] }],
+};
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms10 = errores.length;
+
+/* 1 · Borrar una tarea: la copia se va, las de debajo suben desde donde estaban. */
+ok(await pulsar('Gestión') && await pulsar('Organización') && await pulsar('Tareas') && /Tarea D diez/.test(await esperarTexto(/Tarea D diez/)), 'MS F10 — Gestión → Organización → Tareas, con cuatro tareas de hoy');
+await page.waitForTimeout(500);
+const borrar_ms10 = await page.evaluate(async () => {
+  const fila = (id) => document.querySelector(`[data-flip-id="${id}"]`);
+  const c = fila('t-t10C');
+  const b = [...document.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === 'Eliminar Tarea B diez');
+  if (!c || !b || !fila('t-t10B')) return null;
+  const topAntes = c.getBoundingClientRect().top;
+  b.click();
+  await new Promise((ok) => setTimeout(ok, 0));
+  const copia = document.querySelector('[data-lista-saliendo]');
+  const c2 = fila('t-t10C');
+  const mov = c2 ? c2.getAnimations().map((a) => ({ desde: a.effect.getKeyframes()[0].transform, retraso: a.effect.getTiming().delay, dura: a.effect.getTiming().duration })) : [];
+  const fuera = copia ? copia.getAnimations().map((a) => ({ hasta: a.effect.getKeyframes().at(-1).opacity, dura: a.effect.getTiming().duration })) : [];
+  const r = {
+    sigue: !!fila('t-t10B'), mismaFila: c2 === c, salto: Math.round(topAntes - (c2 ? c2.getBoundingClientRect().top : topAntes)),
+    copia: copia ? { texto: copia.innerText.includes('Tarea B diez'), oculta: copia.getAttribute('aria-hidden'), inerte: copia.inert, conId: !!copia.querySelector('[id], [data-flip-id]') || !!copia.id, toques: getComputedStyle(copia).pointerEvents } : null,
+    mov, fuera,
+  };
+  await new Promise((ok) => setTimeout(ok, 700));
+  r.despues = { copias: document.querySelectorAll('[data-lista-saliendo]').length, enMarcha: c2 ? c2.getAnimations().length : -1 };
+  return r;
+});
+ok(borrar_ms10 && !borrar_ms10.sigue && borrar_ms10.copia && borrar_ms10.copia.texto && borrar_ms10.copia.oculta === 'true' && borrar_ms10.copia.inerte && !borrar_ms10.copia.conId && borrar_ms10.copia.toques === 'none',
+  `🚨 MS F10 — al borrar, lo borrado se va con una COPIA inerte: fuera del lector de pantalla, del foco y del dedo, y sin ids (${JSON.stringify(borrar_ms10 && borrar_ms10.copia)}; apartados 11 y 41)`);
+ok(borrar_ms10 && borrar_ms10.fuera.length === 1 && Number(borrar_ms10.fuera[0].hasta) === 0 && borrar_ms10.fuera[0].dura === 160,
+  `MS F10 — …que se desvanece en \`fast\` (${JSON.stringify(borrar_ms10 && borrar_ms10.fuera)})`);
+const subida_ms10 = borrar_ms10 && borrar_ms10.mov[0] ? Number((/translate\(0px, (-?[\d.]+)px\)/.exec(borrar_ms10.mov[0].desde || '') || [])[1]) : NaN;
+ok(borrar_ms10 && borrar_ms10.mismaFila && borrar_ms10.salto > 20 && borrar_ms10.mov.length === 1 && Math.abs(subida_ms10 - borrar_ms10.salto) <= 1 && borrar_ms10.mov[0].retraso === 80 && borrar_ms10.mov[0].dura === 220,
+  `🚨 MS F10 — …y la de debajo SUBE desde donde estaba (${borrar_ms10 && borrar_ms10.salto} px), cuando la otra ya ha empezado a irse, en vez de saltar (${JSON.stringify(borrar_ms10 && borrar_ms10.mov)}; apartados 2 y 11)`);
+ok(borrar_ms10 && borrar_ms10.despues.copias === 0 && borrar_ms10.despues.enMarcha === 0,
+  `MS F10 — …y después no queda nada: ni la copia ni una animación (${JSON.stringify(borrar_ms10 && borrar_ms10.despues)})`);
+ok(/Tarea C diez/.test(await ver()) && !/Tarea B diez/.test(await esperarTexto(/Tarea C diez/)), 'MS F10 — …y la tarea borrada ya no está en la página');
+
+/* 2 · Cambiar el tamaño de la ventana no arranca ninguna animación (apartados 16 y 35). */
+await page.setViewportSize({ width: 375, height: 812 });
+await page.waitForTimeout(60);
+const tam_ms10 = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running' && a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('[data-lista-animada], .plegable')).length);
+ok(tam_ms10 === 0, `🚨 MS F10 — cambiar el tamaño de la ventana (girar el iPhone) no anima ninguna lista ni ningún desplegable (${tam_ms10}; *"estabilidad > animación"*)`);
+await page.setViewportSize({ width: 390, height: 844 });
+
+/* 3 · Reordenar: A B C → B A C, las dos viajan; en Reducido, se colocan. */
+ok(await pulsar('Vida') && await pulsar('Productividad') && await pulsar('Abrir Rutinas') && await pulsar('Rutina diez') && /Paso tres/.test(await esperarTexto(/Paso tres/)), 'MS F10 — Vida → Productividad → Rutinas → una rutina con tres pasos');
+await page.waitForTimeout(400);
+const mover_ms10 = (etiqueta) => page.evaluate(async (et) => {
+  const ids = () => [...document.querySelectorAll('[data-flip-id^="paso-"]')].map((x) => x.dataset.flipId);
+  const antes = ids();
+  const b = [...document.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === et);
+  if (!b) return null;
+  b.click();
+  await new Promise((ok) => setTimeout(ok, 0));
+  const desde = Object.fromEntries([...document.querySelectorAll('[data-flip-id^="paso-"]')].map((x) => [x.dataset.flipId, x.getAnimations().map((a) => a.effect.getKeyframes()[0].transform)]));
+  const r = { antes, ahora: ids(), desde, copias: document.querySelectorAll('[data-lista-saliendo]').length };
+  await new Promise((ok) => setTimeout(ok, 500));
+  return r;
+}, etiqueta);
+const re_ms10 = await mover_ms10('Bajar el paso Paso uno');
+const dyDe_ms10 = (t) => Number((/translate\(0px, (-?[\d.]+)px\)/.exec((t && t[0]) || '') || [])[1]);
+ok(re_ms10 && re_ms10.antes.join() === 'paso-pa10,paso-pb10,paso-pc10' && re_ms10.ahora.join() === 'paso-pb10,paso-pa10,paso-pc10', `MS F10 — bajar «Paso uno» lo pone segundo (${JSON.stringify(re_ms10 && re_ms10.ahora)})`);
+ok(re_ms10 && dyDe_ms10(re_ms10.desde['paso-pa10']) < -10 && dyDe_ms10(re_ms10.desde['paso-pb10']) > 10 && Math.abs(dyDe_ms10(re_ms10.desde['paso-pa10']) + dyDe_ms10(re_ms10.desde['paso-pb10'])) <= 1 && re_ms10.desde['paso-pc10'].length === 0 && re_ms10.copias === 0,
+  `🚨 MS F10 — …y las dos filas VIAJAN a su sitio nuevo, una hacia abajo y otra hacia arriba, lo mismo; la tercera no se mueve y nada sale (${JSON.stringify(re_ms10 && re_ms10.desde)}; apartado 12)`);
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.waitForTimeout(150);
+const red_ms10 = await mover_ms10('Subir el paso Paso uno');
+ok(red_ms10 && red_ms10.ahora.join() === 'paso-pa10,paso-pb10,paso-pc10' && Object.values(red_ms10.desde).every((x) => x.length === 0),
+  `🚨 MS F10 — con «Reducir movimiento», la fila se COLOCA sin viajar (${JSON.stringify(red_ms10 && red_ms10.desde)}; apartado 40)`);
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+/* 4 · Un desplegable crece, y al cerrarse se encoge ANTES de desmontarse. */
+ok(await pulsar('Bienestar') && await pulsar('Salud física') && /Historial/i.test(await esperarTexto(/Historial/i)), 'MS F10 — Bienestar → Salud física');
+await page.waitForTimeout(400);
+const plegar_ms10 = (etiqueta) => page.evaluate(async (et) => {
+  const b = [...document.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === et);
+  if (!b) return null;
+  const caja = () => b.parentElement.querySelector(':scope > .plegable');
+  const alto = () => { const c = caja(); return c ? Math.round(c.getBoundingClientRect().height) : 0; };
+  b.click();
+  await new Promise((ok) => setTimeout(ok, 0));
+  const c0 = caja();
+  const r = { estado0: c0 ? c0.dataset.plegable : null, alto0: alto(), inerte0: c0 ? !!c0.querySelector(':scope > .plegable-dentro[inert]') : null, oculto0: c0 ? c0.querySelector(':scope > .plegable-dentro').getAttribute('aria-hidden') : null, transicion: c0 ? getComputedStyle(c0).transitionProperty + ' ' + getComputedStyle(c0).transitionDuration : null };
+  await new Promise((ok) => setTimeout(ok, 110));
+  r.alto110 = alto();
+  r.estado110 = caja() ? caja().dataset.plegable : null;
+  await new Promise((ok) => setTimeout(ok, 450));
+  r.altoFin = alto();
+  r.estadoFin = caja() ? caja().dataset.plegable : null;
+  return r;
+}, etiqueta);
+const abre_ms10 = await plegar_ms10('Desplegar Historial');
+ok(abre_ms10 && /abriendo|montado/.test(abre_ms10.estado0 || '') && /grid-template-rows 0\.22s/.test(abre_ms10.transicion || '') && abre_ms10.estadoFin === 'abierto' && abre_ms10.altoFin > 20 && abre_ms10.alto110 > 0 && abre_ms10.alto110 < abre_ms10.altoFin,
+  `🚨 MS F10 — al desplegar, la altura CRECE (${abre_ms10 && `${abre_ms10.alto0} → ${abre_ms10.alto110} → ${abre_ms10.altoFin} px`}, \`grid-template-rows\` en \`normal\`): lo de debajo baja con ella (${JSON.stringify(abre_ms10 && { estado0: abre_ms10.estado0, transicion: abre_ms10.transicion })}; apartados 17 y 18)`);
+const cierra_ms10 = await plegar_ms10('Plegar Historial');
+ok(cierra_ms10 && cierra_ms10.estado0 === 'cerrando' && cierra_ms10.inerte0 && cierra_ms10.oculto0 === 'true' && cierra_ms10.alto110 > 0 && cierra_ms10.alto110 < cierra_ms10.alto0 && cierra_ms10.estadoFin === null && cierra_ms10.altoFin === 0,
+  `🚨 MS F10 — al plegar, se ENCOGE (${cierra_ms10 && `${cierra_ms10.alto0} → ${cierra_ms10.alto110} → ${cierra_ms10.altoFin} px`}) con lo de dentro inerte y fuera del lector de pantalla, y DESPUÉS se desmonta: lo de debajo sube con ella, no de un salto (${JSON.stringify(cierra_ms10 && { estado0: cierra_ms10.estado0, inerte: cierra_ms10.inerte0, estadoFin: cierra_ms10.estadoFin })}; C-54)`);
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.waitForTimeout(150);
+const abreRed_ms10 = await plegar_ms10('Desplegar Historial');
+const cierraRed_ms10 = await plegar_ms10('Plegar Historial');
+ok(abreRed_ms10 && /none/.test(abreRed_ms10.transicion || '') && abreRed_ms10.estadoFin === 'abierto' && cierraRed_ms10 && cierraRed_ms10.estado0 === null && cierraRed_ms10.alto0 === 0,
+  `🚨 MS F10 — con «Reducir movimiento», la altura cambia sin animarse y al plegar se va en el acto (${JSON.stringify({ abre: abreRed_ms10 && abreRed_ms10.transicion, cierra: cierraRed_ms10 && cierraRed_ms10.estado0 })}; apartado 40)`);
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+ok(errores.length === erroresAntes_ms10, `MS F10 — …sin un error en la consola${errores.length > erroresAntes_ms10 ? `: ${errores.slice(erroresAntes_ms10).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms10;
+almacen.productividad = prodDeAntes_ms10;
+
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

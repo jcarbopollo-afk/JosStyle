@@ -10,6 +10,7 @@ import { verificarPin } from '../lib/pin';
 import { transicion } from '../lib/motion';
 import { desenfoque, sombra } from '../lib/profundidad';
 import { estadoDeBoton, TEXTOS_ESTADO_BOTON } from '../lib/estadosInteraccion';
+import { ListaAnimada } from './layoutMotion';
 
 export function Card({ children, style, className = '', id }) {
   return (
@@ -1119,12 +1120,14 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
             </p>
           )}
 
+          {/* MS F10, apartado 14 — una letra más no recarga la lista: los resultados que
+              siguen se quedan (su `key` es su id) y se recolocan, los nuevos entran. */}
           {hayTexto && resultados.length > 0 && (
-            <ul className="mt-3 space-y-1">
+            <ListaAnimada as="ul" className="mt-3 space-y-1">
               {resultados.map((r) => (
-                <li key={r.id}><FilaResultado entrada={r} accent={accent} onClick={() => abrir(r)} /></li>
+                <li key={r.id} data-flip-id={`r-${r.id}`}><FilaResultado entrada={r} accent={accent} onClick={() => abrir(r)} /></li>
               ))}
-            </ul>
+            </ListaAnimada>
           )}
 
           {/* Apartado 7 — con una función encontrada, la función manda y la IA queda

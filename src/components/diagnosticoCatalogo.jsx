@@ -5,6 +5,7 @@ import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { Card } from './ui';
 import { diagnosticoCatalogo, REGLAS_CATALOGO } from '../lib/validacionCatalogo';
+import { Plegable } from './layoutMotion';
 
 /* FIT F35 — «Fitness Catalog Diagnostics» (apartados 29, 30 y 31).
    ═══════════════════════════════════════════════════════════════════════════
@@ -128,7 +129,7 @@ export function CatalogDiagnosticsEntry({ accent }) {
         </span>
         <ChevronDespliegue abierto={abierto} size={16} style={{ color: COLORS.textMuted }} />
       </button>
-      {abierto && <div className="despliegue-entra mt-3"><CatalogDiagnostics diagnostico={diagnostico} /></div>}
+      <Plegable abierto={abierto}>{() => <div className="mt-3"><CatalogDiagnostics diagnostico={diagnostico} /></div>}</Plegable>
     </Card>
   );
 }

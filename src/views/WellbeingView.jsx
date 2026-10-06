@@ -5,6 +5,7 @@ import { uid, todayISO, addDays, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, ToggleTab, EmptyHint } from '../components/ui';
 import { CambioDeContenido, ChevronDespliegue } from '../components/motion';
 import { transicion } from '../lib/motion';
+import { Plegable } from '../components/layoutMotion';
 
 /* ---------- Resumen: tres índices puramente descriptivos sobre el propio registro ----------
    No miden el uso real del móvil (una PWA no puede leerlo) — son el reparto en % de los minutos
@@ -226,14 +227,14 @@ function ReflexionCard({ reflexion, onDelete }) {
         </div>
         <ChevronDespliegue abierto={abierta} size={16} style={{ color: COLORS.textMuted }} />
       </button>
-      {abierta && (
-        <div className="despliegue-entra mt-3 pt-3 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+      <Plegable abierto={abierta}>{() => (
+        <div className="mt-3 pt-3 space-y-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: COLORS.text }}>{reflexion.texto}</p>
           <button onClick={() => onDelete(reflexion.id)} className="flex items-center gap-1.5 text-xs font-medium pt-1" style={{ color: COLORS.textMuted }}>
             <Trash2 size={13} /> Eliminar
           </button>
         </div>
-      )}
+      )}</Plegable>
     </Card>
   );
 }

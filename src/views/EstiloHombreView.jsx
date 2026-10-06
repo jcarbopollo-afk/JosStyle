@@ -293,6 +293,7 @@ import {
    viven en la librería: un número escrito a mano dentro de una vista es el
    siguiente que elegirá otro distinto. */
 import { DEBOUNCE_BUSQUEDA_MS, paginar, POR_PAGINA } from '../lib/rendimiento';
+import { ListaAnimada } from '../components/layoutMotion';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -7286,8 +7287,13 @@ export function GestionarEstiloEH({
         <p className="text-[11px] text-center" style={{ color: COLORS.textMuted }}>
           No hay ningún apartado con ese nombre.
         </p>
-      ) : panel.modulos.map((m) => (
-        <Card key={m.id}>
+      ) : (
+        /* MS F10 — subir o bajar un apartado lo hace VIAJAR a su sitio (apartado
+           12), y buscar deja los que siguen donde están (apartado 13). */
+        <ListaAnimada className="space-y-3">
+        {panel.modulos.map((m) => (
+        <div key={m.id} data-flip-id={`m-${m.id}`}>
+        <Card>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-base leading-none" aria-hidden="true">{m.icono}</span>
             <span className="min-w-0 flex-1">
@@ -7390,7 +7396,10 @@ export function GestionarEstiloEH({
             </div>
           )}
         </Card>
+        </div>
       ))}
+        </ListaAnimada>
+      )}
 
       {/* Apartados 10 y 13 — y que nada es obligatorio. */}
       <p className="text-[10px] text-center" style={{ color: COLORS.textMuted }}>

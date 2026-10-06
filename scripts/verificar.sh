@@ -1002,6 +1002,11 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f9.mjs >/tmp/jc
 else
   fallo "Faltan los estados de interacción del Motion System (F9)"; grep '✗' /tmp/jc_motion_f9.log
 fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f10.mjs >/tmp/jc_motion_f10.log 2>&1; then
+  ok "El Motion System, F10: listas que no saltan, desplegables que crecen y lo que no puede volver — $(grep -c '✓' /tmp/jc_motion_f10.log) comprobaciones"
+else
+  fallo "Falla el diseño que cambia del Motion System (F10)"; grep '✗' /tmp/jc_motion_f10.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

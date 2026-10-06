@@ -26,6 +26,7 @@ import { QuickAdd, FormularioTarea, FormularioEvento, MenuElemento, CambiarFecha
 import { tareaEnFecha, tareaEnHora } from '../lib/accionesHoyAgenda';
 // Entrega 3 · F10 (HC F5) — la semana, y las tareas que se repiten.
 import { semanaDe, semanaAnterior, semanaSiguiente, TEXTO_DIA_LIBRE, marcarInstancia, seRepite } from '../lib/semana';
+import { ListaAnimada } from '../components/layoutMotion';
 // Entrega 3 · F11 (HC F6) — el aviso de un evento: dos campos, no una entidad nueva.
 import { ANTICIPACIONES, estadoPermiso, avisoPorDefecto } from '../lib/avisosPlanificacion';
 // Entrega 3 · F13 (HC F8) — estadísticas de planificación, contadas en el momento.
@@ -866,24 +867,31 @@ function AgendaDeUnDia({ dia, titulo, tira, accent, onDia, onHoy, onCompletar, o
           <PrimaryButton accent={accent} icon={Plus} onClick={onAnadir}>{VACIO_AGENDA.boton}</PrimaryButton>
         </Card>
       ) : (
-        <>
+        /* MS F10 — completar, borrar o añadir algo en este día no hace saltar la
+           agenda: cada bloque y cada elemento se recolocan. Con `key` en la fecha,
+           cambiar de día es otra agenda (apartado 14: una página nueva, no una
+           mutación), y no hay nada que viaje de un día a otro. */
+        <ListaAnimada key={dia.fecha} className="space-y-4">
           {/* Apartado 17 — el siguiente pendiente, destacado LIGERAMENTE. */}
           {dia.proximo && (
+            <div data-flip-id="a-bloque-proximo">
             <Card style={{ padding: '0.7rem 1.1rem', border: `1px solid ${hexToRgba(accent, 0.35)}`, background: hexToRgba(accent, 0.06) }}>
               <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: COLORS.textMuted }}>Próximo</p>
               <p className="text-sm font-semibold mt-0.5" style={{ color: COLORS.text }}>
                 {dia.proximo.inicio} · {dia.proximo.titulo}
               </p>
             </Card>
+            </div>
           )}
 
           {/* Apartado 3 — la línea temporal. Y el 15: un evento pasado sigue
               visible, solo se distingue. Y el 18: dos a la misma hora se ven los
               dos, nunca se esconde uno. */}
           {dia.conHora.length > 0 && (
+            <div data-flip-id="a-bloque-hora">
             <Card>
               {dia.conHora.map((e, i) => (
-                <div key={e.id || i}>
+                <div key={e.id || i} data-flip-id={e.id ? `a-${e.id}` : undefined}>
                   {/* Apartado 16 — la raya de AHORA, y solo en el día de hoy. */}
                   {dia.ahora !== null && i > 0 && dia.conHora[i - 1].minutos < dia.ahora && e.minutos >= dia.ahora && (
                     <div className="flex items-center gap-2 my-1.5">
@@ -923,14 +931,16 @@ function AgendaDeUnDia({ dia, titulo, tira, accent, onDia, onHoy, onCompletar, o
                 </div>
               ))}
             </Card>
+            </div>
           )}
 
           {/* Apartado 4 — lo que pertenece al día pero no tiene hora. */}
           {dia.sinHora.length > 0 && (
+            <div data-flip-id="a-bloque-sin-hora">
             <Card>
               <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: COLORS.textMuted }}>Sin hora</p>
               {dia.sinHora.map((e, i) => (
-                <div key={e.id || i} className="flex items-start gap-2 py-1">
+                <div key={e.id || i} data-flip-id={e.id ? `a-${e.id}` : undefined} className="flex items-start gap-2 py-1">
                   {e.completable ? (
                     <button onClick={() => onCompletar && onCompletar(e.refId)}
                       className="p-1.5 -m-1.5 flex-shrink-0" aria-label={e.hecha ? `Desmarcar ${e.titulo}` : `Completar ${e.titulo}`}>
@@ -967,8 +977,9 @@ function AgendaDeUnDia({ dia, titulo, tira, accent, onDia, onHoy, onCompletar, o
                 </div>
               ))}
             </Card>
+            </div>
           )}
-        </>
+        </ListaAnimada>
       )}
     </>
   );

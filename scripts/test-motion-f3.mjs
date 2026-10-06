@@ -169,8 +169,11 @@ console.log('\n── 6. Lo que se despliega aparece (apartado 14) ──');
 ok(/@keyframes despliegueEntra\s*\{\s*from\s*\{\s*opacity:\s*0;\s*transform:\s*translateY\(calc\(-1 \* var\(--motion-dist-micro\)\)\)/.test(CSS_LIMPIO),
   'entra desde 4 px más arriba con un fundido, y la distancia es un token (en Reducido, 0)');
 ok(/\.despliegue-entra\s*\{[^}]*despliegueEntra var\(--motion-dur-fast\)[^;]*backwards/.test(CSS_LIMPIO), '…en `fast`, y con `backwards`: no deja ningún `transform` puesto');
-const usosDespliegue = Object.values(VISTAS).reduce((n, src) => n + (src.match(/despliegue-entra/g) || []).length, 0);
+/* 🔓 MS F10 — desde la F10 el contenido de un desplegable va dentro de `Plegable`, que le pone él
+   la clase (y además cambia la altura al cerrar, C-54). La promesa es la misma: que lo lleven. */
+const usosDespliegue = Object.values(VISTAS).reduce((n, src) => n + (src.match(/despliegue-entra|<Plegable abierto=/g) || []).length, 0);
 ok(usosDespliegue >= 17, `lo llevan ${usosDespliegue} desplegables y el ⋯ de las plantillas`);
+ok(/className=\{`despliegue-entra \$\{className\}`/.test(VISTAS['src/components/layoutMotion.jsx'] || ''), '…y `Plegable` pone `despliegue-entra` a lo de dentro');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 7. Una marca late al ponerla (apartado 29) ──');

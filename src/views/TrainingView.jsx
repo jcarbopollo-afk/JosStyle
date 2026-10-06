@@ -7,6 +7,7 @@ import { askAI, askAIWithImages, AI_SYSTEM } from '../lib/ai';
 import { extractFramesFromSrc } from '../lib/videoFrames';
 import { getSignedVideoUrl } from '../lib/supabase';
 import { BotonBorrar, BotonBorrarDefinitivo, Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, TextoDeBoton } from '../components/ui';
+import { Plegable } from '../components/layoutMotion';
 
 // Cuántos días seguidos (incluyendo hoy) hay que llevar entrenando la misma habilidad
 // para que aparezca el aviso de "descanso recomendado".
@@ -363,8 +364,8 @@ function SkillCard({ skill, data, onUpdate, videos, onAddVideo, onDeleteVideo, o
         onClick={(e) => e.stopPropagation()}
       />
 
-      {expanded && (
-        <div className="despliegue-entra mt-4 pt-4 space-y-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+      <Plegable abierto={expanded}>{() => (
+        <div className="mt-4 pt-4 space-y-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           <div className="flex gap-1.5">
             <ToggleTab active={sub === 'progresion'} onClick={() => setSub('progresion')} accent={accent}>Progresión</ToggleTab>
             <ToggleTab active={sub === 'prs'} onClick={() => setSub('prs')} accent={accent}>PRs</ToggleTab>
@@ -382,7 +383,7 @@ function SkillCard({ skill, data, onUpdate, videos, onAddVideo, onDeleteVideo, o
             />
           )}
         </div>
-      )}
+      )}</Plegable>
     </Card>
   );
 }

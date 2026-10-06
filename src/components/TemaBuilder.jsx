@@ -7,6 +7,7 @@ import { COLORS, CAPAS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import { PASOS_ESCALA } from '../lib/colorEngine';
 import ColorPicker from './ColorPicker';
+import { Plegable } from './layoutMotion';
 
 // Fase 3 del Sistema de Personalización Visual Extrema — Constructor de temas.
 //
@@ -183,8 +184,8 @@ export default function TemaBuilder({
           <span className="text-sm font-semibold" style={{ color: COLORS.text }}>Estados avanzados</span>
           <ChevronDespliegue abierto={estadosAbiertos} size={16} style={{ color: COLORS.textMuted }} />
         </button>
-        {estadosAbiertos && (
-          <div className="despliegue-entra">
+        <Plegable abierto={estadosAbiertos}>{() => (
+          <div>
             <div
               className="flex items-start gap-2 mb-2 p-2.5 rounded-xl"
               style={{ background: hexToRgba(COLORS.warning, 0.12), border: `1px solid ${hexToRgba(COLORS.warning, 0.3)}` }}
@@ -198,7 +199,7 @@ export default function TemaBuilder({
             </div>
             {FILAS_ESTADOS.map((campo) => <Fila key={campo.key} tipo="estado" campo={campo} />)}
           </div>
-        )}
+        )}</Plegable>
 
         {filaEditando && (
           <ColorPicker

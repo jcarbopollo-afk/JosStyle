@@ -46,6 +46,7 @@ import {
 /* 🔓 FIT F33 — sustituir un ejercicio del borrador o de la plantilla. */
 import { ExerciseReplacementModal } from '../components/sustitucion';
 import { PROPS_CAMPO_NUMERICO } from '../lib/movilFitness';
+import { ListaAnimada } from '../components/layoutMotion';
 
 /* ── Un botón redondo de icono ─────────────────────────────────────────────
    ⚠️ Siempre con `aria-label` y con `toque-44`: un botón de solo icono sin
@@ -601,10 +602,12 @@ export default function ConstructorView({
             </div>
           </Card>
         ) : (
-          <div className="space-y-2">
+          /* MS F10 — subir, bajar, duplicar o quitar un ejercicio lo recoloca en vez
+             de hacer saltar la plantilla (apartados 10-12). */
+          <ListaAnimada className="space-y-2">
             {rutina.lineas.map((l, i) => (
+              <div key={l.id} data-flip-id={`l-${l.id}`}>
               <FilaEjercicio
-                key={l.id}
                 linea={l}
                 propios={propios}
                 accent={accent}
@@ -616,8 +619,9 @@ export default function ConstructorView({
                 onDuplicar={() => cambiar(duplicarLinea(rutina, l.id))}
                 onEliminar={() => cambiar(eliminarLinea(rutina, l.id))}
               />
+              </div>
             ))}
-          </div>
+          </ListaAnimada>
         )}
       </div>
 

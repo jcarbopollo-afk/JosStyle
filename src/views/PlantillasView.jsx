@@ -37,6 +37,7 @@ import {
 } from '../lib/plantillas';
 import { textoDeSeries, textoDeCarga, musculosResumidos } from '../lib/constructor';
 import { PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
+import { Plegable } from '../components/layoutMotion';
 
 /* 🔓 FIT F42 (apartados 42 y 64) — aquí había una `Pastilla` propia, una de las
    siete copias de la pastilla de un filtro: es `PastillaFiltro` (piezasFitness). */
@@ -98,13 +99,13 @@ export function TarjetaPlantilla({
       </div>
 
       {/* Apartado 4: *"No quiero botones enormes para todas las acciones."* */}
-      {abierto && (
-        <div className="despliegue-entra flex gap-2 flex-wrap mt-2.5 pt-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+      <Plegable abierto={abierto}>{() => (
+        <div className="flex gap-2 flex-wrap mt-2.5 pt-2.5" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           <GhostBtn icon={Pencil} onClick={onEditar}>Editar</GhostBtn>
           <GhostBtn icon={Copy} onClick={onDuplicar}>Duplicar</GhostBtn>
           <GhostBtn icon={Trash2} onClick={onEliminar}>Eliminar</GhostBtn>
         </div>
-      )}
+      )}</Plegable>
     </Card>
   );
 }

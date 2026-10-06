@@ -1258,6 +1258,44 @@ cargando, éxito, error— y choca con tres cosas ya decididas:
 ⚠️ **Lo que no se hace aquí** (`NO_EN_F9`): temblar un campo con un error, quitar un elemento de una lista con su
 hueco (F10), los estados del sistema (F16), los contadores (F17) y una bandeja de notificaciones, que no existe.
 
+### C-61 — ✅ RESUELTA AL CONSTRUIR (Motion System F10, v3.140.0) · El indicador de las pestañas que la F7 dejó aquí, un desplegable que no se calcula cerrado, las fuentes y lo que se va de una lista
+
+La F10 (*"Layout motion, scroll, listas y contenido dinámico"*) pide que nada salte cuando el diseño cambia, y
+choca con cuatro cosas:
+
+1. **El indicador que viaja entre las pestañas de dentro** (C-58 lo dejó para aquí). El apartado 15 lo pide para
+   *"tabs con indicador"*, y en el mismo apartado prohíbe las *"transformaciones extrañas"*. `ToggleTab` no tiene
+   una pista: son **pastillas separadas**, cada una con su fondo y su borde, que **se parten en dos líneas** cuando no
+   caben (GE F1). Un indicador tendría que cruzar los huecos y saltar en diagonal de una línea a otra. Lectura que
+   respeta las dos: **no se construye**; la pestaña funde su color al ritmo del contenido (F3) y donde sí hay una pista
+   —la barra de abajo— el indicador ya viaja (F2). Está en `NO_EN_F10`.
+2. **Un desplegable que se anima al cerrarse tiene que seguir montado mientras se cierra**, y los veinte se
+   escribían `{abierto && …}` para no calcular nada cerrados (algunos, como el de Ajustes, pintan mucho). `Plegable`
+   acepta lo de dentro **como función** (`{() => …}`): cerrado no se llama, y mientras se cierra lo de dentro es
+   `inert` y `aria-hidden` —se ve irse, pero ni el foco ni VoiceOver lo encuentran—. En Reducido se va en el acto.
+3. **Las fuentes** (apartado 6): `display=swap` deja que el texto cambie de ancho si Manrope llega tarde, y llegaba
+   justo al pintar Hoy (una fuente no se pide hasta que algo la usa, y la pantalla de carga no tiene texto). Quitar
+   `swap` dejaría el texto invisible con una red lenta. Las dos: **se piden mientras se cargan los datos** y la
+   aplicación espera **como mucho `TOPE_FUENTES_MS` (800 ms)**; la segunda vez ya están en la caché. ⚠️ El hook va
+   antes de los `return` condicionales (regla 4).
+4. **Lo que se va de una lista ya no está en React** cuando se sabe que se ha ido. En vez de retrasar el borrado del
+   dato —que dejaría una tarea borrada viva unos milisegundos, también para quien la cuente—, se deja una **copia
+   inerte** del DOM (sin `id`, `aria-hidden`, sin toques) que se desvanece en `fast`, y lo demás se recoloca con FLIP.
+   Una comprobación del recorrido que busque «ya no está» justo después **tiene que esperar a que se vaya**: por eso
+   `esperarTexto` espera a las copias (`data-capa-saliendo`, F6, y `data-lista-saliendo`).
+
+🐛 **Y la F10 destapó tres cosas de fases anteriores**, que se arreglaron antes:
+- **F7**: al volver a la biblioteca «viajaban» los veinte nombres de ejercicio, a su propio sitio. `StrictMode`
+  deshace y rehace cada efecto sobre el mismo nodo, y la despedida apuntaba un origen que la vuelta tomaba. Ahora un
+  origen dice qué elemento lo dejó, nadie sale del suyo, y el de una despedida dura solo ese cambio (`TTL_EFIMERO_MS`).
+- **F6**: «la explicación se cierra al pasar al historial» salía roja porque `innerText` leía la copia inerte.
+- **F9**: dos comprobaciones medían a mitad de una transición (las capas del botón, el borde rojo), y una comparaba
+  un `rgb(…)` con el hex del token. La aplicación estaba bien en los tres.
+
+⚠️ **Lo que no se hace aquí** (`NO_EN_F10`): una cabecera que se compacta (no hay ninguna), datos en tiempo real y
+actualizaciones optimistas (no hay), el esqueleto que se funde con el contenido (F16), contadores de notificaciones
+y listas virtualizadas (no hay ninguna).
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos
