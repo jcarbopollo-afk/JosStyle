@@ -31,10 +31,10 @@ const scrollY = () => {
   try { return window.scrollY || window.pageYOffset || 0; } catch { return 0; }
 };
 
-/** Apunta el rectángulo de un elemento como origen de `id` (al tocarlo, antes de navegar). */
-export function apuntarOrigen(id, el) {
+/** Apunta el rectángulo de un elemento como origen de `id` (al tocarlo, antes de navegar; `efimero` si es porque se va). */
+export function apuntarOrigen(id, el, opciones) {
   if (!el || typeof el.getBoundingClientRect !== 'function') return false;
-  return registrarOrigen(id, { rect: el.getBoundingClientRect(), radio: radioDe(el), fuente: fuenteDe(el) });
+  return registrarOrigen(id, { rect: el.getBoundingClientRect(), radio: radioDe(el), fuente: fuenteDe(el) }, undefined, opciones);
 }
 
 /**
@@ -92,8 +92,9 @@ export function Compartido({ id, forma = 'texto', as: Etiqueta = 'span', classNa
       }
     }
     /* Al desaparecer (la lista se va y llega el detalle), apunta dónde estaba. React llama a esto
-       ANTES de quitar el nodo, así que todavía se puede medir. */
-    return () => { apuntarOrigen(`compartido:${id}`, el); };
+       ANTES de quitar el nodo, así que todavía se puede medir. Y es EFÍMERO: vale para lo que llega
+       en este mismo cambio; si no, los veinte nombres de una lista viajarían al volver. */
+    return () => { apuntarOrigen(`compartido:${id}`, el, { efimero: true }); };
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
   const apuntar = () => apuntarOrigen(`compartido:${id}`, ref.current);
   return (

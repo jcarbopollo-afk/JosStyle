@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
-  NIVELES_TRANSICION, MAPA_TRANSICIONES, TTL_ORIGEN_MS, registrarOrigen, hayOrigen, tomarOrigen, olvidarOrigenes,
+  NIVELES_TRANSICION, MAPA_TRANSICIONES, TTL_ORIGEN_MS, TTL_EFIMERO_MS, registrarOrigen, hayOrigen, tomarOrigen, olvidarOrigenes,
   recorteDesde, planDeContenedor, FORMAS_COMPARTIDO, flipEntre, planDeCompartido, MAX_ESCALA_COMPARTIDO,
   planDeLlegada, AUDITORIA_F7, NO_EN_F7,
 } from '../src/lib/continuidad.js';
@@ -69,6 +69,15 @@ registrarOrigen('pantalla:z', { rect: R }, 1000);
 ok(tomarOrigen('pantalla:z', 1000 + TTL_ORIGEN_MS + 1) === null, `🚨 caduca a los ${TTL_ORIGEN_MS} ms: una pantalla que llega tarde (una carga lenta) no sale de un sitio que ya no tiene que ver (apartado 18)`);
 registrarOrigen('compartido:a', { rect: R, fuente: 14 }, 1000);
 ok(tomarOrigen('compartido:a', 1100)?.fuente === 14, 'un texto apunta también su tamaño de letra');
+/* 🐛 Lo cazó el recorrido: al volver de una ficha viajaban los veinte nombres de la lista. */
+registrarOrigen('compartido:b', { rect: R }, 2000, { efimero: true });
+ok(hayOrigen('compartido:b', 2000 + TTL_EFIMERO_MS) && tomarOrigen('compartido:b', 2000 + TTL_EFIMERO_MS) !== null, `🐛 el origen de algo que DESAPARECE vale para ese mismo cambio (${TTL_EFIMERO_MS} ms)…`);
+registrarOrigen('compartido:c', { rect: R }, 2000, { efimero: true });
+ok(TTL_EFIMERO_MS < 500 && !hayOrigen('compartido:c', 2500) && tomarOrigen('compartido:c', 2500) === null, '🐛 …y no para los siguientes: volver a una lista no hace viajar a todos sus nombres, solo al que vuelve (apartado 6)');
+registrarOrigen('compartido:d', { rect: R }, 3000);
+registrarOrigen('compartido:d', { rect: { ...R, top: 77 } }, 3050, { efimero: true });
+const d_f7 = tomarOrigen('compartido:d', 3600);
+ok(d_f7 !== null && d_f7.rect.top === 77, '…y si lo que se va es lo que se TOCÓ, su origen sigue siendo el del toque (dura lo de un toque) con el rectángulo de justo antes de irse');
 olvidarOrigenes();
 
 /* ═════════════════════════════════════════════════════════════════════════ */
@@ -153,7 +162,7 @@ ok(ultimoDePila(['hoy', 'area-vida', 'productividad']) === 'productividad' && ul
   '`ultimoDePila` devuelve la pantalla de arriba, con la pila escrita de las dos formas (la raíz siempre está, NAVO F1)');
 ok(tipoDeNavegacion(['hoy', 'area-vida'], ['hoy', 'area-vida', 'productividad']) === 'entrar' && tipoDeNavegacion(['hoy', 'area-vida', 'productividad'], ['hoy', 'area-vida']) === 'volver',
   'entrar en un módulo desde su portada es `entrar` y salir es `volver` (la F2 no cambia)');
-ok(/export function Compartido/.test(COMP) && /onPointerDownCapture=\{apuntar\}/.test(COMP_L) && /return \(\) => \{ apuntarOrigen\(`compartido:\$\{id\}`, el\); \};/.test(COMP_L),
+ok(/export function Compartido/.test(COMP) && /onPointerDownCapture=\{apuntar\}/.test(COMP_L) && /return \(\) => \{ apuntarOrigen\(`compartido:\$\{id\}`, el, \{ efimero: true \}\); \};/.test(COMP_L),
   '`Compartido` apunta su origen al tocarlo Y al desaparecer: funciona en los dos sentidos (apartados 4 y 6)');
 ok(/animacion\.effect\.setKeyframes\(plan\.keyframes\)/.test(COMP_L) && /requestAnimationFrame/.test(COMP_L), '🐛 si el padre mueve el scroll después de medir, el viaje se corrige antes del primer fotograma');
 ok(!/useState/.test(COMP_L) && !/saveData|app_data/.test(COMP_L), 'no guarda nada ni repinta React: el origen es de la pantalla (EH F40)');

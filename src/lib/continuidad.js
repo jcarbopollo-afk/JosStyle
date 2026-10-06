@@ -54,28 +54,51 @@ export const MAPA_TRANSICIONES = Object.freeze([
    lo GASTA: dos destinos no pueden salir del mismo toque (apartado 17).
    ─────────────────────────────────────────────────────────────────────────── */
 export const TTL_ORIGEN_MS = 700;
+/* 🐛 **El origen que deja algo al DESAPARECER vale para ese mismo cambio, no para
+   los 700 ms siguientes.** Al abrir la ficha de un ejercicio se desmontan los
+   veinte nombres de la lista y cada uno apuntaba dónde estaba; volver antes de
+   que caducaran hacía viajar a los veinte —no solo al que se tocó— (apartado 6:
+   *"solo ella"*). React quita lo que se va y monta lo que llega en el MISMO
+   commit, así que el origen de una despedida solo tiene que durar eso. El de un
+   toque sí dura `TTL_ORIGEN_MS`: la tarjeta crece antes de navegar. */
+export const TTL_EFIMERO_MS = 120;
 const ORIGENES = new Map();
+const ttlDe = (o) => (o && o.efimero ? TTL_EFIMERO_MS : TTL_ORIGEN_MS);
 const ahoraMs = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
 
 const rectValido = (r) => !!r && [r.top, r.left, r.width, r.height].every((n) => Number.isFinite(n)) && r.width > 0 && r.height > 0;
 
-export function registrarOrigen(id, { rect, radio = 0, fuente = null } = {}, ahora = ahoraMs()) {
+/**
+ * Apunta un origen. Con `efimero` es el de algo que desaparece: vale para ese
+ * cambio (`TTL_EFIMERO_MS`). Si ya había uno de un TOQUE vivo para el mismo id,
+ * se queda su duración y solo se actualiza el rectángulo (lo que se ve justo
+ * antes de irse es lo más fiel).
+ */
+export function registrarOrigen(id, { rect, radio = 0, fuente = null } = {}, ahora = ahoraMs(), { efimero = false } = {}) {
   if (!id || !rectValido(rect)) return false;
-  ORIGENES.set(id, { rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }, radio: Math.max(0, Number(radio) || 0), fuente: Number(fuente) > 0 ? Number(fuente) : null, t: ahora });
+  const antes = ORIGENES.get(id);
+  const deUnToque = !!antes && !antes.efimero && ahora - antes.t <= TTL_ORIGEN_MS;
+  ORIGENES.set(id, {
+    rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+    radio: Math.max(0, Number(radio) || 0),
+    fuente: Number(fuente) > 0 ? Number(fuente) : null,
+    t: deUnToque ? antes.t : ahora,
+    efimero: !!efimero && !deUnToque,
+  });
   return true;
 }
 
 /** ¿Hay un origen vivo para este id? No lo gasta (lo puede preguntar el pintado). */
 export function hayOrigen(id, ahora = ahoraMs()) {
   const o = ORIGENES.get(id);
-  return !!o && ahora - o.t <= TTL_ORIGEN_MS;
+  return !!o && ahora - o.t <= ttlDe(o);
 }
 
 /** Lo devuelve y lo gasta; caducado o inexistente, `null`. */
 export function tomarOrigen(id, ahora = ahoraMs()) {
   const o = ORIGENES.get(id);
   ORIGENES.delete(id);
-  if (!o || ahora - o.t > TTL_ORIGEN_MS) return null;
+  if (!o || ahora - o.t > ttlDe(o)) return null;
   return o;
 }
 

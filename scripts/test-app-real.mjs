@@ -306,7 +306,13 @@ const pulsar = async (txt, tope = 6000) => {
          debe. */
       const dialogo = [...document.querySelectorAll('[role="dialog"]')].pop();
       const raiz = dialogo || document;
-      const botones = [...raiz.querySelectorAll('button')];
+      /* 🐛 **MS F6 y F10 — ni un botón de algo que no se puede tocar.** Una capa
+         que se cierra deja su copia inerte unos 160 ms, una fila borrada deja la
+         suya mientras se funde, y lo plegado de un `Plegable` es `inert`. Las
+         tres llevan los mismos botones que lo de verdad, y `click()` sobre una
+         copia no hace nada: devolvería `true` sin haber pulsado nada. */
+      const botones = [...raiz.querySelectorAll('button')]
+        .filter((x) => !x.closest('[inert], [data-capa-saliendo], [data-lista-saliendo]'));
       /* 🐛 ⚠️ **Y también por `aria-label`** (Entrega 3 · F4). Un botón de solo
          icono —una papelera, una estrella, una flecha— **no tiene `innerText`**,
          así que hasta aquí el recorrido no podía pulsar ninguno: y desde EH F42
@@ -13042,6 +13048,8 @@ const abrirDesdeTarjeta_ms7 = (modulo) => page.evaluate(async (m) => {
   const t = document.querySelector(`button.hub-card[data-modulo="${m}"]`);
   if (!t) return null;
   const antes = document.querySelector('.pantalla-segura > [data-navegacion]');
+  const scrollAntes = Math.round(window.scrollY);
+  const rt = t.getBoundingClientRect();
   t.click();
   const hasta = performance.now() + 2000;
   let w = null;
@@ -13060,6 +13068,7 @@ const abrirDesdeTarjeta_ms7 = (modulo) => page.evaluate(async (m) => {
     desde: a ? a.effect.getKeyframes()[0].clipPath : null, hasta: a ? a.effect.getKeyframes().at(-1).clipPath : null,
     opacidad: a ? a.effect.getKeyframes()[0].opacity : null, dura: a ? Math.round(a.effect.getComputedTiming().duration) : null,
     contTop: Math.round(cw.top), contLeft: Math.round(cw.left),
+    scrollAntes, scrollDespues: Math.round(window.scrollY), tarjetaAlTocar: { top: Math.round(rt.top), left: Math.round(rt.left) },
   };
 }, modulo);
 ok(await pulsar('Bienestar') && /Área/i.test(await esperarTexto(/Área/i)), 'MS F7 — la portada de Bienestar');
@@ -13075,8 +13084,9 @@ const insets_ms7 = e_ms7 && e_ms7.desde ? (/inset\(([\d.]+)px ([\d.]+)px ([\d.]+
 ok(e_ms7 && e_ms7.tipo === 'entrar' && e_ms7.continuidad === 'desde-tarjeta' && !/module-enter/.test(e_ms7.clase) && !e_ms7.css.includes('moduleSlideIn'),
   `🚨 MS F7 — abrir un módulo desde su tarjeta es ENTRAR EN ELLA: la pantalla no llega además desde la derecha (${JSON.stringify(e_ms7 && { tipo: e_ms7.tipo, continuidad: e_ms7.continuidad, css: e_ms7.css })}; apartados 5 y 21)`);
 ok(insets_ms7.length === 5 && tarjeta_ms7 && Math.abs(insets_ms7[3] - (tarjeta_ms7.left - e_ms7.contLeft)) < 30 && Math.abs(insets_ms7[0] - (tarjeta_ms7.top - e_ms7.contTop)) < 40 && insets_ms7[4] >= 16,
-  `🚨 MS F7 — …su recorte EMPIEZA en el rectángulo de la tarjeta, con sus esquinas redondas (${e_ms7?.desde}; tarjeta en ${Math.round(tarjeta_ms7?.top)},${Math.round(tarjeta_ms7?.left)}; apartados 20 y 21)`);
-ok(e_ms7 && e_ms7.hasta === 'inset(0px 0px 0px 0px round 0px)' && e_ms7.dura === 340 && Number(e_ms7.opacidad) < 1,
+  `🚨 MS F7 — …su recorte EMPIEZA en el rectángulo de la tarjeta, con sus esquinas redondas (${e_ms7?.desde}; tarjeta en ${Math.round(tarjeta_ms7?.top)},${Math.round(tarjeta_ms7?.left)}; ${JSON.stringify(e_ms7 && { cont: [e_ms7.contTop, e_ms7.contLeft], scroll: [e_ms7.scrollAntes, e_ms7.scrollDespues], alTocar: e_ms7.tarjetaAlTocar })}; apartados 20 y 21)`);
+/* ⚠️ Chromium devuelve el fotograma final ya simplificado: `inset(0px 0px 0px 0px round 0px)` se lee `inset(0px)`. */
+ok(e_ms7 && /^inset\(0px( 0px 0px 0px)?( round 0px)?\)$/.test(e_ms7.hasta || '') && e_ms7.dura === 340 && Number(e_ms7.opacidad) < 1,
   `MS F7 — …y se abre hasta la pantalla entera, enderezando las esquinas, en \`slow\`, revelando lo de dentro (${JSON.stringify(e_ms7 && { hasta: e_ms7.hasta, dura: e_ms7.dura, opacidad: e_ms7.opacidad })})`);
 await page.waitForTimeout(700);
 /* Volver: la tarjeta de Sueño se posa. */
@@ -13272,12 +13282,15 @@ const espera_ms9 = await page.evaluate(async () => {
   b.click();
   await new Promise((ok) => setTimeout(ok, 30));
   const giro = () => { const g = b.querySelector('.boton-giro'); return g ? Number(getComputedStyle(g).opacity) : null; };
-  const al = { busy: b.getAttribute('aria-busy'), estado: b.dataset.estado, texto: b.innerText.trim(), ancho: Math.round(b.getBoundingClientRect().width), opacidad: getComputedStyle(b).opacity, giro: giro(), desactivado: b.disabled };
+  /* ⚠️ A los 30 ms las dos capas todavía se funden, así que `innerText` las lee las dos: lo que DICE el
+     botón es la capa visible, y la otra ya está fuera de VoiceOver (`aria-hidden`) desde el primer momento. */
+  const visible = b.querySelector('.boton-capa[data-visible="si"]');
+  const al = { busy: b.getAttribute('aria-busy'), estado: b.dataset.estado, texto: visible ? visible.innerText.trim() : b.innerText.trim(), otrasOcultas: [...b.querySelectorAll('.boton-capa[data-visible="no"]')].every((x) => x.getAttribute('aria-hidden') === 'true'), ancho: Math.round(b.getBoundingClientRect().width), opacidad: getComputedStyle(b).opacity, giro: giro(), desactivado: b.disabled };
   b.click(); b.click();
   await new Promise((ok) => setTimeout(ok, 600));
   return { ancho, al, giroTarde: giro() };
 });
-ok(espera_ms9 && espera_ms9.al.busy === 'true' && espera_ms9.al.estado === 'cargando' && espera_ms9.al.texto === 'Guardando…',
+ok(espera_ms9 && espera_ms9.al.busy === 'true' && espera_ms9.al.estado === 'cargando' && espera_ms9.al.texto === 'Guardando…' && espera_ms9.al.otrasOcultas,
   `🚨 MS F9 — mientras sube, el botón dice «Guardando…» y está ocupado (\`aria-busy\`) (${JSON.stringify(espera_ms9 && espera_ms9.al)}; apartados 4 y 6)`);
 ok(espera_ms9 && espera_ms9.al.ancho === espera_ms9.ancho && espera_ms9.al.opacidad === '1' && !espera_ms9.al.desactivado,
   `🐛 MS F9 — …sin cambiar de ancho (${espera_ms9 && espera_ms9.ancho} → ${espera_ms9 && espera_ms9.al.ancho} px) ni APAGARSE: antes se quedaba a medio color y parecía roto`);
@@ -13303,7 +13316,8 @@ ok(rgb_ms9(bordeHoja_ms9) === rgb_ms9(acento_ms9),
 const horas_ms9 = await page.$$('[role="dialog"] input[type="time"]');
 ok(horas_ms9.length === 2, 'MS F9 — …con su hora de inicio y su hora de fin');
 if (horas_ms9.length === 2) { await horas_ms9[0].fill('10:00'); await horas_ms9[1].fill('09:00'); }
-await page.waitForTimeout(80);
+/* ⚠️ El borde pasa al rojo en `fast` (160 ms): leído a los 80 ms, sale un color a mitad de camino. */
+await page.waitForTimeout(260);
 const error_ms9 = await page.evaluate(() => {
   const m = document.querySelector('[role="dialog"] .campo-mensaje-entra');
   const fin = document.querySelectorAll('[role="dialog"] input[type="time"]')[1];
