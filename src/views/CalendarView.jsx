@@ -483,7 +483,7 @@ function BuscadorEventos({ eventos, accent, onSeleccionar, onCerrar }) {
 
   // Optimización de navegación/scroll — mismo motivo que el editor de eventos, arriba.
   return createPortal(
-    <div className="fixed inset-0 z-capa flex items-start justify-center pt-16 px-4" style={{ background: CAPAS.veloHoja }} onClick={onCerrar}>
+    <div className="fixed inset-0 z-capa flex items-start justify-center velo-arriba px-4" style={{ background: CAPAS.veloHoja }} onClick={onCerrar}>
       <div
         className="calendar-sheet w-full max-w-md rounded-3xl p-4 max-h-[75vh] flex flex-col"
         style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}

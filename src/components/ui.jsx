@@ -869,7 +869,7 @@ export function SuggestionsButton({ accent, buildPrompt, lado = 'izquierda' }) {
     /* Entrega 3 · F1, apartado 1 — la altura la pone `accion-superior` (index.css) a partir
        de `env(safe-area-inset-top)`: en un iPhone con isla este botón caía justo encima de la
        batería. Nunca devolver aquí un `top` en línea, que ganaría a la clase. */
-    <div className="accion-superior fixed z-flotante" style={lado === 'derecha' ? { right: 14 } : { left: 14 }}>
+    <div className={`accion-superior fixed z-flotante ${lado === 'derecha' ? 'accion-derecha' : 'accion-izquierda'}`}>
       <button
         onClick={() => setOpen((o) => !o)}
         className="toque-44 w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
@@ -883,12 +883,12 @@ export function SuggestionsButton({ accent, buildPrompt, lado = 'izquierda' }) {
         /* MS F6, apartados 12 y 14 — el panel NACE DE SU BOTÓN: crece desde la esquina en la que está
            (`menu-entra` con su `transform-origin`), corto y discreto. Profundidad 3, sin velo. */
         <div
-          className="mt-2 rounded-2xl p-3 absolute menu-entra"
+          className="mt-2 rounded-2xl p-3 absolute menu-entra flotante-cabe"
           style={{ width: 252, background: COLORS.surface, border: `1px solid ${COLORS.border}`, boxShadow: sombra('flotante'), transformOrigin: lado === 'derecha' ? 'top right' : 'top left', ...(lado === 'derecha' ? { right: 0 } : { left: 0 }) }}
         >
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold" style={{ color: COLORS.text }}>Sugerencias</p>
-            <button onClick={() => setOpen(false)} aria-label="Cerrar sugerencias"><X size={12} style={{ color: COLORS.textMuted }} /></button>
+            <button onClick={() => setOpen(false)} aria-label="Cerrar sugerencias" className="toque-44 p-1 -m-1"><X size={12} style={{ color: COLORS.textMuted }} /></button>
           </div>
           {!asked && !loading && (
             <button onClick={handleAsk} className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: accent }}>
@@ -1050,7 +1050,7 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
 
   // Optimización de navegación/scroll — portal, mismo motivo que el resto de modales de esta fase.
   return createPortal(
-    <div className="fixed inset-0 z-capa flex items-start justify-center pt-20 px-4" style={{ background: CAPAS.veloHoja }} onClick={onClose}>
+    <div className="fixed inset-0 z-capa flex items-start justify-center velo-arriba px-4" style={{ background: CAPAS.veloHoja, '--velo-arriba': '5rem' }} onClick={onClose}>
       <div
         className="w-full max-w-md rounded-3xl p-4"
         style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}

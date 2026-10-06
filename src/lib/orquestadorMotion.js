@@ -433,6 +433,26 @@ export function completarGrupo(nombre) {
   [...g.registros].forEach((r) => { try { r.anim.finish(); } catch { try { r.anim.cancel(); } catch { /* ya no estaba */ } } });
   return n;
 }
+/* MS F15 (apartados 20, 42 y 52) — al girar el teléfono o cambiar el ancho de la ventana, lo que viaja con
+   una geometría medida ANTES (una hoja que sube su alto de entonces, una tarjeta que crece desde un rectángulo
+   que ya no está ahí, una fila que se recoloca con FLIP) acabaría en su sitio, pero cruzaría el diseño nuevo
+   con las medidas del viejo. No se recalcula nada: se ASIENTA —salta a su final, que es el del DOM— y el diseño
+   nuevo aparece quieto. *"La estabilidad tiene prioridad sobre el espectáculo."* Lo que no depende de la
+   geometría (un color, una cifra, un toque, un bucle) sigue a lo suyo. */
+export const SISTEMAS_QUE_SE_ASIENTAN = Object.freeze(['navegacion', 'profundidad', 'continuidad', 'layout', 'motor']);
+export function asentarMovimiento(motivo = 'cambio_de_diseno', sistemas = SISTEMAS_QUE_SE_ASIENTAN) {
+  let n = 0;
+  [...VIVAS.keys()].forEach((el) => animacionesDe(el).forEach((r) => {
+    if (!sistemas.includes(r.sistema)) return;
+    n += 1;
+    r.final = 'completada';
+    apuntar('MOTION_COMPLETE', r, { motivo });
+    try { r.anim.finish(); } catch { try { r.anim.cancel(); } catch { /* ya no estaba */ } }
+    quitarRegistro(r);
+  }));
+  return n;
+}
+
 /** Una promesa que se cumple cuando todo lo del grupo ha terminado (o se ha cancelado). */
 export function terminaGrupo(nombre) {
   const g = GRUPOS.get(nombre);
@@ -601,7 +621,7 @@ export const ANIMAN_DIRECTAMENTE = Object.freeze(['src/lib/orquestadorMotion.js'
 export const PIEZAS_DE_MOVIMIENTO = Object.freeze([
   'src/components/motion.jsx', 'src/components/gestosMotion.jsx', 'src/components/capasMotion.js',
   'src/components/continuidad.jsx', 'src/components/layoutMotion.jsx', 'src/components/navegacionMotion.js',
-  'src/lib/motion.js', 'src/lib/orquestadorMotion.js',
+  'src/lib/motion.js', 'src/lib/orquestadorMotion.js', 'src/components/responsiveMotion.js',
 ]);
 
 /** Lo que no se limpia a propósito, y por qué no hace falta. */

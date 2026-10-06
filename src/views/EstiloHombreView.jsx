@@ -419,7 +419,7 @@ export function FichaModuloEH({ ficha, accent, onCerrar }) {
     >
       <div
         className="rounded-t-3xl p-4 w-full max-w-md"
-        style={{ background: COLORS.surface, borderTop: `1px solid ${COLORS.border}` }}
+        style={{ background: COLORS.surface, borderTop: `1px solid ${COLORS.border}`, paddingBottom: 'calc(var(--safe-bottom) + 1rem)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">

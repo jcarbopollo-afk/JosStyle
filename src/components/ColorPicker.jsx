@@ -157,8 +157,8 @@ export default function ColorPicker({
     <div className="fixed inset-0 z-capa flex items-end justify-center" style={{ background: CAPAS.veloHoja }} onClick={onClose}>
       <div
         ref={caja}
-        className="w-full max-w-md rounded-t-3xl p-4 max-h-[90vh] overflow-y-auto"
-        style={{ background: COLORS.surface, borderTop: `1px solid ${COLORS.border}`, paddingBottom: 28 }}
+        className="w-full max-w-md rounded-t-3xl p-4 hoja-movil"
+        style={{ background: COLORS.surface, borderTop: `1px solid ${COLORS.border}`, paddingBottom: 'calc(var(--safe-bottom) + 1.75rem)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <AsaHoja cajaRef={caja} onCerrar={onClose} className="-mt-2 mb-1" />

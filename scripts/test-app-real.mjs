@@ -14114,6 +14114,318 @@ ok(lenguaje_ms14 && [CURVAS_ms14.standard, CURVAS_ms14.entrance].every((c) => le
 ok(errores.length === erroresAntes_ms14, `MS F14 — …sin un error en la consola${errores.length > erroresAntes_ms14 ? `: ${errores.slice(erroresAntes_ms14).join(' | ').slice(0, 200)}` : ''}`);
 almacen.ajustes = ajustesDeAntes_ms14;
 
+/* ── MS F15 · Responsive, orientación, áreas seguras y teclado ──
+   Lo que solo se ve en la página de verdad: que lo fijo de arriba y las tarjetas que flotan respeten el
+   área segura de los LADOS y de abajo (Chromium no tiene isla, así que se le dan las variables que pondría
+   el iPhone), la matriz entera de contextos —del iPhone de 320 al escritorio grande y el zoom al 200 %—
+   con la misma hoja convertida en ventana donde toca, girar el teléfono A MITAD de una entrada (lo que
+   viajaba se asienta y la capa cambia de forma), redimensionar a golpes, y el teclado del iPhone: la barra
+   de abajo se aparta mientras se escribe. ⚠️ Sufijo `_ms15`. */
+console.log('\n── MS F15 · Motion responsive, orientación, áreas seguras y multidispositivo ──');
+const ajustesDeAntes_ms15 = almacen.ajustes;
+almacen.ajustes = { ...(ajustesDeAntes_ms15 || {}), apariencia: { ...((ajustesDeAntes_ms15 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'lenta' } };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms15 = errores.length;
+const areaSegura_ms15 = (v) => page.evaluate((v) => {
+  const r = document.documentElement;
+  if (!v) { ['top', 'bottom', 'left', 'right'].forEach((k) => r.style.removeProperty(`--safe-${k}`)); return true; }
+  Object.entries(v).forEach(([k, px]) => r.style.setProperty(`--safe-${k}`, `${px}px`));
+  return true;
+}, v);
+
+/* 1 · Los lados y el pie, con el área segura de un iPhone en horizontal (la isla a la izquierda). */
+await page.setViewportSize({ width: 844, height: 390 });
+await page.waitForTimeout(150);
+await areaSegura_ms15({ top: 0, bottom: 21, left: 47, right: 47 });
+const lados_ms15 = await page.evaluate(() => {
+  const lupa = document.querySelector('button[aria-label="Buscar funciones o preguntar a la IA"]');
+  const sug = document.querySelector('button[aria-label="Sugerencias de la IA"]');
+  const caja = (clases) => {
+    const v = document.createElement('div');
+    v.className = clases;
+    v.style.background = 'rgba(0, 0, 0, 0.55)';
+    v.appendChild(document.createElement('div'));
+    document.body.appendChild(v);
+    const cs = getComputedStyle(v);
+    const r = { pl: cs.paddingLeft, pr: cs.paddingRight, pb: cs.paddingBottom, pt: cs.paddingTop };
+    v.remove();
+    return r;
+  };
+  return {
+    lupa: lupa ? Math.round(lupa.getBoundingClientRect().left) : null,
+    sug: sug ? Math.round(innerWidth - sug.getBoundingClientRect().right) : null,
+    visor: caja('fixed inset-0 z-capa flex flex-col visor-seguro'),
+    pie: caja('fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 velo-pie-seguro'),
+  };
+});
+ok(lados_ms15.lupa === 61 && lados_ms15.sug === 61,
+  `🚨 MS F15 — con el iPhone en horizontal, la lupa y las sugerencias salen de debajo de la isla: 47 px de área segura + sus 14 (${JSON.stringify({ lupa: lados_ms15.lupa, sugerencias: lados_ms15.sug })}; apartados 10-12)`);
+ok(lados_ms15.visor.pl === '47px' && lados_ms15.visor.pr === '47px',
+  `MS F15 — …y un visor a pantalla completa deja los dos lados (${JSON.stringify(lados_ms15.visor)})`);
+ok(lados_ms15.pie.pb === '0px', `MS F15 — una tarjeta flotante a 844 px va centrada: el pie seguro no se aplica (${lados_ms15.pie.pb})`);
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(150);
+await areaSegura_ms15({ top: 62, bottom: 34, left: 0, right: 0 });
+const vertical_ms15 = await page.evaluate(async () => {
+  const v = document.createElement('div');
+  v.className = 'fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 velo-pie-seguro';
+  const c = document.createElement('div');
+  c.className = 'w-full max-w-md rounded-3xl caja-cabe';
+  c.style.height = '3000px';
+  v.appendChild(c);
+  document.body.appendChild(v);
+  await new Promise((ok) => setTimeout(ok, 0));
+  const pb = getComputedStyle(v).paddingBottom;
+  const alto = c.offsetHeight;
+  const arriba = c.offsetTop;
+  v.remove();
+  return { pb, alto, arriba };
+});
+ok(vertical_ms15.pb === '46px', `🚨 MS F15 — en vertical, una tarjeta flotante deja la barra de inicio y 12 px más: sus botones ya no caen donde deslizar es «ir al inicio» (${vertical_ms15.pb}; apartado 48)`);
+ok(vertical_ms15.arriba >= 62 + 12 && vertical_ms15.alto <= 844 - 62 - 34 - 24 + 1,
+  `🚨 MS F15 — …y una tarjeta enorme (\`caja-cabe\`) cabe entre las dos áreas seguras: su cabecera no se sale por arriba (${JSON.stringify(vertical_ms15)})`);
+await page.waitForTimeout(450);
+const buscar_ms15 = await page.evaluate(async () => {
+  const b = document.querySelector('button[aria-label="Buscar funciones o preguntar a la IA"]');
+  if (!b) return null;
+  b.click();
+  await new Promise((ok) => setTimeout(ok, 50));
+  const velo = [...document.body.children].reverse().find((n) => n.dataset && n.dataset.capa);
+  if (!velo) return { sinCapa: true };
+  return { pt: getComputedStyle(velo).paddingTop, caja: Math.round(velo.firstElementChild.offsetTop) };
+});
+ok(buscar_ms15 && buscar_ms15.pt === '80px' && buscar_ms15.caja === 80,
+  `MS F15 — el buscador sigue a sus 80 px de arriba cuando el área segura cabe (${JSON.stringify(buscar_ms15)})`);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(450);
+await areaSegura_ms15({ top: 90, bottom: 34, left: 0, right: 0 });
+const buscarIsla_ms15 = await page.evaluate(async () => {
+  document.querySelector('button[aria-label="Buscar funciones o preguntar a la IA"]').click();
+  await new Promise((ok) => setTimeout(ok, 50));
+  const velo = [...document.body.children].reverse().find((n) => n.dataset && n.dataset.capa);
+  return velo ? getComputedStyle(velo).paddingTop : null;
+});
+ok(buscarIsla_ms15 === '106px', `🚨 MS F15 — …y con un área segura mayor, baja con ella: nunca a dos píxeles de la hora (${buscarIsla_ms15}; apartado 12)`);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(450);
+await areaSegura_ms15(null);
+
+/* 2 · La matriz (apartado 49): los once contextos, en vertical y en horizontal, del iPhone pequeño al
+   escritorio grande y el zoom al 200 %. En cada uno: nada se sale de lado, la barra está abajo, la lupa a
+   la vista, y la MISMA hoja de Fitness es hoja donde el pulgar llega y ventana donde manda el puntero. */
+const contextos_ms15 = await page.evaluate(async () => (await import('/src/lib/responsiveMotion.js')).CONTEXTOS_FISICOS);
+const matriz_ms15 = [];
+for (const c of contextos_ms15 || []) {
+  await page.setViewportSize({ width: c.ancho, height: c.alto });
+  await page.waitForTimeout(250);
+  matriz_ms15.push(await page.evaluate(async (c) => {
+    const nav = document.querySelector('nav.nav-segura') || document.querySelector('.nav-segura');
+    const lupa = document.querySelector('button[aria-label="Buscar funciones o preguntar a la IA"]');
+    const rn = nav ? nav.getBoundingClientRect() : null;
+    const rl = lupa ? lupa.getBoundingClientRect() : null;
+    const v = document.createElement('div');
+    v.className = 'fixed inset-0 z-capa flex items-end sm:items-center justify-center fondo-entra';
+    v.style.background = 'rgba(0, 0, 0, 0.55)';
+    const caja = document.createElement('div');
+    caja.className = 'w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 hoja-entra hoja-movil dialogo-caja';
+    const largo = document.createElement('div');
+    largo.style.height = '2400px';
+    caja.appendChild(largo);
+    v.appendChild(caja);
+    document.body.appendChild(v);
+    await new Promise((ok) => setTimeout(ok, 0));
+    const capa = v.dataset.capa;
+    const dentro = caja.offsetTop >= 0 && caja.offsetTop + caja.offsetHeight <= innerHeight + 1 && caja.offsetLeft >= 0 && caja.offsetLeft + caja.offsetWidth <= innerWidth + 1;
+    v.remove();
+    await new Promise((ok) => setTimeout(ok, 450));
+    return {
+      id: c.id, capa, esperada: c.capa, dentro,
+      lado: document.documentElement.scrollWidth - innerWidth,
+      nav: rn ? Math.round(innerHeight - rn.bottom) : null,
+      lupa: rl ? rl.left >= 0 && rl.top >= 0 && rl.right <= innerWidth : false,
+    };
+  }, c));
+}
+const malos_ms15 = matriz_ms15.filter((m) => m.capa !== m.esperada || !m.dentro || m.lado > 0 || m.nav !== 0 || !m.lupa);
+ok(matriz_ms15.length >= 11 && malos_ms15.length === 0,
+  `🚨 MS F15 — los ${matriz_ms15.length} contextos de la matriz: la hoja es hoja hasta 640 px y ventana desde ahí, cabe en lo que se ve, nada se sale de lado y la barra está abajo (${JSON.stringify(malos_ms15.length ? malos_ms15 : matriz_ms15.map((m) => `${m.id}:${m.capa}`))}; apartados 3-5, 18, 30 y 49)`);
+
+/* 3 · «Reducir movimiento» en el móvil, la tablet y el escritorio (apartado 40): la hoja no se desplaza. */
+await page.emulateMedia({ reducedMotion: 'reduce' });
+const reducido_ms15 = [];
+for (const [w, h] of [[390, 844], [820, 1180], [1440, 900]]) {
+  await page.setViewportSize({ width: w, height: h });
+  await page.waitForTimeout(200);
+  reducido_ms15.push(await page.evaluate(() => ({ modo: document.documentElement.getAttribute('data-motion'), recorrido: getComputedStyle(document.documentElement).getPropertyValue('--hoja-recorrido').trim() })));
+}
+ok(reducido_ms15.length === 3 && reducido_ms15.every((r) => /^0(px|%)?$/.test(r.recorrido)),
+  `MS F15 — «Reducir movimiento» vale igual en el móvil, la tablet y el escritorio: la hoja se funde en su sitio (${JSON.stringify(reducido_ms15)}; apartado 40)`);
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+/* 4 · Girar el teléfono A MITAD de la entrada de una capa (apartados 19 y 20). Primero el testigo: sin
+   girar, a los mismos milisegundos la entrada sigue viva. Después, girando: lo que viajaba se asienta al
+   momento, la capa pasa a ser ventana y sale como ventana, no bajándose como la hoja que ya no es. */
+const abrirCapa_ms15 = () => page.evaluate(async () => {
+  const v = document.createElement('div');
+  v.className = 'fixed inset-0 z-capa flex items-end sm:items-center justify-center';
+  v.style.background = 'rgba(0, 0, 0, 0.55)';
+  v.id = 'capa-giro-ms15';
+  const c = document.createElement('div');
+  c.className = 'w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5';
+  c.style.height = '260px';
+  c.style.background = '#222';
+  v.appendChild(c);
+  document.body.appendChild(v);
+  window.__t0_ms15 = performance.now();
+  await new Promise((ok) => setTimeout(ok, 30));
+  const a = c.getAnimations().find((x) => x.id === 'capa-entra');
+  return { tipo: v.dataset.capa, dura: a ? Math.round(a.effect.getComputedTiming().duration) : null, viva: !!a && a.playState === 'running' };
+});
+const medirCapa_ms15 = () => page.evaluate(() => {
+  const v = document.getElementById('capa-giro-ms15');
+  if (!v) return null;
+  const c = v.firstElementChild;
+  const vivas = c.getAnimations().filter((x) => x.id === 'capa-entra' && x.playState === 'running').length;
+  return { tipo: v.dataset.capa, vivas, transcurrido: Math.round(performance.now() - window.__t0_ms15), transform: getComputedStyle(c).transform, dentro: c.offsetTop >= 0 && c.offsetTop + c.offsetHeight <= innerHeight + 1 };
+});
+const quitarCapa_ms15 = () => page.evaluate(async () => {
+  const v = document.getElementById('capa-giro-ms15');
+  if (v) v.remove();
+  await new Promise((ok) => setTimeout(ok, 0));
+  await new Promise((ok) => setTimeout(ok, 0));
+  const copia = document.querySelector('[data-capa-saliendo]');
+  const sale = copia ? [...copia.getAnimations(), ...(copia.firstElementChild ? copia.firstElementChild.getAnimations() : [])].find((x) => x.id === 'capa-sale') : null;
+  const hasta = sale ? sale.effect.getKeyframes().at(-1).transform || '' : null;
+  await new Promise((ok) => setTimeout(ok, 700));
+  return { hasta, quedan: document.querySelectorAll('[data-capa-saliendo]').length };
+});
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(250);
+const testigo_ms15 = await abrirCapa_ms15();
+await page.waitForTimeout(60);
+const testigoDespues_ms15 = await medirCapa_ms15();
+await quitarCapa_ms15();
+ok(testigo_ms15.tipo === 'hoja' && testigo_ms15.viva && testigoDespues_ms15 && testigoDespues_ms15.vivas === 1,
+  `MS F15 — el testigo: una hoja que entra (\`lenta\`, ${testigo_ms15.dura} ms) sigue viva a los ${testigoDespues_ms15 && testigoDespues_ms15.transcurrido} ms si no se gira nada (${JSON.stringify({ antes: testigo_ms15, despues: testigoDespues_ms15 })})`);
+const giro_ms15 = await abrirCapa_ms15();
+await page.setViewportSize({ width: 844, height: 390 });
+await page.waitForTimeout(60);
+const giroDespues_ms15 = await medirCapa_ms15();
+ok(giro_ms15.viva && giroDespues_ms15 && giroDespues_ms15.vivas === 0 && giroDespues_ms15.transcurrido < giro_ms15.dura && giroDespues_ms15.transform === 'none',
+  `🚨 MS F15 — girando el teléfono a mitad de la entrada, lo que viajaba se ASIENTA: a los ${giroDespues_ms15 && giroDespues_ms15.transcurrido} ms de ${giro_ms15.dura} ya no hay entrada viva ni \`transform\` puesto (${JSON.stringify(giroDespues_ms15)}; apartados 20 y 52)`);
+ok(giroDespues_ms15 && giroDespues_ms15.tipo === 'modal' && giroDespues_ms15.dentro,
+  `🚨 MS F15 — …la capa pasa a ser ventana (a 844 px va centrada) y cabe en los 390 px de alto (${JSON.stringify(giroDespues_ms15 && { tipo: giroDespues_ms15.tipo, dentro: giroDespues_ms15.dentro })}; apartado 30)`);
+const giroSale_ms15 = await quitarCapa_ms15();
+const bajaMucho_ms15 = /translateY\((\d+)px\)/.exec(giroSale_ms15.hasta || '');
+ok(giroSale_ms15.hasta !== null && !(bajaMucho_ms15 && Number(bajaMucho_ms15[1]) > 40) && giroSale_ms15.quedan === 0,
+  `🚨 MS F15 — …y al cerrarla sale como la ventana que es, no bajándose como la hoja que era (${JSON.stringify(giroSale_ms15)})`);
+/* Y al revés: de horizontal a vertical, la ventana vuelve a ser hoja. */
+const vuelta_ms15 = await abrirCapa_ms15();
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(60);
+const vueltaDespues_ms15 = await medirCapa_ms15();
+await quitarCapa_ms15();
+ok(vuelta_ms15.tipo === 'modal' && vueltaDespues_ms15 && vueltaDespues_ms15.tipo === 'hoja' && vueltaDespues_ms15.vivas === 0 && vueltaDespues_ms15.dentro,
+  `MS F15 — …y de horizontal a vertical, la ventana vuelve a ser hoja, quieta y dentro (${JSON.stringify({ antes: vuelta_ms15.tipo, despues: vueltaDespues_ms15 })})`);
+
+/* 5 · Redimensionar a golpes (apartado 34): grande → mediano → pequeño → grande, sin esperar. */
+await page.setViewportSize({ width: 1280, height: 900 });
+await page.waitForTimeout(250);
+await abrirCapa_ms15();
+for (const [w, h] of [[900, 700], [640, 600], [420, 800], [1280, 900]]) await page.setViewportSize({ width: w, height: h });
+await page.waitForTimeout(450);
+const golpes_ms15 = await page.evaluate(async () => {
+  const o = await import('/src/lib/orquestadorMotion.js');
+  const v = document.getElementById('capa-giro-ms15');
+  const c = v && v.firstElementChild;
+  return {
+    tipo: v && v.dataset.capa,
+    enMarcha: o.estadoGlobalMotion().enMarcha,
+    transform: c ? getComputedStyle(c).transform : null,
+    dentro: c ? c.offsetTop >= 0 && c.offsetTop + c.offsetHeight <= innerHeight + 1 : false,
+    lado: document.documentElement.scrollWidth - innerWidth,
+  };
+});
+await quitarCapa_ms15();
+ok(golpes_ms15.tipo === 'modal' && golpes_ms15.enMarcha === 0 && golpes_ms15.transform === 'none' && golpes_ms15.dentro && golpes_ms15.lado <= 0,
+  `🚨 MS F15 — redimensionando a golpes no queda nada a medias: la capa dice lo que es en el ancho final, nada se mueve y nada se sale (${JSON.stringify(golpes_ms15)}; apartados 34 y 53)`);
+
+/* 6 · El teclado del iPhone (apartados 13-16). Chromium no tiene teclado en pantalla, así que se le da lo
+   que daría Safari: lo que se ve encoge (`visualViewport.height`) con un campo enfocado. */
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(250);
+const teclado_ms15 = await page.evaluate(async () => {
+  const fotograma = () => new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
+  const nav = document.querySelector('.nav-segura');
+  const vv = window.visualViewport;
+  const r = {};
+  const antes = nav.getBoundingClientRect().top;
+  const campo = document.createElement('input');
+  campo.type = 'text';
+  campo.setAttribute('aria-label', 'campo de prueba');
+  document.body.appendChild(campo);
+  const caja = document.createElement('input');
+  caja.type = 'checkbox';
+  caja.setAttribute('aria-label', 'casilla de prueba');
+  document.body.appendChild(caja);
+  Object.defineProperty(vv, 'height', { configurable: true, get: () => 500 });
+  campo.focus();
+  vv.dispatchEvent(new Event('resize'));
+  await fotograma();
+  r.abierto = document.documentElement.getAttribute('data-teclado');
+  r.barra = getComputedStyle(nav).visibility;
+  r.animaciones = nav.getAnimations().length;
+  r.movida = nav.getBoundingClientRect().top - antes;
+  caja.focus();
+  await fotograma();
+  r.conCasilla = document.documentElement.getAttribute('data-teclado');
+  r.barraDespues = getComputedStyle(nav).visibility;
+  Object.defineProperty(vv, 'scale', { configurable: true, get: () => 1.6 });
+  campo.focus();
+  await fotograma();
+  r.conZoom = document.documentElement.getAttribute('data-teclado');
+  delete vv.scale;
+  delete vv.height;
+  vv.dispatchEvent(new Event('resize'));
+  await fotograma();
+  r.sinTeclado = document.documentElement.getAttribute('data-teclado');
+  campo.blur();
+  campo.remove();
+  caja.remove();
+  await fotograma();
+  r.alFinal = document.documentElement.getAttribute('data-teclado');
+  return r;
+});
+ok(teclado_ms15.abierto === 'abierto' && teclado_ms15.barra === 'hidden' && teclado_ms15.animaciones === 0 && teclado_ms15.movida === 0,
+  `🚨 MS F15 — con el teclado abierto la barra de abajo se aparta, al momento y sin mover ni un píxel de nada: Safari no la deja flotando sobre lo que se escribe (${JSON.stringify(teclado_ms15)}; apartados 13 y 14)`);
+ok(teclado_ms15.conCasilla === null && teclado_ms15.barraDespues === 'visible',
+  'MS F15 — …una casilla no saca el teclado: con el foco en ella, la barra vuelve');
+ok(teclado_ms15.conZoom === null && teclado_ms15.sinTeclado === null && teclado_ms15.alFinal === null,
+  `MS F15 — …un zoom encoge lo que se ve y no es el teclado, y al cerrarlo la raíz se queda limpia (${JSON.stringify({ zoom: teclado_ms15.conZoom, sinTeclado: teclado_ms15.sinTeclado, alFinal: teclado_ms15.alFinal })}; apartado 15)`);
+
+/* 7 · El zoom al 200 % y el panel de sugerencias (apartados 31 y 39): cabe en lo que se ve. */
+await page.setViewportSize({ width: 640, height: 450 });
+await page.waitForTimeout(250);
+const zoom_ms15 = await page.evaluate(async () => {
+  const b = document.querySelector('button[aria-label="Sugerencias de la IA"]');
+  if (!b) return null;
+  b.click();
+  await new Promise((ok) => setTimeout(ok, 60));
+  const cerrar = document.querySelector('button[aria-label="Cerrar sugerencias"]');
+  const panel = cerrar && cerrar.closest('.flotante-cabe');
+  const r = panel ? { maximo: getComputedStyle(panel).maxHeight, scroll: getComputedStyle(panel).overflowY, dentro: panel.getBoundingClientRect().right <= innerWidth && panel.getBoundingClientRect().left >= 0, cerrar: (() => { const x = cerrar.getBoundingClientRect(); return x.top >= 0 && x.right <= innerWidth; })() } : null;
+  b.click();
+  return r;
+});
+ok(zoom_ms15 && zoom_ms15.maximo === '370px' && zoom_ms15.scroll === 'auto' && zoom_ms15.dentro && zoom_ms15.cerrar,
+  `🚨 MS F15 — al 200 %, el panel de sugerencias nace en su esquina hacia dentro, cabe en lo que se ve y su cerrar está a la vista (${JSON.stringify(zoom_ms15)}; apartados 31-33 y 39)`);
+
+ok(errores.length === erroresAntes_ms15, `MS F15 — …sin un error en la consola${errores.length > erroresAntes_ms15 ? `: ${errores.slice(erroresAntes_ms15).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms15;
+
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

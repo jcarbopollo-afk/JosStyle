@@ -35,7 +35,7 @@ se ordena es **el trabajo**.
 | **F12** ✅ **v3.142.0** | Accesibilidad, reduced motion, adaptive motion y calidad de experiencia | 14966–15717 | 752 |
 | **F13** ✅ **v3.143.0** | Rendimiento extremo, GPU, frame budget y optimización | 15718–16452 | 735 |
 | **F14** ✅ **v3.144.0** | Easings, curvas, ritmo, aceleración y lenguaje visual del movimiento | 16453–17154 | 702 |
-| **F15** | Motion responsive, orientación, safe areas y multidispositivo | 17155–17913 | 759 |
+| **F15** ✅ **v3.145.0** | Motion responsive, orientación, safe areas y multidispositivo | 17155–17913 | 759 |
 | **F16** | Estados de sistema, loading, error, offline, sync y transiciones asíncronas | 1–759 | 759 |
 | **F17** | Motion de datos, dashboard, métricas, gráficas y visualización | 760–1458 | 699 |
 | **F18** | Motion visual polish, brand language y coherencia sensorial | 1459–2241 | 783 |
@@ -91,3 +91,5 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | La prueba de la F13 | `scripts/test-motion-f13.mjs`, y la sección «MS F13» del recorrido de Chromium (pintados, recálculos y memoria medidos) |
 | El lenguaje del movimiento: la curva de cada papel, la escala por tallas, la velocidad que se ve, las parejas y lo equivalente, y la auditoría que lo lee del CSS | `src/lib/lenguajeMotion.js` (F14), aplicado en `index.css`, `PRESETS_MOTION`, el `MOTION_MAP` y `Plegable` |
 | La prueba de la F14 | `scripts/test-motion-f14.mjs`, y la sección «MS F14» del recorrido de Chromium (las curvas de verdad, el Historial que abre y cierra, la pasada global) |
+| El movimiento en cada contexto físico: los cortes de verdad (y el único de movimiento), las áreas seguras de los lados y del pie, asentar lo que viaja al girar o redimensionar, el teclado del iPhone, los bordes del sistema y la matriz de contextos | `src/lib/responsiveMotion.js` (F15), `useContextoFisico` (`src/components/responsiveMotion.js`), `asentarMovimiento` (orquestador), `reevaluarCapas` (`capasMotion.js`) y las clases de `index.css` |
+| La prueba de la F15 | `scripts/test-motion-f15.mjs`, y la sección «MS F15» del recorrido de Chromium (la matriz, girar a mitad de una entrada, redimensionar a golpes, el teclado, el zoom al 200 %) |

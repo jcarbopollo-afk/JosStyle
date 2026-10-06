@@ -143,6 +143,7 @@ import { hayOrigen } from './lib/continuidad';
 import { useContenedorDesdeOrigen } from './components/continuidad';
 import { useNavegacionEnLaPagina } from './components/navegacionMotion';
 import { useCapasMotion } from './components/capasMotion';
+import { useContextoFisico } from './components/responsiveMotion';
 import { useFuentesListas } from './components/layoutMotion';
 import { AnuncioDeNavegacion } from './components/accesibilidadMotion';
 import { AreaSegura } from './components/areaSegura';
@@ -465,6 +466,8 @@ export default function App() {
   /* MS F6 — toda ventana, hoja o pantalla por encima entra y sale con el sistema de profundidad, sin
      escribir la suya (`capasMotion.js`). Un `useEffect`: también aquí arriba (regla 4). */
   useCapasMotion();
+  /* MS F15 — girar, redimensionar y el teclado del iPhone: una sola escucha para toda la aplicación. */
+  useContextoFisico();
   /* 🎬 MS F7, apartados 5 y 21 — una pantalla abierta desde una tarjeta de la portada de un área CRECE
      DESDE ELLA (el origen lo apunta HubView al navegar). Después de `useNavegacionEnLaPagina`, que pone
      el scroll arriba: el rectángulo de la pantalla se mide ya en su sitio. Regla 4: aquí arriba. */
@@ -3719,8 +3722,8 @@ export default function App() {
           botón debajo de la hora del iPhone. */}
       <button
         onClick={() => setShowSearch(true)}
-        className="accion-superior toque-44 fixed z-flotante w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
-        style={{ left: 14, background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: desenfoque('medium'), WebkitBackdropFilter: desenfoque('medium') }}
+        className="accion-superior toque-44 fixed z-flotante accion-izquierda w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
+        style={{ background: hexToRgba(accent, 0.15), border: `1px solid ${hexToRgba(accent, 0.3)}`, backdropFilter: desenfoque('medium'), WebkitBackdropFilter: desenfoque('medium') }}
         aria-label="Buscar funciones o preguntar a la IA"
       >
         <Search size={16} style={{ color: accent }} />

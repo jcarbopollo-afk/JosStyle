@@ -47,10 +47,12 @@ export default function BarcodeScanner({ onDetected, onClose, accent }) {
   // entrada, ver App.jsx/index.css) en vez del viewport real: en vez de cubrir toda la pantalla,
   // podía quedar cortado o desplazado según la altura del contenido de esa vista.
   return createPortal(
-    <div className="fixed inset-0 z-capa flex flex-col" style={{ background: '#000' }}>
-      <div className="flex items-center justify-between p-4" style={{ background: 'rgba(5,6,10,0.85)' }}>
+    <div className="fixed inset-0 z-capa flex flex-col visor-seguro" style={{ background: '#000' }}>
+      {/* MS F15 (apartados 10-12) — la cabecera empieza debajo de la hora y de la isla, y el botón de cerrar
+          llega a los 44 px: estaba a 16 px del borde de arriba, debajo de la batería del iPhone. */}
+      <div className="flex items-center justify-between p-4" style={{ background: 'rgba(5,6,10,0.85)', paddingTop: 'calc(var(--safe-top) + 1rem)' }}>
         <p className="text-sm font-semibold text-white">Apunta al código de barras</p>
-        <button onClick={onClose} className="p-1.5 rounded-full" style={{ background: COLORS.surface2 }} aria-label="Cerrar escáner">
+        <button onClick={onClose} className="p-1.5 rounded-full toque-44" style={{ background: COLORS.surface2 }} aria-label="Cerrar escáner">
           <X size={16} color="#fff" />
         </button>
       </div>

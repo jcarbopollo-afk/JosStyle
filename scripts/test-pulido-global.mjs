@@ -70,7 +70,9 @@ ok(/\.nav-segura\s*\{[^}]*padding-bottom:\s*var\(--safe-bottom\)/.test(CSS),
 /* 🔓 MS F6 — la capa ya no es `z-30` sino `z-flotante` (la jerarquía con nombre), y el desenfoque
    sale de `desenfoque()`, así que el botón ocupa algo más de texto: la ventana pasa de 400 a 600. */
 const botonBuscar = (APP.match(/<button[\s\S]{0,600}?aria-label="Buscar funciones o preguntar a la IA"/) || [''])[0];
-const cajaSugerencias = (UI.match(/<div className="[^"]*fixed z-flotante"[\s\S]{0,200}/) || [''])[0];
+/* 🔓 MS F15 — el lado sale de una clase (`accion-izquierda` / `accion-derecha`, con su área segura), así que
+   la clase es una plantilla y ya no un texto fijo: la promesa es la misma. */
+const cajaSugerencias = (UI.match(/<div className=\{?[`"][^"`]*fixed z-flotante[\s\S]{0,200}/) || [''])[0];
 
 ok(/accion-superior/.test(botonBuscar), 'el botón de buscar/preguntar usa `accion-superior`');
 ok(/toque-44/.test(botonBuscar), 'y llega a 44 px de área táctil (`toque-44`)');

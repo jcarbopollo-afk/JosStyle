@@ -147,10 +147,10 @@ export function acentoLegible(accent) {
 
 export const HOJA = {
   velo: 'fixed inset-0 z-capa flex items-end sm:items-center justify-center fondo-entra',
-  veloConfirmacion: 'fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0 fondo-entra',
+  veloConfirmacion: 'fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 velo-pie-seguro fondo-entra',
   caja: 'w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 hoja-entra hoja-movil dialogo-caja',
   confirmacion: 'w-full max-w-sm rounded-3xl p-5 space-y-4 hoja-entra hoja-movil dialogo-caja',
-  visor: 'fixed inset-0 z-capa flex flex-col fondo-entra dialogo-caja',
+  visor: 'fixed inset-0 z-capa flex flex-col fondo-entra dialogo-caja visor-seguro',
   /* Sitio para la barra de inicio del iPhone (F38, apartado 47). */
   abajo: 'calc(var(--safe-bottom) + 1.25rem)',
   fondoVelo: CAPAS.veloHoja,

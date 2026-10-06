@@ -1,5 +1,59 @@
 # CHANGELOG.md
 
+## v3.145.0 — Motion System F15/20: motion responsive, orientación, safe areas y adaptación multidispositivo
+
+La F15 del Motion System (*"Motion responsive, orientación, safe areas y adaptación multidispositivo"*, líneas
+17155–17913 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). *"No queremos simplemente: mobile = desktop pero más
+pequeño."* Y la regla que queda (apartado 56): *¿esta diferencia existe porque cambia la interacción, o solo porque
+el viewport es otro?* Vive en `src/lib/responsiveMotion.js` y `src/components/responsiveMotion.js`.
+
+### La auditoría (apartados 1 y 2)
+
+- JosStyle es **una columna de 448 px** en todos los tamaños con la barra de cinco pestañas abajo **siempre**: no hay
+  barra lateral que transformar. Los cortes de verdad son cuatro (`min-[360px]`, `sm`, `md`, `xl`) y **solo `sm` es de
+  movimiento** (la hoja pasa a ventana: cambia la interacción). Los demás cambian un texto o unas columnas.
+- Las duraciones no cambian con el ancho; las distancias, el umbral del gesto y las sombras tampoco, y cada decisión
+  va con su motivo en `DECISIONES_F15`.
+
+### 🐛 Lo que se arregló (apartados 9-12, 17, 18 y 48)
+
+- **La lupa y el botón de sugerencias, con el iPhone en horizontal, caían debajo de la isla**: tenían `left: 14` y
+  `right: 14` escritos. Ahora salen del área segura de su lado (`accion-izquierda`, `accion-derecha`).
+- **El escáner de códigos empezaba a 16 px del borde de arriba**, con su cerrar (28 px) debajo de la batería: ahora
+  empieza bajo la isla, deja los lados y su cerrar llega a 44 px.
+- **Las confirmaciones de Fitness y las tres fichas del Armario dejaban 12 px bajo ellas**: sus botones caían en la
+  franja de la barra de inicio, donde deslizar es «ir al inicio». Ahora dejan esa franja (`velo-pie-seguro`).
+- **Las fichas del Armario podían sacar su cabecera por arriba**: su `86vh` estaba en un `style`, donde no cabe el
+  respaldo con `dvh`. Ahora caben entre las dos áreas seguras (`caja-cabe`).
+- El selector de color, el constructor de temas y la ficha de un apartado de Imagen personal dejan la barra de inicio;
+  los visores de fotos dejan los lados; el buscador y el día del Calendario bajan con el área segura si es mayor que su
+  margen; y el panel de sugerencias cabe en lo que se ve (en horizontal o al 200 % se salía por debajo).
+- **`auditarResponsive`** caza los cinco tipos de fallo en las vistas, y con el código de antes sale roja en los
+  cuatro sitios que se arreglaron.
+
+### Girar, redimensionar y el teclado (apartados 13-16, 19, 20, 34, 41, 42 y 52)
+
+- **Una sola pieza escucha la ventana** (`useContextoFisico`): cinco escuchadores pasivos, un fotograma de por medio y
+  ni un estado de React. Al cambiar el **ancho**, lo que viajaba con medidas de antes **se asienta**
+  (`asentarMovimiento`, en el orquestador) y cada capa abierta vuelve a decir qué es (`reevaluarCapas`): una hoja que
+  al girar pasa a ventana sale como ventana. Un cambio solo de alto —la barra de Safari— no asienta nada.
+- **Con el teclado del iPhone abierto, la barra de abajo se aparta** (`data-teclado`): Safari la dejaba flotando a
+  media pantalla encima de lo que se escribe al desplazar. Al momento, sin animación y sin mover nada.
+- **Un dedo apoyado en un lado deja el gesto al sistema** (`UMBRALES_GESTO.bordeSistema`, 20 px): deslizar desde el
+  borde es «atrás» en Safari, no cambiar de ejercicio.
+
+### La matriz (apartado 49)
+
+`CONTEXTOS_FISICOS` **amplía** los siete tamaños de Fitness (FIT F38) con el iPad en horizontal, dos escritorios y el
+zoom al 200 %. La sección «MS F15» del recorrido la abre entera (la hoja es hoja hasta 640 px y ventana desde ahí,
+cabe, nada se sale de lado, la barra está abajo), mide las áreas seguras con las variables de un iPhone, «Reducir
+movimiento» en el móvil, la tablet y el escritorio, **gira el teléfono a mitad de la entrada de una capa** (con su
+testigo sin girar), redimensiona a golpes y simula el teclado.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.144.0 — Motion System F14/20: easings, curvas, ritmo, aceleración y lenguaje visual del movimiento
 
 La F14 del Motion System (*"Easings, curvas, ritmo, aceleración y lenguaje visual del movimiento"*, líneas

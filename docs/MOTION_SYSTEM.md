@@ -603,6 +603,89 @@ si hace lo mismo que otra, va a su ritmo. **No se inventa un valor aislado**: si
 `motion.js` y en `index.css` a la vez. Lo que se miró y está bien está en `REVISADO_Y_BIEN_F14`; lo que no se hace
 (parallax, tooltips, un muelle en cada cosa, tokens de más), en `NO_EN_F14`.
 
+## 8.14 · Responsive, orientación, áreas seguras y teclado (F15)
+
+> **La regla permanente (apartado 56):** *¿Esta diferencia existe porque cambia realmente la interacción o
+> simplemente porque el viewport es diferente?* Si no hay una razón real, se reutiliza el mismo comportamiento.
+
+**Lo que hay, medido** (`src/lib/responsiveMotion.js`). JosStyle es **una columna de 448 px** (`max-w-md`)
+centrada en todos los tamaños, con la barra de cinco pestañas abajo **siempre**: no hay barra lateral ni una
+navegación de escritorio que aparezca a partir de un ancho, así que no hay nada que transformar entre las dos
+(apartados 28 y 29). Los cortes de verdad son cuatro (`BREAKPOINTS_REALES`) y **solo uno es de movimiento**
+(`MOTION_BREAKPOINTS`):
+
+| Corte | Qué cambia | ¿Movimiento? |
+|---|---|---|
+| `min-[360px]` | El nombre corto de una pestaña de Fitness | No |
+| `sm` · 640 px | **La hoja que sube del borde pasa a ventana centrada** | **Sí**: cambia la interacción (el pulgar frente al puntero), y lo decide solo `tipoDeCapa` (F6) del estilo calculado |
+| `md` · 768 px | Columnas de las rejillas de Fitness | No: se recolocan al momento (`cambioDeDiseno`, F10) |
+| `xl` · 1280 px | Columnas de la biblioteca de ejercicios | No |
+
+**Cada contexto, y lo que cambia** (`LENGUAJE_POR_CONTEXTO`, `ENTRADAS_MOTION`). En el **móvil**: respuesta
+inmediata, hojas que suben de su borde y se arrastran, pulsar que encoge y los bordes de la pantalla para el
+sistema. En el **escritorio**: las hojas son ventanas, el hover solo existe con un puntero de verdad
+(`hoverOnlyWhenSupported`, F2) y el foco se ve con `:focus-visible`. **La tablet** no es «un móvil gigante» ni «un
+escritorio pequeño»: es la misma columna con el corte `sm` y la entrada que tenga. **Las duraciones son las
+mismas en todos los tamaños** (apartado 26): lo que cambia la duración es la velocidad de Ajustes.
+
+**Las áreas seguras de los lados y de abajo** (apartados 9-12, 17 y 18). Arriba y abajo ya estaban (E3 F1); lo
+que faltaba eran **los lados** —con el iPhone en horizontal la isla pasa a un lado y vale ~47 px— y **el pie de
+las tarjetas que flotan**. Las clases, en `index.css`:
+
+| Clase | Qué hace | Dónde |
+|---|---|---|
+| `accion-izquierda` / `accion-derecha` | `left`/`right` = área segura de su lado + 14 px | La lupa y el botón de sugerencias (estaban a 14 px escritos: debajo de la isla) |
+| `visor-seguro` | Deja los dos lados | `HOJA.visor` (la foto y el comparador de Fitness) y el escáner de códigos |
+| `velo-pie-seguro` | Deja la barra de inicio + 12 px; desde `sm`, nada | `HOJA.veloConfirmacion` y las tres fichas del Armario (sus botones caían donde deslizar es «ir al inicio») |
+| `caja-cabe` | Cabe entre las dos áreas seguras (`dvh`, con `vh` de respaldo) | Las fichas del Armario (su `86vh` en un `style` sacaba la cabecera por arriba) |
+| `velo-arriba` | El margen de siempre, o el área segura + 1 rem si es mayor (`--velo-arriba`) | El buscador y el día del Calendario |
+| `flotante-cabe` | Un panel que cuelga de un botón cabe en lo que se ve y desplaza dentro | El panel de sugerencias |
+
+Y el **escáner de códigos** empieza ya debajo de la isla, con su cerrar a 44 px (estaba a 16 px del borde, debajo
+de la batería). Una hoja nueva que sube del borde deja `--safe-bottom` (`HOJA.abajo`, o `velo-pie-seguro` si
+flota), y algo `fixed` en un lado lleva su clase: **`auditarResponsive`** caza un `left`/`right` con número en
+algo fijo, una hoja pegada a la barra de inicio, una caja de más del 60 % del alto en `vh` escrita en un `style`,
+un corte de Tailwind que no está en la lista, `devicePixelRatio` y una clase de área segura sin su regla. Con el
+código de antes de la fase sale roja en los cuatro sitios que se arreglaron.
+
+**Girar y redimensionar** (apartados 19, 20, 34, 42 y 52). Una sola pieza escucha la ventana para toda la
+aplicación: **`useContextoFisico`** (`src/components/responsiveMotion.js`, montado en `App.jsx` antes de cualquier
+`return`), con cinco escuchadores pasivos, un fotograma de por medio y **ni un estado de React**. Cuando cambia el
+**ancho** (`cambioDeDiseno`):
+
+- **`asentarMovimiento`** (orquestador) lleva a su final —el del DOM— lo que viaja con medidas de antes: las capas,
+  la continuidad, el FLIP de las listas y el motor (`SISTEMAS_QUE_SE_ASIENTAN`). Un color, una cifra, un toque o
+  el dedo siguen a lo suyo. **No se recalcula nada ni se anima el cambio**: el diseño nuevo aparece quieto.
+- **`reevaluarCapas`** (`capasMotion.js`) vuelve a leer el tipo de cada capa abierta: la hoja que al girar pasa a
+  ventana **sale como ventana**, no bajándose como la hoja que ya no es.
+
+Un cambio solo de **alto** —la barra de Safari que aparece al desplazar— no asienta nada: pasa a cada rato. Y
+girar con el dedo apoyado lo resuelve iOS, que cancela el toque (`gestoAbandonado`, F8).
+
+**El teclado del iPhone** (apartados 13-16). Safari no encoge la página al abrir el teclado: encoge lo que **se
+ve**. Con un campo de escribir enfocado y lo que se ve más de 150 px por debajo de la página, sin pellizco
+(`tecladoAbierto`), la raíz lleva **`data-teclado="abierto"`** y la barra de abajo se aparta con `visibility`: al
+momento, sin animación, sin mover un píxel. Así no flota sobre lo que se escribe. **No se recolocan las hojas con
+JavaScript**: Safari ya desplaza hasta el campo, y moverlo otra vez sería el «segundo scroll» del apartado 16. El
+zoom al enfocar un campo de 14 px es la **C-32**, de Josué.
+
+**Los gestos y los bordes** (apartados 47 y 48). Un dedo o un lápiz que se apoya a menos de
+**`UMBRALES_GESTO.bordeSistema`** (20 px) de un lado deja el gesto al sistema («atrás» en Safari):
+`empiezaEnBordeDelSistema`, mirado por `useDeslizarParaCambiar` antes de tomar el control. Un ratón, nunca. El
+umbral de cambiar de ejercicio (56 px) se queda fijo: la tarjeta nunca pasa de 448 px (apartado 25).
+
+**Lo que no cambia, y por qué** (`DECISIONES_F15`): las distancias (la columna está acotada), las duraciones, la
+cascada (ya tiene tope), la profundidad y el desenfoque (el velo no desenfoca; el único animado es el de «Ultra»),
+las sombras (los cinco tokens de la F6), los elementos compartidos (miden el rectángulo de verdad en cada ancho),
+la densidad de píxeles (todo en píxeles CSS) y la frecuencia de refresco (CSS, la Web Animations API y
+`requestAnimationFrame`; ni un `setInterval`).
+
+**La matriz** (`CONTEXTOS_FISICOS`, apartado 49) **amplía** los siete tamaños de Fitness (`DISPOSITIVOS_DE_PRUEBA`,
+FIT F38) con el iPad en horizontal, un escritorio pequeño, uno grande y el zoom al 200 % (640 × 450), cada uno con
+su entrada y la forma que tiene ahí una hoja. La sección «MS F15» del recorrido la abre entera, más «Reducir
+movimiento» en el móvil, la tablet y el escritorio, girar a mitad de una entrada (con su testigo sin girar),
+redimensionar a golpes y el teclado.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en
@@ -646,3 +729,7 @@ si hace lo mismo que otra, va a su ritmo. **No se inventa un valor aislado**: si
   gasto, el vacío que entra, la línea de Sueño que se mueve ~420 ms (antes 1,5 s) y, en Reducido, una
   línea quieta y una cifra que se releva.
 - `docs/MOTION_MAP.md` se genera del mapa y la prueba lo compara con el archivo.
+- La sección «MS F15» del recorrido mide las áreas seguras de los lados y del pie con las variables que pondría un
+  iPhone, los once contextos de `CONTEXTOS_FISICOS`, «Reducir movimiento» en tres tamaños, girar a mitad de la
+  entrada de una capa (lo que viaja se asienta y la capa sale con su forma nueva), redimensionar a golpes, el
+  teclado (`data-teclado`) y el panel de sugerencias al 200 %. `auditarResponsive` (F15) lee las vistas.

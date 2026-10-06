@@ -1027,6 +1027,11 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f14.mjs >/tmp/j
 else
   fallo "Falla el lenguaje del movimiento del Motion System (F14)"; grep '✗' /tmp/jc_motion_f14.log
 fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f15.mjs >/tmp/jc_motion_f15.log 2>&1; then
+  ok "El Motion System, F15: el movimiento en cada contexto físico —los cortes de verdad, las áreas seguras de los lados y del pie, girar sin dejar nada a medias, el teclado y los bordes del sistema— — $(grep -c '✓' /tmp/jc_motion_f15.log) comprobaciones"
+else
+  fallo "Falla el movimiento responsive del Motion System (F15)"; grep '✗' /tmp/jc_motion_f15.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.145.0 — Motion System F15/20: responsive, orientación y áreas seguras):**
+> Con el iPhone en horizontal, la lupa y las sugerencias ya no quedan debajo de la isla; el escáner de códigos ya no
+> pone su cerrar debajo de la batería; y las confirmaciones y las fichas del Armario dejan la barra de inicio. Girar el
+> teléfono a mitad de una animación **la asienta** y la hoja que pasa a ventana sale como ventana. Con el teclado
+> abierto la barra de abajo se aparta, y deslizar desde el borde es del sistema. **La siguiente es la F16** (estados de
+> sistema, carga, error, sin conexión y sincronización).
+
 > **📅 ACTUALIZACIÓN (v3.144.0 — Motion System F14/20: el lenguaje del movimiento):**
 > Cada curva tiene ya un papel: lo que **llega** a su sitio con la deceleración de la marca, lo que **aparece** (una
 > hoja, un aviso, un error) llega deprisa y se posa, lo que **sale** acelera hacia fuera, un desplegable **abre** en

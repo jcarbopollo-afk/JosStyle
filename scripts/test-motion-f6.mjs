@@ -194,7 +194,8 @@ ok(/\.calendar-sheet \{[\s\S]{0,300}animation: calendarSheetIn var\(--motion-dur
   '🐛 las ventanas del Calendario terminan con `backwards`: el `both` dejaba un `transform` puesto');
 ok(/\.menu-entra \{\s*animation: menuEntra var\(--motion-dur-fast\) var\(--motion-curva-entrance\) backwards;/.test(CSS), 'un menú que nace de su botón: corto y discreto (apartados 12 y 14)');
 const UI = leer('src/components/ui.jsx');
-ok(/menu-entra"[\s\S]{0,300}transformOrigin: lado === 'derecha' \? 'top right' : 'top left'/.test(UI), '…el panel de sugerencias crece desde la esquina de su botón');
+/* 🔓 MS F15 — el panel lleva además `flotante-cabe` (cabe en lo que se ve): la esquina es la misma. */
+ok(/menu-entra[^"]*"[\s\S]{0,300}transformOrigin: lado === 'derecha' \? 'top right' : 'top left'/.test(UI), '…el panel de sugerencias crece desde la esquina de su botón');
 ok(/if \(ev\.key === 'Escape'\) onClose\(\);/.test(UI.slice(UI.indexOf('resolverConsulta(indice, query)') - 2000)), '🐛 el buscador por fin se cierra con Escape, como el resto de capas (apartado 33)');
 
 /* ═════════════════════════════════════════════════════════════════════════ */

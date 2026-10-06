@@ -119,6 +119,24 @@ function salir(n, siguiente, anterior, padre) {
   setTimeout(quitar, anim.duracionMs + 400);
 }
 
+/* MS F15 (apartados 20 y 30) — una capa abierta puede cambiar de forma al girar el teléfono: con `items-end
+   sm:items-center`, la hoja de 390 px de ancho es una ventana centrada a 844. Su tipo es lo que dice cómo SALE,
+   y se apuntó al entrar, así que se vuelve a leer del estilo calculado: si no, la ventana se iría bajando como
+   la hoja que ya no es. Solo las que siguen abiertas; la copia de una que se va no se toca. */
+export function reevaluarCapas() {
+  if (typeof document === 'undefined' || !document.body) return 0;
+  let n = 0;
+  [...document.body.children].forEach((el) => {
+    if (!el.dataset || el.dataset.capa === undefined || el.dataset[MARCA_SALIENDO] !== undefined) return;
+    try {
+      const cs = getComputedStyle(el);
+      const tipo = tipoDeCapa({ alignItems: cs.alignItems, overflowY: cs.overflowY, fondo: cs.backgroundColor });
+      if (tipo !== el.dataset.capa) { el.dataset.capa = tipo; n += 1; }
+    } catch { /* sin estilo calculado, se queda el que tenía */ }
+  });
+  return n;
+}
+
 /** Se monta UNA vez, en App.jsx, antes de cualquier `return` (regla 4). */
 export function useCapasMotion() {
   useEffect(() => {

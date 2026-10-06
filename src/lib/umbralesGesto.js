@@ -23,6 +23,9 @@ export const UMBRALES_GESTO = Object.freeze({
   distanciaCierre: 0.35,
   /** Lo que hay que deslizar para pasar de ejercicio (era `UMBRAL_GESTO_PX`, FIT F9). */
   distanciaCambio: 56,
+  /** MS F15 (apartados 47 y 48) — la franja de cada lado que es del SISTEMA: deslizar desde el borde
+   *  izquierdo es «atrás» en Safari. Un dedo que se apoya ahí no empieza un gesto de la aplicación. */
+  bordeSistema: 20,
   /** La constante de la resistencia: la de iOS. Más grande, más blando. */
   resistencia: 0.55,
   /** Las muestras que cuentan para la velocidad: las de los últimos 100 ms. */

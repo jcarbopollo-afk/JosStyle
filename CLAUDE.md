@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.144.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.145.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -40,7 +40,7 @@ plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegac
 **F6 (v3.136.0)** —la profundidad y las capas—, la **F7 (v3.137.0)** —la continuidad espacial—, la **F8
 (v3.138.0)** —la física y la interacción directa—, la **F9 (v3.139.0)** —los estados y el feedback— y la
 **F10 (v3.140.0)** —el diseño que cambia: listas y desplegables— , la **F11 (v3.141.0)** —el orquestador—, la **F12 (v3.142.0)** —la accesibilidad del
-movimiento—, la **F13 (v3.143.0)** —el rendimiento— y la **F14 (v3.144.0)** —el lenguaje del movimiento: curvas, ritmo y firma—.
+movimiento—, la **F13 (v3.143.0)** —el rendimiento—, la **F14 (v3.144.0)** —el lenguaje del movimiento: curvas, ritmo y firma— y la **F15 (v3.145.0)** —el movimiento en cada contexto físico: áreas seguras, girar y el teclado—.
 Lo que vale para cualquier cambio a partir de hoy:
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
@@ -187,6 +187,20 @@ Lo que vale para cualquier cambio a partir de hoy:
   0,015 y 0,08 px/ms, **lo que se va dura menos que lo que llega**, y **lo equivalente va al mismo ritmo** (las cuatro
   barras de progreso en `medium`). `auditarLenguaje` lee `index.css` y pone la suite roja con una curva fuera de su
   papel, un preset que no coincide con su CSS o una pareja al revés. Un desplegable abre en `medium` y cierra en `fast`.
+- 🚨 **LOS LADOS Y EL PIE TAMBIÉN TIENEN ÁREA SEGURA, Y SE PONE CON UNA CLASE** (F15, `responsiveMotion.js`): algo
+  `fixed` en un lado lleva `accion-izquierda`/`accion-derecha` (nunca `left: 14` en su `style`: en horizontal queda
+  debajo de la isla), un visor a pantalla completa `visor-seguro`, una tarjeta que flota desde abajo
+  `velo-pie-seguro` (sus botones caían donde deslizar es «ir al inicio») y su tope `caja-cabe` (nunca `86vh` en un
+  `style`), un velo con la tarjeta arriba `velo-arriba` y un panel colgado de un botón `flotante-cabe`.
+  `auditarResponsive` caza el que lo escriba a mano. **Solo `sm` es un corte de movimiento** (la hoja pasa a
+  ventana); las duraciones no cambian con el ancho.
+- 🚨 **GIRAR O CAMBIAR EL ANCHO ASIENTA LO QUE VIAJA, Y UNA SOLA PIEZA LO ESCUCHA** (F15, `useContextoFisico` en
+  `App.jsx`): `asentarMovimiento` (orquestador) lleva a su final lo que se movía con medidas de antes y
+  `reevaluarCapas` vuelve a leer qué es cada capa abierta (la hoja que pasa a ventana sale como ventana). **Ninguna
+  otra pieza escucha `resize` para eso, ni `visualViewport`.** Con el teclado del iPhone abierto la raíz lleva
+  `data-teclado` y la barra de abajo se aparta; **un dedo a menos de `UMBRALES_GESTO.bordeSistema` de un lado no
+  empieza un gesto** (es «atrás» en Safari). La matriz de contextos (`CONTEXTOS_FISICOS`) **amplía** la de Fitness
+  (`DISPOSITIVOS_DE_PRUEBA`): un tamaño nuevo de prueba va allí, no a una tercera lista.
 - 🐛 **DOS HERMANOS CON LA MISMA `key` DEJAN EL VIEJO PUESTO** (F14): los indicadores de Nutrición y su
   `ListaAnimada` iban los dos por la fecha, y al cambiar de día se leían las cifras de hoy y las de ayer. **Un bloque
   con `key` por fecha lleva su prefijo.** Y 🐛 **una decisión de llegada se toma UNA vez por navegación**
@@ -2175,8 +2189,8 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F15 DEL MOTION SYSTEM** (*"Motion responsive, orientación, safe areas y adaptación
-   multidispositivo"*, líneas 17155–17913 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F16… hasta la F20, en
+0. 🎬 **LA SIGUIENTE ES LA F16 DEL MOTION SYSTEM** (*"Estados de sistema, loading, error, offline, sync y
+   transiciones asíncronas"*, líneas 1–759 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F17… hasta la F20, en
    el orden de
    `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
    `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**

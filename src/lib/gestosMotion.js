@@ -109,6 +109,20 @@ export function decidirSoltar({ desplazamiento = 0, velocidad = 0, tamano = 400,
 }
 
 /**
+ * MS F15 (apartado 48) — *"No competir con gestos nativos del sistema"*: un dedo (no un ratón ni un lápiz que
+ * apunta) que se apoya en la franja de un lado deja ese gesto al sistema —«atrás» en Safari—. Arriba y abajo no
+ * hace falta: la barra de inicio y el centro de notificaciones están fuera de cualquier zona que se desliza
+ * (las hojas dejan su `--safe-bottom`, y la cabecera su `--safe-top`).
+ */
+export function empiezaEnBordeDelSistema({ x, ancho, tipo = 'touch' } = {}, u = UMBRALES_GESTO) {
+  if (tipo === 'mouse') return false;
+  const px = Number(x);
+  const w = Number(ancho);
+  if (!Number.isFinite(px) || !Number.isFinite(w) || w <= 0) return false;
+  return px < u.bordeSistema || px > w - u.bordeSistema;
+}
+
+/**
  * Pasar de ejercicio deslizando (FIT F9, ahora con velocidad): `'siguiente'` (hacia
  * la izquierda), `'anterior'` o `null`. Hace falta recorrer `distanciaCambio`, o
  * lanzarlo a `velocidadCierre` con al menos el doble del arranque; y la velocidad

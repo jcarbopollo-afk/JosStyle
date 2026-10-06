@@ -3,7 +3,7 @@ import { COLORS } from '../tokens';
 import { contextoDelDocumento, CURVAS_MOTION } from '../lib/motion';
 import {
   ejeDeGesto, velocidadDeMuestras, conResistencia, decidirSoltar, decidirCambio,
-  vueltaConMuelle, salidaConInercia,
+  vueltaConMuelle, salidaConInercia, empiezaEnBordeDelSistema,
 } from '../lib/gestosMotion';
 import { siguienteEstadoGesto, veloDuranteArrastre, punteroQueCuenta, gestoAbandonado } from '../lib/fisicaMotion';
 import { animarOrquestado, tomarControl } from '../lib/orquestadorMotion';
@@ -195,6 +195,8 @@ export function useDeslizarParaCambiar(zonaRef, { hayAnterior = true, haySiguien
   const mover = (el, x) => { el.style.transform = x ? `translateX(${x}px)` : ''; };
   const onPointerDown = (ev) => {
     if (ev.target && ev.target.closest && ev.target.closest('button, input, textarea, select, a')) return;
+    /* MS F15, apartado 48 — desde el borde, el gesto es del sistema («atrás» en Safari), no de la tarjeta. */
+    if (typeof window !== 'undefined' && empiezaEnBordeDelSistema({ x: ev.clientX, ancho: window.innerWidth, tipo: ev.pointerType })) return;
     const el = zonaRef.current;
     /* MS F8, apartado 34 — un segundo dedo no empieza otro gesto ni corrompe éste. */
     if (!el || (gesto.current && !gestoAbandonado(gesto.current, ev, capturando(gesto.current)))) return;

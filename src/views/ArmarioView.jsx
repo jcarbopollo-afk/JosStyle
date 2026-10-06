@@ -277,15 +277,15 @@ function DetallePrenda({ prenda, outfits, usos, hoyISO, accent, onCerrar, onEdit
 
   // Regla 3 del proyecto: todo overlay `fixed inset-0` va con createPortal.
   return createPortal(
-    <div className="fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: CAPAS.veloHoja }} onClick={onCerrar}>
+    <div className="fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 velo-pie-seguro" style={{ background: CAPAS.veloHoja }} onClick={onCerrar}>
       <div
         ref={caja}
-        className="w-full max-w-md rounded-3xl overflow-hidden"
-        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, maxHeight: '86vh' }}
+        className="w-full max-w-md rounded-3xl overflow-hidden caja-cabe flex flex-col"
+        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
         onClick={(e) => e.stopPropagation()}
       >
         <AsaHoja cajaRef={caja} onCerrar={onCerrar} className="" />
-        <div style={{ maxHeight: '86vh', overflowY: 'auto' }}>
+        <div className="min-h-0 overflow-y-auto">
           <div className="relative">
             <MiniaturaPrenda prenda={prenda} alto={190} />
             <button
@@ -775,15 +775,15 @@ function DetalleOutfit({ outfit, prendas, usos, hoyISO, accent, onCerrar, onEdit
   ].filter(([, v]) => v);
 
   return createPortal(
-    <div className="fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: CAPAS.veloHoja }} onClick={onCerrar}>
+    <div className="fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 velo-pie-seguro" style={{ background: CAPAS.veloHoja }} onClick={onCerrar}>
       <div
         ref={caja}
-        className="w-full max-w-md rounded-3xl overflow-hidden"
-        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, maxHeight: '86vh' }}
+        className="w-full max-w-md rounded-3xl overflow-hidden caja-cabe flex flex-col"
+        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
         onClick={(e) => e.stopPropagation()}
       >
         <AsaHoja cajaRef={caja} onCerrar={onCerrar} className="" />
-        <div style={{ maxHeight: '86vh', overflowY: 'auto' }}>
+        <div className="min-h-0 overflow-y-auto">
           <div className="flex items-start justify-between gap-3 p-4 pb-2">
             <div className="min-w-0">
               <p className="text-lg font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
@@ -1993,11 +1993,11 @@ function DetalleDia({ fecha, usos, outfits, prendas, accent, onCerrar, onAnadir,
   const caja = useRef(null);
   const legible = new Date(`${fecha}T00:00:00`).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
   return createPortal(
-    <div className="fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0" style={{ background: CAPAS.veloHoja }} onClick={onCerrar}>
+    <div className="fixed inset-0 z-capa flex items-end sm:items-center justify-center px-3 velo-pie-seguro" style={{ background: CAPAS.veloHoja }} onClick={onCerrar}>
       <div
         ref={caja}
-        className="w-full max-w-md rounded-3xl p-4"
-        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, maxHeight: '86vh', overflowY: 'auto' }}
+        className="w-full max-w-md rounded-3xl p-4 caja-cabe overflow-y-auto"
+        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
         onClick={(e) => e.stopPropagation()}
       >
         <AsaHoja cajaRef={caja} onCerrar={onCerrar} className="-mt-2 mb-1" />

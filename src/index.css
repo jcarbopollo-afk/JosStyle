@@ -98,6 +98,72 @@ input[type='range']::-webkit-slider-thumb {
   padding-bottom: var(--safe-bottom);
 }
 
+/* 🚨 MS F15 (apartados 10-12) — LOS LADOS TAMBIÉN TIENEN ÁREA SEGURA. Con el iPhone en horizontal, la
+   isla y las esquinas redondas pasan a un LADO (`--safe-left` o `--safe-right` valen ~47 px), y la lupa y
+   el botón de sugerencias estaban a 14 px escritos en su `style`: debajo de la isla. Ahora salen del mismo
+   sitio que su altura. En vertical los dos valen 0 y nada se mueve ni un píxel. */
+.accion-izquierda {
+  left: calc(var(--safe-left) + 14px);
+}
+.accion-derecha {
+  right: calc(var(--safe-right) + 14px);
+}
+
+/* Un visor a pantalla completa (una foto, el comparador, el escáner) se pinta de borde a borde, y lo que
+   lleva dentro —los botones, el pie— no puede quedar debajo de la isla al girar el teléfono. */
+.visor-seguro {
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
+/* Una tarjeta flotante que sube desde abajo (una confirmación, una ficha del Armario) dejaba 12 px bajo
+   ella: con la barra de inicio del iPhone (34 px), sus botones caían en la franja donde deslizar hacia
+   arriba es «ir al inicio» (apartado 48). Ahora deja esa franja y 12 px más; desde `sm` va centrada. */
+.velo-pie-seguro {
+  padding-bottom: calc(var(--safe-bottom) + 0.75rem);
+}
+@media (min-width: 640px) {
+  .velo-pie-seguro {
+    padding-bottom: 0;
+  }
+}
+
+/* Un velo que pone su tarjeta arriba (el buscador, el día del Calendario) la dejaba a 64-80 px del borde:
+   en un iPhone con isla (59-62 px de área segura) se quedaba a dos píxeles de la hora. El margen de siempre,
+   o el área segura y un poco más si es mayor. Cada velo dice su margen con `--velo-arriba`. */
+.velo-arriba {
+  padding-top: max(var(--velo-arriba, 4rem), calc(var(--safe-top) + 1rem));
+}
+
+/* Una tarjeta flotante cabe entre las dos áreas seguras: con `86vh` escrito en su `style`, en Safari (donde
+   `vh` es la altura con la barra escondida) y con el margen de la barra de inicio, su cabecera —y su botón
+   de cerrar— se salía por arriba. `dvh` es lo que se ve; los dos valores van aquí porque en un `style` de
+   React la segunda clave borraría a la primera (SF F1). */
+.caja-cabe {
+  max-height: 86vh;
+  max-height: min(86dvh, calc(100dvh - var(--safe-top) - var(--safe-bottom) - 1.5rem));
+}
+
+/* Un panel que flota desde un botón de arriba (las sugerencias) no puede pasar del borde de abajo: con el
+   teléfono en horizontal (390 px de alto) o el zoom al 200 %, una respuesta larga se salía por debajo y no se
+   podía leer. Cabe en lo que se ve y se desplaza dentro. */
+.flotante-cabe {
+  max-height: calc(100vh - var(--safe-top) - var(--safe-bottom) - 80px);
+  max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 80px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* 🚨 MS F15 (apartados 13-16) — CON EL TECLADO DEL iPHONE ABIERTO, LA BARRA DE ABAJO SE APARTA. Safari no
+   encoge la página al abrir el teclado: encoge lo que SE VE. Una barra `fixed` abajo se queda detrás del
+   teclado y, al desplazar con él abierto, Safari la deja flotando a media pantalla encima de lo que se
+   escribe. `useContextoFisico` (App.jsx) pone `data-teclado` cuando hay un campo enfocado y lo visible ha
+   encogido de verdad; la barra se esconde AL MOMENTO —sin animación: cambiar de diseño no se anima
+   (apartado 52)— y vuelve igual al cerrarlo. `visibility` y no `display`: no mueve ni un píxel de nada. */
+html[data-teclado='abierto'] .nav-segura {
+  visibility: hidden;
+}
+
 /* 🚨 SF F1 — EL ALTO DE LA RAÍZ, Y POR QUÉ ESTÁ AQUÍ Y NO EN UN `style={{}}`.
 
    `100vh` **no es la altura visible en Safari de iOS**: incluye la franja que
