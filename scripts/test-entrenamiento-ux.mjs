@@ -299,7 +299,8 @@ ok(/<Circle /.test(VISTA_CODIGO) && /<Check size=\{20\}/.test(VISTA_CODIGO),
 ok(/aria-pressed=\{hecha\}/.test(VISTA_CODIGO), '…y se anuncia como pulsado');
 ok(/data-sin-sonido/.test(VISTA_CODIGO), '⚠️ El ✓ no suena dos veces (clic de interfaz + serie hecha)');
 ok(/inputMode=\{conDecimal \? 'decimal' : 'numeric'\}/.test(VISTA_CODIGO), 'Teclado numérico, con decimales en el peso (apartado 8)');
-ok(/scrollIntoView\(\{ block: 'center'/.test(VISTA_CODIGO), 'El campo activo se centra cuando sube el teclado (apartado 37)');
+/* MS F12 — se centra con `desplazarHasta`, que se desliza o salta según «Reducir movimiento». */
+ok(/desplazarHasta\(el, \{ block: 'center' \}\)/.test(VISTA_CODIGO), 'El campo activo se centra cuando sube el teclado (apartado 37; desde la MS F12, respetando «Reducir movimiento»)');
 ok(/pasarAFinalizacion\(\{ \.\.\.sesion, descanso: null \}\)/.test(VISTA_CODIGO),
   '⚠️ Terminar suelta el descanso: una sesión terminada no está descansando');
 ok(!/position:\s*'fixed'|className="[^"]*\bfixed\b/.test(VISTA_CODIGO),

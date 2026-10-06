@@ -46,6 +46,7 @@ import {
 } from '../lib/cierreEstudios';
 import { Card, SectionTitle, Field, TextInput, SelectInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel, TextoDeBoton } from '../components/ui';
 import { Plegable, ListaAnimada } from '../components/layoutMotion';
+import { desplazarHasta } from '../lib/accesibilidadMotion';
 
 function diasHasta(fechaISO) {
   return Math.ceil((new Date(fechaISO + 'T00:00:00').getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -188,7 +189,7 @@ function ExamenItem({ examen, onUpdate, onDelete, accent, forzarAbierta, onFocoC
     if (forzarAbierta) {
       setAbierto(true);
       const el = document.getElementById(`examen-${examen.id}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      desplazarHasta(el, { block: 'center' });
       onFocoConsumido && onFocoConsumido();
     }
   }, [forzarAbierta]);

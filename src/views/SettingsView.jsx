@@ -60,6 +60,7 @@ import TemaBuilder from '../components/TemaBuilder';
 import GestionTemas from '../components/GestionTemas';
 import { desenfoque } from '../lib/profundidad';
 import { Plegable } from '../components/layoutMotion';
+import { GiroDeCarga } from '../components/accesibilidadMotion';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Fase A1 — Ajustes: arquitectura general (Entrega 1 de la especificación
@@ -1811,7 +1812,7 @@ export function AvatarCabecera({ perfil, accent, onCambiar, lado = 56 }) {
           }}
         >
           {cargando
-            ? <Loader2 size={11} className="animate-spin" style={{ color: COLORS.textOnAccent }} />
+            ? <GiroDeCarga size={11} style={{ color: COLORS.textOnAccent }} texto="Subiendo la foto…" />
             : <Camera size={11} style={{ color: COLORS.textOnAccent }} />}
         </span>
       </button>

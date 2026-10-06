@@ -1075,6 +1075,28 @@ html[data-motion='reducido'] .nav-indicador {
   border-radius: 1rem;
 }
 
+/* 🐛 MS F12, apartados 13 y 14 — LO QUE SE REPITE SIN FIN SE QUEDA QUIETO EN REDUCIDO. El latido del
+   esqueleto y el giro de carga seguían en bucle con «Reducir movimiento» (solo «Sin movimiento» los
+   paraba). Quietos no pierden nada: el esqueleto ya tiene la forma de lo que viene, y el giro va siempre
+   con su texto («Guardando…», «Pensando…») o en un botón ocupado (`aria-busy`). El esqueleto se queda a
+   media opacidad, que es como se lee «todavía no». */
+html[data-motion='reducido'] .esqueleto,
+html[data-motion='reducido'] .animate-spin {
+  animation: none;
+}
+html[data-motion='reducido'] .esqueleto {
+  opacity: var(--motion-opac-secondary);
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='off']) .esqueleto,
+  html:not([data-motion='off']) .animate-spin {
+    animation: none;
+  }
+  html:not([data-motion='off']) .esqueleto {
+    opacity: var(--motion-opac-secondary);
+  }
+}
+
 /* ===========================================================================
    ENTREGA 3 · FASE 14 (HC F9) — EL FEEDBACK DE UNA ACCIÓN (apartados 15-17)
    ===========================================================================

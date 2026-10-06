@@ -13647,6 +13647,113 @@ ok(errores.length === erroresAntes_ms11, `MS F11 — …sin un error en la conso
 almacen.ajustes = ajustesDeAntes_ms11;
 almacen.productividad = prodDeAntes_ms11;
 
+/* ── MS F12 · Accesibilidad: el foco no se pierde, los bucles se paran en Reducido y VoiceOver sabe dónde está ──
+   Lo que solo se ve en la página de verdad: que borrar una fila con el teclado deje el foco en la siguiente
+   (antes se iba al `body`), que plegar un desplegable con el foco dentro lo devuelva a su botón —también en
+   Reducido, donde se desmonta en el acto—, que el esqueleto y el giro se queden quietos con «Reducir
+   movimiento», y que al cambiar de pantalla un aviso diga a dónde se ha llegado. ⚠️ Sufijo `_ms12`. */
+console.log('\n── MS F12 · Accesibilidad, reduced motion y calidad de experiencia ──');
+const ajustesDeAntes_ms12 = almacen.ajustes;
+const prodDeAntes_ms12 = almacen.productividad;
+almacen.ajustes = { ...(ajustesDeAntes_ms12 || {}), apariencia: { ...((ajustesDeAntes_ms12 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+const hoy_ms12 = new Date().toLocaleDateString('sv-SE');
+almacen.productividad = {
+  tareas: ['A', 'B', 'C', 'D'].map((l) => ({ id: `t12${l}`, texto: `Tarea ${l} doce`, fecha: hoy_ms12, hecha: false })),
+  habitos: [], metas: [], pomodoros: {}, pomodoroSesiones: [], apuntes: [], rutinas: [], rutinaEjecuciones: [], rutinaEnCurso: null,
+};
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms12 = errores.length;
+
+/* 1 · VoiceOver: al cambiar de pantalla, un aviso dice a dónde se ha llegado, y la pantalla tiene nombre. */
+const anuncio_ms12 = async () => page.evaluate(() => {
+  const a = document.querySelector('[data-anuncio-navegacion]');
+  const r = document.querySelector('.pantalla-segura > [data-navegacion]');
+  return { texto: a ? a.textContent : null, vivo: a ? a.getAttribute('aria-live') : null, region: r ? `${r.getAttribute('role')}:${r.getAttribute('aria-label')}` : null };
+});
+const inicio_ms12 = await anuncio_ms12();
+ok(await pulsar('Vida') && /Productividad/.test(await esperarTexto(/Productividad/)), 'MS F12 — VoiceOver: se cambia a Vida');
+await page.waitForTimeout(200);
+const vida_ms12 = await anuncio_ms12();
+ok(inicio_ms12.texto === '' && vida_ms12.texto === 'Vida' && vida_ms12.vivo === 'polite' && vida_ms12.region === 'region:Vida',
+  `🐛 MS F12 — VoiceOver: al llegar, un aviso educado dice «Vida» (al abrir la aplicación no habla), y la pantalla se llama así (${JSON.stringify({ inicio: inicio_ms12, vida: vida_ms12 })}; apartados 9 y 26)`);
+ok(await pulsar('Productividad'), 'MS F12 — VoiceOver: …y se entra en Productividad');
+await page.waitForTimeout(200);
+ok((await anuncio_ms12()).texto === 'Productividad', 'MS F12 — VoiceOver: …y el aviso dice «Productividad»');
+
+/* 2 · Con el teclado: borrar una fila deja el foco en la siguiente. */
+ok(await pulsar('Gestión') && await pulsar('Organización') && await pulsar('Tareas') && /Tarea D doce/.test(await esperarTexto(/Tarea D doce/)), 'MS F12 — con el teclado: Tareas, con cuatro tareas de hoy');
+await page.waitForTimeout(400);
+const borrarConTeclado_ms12 = async (etiqueta) => {
+  const b = await page.$(`button[aria-label="${etiqueta}"]`);
+  if (!b) return { sinBoton: etiqueta };
+  await b.focus();
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(120);
+  return page.evaluate(() => {
+    const a = document.activeElement;
+    return { etiqueta: a ? (a.getAttribute('aria-label') || a.innerText || a.tagName) : null, enBody: a === document.body };
+  });
+};
+const foco_ms12 = await borrarConTeclado_ms12('Eliminar Tarea B doce');
+ok(foco_ms12 && !foco_ms12.enBody && foco_ms12.etiqueta === 'Eliminar Tarea C doce',
+  `🐛 MS F12 — con el teclado: borrar «Tarea B» deja el foco en el mismo botón de la fila que ocupa su sitio, no en el \`body\` (${JSON.stringify(foco_ms12)}; apartado 24)`);
+const focoUltima_ms12 = await borrarConTeclado_ms12('Eliminar Tarea D doce');
+ok(focoUltima_ms12 && !focoUltima_ms12.enBody && focoUltima_ms12.etiqueta === 'Eliminar Tarea C doce',
+  `MS F12 — con el teclado: …y si era la última, en la anterior (${JSON.stringify(focoUltima_ms12)})`);
+
+/* 3 · Con el teclado: plegar un desplegable con el foco dentro lo devuelve a su botón. */
+const plegarConFoco_ms12 = () => page.evaluate(async () => {
+  const abrir = [...document.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === 'Desplegar Historial');
+  if (!abrir) return { sin: 'abrir' };
+  abrir.focus();
+  abrir.click();
+  await new Promise((ok) => setTimeout(ok, 450));
+  const caja = abrir.parentElement.querySelector(':scope > .plegable');
+  const dentro = caja ? [...caja.querySelectorAll('button, input, textarea, select, [href]')].find((x) => !x.disabled) : null;
+  if (!dentro) return { sin: 'dentro', estado: caja && caja.dataset.plegable };
+  dentro.focus();
+  const antes = document.activeElement === dentro;
+  const plegar = [...document.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === 'Plegar Historial');
+  plegar.click();
+  await new Promise((ok) => setTimeout(ok, 0));
+  const a = document.activeElement;
+  const r = { antes, foco: a ? a.getAttribute('aria-label') : null, enBody: a === document.body };
+  await new Promise((ok) => setTimeout(ok, 450));
+  r.cerrado = !abrir.parentElement.querySelector(':scope > .plegable');
+  return r;
+});
+ok(await pulsar('Bienestar') && await pulsar('Salud física') && /Historial/i.test(await esperarTexto(/Historial/i)), 'MS F12 — con el teclado: Bienestar → Salud física');
+await page.waitForTimeout(400);
+const plegado_ms12 = await plegarConFoco_ms12();
+ok(plegado_ms12 && plegado_ms12.antes && !plegado_ms12.enBody && /Historial/.test(plegado_ms12.foco || '') && plegado_ms12.cerrado,
+  `🐛 MS F12 — con el teclado: plegar «Historial» con el foco DENTRO lo devuelve a su botón antes de volverse inerte (${JSON.stringify(plegado_ms12)}; apartado 24)`);
+
+/* 4 · En Reducido, con el teclado: lo mismo, aunque el desplegable se desmonte en el acto. */
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.waitForTimeout(200);
+const plegadoRed_ms12 = await plegarConFoco_ms12();
+ok(plegadoRed_ms12 && plegadoRed_ms12.antes && !plegadoRed_ms12.enBody && /Historial/.test(plegadoRed_ms12.foco || '') && plegadoRed_ms12.cerrado,
+  `🐛 MS F12 — en Reducido, con el teclado: el desplegable se desmonta en el acto y el foco vuelve igual a su botón (${JSON.stringify(plegadoRed_ms12)})`);
+
+/* 5 · En Reducido, los bucles se quedan quietos; con movimiento completo, no. */
+const bucles_ms12 = () => page.evaluate(() => {
+  const crear = (clase) => { const d = document.createElement('div'); d.className = clase; document.body.appendChild(d); const n = getComputedStyle(d).animationName; d.remove(); return n; };
+  return { esqueleto: crear('esqueleto'), giro: crear('animate-spin') };
+});
+const quietos_ms12 = await bucles_ms12();
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.waitForTimeout(150);
+const girando_ms12 = await bucles_ms12();
+ok(quietos_ms12.esqueleto === 'none' && quietos_ms12.giro === 'none' && girando_ms12.esqueleto === 'latido' && girando_ms12.giro === 'spin',
+  `🐛 MS F12 — con «Reducir movimiento» el esqueleto y el giro se quedan QUIETOS; sin él, laten y giran (${JSON.stringify({ reducido: quietos_ms12, completo: girando_ms12 })}; apartados 13 y 14)`);
+
+ok(errores.length === erroresAntes_ms12, `MS F12 — …sin un error en la consola${errores.length > erroresAntes_ms12 ? `: ${errores.slice(erroresAntes_ms12).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms12;
+almacen.productividad = prodDeAntes_ms12;
+
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

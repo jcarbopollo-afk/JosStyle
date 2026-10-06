@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BrowserMultiFormatReader } from '@zxing/library';
-import { X, Loader2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { COLORS } from '../tokens';
+import { GiroDeCarga } from './accesibilidadMotion';
 
 // Overlay de pantalla completa que abre la cámara trasera y decodifica códigos de barras
 // en directo. Al detectar uno, llama a onDetected(codigo) una sola vez y se detiene sola.
@@ -58,7 +59,7 @@ export default function BarcodeScanner({ onDetected, onClose, accent }) {
         <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
         {!ready && !error && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <Loader2 className="animate-spin" size={28} color={accent} />
+            <GiroDeCarga size={28} color={accent} texto="Abriendo la cámara…" />
           </div>
         )}
         {!error && (

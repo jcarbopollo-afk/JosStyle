@@ -294,6 +294,7 @@ import {
    siguiente que elegirá otro distinto. */
 import { DEBOUNCE_BUSQUEDA_MS, paginar, POR_PAGINA } from '../lib/rendimiento';
 import { ListaAnimada } from '../components/layoutMotion';
+import { desplazarHasta } from '../lib/accesibilidadMotion';
 
 /* ===========================================================================
    UNA PLAQUITA (F1, apartado 5)
@@ -6008,7 +6009,7 @@ export function AccesoriosEH({ estado, armario = null, accent, datosGlobales = {
             estados, con su título, su explicación y su botón. */}
         <VacioEH
           estado={estado} coleccion="accesorios.accesorios" accent={accent}
-          onAnadir={() => document.getElementById('nuevo-accesorio')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+          onAnadir={() => desplazarHasta(document.getElementById('nuevo-accesorio'), { block: 'center' })}
         />
 
         {/* Apartado 3 — los que ya están en el Armario, sin volver a crearlos. */}

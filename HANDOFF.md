@@ -2,6 +2,12 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.142.0 — Motion System F12/20: accesibilidad del movimiento):**
+> Con «Reducir movimiento» ya no queda nada girando ni latiendo, y llevar la vista a algo salta en vez de deslizarse.
+> Con el teclado, borrar una tarea o plegar un desplegable **no pierde el foco**. Con VoiceOver, **cambiar de pantalla
+> dice a dónde has llegado**, y los giros de carga dicen qué esperan. Reducir el movimiento no apaga la vibración.
+> **La siguiente es la F13** (rendimiento, GPU y presupuesto de fotogramas).
+
 > **📅 ACTUALIZACIÓN (v3.141.0 — Motion System F11/20: el orquestador):**
 > Todas las animaciones por JavaScript pasan ya por **un solo orquestador** (`animarOrquestado`), que sabe de qué
 > sistema es cada una, qué prioridad tiene y qué hacer cuando dos quieren mover lo mismo: la más importante manda y

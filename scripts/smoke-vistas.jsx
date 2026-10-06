@@ -440,6 +440,7 @@ import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
 import { AvatarPerfil, BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal, AjusteMovimiento } from '../src/views/SettingsView.jsx';
 import { Presencia, ChevronDespliegue, LatidoAlMarcar, CifraQueCambia } from '../src/components/motion.jsx';
 import { ListaAnimada, Plegable } from '../src/components/layoutMotion.jsx';
+import { AnuncioDeNavegacion, GiroDeCarga } from '../src/components/accesibilidadMotion.jsx';
 import { AsaHoja } from '../src/components/gestosMotion.jsx';
 import { Switch, PistaInterruptor, ToggleTab, BotonBorrar, PrimaryButton, GhostBtn, TextoDeBoton, MensajeDeCampo, TextInput, Textarea } from '../src/components/ui.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
@@ -3217,6 +3218,9 @@ const CASOS = [
   ['ListaAnimada (como lista, con un bloque)', ListaAnimada, () => ({ as: 'ul', children: <li data-flip-id="s-hoy"><span data-flip-id="t-1">Una tarea</span></li> })],
   ['Plegable (abierto)', Plegable, () => ({ abierto: true, className: 'mt-2', children: <p>Lo de dentro</p> })],
   ['Plegable (abierto, lo de dentro como función)', Plegable, () => ({ abierto: true, children: () => <p>Calculado al abrir</p> })],
+  /* MS F12 — el aviso de navegación (vacío al pintarse: no habla la primera vez) y un giro de carga con su texto. */
+  ['AnuncioDeNavegacion (al abrir)', AnuncioDeNavegacion, () => ({ nombre: 'Vida', clave: 'vida' })],
+  ['GiroDeCarga (con su texto)', GiroDeCarga, () => ({ texto: 'Cargando la foto…', size: 16 })],
   /* MS F5 — el asa de una hoja: con su margen por defecto, pegada (las del Armario con foto arriba) y
      sin caja todavía (el primer render, antes de que el `ref` llegue). */
   ['AsaHoja (por defecto)', AsaHoja, () => ({ cajaRef: { current: null }, onCerrar: noop })],

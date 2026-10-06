@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Target, Plus, Trash2, CheckCircle2, Circle, CalendarClock, Sparkles, Loader2, Star, ArrowLeft, Pencil, Pause, Play, Archive } from 'lucide-react';
+import { Target, Plus, Trash2, CheckCircle2, Circle, CalendarClock, Sparkles, Star, ArrowLeft, Pencil, Pause, Play, Archive } from 'lucide-react';
 import { COLORS, PLAZOS_OBJETIVO, DIAS_ENTRE_REVISIONES } from '../tokens';
 import { uid, todayISO } from '../lib/helpers';
 import { askAI, AI_SYSTEM } from '../lib/ai';
@@ -18,6 +18,8 @@ import {
   FILTROS_OBJETIVO, filtrarObjetivos, ordenarObjetivos, VACIO_OBJETIVOS,
 } from '../lib/metasObjetivos';
 import { transicion } from '../lib/motion';
+import { desplazarHasta } from '../lib/accesibilidadMotion';
+import { GiroDeCarga } from '../components/accesibilidadMotion';
 
 function diasDesde(iso) {
   if (!iso) return Infinity;
@@ -73,7 +75,7 @@ function RevisionBanner({ ultimaRevision, objetivos, accent, onRevisionHecha }) 
           ) : (
             <>
               <p className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: COLORS.text }}>
-                {cargando && <Loader2 size={14} className="animate-spin" />} Revisión
+                {cargando && <GiroDeCarga size={14} texto="Preparando la revisión…" />} Revisión
               </p>
               {error && <p className="text-xs" style={{ color: COLORS.textMuted }}>{error}</p>}
               {texto && <p className="text-sm leading-relaxed" style={{ color: COLORS.text }}>{texto}</p>}
@@ -371,7 +373,7 @@ export default function ObjectivesView({
     }
     if (foco.id) {
       const el = document.getElementById(`objetivo-${foco.id}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      desplazarHasta(el, { block: 'center' });
       setDestacadoId(foco.id);
       onFocoConsumido && onFocoConsumido();
       const t = setTimeout(() => setDestacadoId(null), 2200);

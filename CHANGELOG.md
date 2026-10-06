@@ -1,5 +1,45 @@
 # CHANGELOG.md
 
+## v3.142.0 — Motion System F12/20: accesibilidad, reduced motion, adaptive motion y calidad de experiencia
+
+La F12 del Motion System (*"Accesibilidad, reduced motion, adaptive motion y calidad de experiencia"*, líneas
+14966–15717 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). Su principio: separar el MOVIMIENTO del SIGNIFICADO.
+Vive en `src/lib/accesibilidadMotion.js` y `src/components/accesibilidadMotion.jsx` (C-63).
+
+### Una política, de una sola fuente (apartados 2-12 y 46)
+
+`intensidadDe(ctx)` pone nombre a lo que ya decide el contexto del motor —completa, reducida, ninguna—, y
+`POLITICA_MOTION` dice qué pasa en cada área con cada una y DÓNDE se cumple (la prueba abre el archivo). Solo el motor
+pregunta al navegador si reducir.
+
+### 🐛 Lo que no cumplía la política
+
+- **El esqueleto y el giro seguían en bucle con «Reducir movimiento»**: ahora se quedan quietos (`BUCLES_INFINITOS`).
+- **Siete `scrollIntoView({ behavior: 'smooth' })` ignoraban la preferencia**: ahora son `desplazarHasta`, que salta
+  en Reducido.
+- **Cinco giros de carga iban solos**, sin texto: quietos o para VoiceOver no decían nada. Ahora son `GiroDeCarga`
+  (con su texto, `role="status"`), y el botón de preguntar a la IA dice que está ocupado.
+- **Borrar una fila con el teclado mandaba el foco al `body`**: pasa a la fila que ocupa su sitio. **Plegar un
+  desplegable con el foco dentro**, igual: vuelve a su botón antes de volverse inerte (también en Reducido).
+- **Cambiar de pantalla no le decía nada a VoiceOver**: la pantalla es una región con su nombre y
+  `AnuncioDeNavegacion` lo dice al llegar.
+
+### Celebraciones, hápticos, jerarquía y la matriz (apartados 16-22, 37-39, 44 y 47)
+
+Las cinco celebraciones tienen su versión completa, reducida y estática, y se comprueba que se mueven con los pulsos
+del motor. Los hápticos llevan los nombres del enunciado sobre los patrones de siempre, ningún componente vibra por su
+cuenta y reducir el movimiento no los apaga. Los niveles altos se usan con moderación, la adaptación solo usa señales
+fiables (ser un móvil no reduce nada) y la matriz de QA dice qué sección del recorrido prueba cada fila.
+
+### Lo que no se construye (`NO_EN_F12`)
+
+Una intensidad «minimal» que nadie puede encender, adaptar por dispositivo o batería, una preferencia de movimiento
+nueva y un temblor para los errores.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.141.0 — Motion System F11/20: orquestación global, coordinación y motion engine avanzado
 
 La F11 del Motion System (*"Orquestación global, coordinación y motion engine avanzado"*, líneas 13290–14127 de

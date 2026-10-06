@@ -82,6 +82,7 @@ import { emitir } from '../lib/eventos';
 import { PROPS_CAMPO_NUMERICO } from '../lib/movilFitness';
 /* 🧹 FIT F44 (apartado 39) — números como se leen en español: 62,5 y no 62.5, de un solo sitio. */
 import { decimal } from '../lib/numerosFitness';
+import { desplazarHasta } from '../lib/accesibilidadMotion';
 
 /* ⚠️ Cada cuánto se redibuja el reloj. **Solo redibuja**: la cuenta la lleva
    `duracionSesion()` restando marcas de tiempo (E3 F25). */
@@ -327,7 +328,7 @@ function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal: conDe
       onFocus={(ev) => {
         setTocando(true);
         const el = ev.currentTarget;
-        setTimeout(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch { /* da igual */ } }, 300);
+        setTimeout(() => { desplazarHasta(el, { block: 'center' }); }, 300);
       }}
       onChange={(ev) => { setTexto(ev.target.value); confirmarLuego(ev.target.value); }}
       /* Al salir del campo se guarda YA —y solo si hay algo pendiente: salir
@@ -967,7 +968,7 @@ export default function EntrenamientoVivoView({
     setTimeout(() => {
       try {
         const fila = document.querySelector('[data-serie-activa="true"]');
-        if (fila) fila.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        desplazarHasta(fila, { block: 'center' });
       } catch { /* da igual */ }
     }, 60);
   };

@@ -432,6 +432,30 @@ para el movimiento, migrar todo a propiedades individuales— está en `NO_EN_F1
 **Regla permanente (apartado 47):** antes de crear una animación nueva, buscar una existente, reutilizarla,
 extenderla, y solo si falta, crear una abstracción — **y que pase por `animarOrquestado`**.
 
+## 8.11 · Accesibilidad: el movimiento nunca es una barrera (F12)
+
+*"Separar el MOVIMIENTO del SIGNIFICADO."* Si se quita una animación, lo que quería decir se sigue diciendo. Vive
+en `src/lib/accesibilidadMotion.js` y `src/components/accesibilidadMotion.jsx`.
+
+| Si es… | Usa | Cómo se comporta |
+|---|---|---|
+| Saber cuánto movimiento toca | `intensidadDe(ctx)` → `full` · `reduced` · `none` | Una sola fuente: el contexto del motor (Ajustes y el iPhone). 🚨 Ninguna pantalla pregunta por su cuenta a `matchMedia` |
+| Llevar la vista a un elemento | `desplazarHasta(el, { block })` | Se desliza con movimiento completo y **salta** en Reducido. 🐛 Eran siete `behavior: 'smooth'` a mano |
+| Un giro de carga sin texto al lado | `<GiroDeCarga texto="Cargando la foto…" />` | Su texto va para VoiceOver (`role="status"`); quieto en Reducido sigue diciendo algo |
+| Algo que se repite sin fin | Una línea en `BUCLES_INFINITOS` y su regla de Reducido | El esqueleto y el giro se quedan quietos en Reducido (🐛 antes seguían) |
+| Una celebración | Tokens de pulso y distancia | Completa (late), reducida (los pulsos valen 1: queda el fundido) y estática (la cifra) |
+| Una vibración | Emitir al bus | Decide el motor de audio con el 📳 de Ajustes: **reducir el movimiento no la apaga** (`HAPTICOS`) |
+
+🐛 **El foco no se pierde**: borrar una fila de una `ListaAnimada` con el teclado deja el foco en la fila que ocupa su
+sitio, y plegar un `Plegable` con el foco dentro lo devuelve a su botón antes de volverse inerte. 🐛 **La navegación
+se oye**: el contenedor de cada pantalla es una región con su nombre y `AnuncioDeNavegacion` lo dice al llegar.
+⚠️ **En Reducido el dedo sigue moviendo** una hoja: un gesto que cumple una función no se quita. Lo que no se hace
+—una intensidad «minimal», adaptar por dispositivo, otra preferencia— está en `NO_EN_F12`.
+
+**Regla permanente (apartado 50):** todo movimiento nuevo contesta `PREGUNTAS_DE_UN_MOVIMIENTO` (qué comunica, si
+hace falta, qué pasa en Reducido, con teclado, con VoiceOver, en táctil, con menos rendimiento, si se puede
+interrumpir y si se puede quitar sin romper nada). Si no tiene buenas respuestas, no se añade.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en

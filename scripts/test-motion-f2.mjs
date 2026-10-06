@@ -163,7 +163,8 @@ const primerReturn = app.indexOf("if (session === undefined) return");
 ok(posHook > 0 && primerReturn > 0 && posHook < primerReturn, '🚨 REGLA 4: el hook de la navegación va antes de cualquier `return` condicional');
 /* 🔓 MS F7 — el contenedor sigue siendo UNO, con su clase, su clave y su ref; lo único nuevo es que,
    cuando la pantalla crece desde su tarjeta, no lleva además la entrada desde la derecha. */
-ok(/<div key=\{tab\} ref=\{pantallaRef\} tabIndex=\{-1\} data-navegacion=\{tipoNav\} data-continuidad=\{desdeTarjeta \? 'desde-tarjeta' : undefined\} className=\{`outline-none \$\{desdeTarjeta \? '' : claseDeNavegacion\(tipoNav\)\}`\.trim\(\)\}>/.test(app), 'TODAS las pantallas van en el mismo contenedor, con su clase, su clave y su ref (y la F7 no le pone dos entradas a la vez)');
+/* MS F12 — y con su nombre para VoiceOver (`role="region"` y `aria-label`). */
+ok(/<div key=\{tab\} ref=\{pantallaRef\} tabIndex=\{-1\} role="region" aria-label=\{nombrePantalla\} data-navegacion=\{tipoNav\} data-continuidad=\{desdeTarjeta \? 'desde-tarjeta' : undefined\} className=\{`outline-none \$\{desdeTarjeta \? '' : claseDeNavegacion\(tipoNav\)\}`\.trim\(\)\}>/.test(app), 'TODAS las pantallas van en el mismo contenedor, con su clase, su clave y su ref (y la F7 no le pone dos entradas a la vez)');
 ok(/if \(!enModulo \|\| !puedeVolverNav\(pilaNav\)\) return contenedor\(protegido\);/.test(app), '…también Inicio y los hubs, que antes aparecían de golpe');
 ok(!/<div key=\{tab\} className="module-enter">/.test(app), '…y ya no hay un `module-enter` puesto a pelo');
 ok(/<AreaSegura clave=\{tab\} nombre=\{nombrePantalla\}[^>]*texto="Las demás pantallas y la barra de abajo siguen funcionando/.test(app), '🐛 un límite de error por pantalla (apartado 18): un fallo al pintar no deja la aplicación en blanco');

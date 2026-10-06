@@ -1320,6 +1320,26 @@ conflictos, grupos, líneas de tiempo, estado global, ciclo de vida, depuración
 `requestAnimationFrame` que reasigna su manejador parecía una fuga: cuenta por manejador. Y el tipo de capa
 `alerta` no existe —es una capa de z-index, no un tipo—, así que lo crítico se lee del z-index real.
 
+### C-63 — ✅ RESUELTA AL CONSTRUIR (Motion System F12, v3.142.0) · Una intensidad «minimal» que nadie puede encender, los hápticos contra Reducir, y el foco contra el desmontaje
+
+La F12 (*"Accesibilidad, reduced motion, adaptive motion y calidad de experiencia"*) choca con tres cosas:
+
+1. **«full, reduced, minimal, none»** (apartado 4). JosStyle tiene cinco modos en Ajustes (F1) que caen en tres
+   intensidades. Una «minimal» aparte no la pediría ninguna señal fiable (apartado 37) ni la elegiría ningún ajuste:
+   sería un modo que nadie puede encender (regla 8). Lo que haría —sin bucles, sin celebraciones que salten— ya lo
+   hace Reducido desde esta fase. Está en `NO_EN_F12`.
+2. **Reducir el movimiento contra los hápticos** (apartado 22: *"no implica eliminar todo feedback háptico"*). Ya
+   eran dos preferencias —el 📳 de Ajustes y el modo de movimiento— y el motor de audio no mira el movimiento; la
+   prueba lo comprueba para que siga así. Los nombres del enunciado (light… selection) se ponen sobre los patrones que
+   ya existían (`PATRONES_VIBRACION`): ni uno nuevo, y warning y error no vibran (se leen, apartado 16).
+3. **El foco y una animación** (apartado 24). Plegar un desplegable lo vuelve inerte (F10) y en Reducido lo desmonta
+   en el acto; borrar una fila la quita del DOM. Las dos cosas mandaban el foco al `body`. No se retrasa ni el plegado
+   ni el borrado: el foco se MUEVE antes (al botón que pliega) o después (a la fila que ocupa su sitio).
+
+🐛 **Lo que destapó**: el esqueleto y el giro seguían en bucle con «Reducir movimiento»; siete desplazamientos suaves
+ignoraban la preferencia; cinco giros de carga iban solos (sin texto para VoiceOver ni para cuando están quietos); y
+cambiar de pantalla no le decía nada a VoiceOver.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

@@ -8,6 +8,7 @@ import { extractFramesFromSrc } from '../lib/videoFrames';
 import { getSignedVideoUrl } from '../lib/supabase';
 import { BotonBorrar, BotonBorrarDefinitivo, Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, TextoDeBoton } from '../components/ui';
 import { Plegable } from '../components/layoutMotion';
+import { desplazarHasta } from '../lib/accesibilidadMotion';
 
 // Cuántos días seguidos (incluyendo hoy) hay que llevar entrenando la misma habilidad
 // para que aparezca el aviso de "descanso recomendado".
@@ -338,7 +339,7 @@ function SkillCard({ skill, data, onUpdate, videos, onAddVideo, onDeleteVideo, o
     if (foco?.skill === skill) {
       setExpanded(true);
       const el = document.getElementById(`skill-${skill}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      desplazarHasta(el, { block: 'center' });
       onFocoConsumido && onFocoConsumido();
     }
   }, [foco]);

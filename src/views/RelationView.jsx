@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Heart, Trash2, CalendarHeart, Repeat, Pencil, X, ImagePlus, Loader2 } from 'lucide-react';
+import { Heart, Trash2, CalendarHeart, Repeat, Pencil, X, ImagePlus } from 'lucide-react';
 import { COLORS, TIPOS_FECHA_RELACION } from '../tokens';
 import { uid, formatFecha, diasHasta } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, ToggleTab, EmptyHint, BotonBorrarDefinitivo, PistaInterruptor } from '../components/ui';
 import { CambioDeContenido } from '../components/motion';
 import { fotosDelAlbum, validarFotoAlbum, TIPOS_FOTO_ALBUM, MAX_NOTA_ALBUM, BORRADO_ALBUM } from '../lib/albumRelacion';
+import { GiroDeCarga } from '../components/accesibilidadMotion';
 
 // Fase 13 — solo la lista de nombres del Prompt Maestro. Tocar uno abre el formulario de fecha
 // para que Josué la escriba él mismo.
@@ -278,7 +279,7 @@ export function FotoDelAlbum({ foto, accent, onFirmar, onBorrar }) {
         {url && <img src={url} alt={foto.nota || 'Foto del álbum'} className="w-full h-full object-cover" />}
         {!url && !falla && (
           <div className="w-full h-full flex items-center justify-center">
-            <Loader2 size={18} className="animate-spin" style={{ color: COLORS.textMuted }} />
+            <GiroDeCarga size={18} style={{ color: COLORS.textMuted }} texto="Cargando la foto…" />
           </div>
         )}
         {/* ⚠️ Si la foto no se puede cargar se DICE, no se deja un cuadro gris:

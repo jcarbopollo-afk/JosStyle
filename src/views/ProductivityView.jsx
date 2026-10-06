@@ -92,6 +92,7 @@ import {
 import ObjectivesView from './ObjectivesView';
 import { escalonado, transicion } from '../lib/motion';
 import { ListaAnimada } from '../components/layoutMotion';
+import { desplazarHasta } from '../lib/accesibilidadMotion';
 
 /* ---------- Hábitos ---------- */
 // RA Fase 1 — la racha ya no se guarda: se deriva del historial con el motor de
@@ -1842,7 +1843,7 @@ export function TareasTab({ tareas, onAdd, onUpdate, onToggle, onDelete, onConce
     }
     if (foco.tareaId) {
       const el = document.getElementById(`tarea-${foco.tareaId}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      desplazarHasta(el, { block: 'center' });
       setDestacadoId(foco.tareaId);
       onFocoConsumido && onFocoConsumido();
       const t = setTimeout(() => setDestacadoId(null), 2200);

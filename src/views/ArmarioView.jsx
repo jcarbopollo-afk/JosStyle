@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, ChevronLeft, ChevronRight, Loader2, Copy, Check, Layers, CalendarDays, History, List, Sparkles, BarChart3, TrendingUp } from 'lucide-react';
+import { Shirt, Plus, Search, X, SlidersHorizontal, Star, Camera, Pencil, ChevronLeft, ChevronRight, Copy, Check, Layers, CalendarDays, History, List, Sparkles, BarChart3, TrendingUp } from 'lucide-react';
 import { COLORS, CAPAS } from '../tokens';
 import { AsaHoja } from '../components/gestosMotion';
 import { hexToRgba, todayISO, formatFecha } from '../lib/helpers';
@@ -33,6 +33,7 @@ import {
 } from '../components/ui';
 import { CambioDeContenido, ChevronDespliegue, LatidoAlMarcar } from '../components/motion';
 import { Plegable } from '../components/layoutMotion';
+import { GiroDeCarga } from '../components/accesibilidadMotion';
 
 /* ---------- Miniatura ----------
    Apartado 6: "nunca dejar un enorme espacio vacío por no tener imagen". Sin foto se
@@ -63,7 +64,7 @@ function MiniaturaPrenda({ prenda, alto = 104 }) {
       <div className="w-full flex items-center justify-center overflow-hidden" style={{ height: alto, background: COLORS.surface2 }}>
         {url
           ? <img src={url} alt={prenda.nombre} className="w-full h-full" style={{ objectFit: 'cover' }} />
-          : <Loader2 size={16} className="animate-spin" style={{ color: COLORS.textMuted }} />}
+          : <GiroDeCarga size={16} style={{ color: COLORS.textMuted }} texto="Cargando la foto…" />}
       </div>
     );
   }

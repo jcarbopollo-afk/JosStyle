@@ -1098,8 +1098,9 @@ export function UniversalSearchModal({ accent, onClose, buildContext, indice, on
             className="rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-60"
             style={{ width: 44, height: 42, background: accent }}
             aria-label="Preguntar a la IA"
+            aria-busy={loading || undefined}
           >
-            {loading ? <Loader2 size={16} className="animate-spin" style={{ color: COLORS.textOnAccent }} /> : <Sparkles size={16} style={{ color: COLORS.textOnAccent }} />}
+            {loading ? <Loader2 size={16} className="animate-spin" aria-hidden="true" style={{ color: COLORS.textOnAccent }} /> : <Sparkles size={16} style={{ color: COLORS.textOnAccent }} />}
           </button>
         </div>
 

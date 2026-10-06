@@ -144,6 +144,7 @@ import { useContenedorDesdeOrigen } from './components/continuidad';
 import { useNavegacionEnLaPagina } from './components/navegacionMotion';
 import { useCapasMotion } from './components/capasMotion';
 import { useFuentesListas } from './components/layoutMotion';
+import { AnuncioDeNavegacion } from './components/accesibilidadMotion';
 import { AreaSegura } from './components/areaSegura';
 import SettingsView from './views/SettingsView';
 import { construirIndice } from './lib/indiceBusqueda';
@@ -3542,10 +3543,16 @@ export default function App() {
         {contenido}
       </AreaSegura>
     );
+    /* MS F12 (apartados 9 y 26) — la pantalla tiene nombre (`role="region"` y `aria-label`: es lo que lee
+       VoiceOver cuando la navegación le pone el foco, F2) y un aviso educado dice a dónde se ha llegado.
+       El aviso va FUERA del contenedor con `key`: así sobrevive al cambio de pantalla. */
     const contenedor = (hijos) => (
-      <div key={tab} ref={pantallaRef} tabIndex={-1} data-navegacion={tipoNav} data-continuidad={desdeTarjeta ? 'desde-tarjeta' : undefined} className={`outline-none ${desdeTarjeta ? '' : claseDeNavegacion(tipoNav)}`.trim()}>
-        {hijos}
-      </div>
+      <>
+        <AnuncioDeNavegacion nombre={nombrePantalla} clave={claveDeScroll(pilaNav)} />
+        <div key={tab} ref={pantallaRef} tabIndex={-1} role="region" aria-label={nombrePantalla} data-navegacion={tipoNav} data-continuidad={desdeTarjeta ? 'desde-tarjeta' : undefined} className={`outline-none ${desdeTarjeta ? '' : claseDeNavegacion(tipoNav)}`.trim()}>
+          {hijos}
+        </div>
+      </>
     );
     if (!enModulo || !puedeVolverNav(pilaNav)) return contenedor(protegido);
     /* 🚨 NAVO F1 — AQUÍ ESTABA EL FALLO QUE REPORTÓ JOSUÉ, Y ERA UNA LÍNEA:

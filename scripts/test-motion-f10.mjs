@@ -156,7 +156,7 @@ ok(/document\.fonts\.load\(f\)\.catch\(\(\) => null\)/.test(COMP_L) && /setTimeo
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 5. El motor: `ListaAnimada` y `Plegable` ──');
 
-ok(/getSnapshotBeforeUpdate\(\)\s*\{\s*return medirLista\(this\.raiz\.current\);/.test(COMP_L) && /componentDidUpdate\(_props, _estado, antes\)\s*\{\s*animarLista\(this\.raiz\.current, antes\);/.test(COMP_L), '🚨 `ListaAnimada` mide JUSTO ANTES de cada cambio y justo después: nunca compara con una medida vieja');
+ok(/getSnapshotBeforeUpdate\(\)\s*\{\s*return \{ medidas: medirLista\(this\.raiz\.current\), foco: focoEnLista\(this\.raiz\.current\) \};/.test(COMP_L) && /componentDidUpdate\(_props, _estado, antes\)\s*\{\s*animarLista\(this\.raiz\.current, antes && antes\.medidas\);/.test(COMP_L), '🚨 `ListaAnimada` mide JUSTO ANTES de cada cambio y justo después: nunca compara con una medida vieja (y desde la F12 apunta también dónde está el foco)');
 ok(/cancelarDe\(el, 'layout'\)/.test(COMP_L) && COMP_L.indexOf("cancelarDe(el, 'layout')") < COMP_L.indexOf('const ahora = medirLista(raiz)'), '…y un cambio a mitad de otro cancela lo que estaba en marcha —solo lo de la lista (MS F11)— DESPUÉS de haber medido dónde se veía, y ANTES de medir dónde queda (apartado 44)');
 ok(/if \(!raiz \|\| !antes \|\| ctx\.apagado\) return null;/.test(COMP_L), 'con «Sin movimiento» no se anima nada');
 ok(/cambioDeDiseno\(antes\.ancho, ahora\.ancho\)/.test(COMP_L), 'con otro ancho, tampoco');

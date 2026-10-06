@@ -4,6 +4,7 @@ import {
   PRESUPUESTO_LAYOUT, planDeLista, cambioDeDiseno, escalaDe, FUENTES_DE_LA_APP, TOPE_FUENTES_MS,
 } from '../lib/layoutMotion';
 import { animarOrquestado, cancelarDe, planificarLinea } from '../lib/orquestadorMotion';
+import { filaParaElFoco, ENFOCABLES } from '../lib/accesibilidadMotion';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MOTION SYSTEM · F10 — LAS PIEZAS DE REACT DEL DISEÑO QUE CAMBIA
@@ -135,6 +136,38 @@ export function animarLista(raiz, antes) {
   return plan;
 }
 
+/* MS F12, apartado 24 — DÓNDE ESTÁ EL FOCO antes de un cambio: en qué fila, entre qué hermanas y en qué
+   control de la fila. Si esa fila se va (borrarla con el teclado), el foco pasa a la que ocupa su sitio. */
+const enfocables = (raiz) => [...raiz.querySelectorAll(ENFOCABLES)].filter((x) => !x.closest('[inert]'));
+function focoEnLista(raiz) {
+  if (typeof document === 'undefined' || !raiz || typeof raiz.contains !== 'function') return null;
+  const activo = document.activeElement;
+  if (!activo || activo === document.body || !raiz.contains(activo)) return null;
+  const filas = filasDe(raiz);
+  const fila = filas.filter((f) => f.contains(activo)).pop();
+  if (!fila) return null;
+  const padre = fila.parentElement ? fila.parentElement.closest('[data-flip-id]') : null;
+  const hermanas = filas.filter((f) => (f.parentElement ? f.parentElement.closest('[data-flip-id]') : null) === padre);
+  return {
+    id: fila.dataset.flipId,
+    hermanas: hermanas.map((f) => f.dataset.flipId),
+    orden: filas.map((f) => f.dataset.flipId),
+    indice: Math.max(0, enfocables(fila).indexOf(activo)),
+  };
+}
+function devolverFoco(raiz, foco) {
+  if (!foco || typeof document === 'undefined' || !raiz) return;
+  const activo = document.activeElement;
+  if (activo && activo !== document.body && activo.isConnected) return;
+  const ahora = filasDe(raiz).map((f) => f.dataset.flipId);
+  const destino = filaParaElFoco(foco.hermanas, ahora, foco.id) || filaParaElFoco(foco.orden, ahora, foco.id);
+  const fila = destino ? filasDe(raiz).find((f) => f.dataset.flipId === destino) : null;
+  if (!fila) return;
+  const opciones = enfocables(fila);
+  const el = opciones[Math.min(foco.indice, opciones.length - 1)];
+  try { if (el) el.focus({ preventScroll: true }); } catch { /* el foco nunca tumba la lista */ }
+}
+
 /**
  * Una lista que él edita (apartados 10-14). Cada fila —o su envoltorio— lleva
  * `data-flip-id` con su id; un bloque que agrupa filas también puede llevarlo,
@@ -153,11 +186,12 @@ export class ListaAnimada extends React.Component {
   }
 
   getSnapshotBeforeUpdate() {
-    return medirLista(this.raiz.current);
+    return { medidas: medirLista(this.raiz.current), foco: focoEnLista(this.raiz.current) };
   }
 
   componentDidUpdate(_props, _estado, antes) {
-    animarLista(this.raiz.current, antes);
+    animarLista(this.raiz.current, antes && antes.medidas);
+    devolverFoco(this.raiz.current, antes && antes.foco);
   }
 
   render() {
@@ -180,11 +214,29 @@ export class ListaAnimada extends React.Component {
  * Lo de dentro puede ir como función —`<Plegable abierto={x}>{() => …}</Plegable>`—
  * para que, cerrado, no se calcule nada: es lo que hacía `{x && …}`.
  */
+/* MS F12, apartado 24 — el botón que abre y cierra un desplegable: el de su padre con `aria-expanded`, o lo
+   enfocable justo antes. */
+function botonDelPlegable(caja) {
+  const padre = caja && caja.parentElement;
+  if (!padre) return null;
+  const conEstado = [...padre.children].find((x) => x !== caja && x.matches && x.matches('[aria-expanded]'));
+  if (conEstado) return conEstado;
+  const antes = caja.previousElementSibling;
+  if (!antes) return null;
+  return antes.matches && antes.matches(ENFOCABLES) ? antes : antes.querySelector(ENFOCABLES);
+}
+
 export function Plegable({ abierto, className = '', style, children, ...resto }) {
   const [estado, setEstado] = useState(abierto ? 'abierto' : 'cerrado');
   const caja = useRef(null);
 
   useEfectoDeDiseno(() => {
+    /* Plegarlo con el foco dentro lo perdería (lo de dentro se vuelve inerte, o se desmonta en
+       Reducido): vuelve al botón que lo pliega, ANTES de nada. */
+    if (!abierto && caja.current && typeof document !== 'undefined' && caja.current.contains(document.activeElement)) {
+      const boton = botonDelPlegable(caja.current);
+      try { if (boton) boton.focus({ preventScroll: true }); } catch { /* el foco nunca tumba el desplegable */ }
+    }
     if (abierto) {
       setEstado((e) => (e === 'cerrado' ? 'montado' : e === 'cerrando' ? 'abriendo' : e));
     } else {

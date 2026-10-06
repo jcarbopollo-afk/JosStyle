@@ -120,7 +120,8 @@ console.log('\n🔒 EH · Fase 43/65 — Seguridad, privacidad y control de dato
     '⚠️ …y va por el ID DEL USUARIO, no por el objeto `session` (que Supabase renueva solo)');
   ok(/setEstiloHombre\(DEFAULT_ESTILO_HOMBRE\);[\s\S]{0,200}setRelacion\(DEFAULT_RELACION\)/.test(APP),
     '⚠️ y al cerrar sesión lo más privado sale de memoria');
-  ok(/if \(!loaded\) return <LoadingScreen \/>;/.test(APP),
+  /* MS F10 — la misma puerta, que además espera a las fuentes (con tope): sigue siendo la pantalla de carga. */
+  ok(/if \(!loaded(?: \|\| !fuentesListas)?\) return <LoadingScreen \/>;/.test(APP),
     'así que el siguiente usuario ve la pantalla de carga, no los datos del anterior');
 
   const auditoria = auditarPrivacidad({ fuentes: FUENTES, schemaSql: SCHEMA, app: APP });
