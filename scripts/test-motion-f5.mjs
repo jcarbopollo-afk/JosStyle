@@ -159,7 +159,9 @@ ok(/translateY\(/.test(COMP_LIMPIO) && /translateX\(/.test(COMP_LIMPIO) && !/sty
 ok(/touchAction:\s*'none'/.test(COMP_LIMPIO) && /aria-hidden="true"/.test(COMP_LIMPIO) && /sm:hidden/.test(COMP_LIMPIO),
   'el asa es su propia zona de gesto (`touch-action: none`), fuera de VoiceOver —la hoja tiene su botón de cerrar— y solo en el móvil');
 ok(/closest\('button, input, textarea, select, a'\)/.test(COMP_LIMPIO), 'un gesto que empieza sobre un botón o un campo no cuenta');
-ok(/a\.id === 'deslizar-ejercicio'/.test(COMP_LIMPIO) && /a\.id === 'asa-hoja'/.test(COMP_LIMPIO) && /DOMMatrix/.test(COMP_LIMPIO),
+/* 🔓 MS F11 — antes se cancelaban por su nombre (`deslizar-ejercicio`, `asa-hoja`); ahora el dedo TOMA EL
+   CONTROL de la propiedad (`tomarControl`): se para cualquier animación de `transform`, leída antes. */
+ok(/tomarControl\(el, \['transform'\], 'gestos'\)/.test(COMP_LIMPIO) && /tomarControl\(caja, \['transform'\], 'gestos'\)/.test(COMP_LIMPIO) && /DOMMatrix/.test(COMP_LIMPIO),
   '🐛 un gesto nuevo para la vuelta en marcha y sigue DESDE DONDE ESTÁ (apartado 19)');
 ok(/onPointerCancel/.test(COMP_LIMPIO) && (COMP_LIMPIO.match(/cancelado/g) || []).length >= 4,
   'un gesto cancelado por el sistema vuelve: nunca cierra ni cambia (apartado 17, «cancel state»)');

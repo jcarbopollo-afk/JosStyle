@@ -36,6 +36,7 @@
    Web Animations API del navegador (`element.animate`), que se interrumpe desde
    el estado visual de AHORA (apartado 12) y existe en Safari desde la 13.1.
    =========================================================================== */
+import { animarOrquestado } from './orquestadorMotion';
 
 const lista = (x) => (Array.isArray(x) ? x : []);
 const redondear = (n, d = 0) => { const f = 10 ** d; return Math.round(n * f) / f; };
@@ -644,7 +645,10 @@ export function animar(el, presetId, { ctx = contextoDelDocumento(), retraso = 0
     ANIMACIONES_VIVAS.delete(el);
     return null;
   }
-  const a = el.animate(frames, { ...opciones, delay: retraso });
+  /* MS F11 — por el orquestador: queda apuntada con su sistema y su prioridad. Lo de «desde donde se ve»
+     ya lo ha resuelto esta función (leyó el estado antes de cancelar la previa). */
+  const a = animarOrquestado(el, frames, { ...opciones, delay: retraso }, { sistema: 'motor' });
+  if (!a) { ANIMACIONES_VIVAS.delete(el); return null; }
   a.interrumpida = interrumpida;
   ANIMACIONES_VIVAS.set(el, a);
   const limpiar = () => { if (ANIMACIONES_VIVAS.get(el) === a) ANIMACIONES_VIVAS.delete(el); };
@@ -715,8 +719,8 @@ export function flip(elementos, cambiar, { ctx = contextoDelDocumento(), duracio
     const d = deltaFlip(antes.get(el), rect(el));
     if (!d || typeof el.animate !== 'function') return;
     const desde = escalar ? `translate(${d.dx}px, ${d.dy}px) scale(${d.sx}, ${d.sy})` : `translate(${d.dx}px, ${d.dy}px)`;
-    const a = el.animate([{ transform: desde, transformOrigin: 'top left' }, { transform: 'none', transformOrigin: 'top left' }], { duration: ms, easing: CURVAS_MOTION[curva] });
-    animaciones.push(a);
+    const a = animarOrquestado(el, [{ transform: desde, transformOrigin: 'top left' }, { transform: 'none', transformOrigin: 'top left' }], { duration: ms, easing: CURVAS_MOTION[curva] }, { sistema: 'layout' });
+    if (a) animaciones.push(a);
   });
   return animaciones;
 }
@@ -730,16 +734,16 @@ export function compartirElemento(rectOrigen, destino, { ctx = contextoDelDocume
   if (!destino || !rectOrigen) return null;
   if (!ctx.espacial || ctx.apagado) {
     if (!ctx.apagado && typeof destino.animate === 'function') {
-      return destino.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duracionMs('fast', ctx), easing: CURVAS_MOTION.standard });
+      return animarOrquestado(destino, [{ opacity: 0 }, { opacity: 1 }], { duration: duracionMs('fast', ctx), easing: CURVAS_MOTION.standard }, { sistema: 'continuidad' });
     }
     return null;
   }
   const d = deltaFlip(rectOrigen, rect(destino));
   if (!d || typeof destino.animate !== 'function') return null;
-  return destino.animate([
+  return animarOrquestado(destino, [
     { transform: `translate(${d.dx}px, ${d.dy}px) scale(${d.sx}, ${d.sy})`, transformOrigin: 'top left' },
     { transform: 'none', transformOrigin: 'top left' },
-  ], { duration: duracionMs(duracion, ctx), easing: CURVAS_MOTION[curva] });
+  ], { duration: duracionMs(duracion, ctx), easing: CURVAS_MOTION[curva] }, { sistema: 'continuidad' });
 }
 
 /* ───────────────────────────────────────────────────────────────────────────

@@ -13513,6 +13513,140 @@ ok(errores.length === erroresAntes_ms10, `MS F10 — …sin un error en la conso
 almacen.ajustes = ajustesDeAntes_ms10;
 almacen.productividad = prodDeAntes_ms10;
 
+/* ── MS F11 · El orquestador: el dedo manda, tocar deprisa no deja nada a medias, y la consola de depuración ──
+   Lo que solo se ve en la página de verdad: que agarrar una hoja MIENTRAS SUBE la pare donde se ve y la caja
+   siga al dedo (antes la entrada mandaba hasta acabar y la hoja saltaba al soltarla), que abrir y cerrar el ＋
+   cinco veces, cambiar de pestaña cuatro y borrar tres tareas seguidas no dejen ni una capa, ni una copia, ni
+   una animación viva, y que la consola de depuración (`window.__motion`, el contorno con el sistema) solo
+   exista con la marca puesta. ⚠️ Sufijo `_ms11`. */
+console.log('\n── MS F11 · Orquestación global, coordinación y motion engine avanzado ──');
+const ajustesDeAntes_ms11 = almacen.ajustes;
+const prodDeAntes_ms11 = almacen.productividad;
+almacen.ajustes = { ...(ajustesDeAntes_ms11 || {}), apariencia: { ...((ajustesDeAntes_ms11 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+const hoy_ms11 = new Date().toLocaleDateString('sv-SE');
+almacen.productividad = {
+  tareas: ['A', 'B', 'C', 'D'].map((l) => ({ id: `t11${l}`, texto: `Tarea ${l} once`, fecha: hoy_ms11, hecha: false })),
+  habitos: [], metas: [], pomodoros: {}, pomodoroSesiones: [], apuntes: [], rutinas: [], rutinaEjecuciones: [], rutinaEnCurso: null,
+};
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms11 = errores.length;
+
+/* 0 · Sin la marca, la depuración no existe. */
+const sinMarca_ms11 = await page.evaluate(() => ({ api: typeof window.__motion, contorno: !!document.querySelector('[data-motion-sistema], style[data-motion-depuracion]') }));
+ok(sinMarca_ms11.api === 'undefined' && !sinMarca_ms11.contorno, `🚨 MS F11 — sin la marca, la consola de depuración NO existe: ni \`window.__motion\` ni contornos (${JSON.stringify(sinMarca_ms11)}; apartados 35-37)`);
+await page.evaluate(() => { try { localStorage.setItem('josstyle:motion-debug', '1'); } catch { /* sin almacenamiento */ } });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const conMarca_ms11 = await page.evaluate(() => ({ api: typeof window.__motion, estado: window.__motion ? window.__motion.estado().estado : null, sistemas: window.__motion ? window.__motion.sistemas.length : 0 }));
+ok(conMarca_ms11.api === 'object' && conMarca_ms11.sistemas >= 10, `MS F11 — con la marca (y en desarrollo), \`window.__motion\` enseña el estado y los sistemas (${JSON.stringify(conMarca_ms11)})`);
+
+/* 1 · El dedo agarra la hoja MIENTRAS SUBE: la entrada se para donde se ve y la caja sigue al dedo. */
+const agarre_ms11 = await page.evaluate(async () => {
+  window.__motion.vaciar();
+  const b = [...document.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === 'Añadir' || x.innerText.trim() === 'Añadir');
+  if (!b) return null;
+  b.click();
+  for (let i = 0; i < 3; i += 1) await new Promise((ok) => requestAnimationFrame(() => ok()));
+  const asa = [...document.querySelectorAll('[data-asa-hoja]')].find((a) => a.getBoundingClientRect().height > 0);
+  if (!asa) return { sinAsa: true };
+  const caja = asa.parentElement;
+  const entrando = caja.getAnimations().filter((a) => a.playState === 'running').map((a) => a.id);
+  const marca = caja.getAttribute('data-motion-sistema');
+  const r = asa.getBoundingClientRect();
+  const x0 = r.left + r.width / 2;
+  const y0 = r.top + r.height / 2;
+  asa.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x0, clientY: y0, pointerType: 'touch', pointerId: 21 }));
+  const trasAgarrar = caja.getAnimations().filter((a) => a.playState === 'running').map((a) => a.id);
+  asa.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: x0, clientY: y0 + 50, pointerType: 'touch', pointerId: 21 }));
+  const y = new DOMMatrix(getComputedStyle(caja).transform === 'none' ? undefined : getComputedStyle(caja).transform).m42;
+  asa.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x0, clientY: y0 + 50, pointerType: 'touch', pointerId: 21 }));
+  const diario = window.__motion.diario();
+  return { entrando, marca, trasAgarrar, y: Math.round(y), interrumpe: diario.filter((e) => e.tipo === 'MOTION_INTERRUPT').map((e) => `${e.sistema}>${e.motivo}`) };
+});
+ok(agarre_ms11 && agarre_ms11.entrando.includes('capa-entra') && /^profundidad·navegacion·capas$/.test(agarre_ms11.marca || ''),
+  `MS F11 — la hoja del ＋ está SUBIENDO, y la consola dice de quién es ese movimiento (${JSON.stringify(agarre_ms11 && { entrando: agarre_ms11.entrando, marca: agarre_ms11.marca })}; apartado 37)`);
+ok(agarre_ms11 && agarre_ms11.trasAgarrar.length === 0 && agarre_ms11.interrumpe.includes('profundidad>el_dedo') && Math.abs(agarre_ms11.y - 50) <= 2,
+  `🚨 MS F11 — al agarrarla mientras sube, la entrada se PARA DONDE SE VE y la caja sigue al dedo (${agarre_ms11 && agarre_ms11.y} px de 50): manda el dedo, sea cual sea la prioridad de lo que se movía (${JSON.stringify(agarre_ms11 && { trasAgarrar: agarre_ms11.trasAgarrar, interrumpe: agarre_ms11.interrumpe })}; apartado 14)`);
+await page.waitForTimeout(700);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(700);
+
+/* 2 · Abrir y cerrar el ＋ cinco veces, deprisa. */
+const rafaga_ms11 = await page.evaluate(async () => {
+  const boton = () => [...document.querySelectorAll('button')].find((x) => !x.closest('[inert], [data-capa-saliendo]') && (x.getAttribute('aria-label') === 'Añadir' || x.innerText.trim() === 'Añadir'));
+  for (let i = 0; i < 5; i += 1) {
+    const b = boton();
+    if (!b) return { sinBoton: i };
+    b.click();
+    await new Promise((ok) => setTimeout(ok, 40));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await new Promise((ok) => setTimeout(ok, 40));
+  }
+  await new Promise((ok) => setTimeout(ok, 900));
+  const e = window.__motion.estado();
+  return { dialogos: document.querySelectorAll('[role="dialog"]').length, copias: document.querySelectorAll('[data-capa-saliendo]').length, enMarcha: e.enMarcha, capas: e.grupos.capas, marcas: document.querySelectorAll('[data-motion-sistema]').length };
+});
+ok(rafaga_ms11 && rafaga_ms11.dialogos === 0 && rafaga_ms11.copias === 0 && rafaga_ms11.enMarcha === 0 && rafaga_ms11.capas !== 'running' && rafaga_ms11.marcas === 0,
+  `🚨 MS F11 — abrir y cerrar el ＋ cinco veces seguidas no deja NADA: ni una capa, ni una copia, ni una animación viva, ni un contorno (${JSON.stringify(rafaga_ms11)}; apartado 15)`);
+ok(await pulsar('Añadir') && /Apunte/.test(await esperarTexto(/Apunte/)), 'MS F11 — …y la aplicación sigue respondiendo: el ＋ se abre a la primera');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(600);
+
+/* 3 · Cambiar de pestaña cuatro veces, deprisa. */
+const pestanas_ms11 = await page.evaluate(async () => {
+  const nav = (t) => [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === t);
+  for (const t of ['Vida', 'Gestión', 'Bienestar', 'Inicio']) {
+    const b = nav(t);
+    if (!b) return { sinPestana: t };
+    b.click();
+    await new Promise((ok) => setTimeout(ok, 15));
+  }
+  await new Promise((ok) => setTimeout(ok, 900));
+  const e = window.__motion.estado();
+  return { pantallas: document.querySelectorAll('.pantalla-segura > [data-navegacion]').length, enMarcha: e.enMarcha, inicio: /Hoy|Buenos|Buenas/.test(document.body.innerText) };
+});
+ok(pestanas_ms11 && pestanas_ms11.pantallas === 1 && pestanas_ms11.enMarcha === 0 && pestanas_ms11.inicio,
+  `🚨 MS F11 — cuatro pestañas seguidas acaban en la última, con UNA pantalla y nada moviéndose (${JSON.stringify(pestanas_ms11)}; apartados 14 y 15)`);
+
+/* 4 · Borrar tres tareas seguidas: una lista que cambia a mitad de otro cambio. */
+ok(await pulsar('Gestión') && await pulsar('Organización') && await pulsar('Tareas') && /Tarea D once/.test(await esperarTexto(/Tarea D once/)), 'MS F11 — Tareas, con cuatro tareas de hoy');
+await page.waitForTimeout(500);
+const borrado_ms11 = await page.evaluate(async () => {
+  window.__motion.vaciar();
+  const borrar = (t) => { const b = [...document.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === `Eliminar ${t}` && !x.closest('[inert]')); if (b) b.click(); return !!b; };
+  const hechos = [];
+  for (const t of ['Tarea A once', 'Tarea B once', 'Tarea C once']) {
+    hechos.push(borrar(t));
+    await new Promise((ok) => setTimeout(ok, 50));
+  }
+  const marcaDuranteLista = [...document.querySelectorAll('[data-motion-sistema]')].map((x) => x.getAttribute('data-motion-sistema'));
+  await new Promise((ok) => setTimeout(ok, 900));
+  const diario = window.__motion.diario();
+  return {
+    hechos, marcaDuranteLista,
+    copias: document.querySelectorAll('[data-lista-saliendo]').length,
+    quedan: ['A', 'B', 'C', 'D'].filter((l) => document.body.innerText.includes(`Tarea ${l} once`)),
+    enMarcha: window.__motion.estado().enMarcha,
+    interrumpidas: diario.filter((e) => e.tipo === 'MOTION_INTERRUPT' && e.sistema === 'layout').length,
+    completadas: diario.filter((e) => e.tipo === 'MOTION_COMPLETE' && e.sistema === 'layout').length,
+  };
+});
+ok(borrado_ms11 && borrado_ms11.hechos.every(Boolean) && borrado_ms11.quedan.join() === 'D' && borrado_ms11.copias === 0 && borrado_ms11.enMarcha === 0,
+  `🚨 MS F11 — tres tareas borradas seguidas: queda la cuarta, sin copias ni animaciones colgadas (${JSON.stringify(borrado_ms11 && { quedan: borrado_ms11.quedan, copias: borrado_ms11.copias, enMarcha: borrado_ms11.enMarcha })}; apartados 15 y 17)`);
+ok(borrado_ms11 && borrado_ms11.interrumpidas > 0 && borrado_ms11.completadas > 0 && borrado_ms11.marcaDuranteLista.some((m) => /^layout·layout/.test(m)),
+  `MS F11 — …cada cambio a mitad de otro INTERRUMPE lo de la lista (y sale de donde se ve), y la consola lo apunta (${JSON.stringify(borrado_ms11 && { interrumpidas: borrado_ms11.interrumpidas, completadas: borrado_ms11.completadas, marcas: borrado_ms11.marcaDuranteLista.slice(0, 3) })}; apartados 14 y 36)`);
+
+await page.evaluate(() => { try { localStorage.removeItem('josstyle:motion-debug'); } catch { /* sin almacenamiento */ } });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+ok(await page.evaluate(() => typeof window.__motion === 'undefined'), 'MS F11 — …y al quitar la marca, la consola se va');
+ok(errores.length === erroresAntes_ms11, `MS F11 — …sin un error en la consola${errores.length > erroresAntes_ms11 ? `: ${errores.slice(erroresAntes_ms11).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms11;
+almacen.productividad = prodDeAntes_ms11;
+
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

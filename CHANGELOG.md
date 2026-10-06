@@ -1,5 +1,49 @@
 # CHANGELOG.md
 
+## v3.141.0 — Motion System F11/20: orquestación global, coordinación y motion engine avanzado
+
+La F11 del Motion System (*"Orquestación global, coordinación y motion engine avanzado"*, líneas 13290–14127 de
+`especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). Su frase: *"No quiero una colección de animaciones. Quiero un Motion
+Engine real y orquestado."* Vive en `src/lib/orquestadorMotion.js` (C-62).
+
+### 🔓 Toda animación pasa por el orquestador (apartados 1-9)
+
+`animarOrquestado` apunta cada animación con su **sistema** (`SISTEMAS_MOTION`: once, cada uno con su fase, sus
+archivos y lo que toca), su **prioridad** (`PRIORIDADES_MOTION`: crítica > navegación > gesto > estado > layout >
+micro > decorativa) y su **grupo**, y al empezar algo nuevo decide con `resolverConflicto`: lo que no toca la misma
+propiedad convive; con la misma, gana el que más pesa y, a igual peso, el último, saliendo de donde se ve. El motor
+de la F1, la continuidad, las capas, los gestos, las listas y `useFlip` lo usan: **nadie llama a `.animate(` por su
+cuenta**, y una auditoría lo vigila. Cada entrada del MOTION_MAP tiene su dueño (`duenoDeEntrada`).
+
+### 🔓 El dedo toma el control (apartado 14)
+
+`tomarControl` para lo que movía una propiedad —sea de quien sea, aunque no pasara por el orquestador— y devuelve
+lo que se veía, para que el dedo siga desde ahí. El asa de una hoja y deslizar para cambiar de ejercicio lo usan:
+antes cancelaban dos animaciones por su nombre.
+
+### 🔓 Grupos, líneas de tiempo, ciclo de vida y estado (apartados 4-6, 12, 13 y 18)
+
+`planificarLinea` expresa secuencial, paralelo, escalonado, retrasado, dependiente y solapado sin código por
+pantalla, y `crearLinea` lo maneja (pausar, reanudar, cancelar, completar, invertir, ir a un punto). La lista de la
+F10 es una: lo que sale, y a mitad de su salida lo demás. Los grupos (`capas`, `navegacion`) se inician, cancelan,
+completan y consultan; el estado global es un registro, no un estado de React; y el ciclo beforeEnter… exited lee los
+estados que ya tienen `Presencia`, `Plegable`, las capas, la hoja y la navegación.
+
+### Política, presupuesto, errores y depuración (apartados 27-30, 35-38)
+
+«Sin movimiento» no deja empezar nada; con 48 animaciones a la vez, lo micro y lo decorativo no empiezan; una que el
+navegador no puede hacer devuelve `null` y el elemento queda en su estado final. En desarrollo, y con
+`localStorage["josstyle:motion-debug"] = "1"`: `window.__motion`, un diario de eventos y un contorno con el sistema.
+
+### Lo que no se construye (`NO_EN_F11`)
+
+Un framework o una librería, pasar las animaciones CSS por el orquestador, un estado global de React, migrar todo a
+`translate`/`scale` individuales y variantes por dispositivo que no cambian la interacción.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.140.0 — Motion System F10/20: layout motion, listas y contenido dinámico
 
 La F10 del Motion System (*"Layout motion, scroll, listas y contenido dinámico"*, líneas 12128–12784 de

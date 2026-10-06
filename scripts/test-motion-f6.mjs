@@ -154,7 +154,13 @@ const VIG_L = sinComentarios(VIG);
 ok(/vigia\.observe\(document\.body, \{ childList: true \}\)/.test(VIG_L), 'mira SOLO los hijos directos del `body`: cada capa es un portal (regla 3), y nada de dentro le cuesta nada');
 ok(/cs\.position === 'fixed' && cs\.top === '0px' && cs\.left === '0px' && cs\.right === '0px' && cs\.bottom === '0px'/.test(VIG_L) && /n\.id === 'root'/.test(VIG_L),
   '…y solo las que cubren la pantalla: ni la raíz de la aplicación ni un aviso pequeño');
-ok(/n\.dataset\.capa = tipo;\s*if \(traeSuEntrada\(n\)\) return;/.test(VIG_L), '🐛 el tipo se apunta SIEMPRE al entrar: fuera del documento ya no se puede calcular, y es lo que dice cómo sale');
+{
+  /* MS F11 — entre el tipo y el `return` va también la prioridad (lo mismo: al salir no hay estilo). */
+  const iTipo = VIG_L.indexOf('n.dataset.capa = tipo;');
+  const iRet = VIG_L.indexOf('if (traeSuEntrada(n)) return;');
+  ok(iTipo > 0 && iRet > iTipo && !/return\b/.test(VIG_L.slice(iTipo, iRet)) && /n\.dataset\.capaPrioridad = prioridad;/.test(VIG_L.slice(iTipo, iRet)),
+    '🐛 el tipo (y su prioridad) se apuntan SIEMPRE al entrar: fuera del documento ya no se pueden calcular, y es lo que dice cómo sale');
+}
 for (const [re, que] of [
   [/copia\.removeAttribute\('role'\)/, 'sin `role` (el recorrido y VoiceOver no la confunden con la ventana)'],
   [/copia\.setAttribute\('aria-hidden', 'true'\)/, 'fuera de VoiceOver'],
@@ -174,7 +180,7 @@ const primerReturn = APP.slice(inicioApp).search(/\n  (if \([^\n]*\) )?return\b/
 ok(usoVigia > inicioApp && usoVigia < inicioApp + primerReturn, '🚨 se monta UNA vez, en App.jsx, antes del primer `return` (regla 4)');
 ok((Object.values(VISTAS).join('\n').match(/(?<!function )useCapasMotion\(\)/g) || []).length === 1, '…y solo ahí');
 const ASA = sinComentarios(leer('src/components/gestosMotion.jsx'));
-ok(/a\.id === 'asa-hoja' \|\| a\.id === 'capa-entra'/.test(ASA), 'si el dedo agarra una hoja mientras sube, manda el dedo (F5 + F6)');
+ok(/tomarControl\(caja, \['transform'\], 'gestos'\)/.test(ASA), 'si el dedo agarra una hoja mientras sube, manda el dedo (F5 + F6; desde la F11, `tomarControl` para cualquier animación de la caja)');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 8. La hoja, el menú y el CSS ──');

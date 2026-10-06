@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { contextoDelDocumento } from '../lib/motion';
 import {
-  tipoDeCapa, animacionDeCapa, salidaPosible, ENTRADAS_CSS_DE_CAPA,
+  tipoDeCapa, animacionDeCapa, salidaPosible, ENTRADAS_CSS_DE_CAPA, valorZ,
 } from '../lib/profundidad';
+import { animarOrquestado } from '../lib/orquestadorMotion';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MOTION SYSTEM · F6 — LAS CAPAS SE MUEVEN SOLAS (apartados 8-11 y 40)
@@ -41,10 +42,13 @@ const traeSuEntrada = (n) => {
   return tiene(n) || [...(n.children || [])].some(tiene);
 };
 
-const lanzar = (el, anim, id) => {
-  if (!el || !anim || typeof el.animate !== 'function') return null;
-  try { return el.animate(anim.keyframes, { ...anim.opciones, id }); } catch { return null; }
+/* MS F11 — por el orquestador: el velo y la caja son UNA operación (el grupo `capas`, apartado 23), y lo que
+   va en la capa de alerta (lo que hay que leer encima de todo) pasa por delante de cualquier otra cosa. */
+const lanzar = (el, anim, id, prioridad = 'navegacion') => {
+  if (!el || !anim) return null;
+  return animarOrquestado(el, anim.keyframes, anim.opciones, { sistema: 'profundidad', prioridad, grupo: 'capas', id });
 };
+const prioridadDeCapa = (zIndex) => (Number(zIndex) >= valorZ('alerta') ? 'critica' : 'navegacion');
 
 function entrar(n) {
   const cs = getComputedStyle(n);
@@ -52,13 +56,16 @@ function entrar(n) {
   /* El tipo se apunta SIEMPRE: al quitarla ya no se puede calcular (fuera del documento no hay estilo),
      y es lo que dice cómo sale. Las que traen su entrada en CSS la conservan, pero salen igual. */
   n.dataset.capa = tipo;
+  /* La prioridad también se apunta: al salir ya no hay estilo calculado del que leer el z-index. */
+  const prioridad = prioridadDeCapa(cs.zIndex);
+  n.dataset.capaPrioridad = prioridad;
   if (traeSuEntrada(n)) return;
   const caja = n.firstElementChild;
   const anim = animacionDeCapa(tipo, 'entrar', { ctx: contextoDelDocumento(), alto: caja ? caja.getBoundingClientRect().height : 0, fondo: cs.backgroundColor });
   if (!anim) return;
-  lanzar(n, anim.velo, 'capa-velo');
-  lanzar(caja, anim.caja, 'capa-entra');
-  lanzar(n, anim.raiz, 'capa-entra');
+  lanzar(n, anim.velo, 'capa-velo', prioridad);
+  lanzar(caja, anim.caja, 'capa-entra', prioridad);
+  lanzar(n, anim.raiz, 'capa-entra', prioridad);
 }
 
 /* La copia de lo que se acaba de quitar, colocada donde estaba. */
@@ -98,10 +105,11 @@ function salir(n, siguiente, anterior, padre) {
   const fondoReal = fondo || getComputedStyle(copia).backgroundColor;
   const anim = animacionDeCapa(tipo, 'salir', { ctx, alto: copia.firstElementChild ? copia.firstElementChild.getBoundingClientRect().height : 0, fondo: fondoReal });
   if (!anim) { copia.remove(); return; }
-  const animaciones = [lanzar(copia, anim.velo, 'capa-velo')];
+  const prioridad = n.dataset.capaPrioridad || 'navegacion';
+  const animaciones = [lanzar(copia, anim.velo, 'capa-velo', prioridad)];
   if (modo === 'completa') {
-    animaciones.push(lanzar(copia.firstElementChild, anim.caja, 'capa-sale'));
-    animaciones.push(lanzar(copia, anim.raiz, 'capa-sale'));
+    animaciones.push(lanzar(copia.firstElementChild, anim.caja, 'capa-sale', prioridad));
+    animaciones.push(lanzar(copia, anim.raiz, 'capa-sale', prioridad));
   }
   const vivas = animaciones.filter(Boolean);
   if (!vivas.length) { copia.remove(); return; }

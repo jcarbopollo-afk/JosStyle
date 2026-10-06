@@ -6,6 +6,7 @@ import {
   vueltaConMuelle, salidaConInercia,
 } from '../lib/gestosMotion';
 import { siguienteEstadoGesto, veloDuranteArrastre, punteroQueCuenta, gestoAbandonado } from '../lib/fisicaMotion';
+import { animarOrquestado, tomarControl } from '../lib/orquestadorMotion';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MOTION SYSTEM · F5 — LAS PIEZAS DE REACT DE LOS GESTOS
@@ -65,16 +66,18 @@ export function AsaHoja({ cajaRef, onCerrar, className = '-mt-3 mb-1' }) {
     try { captor.setPointerCapture(ev.pointerId); } catch { /* sin captura, el gesto sigue mientras el dedo esté encima */ }
     /* Una vuelta que estaba en marcha se para donde está: se sigue desde ahí (apartado 19). */
     let desde = 0;
+    /* MS F11 — EL DEDO TOMA EL CONTROL de la caja y de su velo (`tomarControl`): lo que los movía —la vuelta de
+       antes, la entrada de la capa (F6), una entrada en CSS o lo que venga— se para DONDE SE VE, y el dedo
+       sigue desde ahí. Antes se cancelaban por su nombre, y una animación con otro nombre se habría quedado. */
     try {
-      const m = new DOMMatrix(getComputedStyle(caja).transform === 'none' ? undefined : getComputedStyle(caja).transform);
-      desde = m.m42 || 0;
-      /* La entrada de la capa (F6) también: si el dedo agarra la hoja mientras sube, manda el dedo. */
-      (caja.getAnimations ? caja.getAnimations() : []).forEach((a) => { if (a.id === 'asa-hoja' || a.id === 'capa-entra') a.cancel(); });
+      const visto = tomarControl(caja, ['transform'], 'gestos');
+      const t = visto.transform && visto.transform !== 'none' ? visto.transform : undefined;
+      desde = new DOMMatrix(t).m42 || 0;
     } catch { desde = 0; }
     const velo = caja.parentElement;
     let fondo = null;
     try {
-      (velo && velo.getAnimations ? velo.getAnimations() : []).forEach((a) => { if (a.id === 'asa-velo' || a.id === 'capa-velo') a.cancel(); });
+      if (velo) tomarControl(velo, ['background-color'], 'gestos');
       fondo = velo && velo.dataset.veloOriginal ? velo.dataset.veloOriginal : (velo ? getComputedStyle(velo).backgroundColor : null);
       if (velo && fondo) velo.dataset.veloOriginal = fondo;
     } catch { fondo = null; }
@@ -136,14 +139,13 @@ export function AsaHoja({ cajaRef, onCerrar, className = '-mt-3 mb-1' }) {
       pasar(caja, 'soltarCerrar');
       const hasta = g.alto + 24;
       const { duracionMs } = salidaConInercia({ desde: g.actual, hasta, velocidad: vy, ctx });
-      if (duracionMs > 0 && typeof caja.animate === 'function') {
-        mover(caja, hasta);
-        const a = caja.animate([{ transform: `translateY(${g.actual}px)` }, { transform: `translateY(${hasta}px)` }],
-          { duration: duracionMs, easing: CURVAS_MOTION.exit, id: 'asa-hoja' });
-        a.finished.then(() => cerrarDeVerdad(caja, g), () => {});
-      } else {
-        cerrarDeVerdad(caja, g);
-      }
+      mover(caja, hasta);
+      const a = duracionMs > 0
+        ? animarOrquestado(caja, [{ transform: `translateY(${g.actual}px)` }, { transform: `translateY(${hasta}px)` }],
+          { duration: duracionMs, easing: CURVAS_MOTION.exit }, { sistema: 'gestos', id: 'asa-hoja' })
+        : null;
+      if (a) a.finished.then(() => cerrarDeVerdad(caja, g), () => {});
+      else cerrarDeVerdad(caja, g);
       return;
     }
     pasar(caja, cancelado ? 'cancelar' : 'soltarVolver');
@@ -152,11 +154,12 @@ export function AsaHoja({ cajaRef, onCerrar, className = '-mt-3 mb-1' }) {
     /* El velo vuelve con la hoja, en el mismo tiempo (apartados 16 y 33: nada de un velo a medias). */
     const veloAhora = g.velo ? g.velo.style.backgroundColor : null;
     if (g.velo && g.fondo) g.velo.style.backgroundColor = g.fondo;
-    if (duracionMs > 0 && typeof caja.animate === 'function' && g.actual) {
-      const a = caja.animate(valores.map((v) => ({ transform: `translateY(${v}px)` })), { duration: duracionMs, easing: 'linear', id: 'asa-hoja' });
-      if (g.velo && veloAhora && typeof g.velo.animate === 'function') {
-        try { g.velo.animate([{ backgroundColor: veloAhora }, { backgroundColor: g.fondo }], { duration: duracionMs, easing: CURVAS_MOTION.standard, id: 'asa-velo' }); } catch { /* sin animación, el velo ya está en su color */ }
-      }
+    const a = duracionMs > 0 && g.actual
+      ? animarOrquestado(caja, valores.map((v) => ({ transform: `translateY(${v}px)` })), { duration: duracionMs, easing: 'linear' }, { sistema: 'gestos', id: 'asa-hoja' })
+      : null;
+    if (a) {
+      /* Sin animación, el velo ya está en su color. */
+      if (g.velo && veloAhora) animarOrquestado(g.velo, [{ backgroundColor: veloAhora }, { backgroundColor: g.fondo }], { duration: duracionMs, easing: CURVAS_MOTION.standard }, { sistema: 'gestos', id: 'asa-velo' });
       a.finished.then(() => { if (caja.dataset.arrastre === 'volviendo') pasar(caja, 'fin'); }, () => {});
     } else {
       pasar(caja, 'fin');
@@ -199,9 +202,9 @@ export function useDeslizarParaCambiar(zonaRef, { hayAnterior = true, haySiguien
        sigue desde ahí. Sin cancelarla, la animación mandaría sobre el dedo hasta acabar. */
     let base = 0;
     try {
-      const t = getComputedStyle(el).transform;
+      /* MS F11 — el dedo toma el control (y lo que se movía se para donde se ve). */
+      const t = tomarControl(el, ['transform'], 'gestos').transform;
       base = t && t !== 'none' ? (new DOMMatrix(t).m41 || 0) : 0;
-      (el.getAnimations ? el.getAnimations() : []).forEach((a) => { if (a.id === 'deslizar-ejercicio') a.cancel(); });
     } catch { base = 0; }
     mover(el, base);
     gesto.current = { x0: ev.clientX, y0: ev.clientY, base, eje: null, muestras: [muestra(ev)], actual: base, ancho: el.getBoundingClientRect().width || 360, id: ev.pointerId };
@@ -248,8 +251,8 @@ export function useDeslizarParaCambiar(zonaRef, { hayAnterior = true, haySiguien
     }
     const { valores, duracionMs } = vueltaConMuelle({ desde: g.actual, velocidad: vx, ctx: contextoDelDocumento() });
     mover(el, 0);
-    if (duracionMs > 0 && typeof el.animate === 'function' && g.actual) {
-      el.animate(valores.map((v) => ({ transform: `translateX(${v}px)` })), { duration: duracionMs, easing: 'linear', id: 'deslizar-ejercicio' });
+    if (duracionMs > 0 && g.actual) {
+      animarOrquestado(el, valores.map((v) => ({ transform: `translateX(${v}px)` })), { duration: duracionMs, easing: 'linear' }, { sistema: 'gestos', id: 'deslizar-ejercicio' });
     }
   };
   return {

@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.140.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.141.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -39,7 +39,7 @@ plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegac
 —las microinteracciones—, la **F4 (v3.134.0)** —los datos que cambian—, la **F5 (v3.135.0)** —los gestos—, la
 **F6 (v3.136.0)** —la profundidad y las capas—, la **F7 (v3.137.0)** —la continuidad espacial—, la **F8
 (v3.138.0)** —la física y la interacción directa—, la **F9 (v3.139.0)** —los estados y el feedback— y la
-**F10 (v3.140.0)** —el diseño que cambia: listas y desplegables—.
+**F10 (v3.140.0)** —el diseño que cambia: listas y desplegables— y la **F11 (v3.141.0)** —el orquestador—.
 Lo que vale para cualquier cambio a partir de hoy:
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
@@ -158,6 +158,13 @@ Lo que vale para cualquier cambio a partir de hoy:
   (`esperarTexto`) y `pulsar` no pulsa nada inerte. 🐛 **Y un origen de la F7 dice qué elemento lo dejó**: con
   `StrictMode` cada efecto se deshace y se rehace sobre el mismo nodo, y los veinte nombres de la biblioteca «viajaban»
   a su propio sitio.
+- 🚨 **NINGUNA ANIMACIÓN LLAMA A `.animate(` POR SU CUENTA: PASA POR `animarOrquestado`** (F11, `orquestadorMotion.js`,
+  una hoja del árbol de imports), con su `sistema` (`SISTEMAS_MOTION`) y, si hace falta, `prioridad`, `grupo` e `id`.
+  Él decide qué pasa si dos quieren la misma propiedad (`resolverConflicto`: más peso gana; a igual peso, la última,
+  desde donde se ve). **Lo que sigue al dedo empieza con `tomarControl(el, ['transform'], 'gestos')`**: sobre el dedo
+  no manda ninguna prioridad. Una secuencia es `planificarLinea`, nunca un retraso suelto. `auditarOrquestacion` caza
+  un `.animate(` por libre y un temporizador, fotograma, escuchador u observador sin limpiar en las piezas de
+  movimiento. ⚠️ **Depurar**: `localStorage["josstyle:motion-debug"] = "1"` en desarrollo → `window.__motion`.
 - 🐛 **UNA ANIMACIÓN DE VUELTA SE CANCELA CUANDO EL DEDO VUELVE A AGARRAR** (F5, apartado 19): si no, manda sobre
   el `transform` hasta acabar y el dedo no mueve nada. **Y un muelle que mueve píxeles reposa a un cuarto de
   píxel** (`muestrearSpring(…, { reposo })`): con el reposo genérico una vuelta de 30 px «duraba» 900 ms.
@@ -2141,8 +2148,8 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F11 DEL MOTION SYSTEM** (*"Orquestación global, coordinación y motion engine avanzado"*,
-   líneas 13290–14127 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F12… hasta la F20, en
+0. 🎬 **LA SIGUIENTE ES LA F12 DEL MOTION SYSTEM** (*"Accesibilidad, reduced motion, adaptive motion y calidad de
+   experiencia"*, líneas 14966–15717 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F13… hasta la F20, en
    el orden de
    `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
    `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**

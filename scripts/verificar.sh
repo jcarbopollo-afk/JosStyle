@@ -1007,6 +1007,11 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f10.mjs >/tmp/j
 else
   fallo "Falla el diseño que cambia del Motion System (F10)"; grep '✗' /tmp/jc_motion_f10.log
 fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f11.mjs >/tmp/jc_motion_f11.log 2>&1; then
+  ok "El Motion System, F11: el orquestador, quién manda, el dedo, los grupos y que todo pase por él — $(grep -c '✓' /tmp/jc_motion_f11.log) comprobaciones"
+else
+  fallo "Falla el orquestador del Motion System (F11)"; grep '✗' /tmp/jc_motion_f11.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

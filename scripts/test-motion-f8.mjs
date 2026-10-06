@@ -128,8 +128,8 @@ ok(veloDuranteArrastre('rgba(15, 15, 18, 0.5)', 1) === `rgba(15, 15, 18, ${Math.
 ok(veloDuranteArrastre('rgb(0, 0, 0)', 0.5) === 'rgba(0, 0, 0, 0.7)', 'un color sin alfa se lee como opaco');
 ok(veloDuranteArrastre('transparent', 0.5) === null && veloDuranteArrastre(null, 0.5) === null, 'un fondo que no sabe leer no se toca (devuelve `null`)');
 ok(/aclarar\(g, g\.actual \/ g\.alto\)/.test(GESTOS_LIMPIO), 'el asa aclara el velo mientras el dedo arrastra, con lo que ha bajado la hoja');
-ok(/id: 'asa-velo'/.test(GESTOS_LIMPIO) && /duration: duracionMs, easing: CURVAS_MOTION\.standard, id: 'asa-velo'/.test(GESTOS_LIMPIO), 'si la hoja vuelve, el velo vuelve con ella y en su mismo tiempo');
-ok(/a\.id === 'asa-velo' \|\| a\.id === 'capa-velo'/.test(GESTOS_LIMPIO), 'agarrar la hoja para la vuelta del velo y su entrada (F6): manda el dedo (apartado 35)');
+ok(/\{ duration: duracionMs, easing: CURVAS_MOTION\.standard \}, \{ sistema: 'gestos', id: 'asa-velo' \}/.test(GESTOS_LIMPIO), 'si la hoja vuelve, el velo vuelve con ella y en su mismo tiempo');
+ok(/tomarControl\(velo, \['background-color'\], 'gestos'\)/.test(GESTOS_LIMPIO), 'agarrar la hoja para la vuelta del velo y su entrada (F6): manda el dedo (apartado 35; desde la F11, `tomarControl`)');
 ok(/veloOriginal/.test(GESTOS_LIMPIO), 'el color de partida se apunta UNA vez: un segundo gesto no toma por bueno el velo aclarado del primero');
 ok(/g\.velo\.style\.backgroundColor = g\.fondo;\s*pasar\(caja, 'recuperar'\)/.test(GESTOS_LIMPIO), '🚨 si la hoja vuelve de emergencia, su velo también: nada de un velo a medias (apartado 33)');
 

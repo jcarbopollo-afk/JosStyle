@@ -3,6 +3,7 @@ import { contextoDelDocumento } from '../lib/motion';
 import {
   registrarOrigen, tomarOrigen, planDeContenedor, planDeCompartido, planDeLlegada,
 } from '../lib/continuidad';
+import { animarOrquestado } from '../lib/orquestadorMotion';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MOTION SYSTEM · F7 — LAS PIEZAS DE REACT DE LA CONTINUIDAD
@@ -13,9 +14,10 @@ import {
    primer fotograma ya salga del origen y no haya un destello del final—.
    =========================================================================== */
 
+/* MS F11 — por el orquestador: la continuidad es del grupo `navegacion` y tiene su prioridad. */
 const lanzar = (el, plan, id) => {
-  if (!el || !plan || typeof el.animate !== 'function') return null;
-  try { return el.animate(plan.keyframes, { ...plan.opciones, id }); } catch { return null; }
+  if (!el || !plan) return null;
+  return animarOrquestado(el, plan.keyframes, plan.opciones, { sistema: 'continuidad', grupo: 'navegacion', id });
 };
 
 /** El radio de las esquinas de un elemento, en px (la primera esquina basta). */

@@ -396,6 +396,42 @@ pone la suite roja** (`auditarLayout`): es `Plegable`. Lo que la F10 no hace —
 las pestañas de dentro (C-61), una cabecera que se compacta, datos en tiempo real, el esqueleto que se funde
 con el contenido (F16)— está en `NO_EN_F10` con su motivo.
 
+## 8.10 · El orquestador: quién manda cuando dos coinciden (F11)
+
+*"No quiero una colección de animaciones. Quiero un Motion Engine real y orquestado."* Vive en
+`src/lib/orquestadorMotion.js`, que es una **hoja del árbol de imports** (no importa nada: el motor de la F1 pasa
+por él sin ciclo). No es un framework: es un **registro** —qué anima a qué elemento, de qué sistema, con qué
+prioridad, en qué grupo— y las reglas que se aplican al empezar algo nuevo.
+
+```
+Motion Tokens (motion.js · index.css)
+      ↓
+Motion Engine (motion.js: animar, flip, compartirElemento)
+      ↓
+Motion Orchestrator (orquestadorMotion.js: animarOrquestado, tomarControl, grupos, líneas de tiempo)
+      ↓
+ Navegación · Continuidad · Profundidad · Gestos · Estados · Datos · Layout · Micro · Decorativa
+```
+
+| Si es… | Usa | Cómo se comporta |
+|---|---|---|
+| Cualquier animación por JavaScript | `animarOrquestado(el, fotogramas, opciones, { sistema, prioridad?, grupo?, id?, desdeLoQueSeVe? })` | 🚨 **Nadie llama a `.animate(` por su cuenta** (`auditarOrquestacion`). Sin prioridad, la de su sistema (`SISTEMAS_MOTION`) |
+| Dos animaciones sobre la MISMA propiedad del mismo elemento | Nada: lo decide `resolverConflicto` | Más peso gana (`PRIORIDADES_MOTION`: crítica > navegación > gesto > estado > layout > micro > decorativa); con el mismo, la última, **saliendo de donde se ve**. La que pierde **cede** (no empieza) o se **interrumpe** |
+| Combinar movimientos de dos sistemas en un elemento | `translate` / `scale` / `rotate` individuales, o un envoltorio | Se componen con `transform`: ni uno pisa al otro |
+| El dedo agarra algo que se mueve | `tomarControl(el, ['transform'], 'gestos')` | Se para lo que lo movía —sea cual sea su prioridad, y aunque no pasara por el orquestador— leído antes, y el dedo sigue desde ahí |
+| Varias animaciones que son UNA operación | `grupo` (`capas`, `navegacion`…), y `iniciarGrupo` / `cancelarGrupo` / `completarGrupo` / `terminaGrupo` | Iniciar un grupo que sigue en marcha lo interrumpe primero |
+| Una secuencia (A → B, en paralelo, escalonada, a mitad de otra) | `planificarLinea` (el plan) o `crearLinea` (el plan y sus animaciones, con pausar, reanudar, invertir, ir a un punto) | Sin código por pantalla. La lista de la F10 es una: lo que sale, y a mitad de su salida lo demás |
+
+🚨 **«Sin movimiento» es una política del orquestador**: no empieza nada. Con **48 animaciones a la vez**, lo micro
+y lo decorativo no empiezan (`PRESUPUESTO_ORQUESTADOR`). Una animación que el navegador no puede hacer devuelve
+`null` y el elemento queda en su estado final. ⚠️ **Depurar**: solo en desarrollo y con
+`localStorage["josstyle:motion-debug"] = "1"` — `window.__motion` (estado, diario de `MOTION_START`…`MOTION_ERROR`,
+grupos) y un contorno con el sistema en lo que se anima. Lo que la F11 no hace —un framework, un estado de React
+para el movimiento, migrar todo a propiedades individuales— está en `NO_EN_F11`.
+
+**Regla permanente (apartado 47):** antes de crear una animación nueva, buscar una existente, reutilizarla,
+extenderla, y solo si falta, crear una abstracción — **y que pase por `animarOrquestado`**.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en
@@ -403,8 +439,9 @@ con el contenido (F16)— está en `NO_EN_F10` con su motivo.
   4,4 MB (C-42). `package.json` lo vigila.
 - **Lo que puede ser CSS, sigue siendo CSS**: entradas, pulsar, barras, cascadas. Así respeta los modos y
   el movimiento reducido sin una línea de JavaScript.
-- **El motor (`src/lib/motion.js`) no importa nada** y no guarda nada: lo puede leer cualquier capa sin
-  un ciclo, y se prueba en Node con elementos de mentira y en Chromium con los de verdad.
+- **El motor (`src/lib/motion.js`) solo importa el orquestador**, que no importa nada (F11), y no guarda
+  nada: lo puede leer cualquier capa sin un ciclo, y se prueba en Node con elementos de mentira y en
+  Chromium con los de verdad. **Toda animación por JavaScript pasa por `animarOrquestado`.**
 - **Las piezas de React (`src/components/motion.jsx`)** solo hacen lo que necesita React: `useMotion`,
   `Presencia`, `useFlip`, `CambioDeContenido`, `ChevronDespliegue`, `LatidoAlMarcar`, `CifraQueCambia` y
   `useAnimacionDeGrafica`. La navegación tiene su par: la decisión en

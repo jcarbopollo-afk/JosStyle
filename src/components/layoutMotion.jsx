@@ -3,6 +3,7 @@ import { contextoDelDocumento, duracionMs, distancia, escala, CURVAS_MOTION } fr
 import {
   PRESUPUESTO_LAYOUT, planDeLista, cambioDeDiseno, escalaDe, FUENTES_DE_LA_APP, TOPE_FUENTES_MS,
 } from '../lib/layoutMotion';
+import { animarOrquestado, cancelarDe, planificarLinea } from '../lib/orquestadorMotion';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MOTION SYSTEM · F10 — LAS PIEZAS DE REACT DEL DISEÑO QUE CAMBIA
@@ -23,10 +24,6 @@ import {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const useEfectoDeDiseno = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
-
-/* Las animaciones en marcha de cada fila: un cambio a mitad de otro las cancela
-   después de haber medido dónde se VE la fila. */
-const EN_MARCHA = new WeakMap();
 
 function filasDe(raiz) {
   if (!raiz || typeof raiz.querySelectorAll !== 'function') return [];
@@ -66,12 +63,6 @@ export function medirLista(raiz) {
   return { medidas, nodos, ancho: raiz.offsetWidth, arriba: caja.top };
 }
 
-function apuntar(el, a) {
-  if (!a) return;
-  EN_MARCHA.set(el, a);
-  a.onfinish = () => { if (EN_MARCHA.get(el) === a) EN_MARCHA.delete(el); };
-}
-
 function sacarCopia(raiz, nodo, m, ctx) {
   if (!nodo || nodo.isConnected || typeof nodo.cloneNode !== 'function') return;
   const copia = nodo.cloneNode(true);
@@ -89,12 +80,12 @@ function sacarCopia(raiz, nodo, m, ctx) {
   });
   raiz.appendChild(copia);
   const quitar = () => { if (copia.parentNode) copia.parentNode.removeChild(copia); };
-  if (typeof copia.animate !== 'function') { quitar(); return; }
   const fotogramas = ctx.espacial
     ? [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: `scale(${escala('micro', ctx)})` }]
     : [{ opacity: 1 }, { opacity: 0 }];
   const ms = duracionMs('fast', ctx);
-  const a = copia.animate(fotogramas, { duration: ms, easing: CURVAS_MOTION.exit, fill: 'forwards' });
+  const a = animarOrquestado(copia, fotogramas, { duration: ms, easing: CURVAS_MOTION.exit, fill: 'forwards' }, { sistema: 'layout', id: 'lista-sale' });
+  if (!a) { quitar(); return; }
   a.onfinish = quitar;
   a.oncancel = quitar;
   /* Por si la pestaña se esconde a mitad: una copia nunca se queda. */
@@ -106,38 +97,40 @@ export function animarLista(raiz, antes) {
   const ctx = contextoDelDocumento();
   if (!raiz || !antes || ctx.apagado) return null;
   /* Primero se cancela lo que estaba en marcha (ya se midió dónde se veía),
-     para medir dónde queda cada fila de verdad. */
-  filasDe(raiz).forEach((el) => {
-    const a = EN_MARCHA.get(el);
-    if (a) { a.cancel(); EN_MARCHA.delete(el); }
-  });
+     para medir dónde queda cada fila de verdad. Es del orquestador (MS F11):
+     solo lo suyo —lo de la lista—, nunca lo que otro sistema mueve en la fila. */
+  filasDe(raiz).forEach((el) => cancelarDe(el, 'layout'));
   const ahora = medirLista(raiz);
   if (!ahora || cambioDeDiseno(antes.ancho, ahora.ancho)) return null;
   const alto = typeof window !== 'undefined' ? window.innerHeight : Infinity;
   const plan = planDeLista(antes.medidas, ahora.medidas, { arriba: ahora.arriba, alto });
   if (plan.saltar) {
-    if (typeof raiz.animate === 'function') {
-      raiz.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: duracionMs('fast', ctx), easing: CURVAS_MOTION.standard });
-    }
+    animarOrquestado(raiz, [{ opacity: 0.4 }, { opacity: 1 }], { duration: duracionMs('fast', ctx), easing: CURVAS_MOTION.standard }, { sistema: 'layout', id: 'lista-entera' });
     return plan;
   }
   plan.salidas.forEach((id) => sacarCopia(raiz, antes.nodos[id], antes.medidas[id], ctx));
-  const espera = plan.salidas.length ? Math.round(duracionMs('fast', ctx) / 2) : 0;
+  /* MS F11 — la secuencia es una línea de tiempo, no un número suelto: lo que sale empieza, y a MITAD de su
+     salida lo demás se recoloca y lo nuevo entra (*"item → exit → remaining items move"*). */
+  const linea = planificarLinea([
+    { id: 'sale', duracion: plan.salidas.length ? duracionMs('fast', ctx) : 0 },
+    { id: 'recoloca', duracion: duracionMs('normal', ctx), despuesDe: 'sale', solape: 0.5 },
+  ]);
+  const espera = linea.pasos[1].inicio;
   if (ctx.espacial) {
     plan.movidos.forEach(({ id, dx, dy }) => {
       const el = ahora.nodos[id];
-      if (!el || typeof el.animate !== 'function') return;
-      apuntar(el, el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }],
-        { duration: duracionMs('normal', ctx), easing: CURVAS_MOTION.standard, delay: espera, fill: 'backwards' }));
+      if (!el) return;
+      animarOrquestado(el, [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }],
+        { duration: duracionMs('normal', ctx), easing: CURVAS_MOTION.standard, delay: espera, fill: 'backwards' }, { sistema: 'layout', id: 'lista-recoloca' });
     });
   }
   plan.entradas.forEach((id) => {
     const el = ahora.nodos[id];
-    if (!el || typeof el.animate !== 'function') return;
+    if (!el) return;
     const fot = ctx.espacial
       ? [{ opacity: 0, transform: `translateY(${distancia('small', ctx)}px)` }, { opacity: 1, transform: 'none' }]
       : [{ opacity: 0 }, { opacity: 1 }];
-    apuntar(el, el.animate(fot, { duration: duracionMs('normal', ctx), easing: CURVAS_MOTION.entrance, delay: espera, fill: 'backwards' }));
+    animarOrquestado(el, fot, { duration: duracionMs('normal', ctx), easing: CURVAS_MOTION.entrance, delay: espera, fill: 'backwards' }, { sistema: 'layout', id: 'lista-entra' });
   });
   return plan;
 }

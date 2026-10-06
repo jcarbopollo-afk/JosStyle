@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.141.0 — Motion System F11/20: el orquestador):**
+> Todas las animaciones por JavaScript pasan ya por **un solo orquestador** (`animarOrquestado`), que sabe de qué
+> sistema es cada una, qué prioridad tiene y qué hacer cuando dos quieren mover lo mismo: la más importante manda y
+> lo interrumpido sigue desde donde se ve. **El dedo toma el control** de una hoja aunque esté subiendo. Abrir y
+> cerrar, cambiar de pestaña o borrar deprisa no deja nada a medias (el recorrido lo hace). Hay una consola de
+> depuración solo para desarrollo. **La siguiente es la F12** (accesibilidad, reducido y movimiento adaptativo).
+
 > **📅 ACTUALIZACIÓN (v3.140.0 — Motion System F10/20: el diseño que cambia):**
 > Las listas ya no saltan: al borrar una tarea se va **desvaneciéndose** y las de debajo **suben** desde donde
 > estaban; al reordenar los pasos de una rutina, las filas **viajan** a su sitio (`ListaAnimada`). Los veinte

@@ -5,6 +5,7 @@ import {
   deltaFlip, duracionMs, CURVAS_MOTION,
 } from '../lib/motion';
 import { giroDeChevron, siguienteLatido } from '../lib/microinteraccionesMotion';
+import { animarOrquestado } from '../lib/orquestadorMotion';
 import { animacionDeGrafica, animacionDeTooltip, planDeCifra, interpolarCifra, curvaDeCuenta, reservarCuenta, liberarCuenta } from '../lib/datosMotion';
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -248,9 +249,9 @@ export function useFlip(contenedorRef, clave) {
     if (antes.current.size > 0 && ctx.espacial) {
       hijos.forEach((el) => {
         const d = deltaFlip(antes.current.get(el.dataset.flipId), ahora.get(el.dataset.flipId));
-        if (!d || typeof el.animate !== 'function') return;
-        el.animate([{ transform: `translate(${d.dx}px, ${d.dy}px)` }, { transform: 'none' }],
-          { duration: duracionMs('medium', ctx), easing: CURVAS_MOTION.standard });
+        if (!d) return;
+        animarOrquestado(el, [{ transform: `translate(${d.dx}px, ${d.dy}px)` }, { transform: 'none' }],
+          { duration: duracionMs('medium', ctx), easing: CURVAS_MOTION.standard }, { sistema: 'layout' });
       });
     }
     antes.current = ahora;

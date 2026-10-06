@@ -31,7 +31,7 @@ se ordena es **el trabajo**.
 | **F8** ✅ **v3.138.0** | Física, springs, gestos e interacción directa | 10688–11379 | 692 |
 | **F9** ✅ **v3.139.0** | Microinteracciones, estados y feedback de interfaz | 11380–12127 | 748 |
 | **F10** ✅ **v3.140.0** | Layout motion, scroll, listas y contenido dinámico | 12128–12784 | 657 |
-| **F11** | Orquestación global, coordinación y motion engine avanzado | 13290–14127 | 838 |
+| **F11** ✅ **v3.141.0** | Orquestación global, coordinación y motion engine avanzado | 13290–14127 | 838 |
 | **F12** | Accesibilidad, reduced motion, adaptive motion y calidad de experiencia | 14966–15717 | 752 |
 | **F13** | Rendimiento extremo, GPU, frame budget y optimización | 15718–16452 | 735 |
 | **F14** | Easings, curvas, ritmo, aceleración y lenguaje visual del movimiento | 16453–17154 | 702 |
@@ -83,3 +83,5 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | La prueba de la F9 | `scripts/test-motion-f9.mjs`, y la sección «MS F9» del recorrido de Chromium |
 | El diseño que cambia: el plan de una lista (qué entra, sale y se recoloca), su presupuesto, otro ancho, las fuentes y lo que no puede volver | `src/lib/layoutMotion.js` (F10), con `ListaAnimada`, `Plegable` y `useFuentesListas` en `src/components/layoutMotion.jsx` |
 | La prueba de la F10 | `scripts/test-motion-f10.mjs`, y la sección «MS F10» del recorrido de Chromium |
+| El orquestador: quién manda en cada movimiento, las prioridades, los conflictos, el dedo que toma el control, los grupos, la línea de tiempo, el estado global, la depuración y la auditoría de que todo pasa por él | `src/lib/orquestadorMotion.js` (F11), una hoja del árbol de imports que usan el motor (F1), la continuidad (F7), las capas (F6), los gestos (F5/F8), las listas (F10) y `useFlip` |
+| La prueba de la F11 | `scripts/test-motion-f11.mjs`, y la sección «MS F11» del recorrido de Chromium |

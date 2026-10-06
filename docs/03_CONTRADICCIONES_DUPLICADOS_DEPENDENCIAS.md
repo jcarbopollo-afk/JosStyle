@@ -1296,6 +1296,30 @@ choca con cuatro cosas:
 actualizaciones optimistas (no hay), el esqueleto que se funde con el contenido (F16), contadores de notificaciones
 y listas virtualizadas (no hay ninguna).
 
+### C-62 — ✅ RESUELTA AL CONSTRUIR (Motion System F11, v3.141.0) · Un «motion engine orquestado» sin un framework, la prioridad contra el dedo, y lo que se queda en CSS
+
+La F11 (*"Orquestación global, coordinación y motion engine avanzado"*) pide un orquestador con prioridades,
+conflictos, grupos, líneas de tiempo, estado global, ciclo de vida, depuración… y en el apartado 40 prohíbe
+*"un framework propio gigantesco"*. Y choca con tres cosas:
+
+1. **Coordinar todo sin un framework.** Lectura que respeta las dos: el orquestador es una **hoja** de 600 líneas
+   —un registro y unas reglas sobre la Web Animations API— y **todas** las animaciones por JavaScript pasan por él
+   (`animarOrquestado`): el motor de la F1, la continuidad (F7), las capas (F6), los gestos (F5/F8), las listas
+   (F10) y `useFlip`. Ni una librería, ni un estado global de React (apartado 13), ni una segunda forma de animar.
+2. **La prioridad del enunciado pone la navegación por encima del gesto** (apartado 7), y el apartado 14 pide que
+   lo que interrumpe el usuario salga de donde está. Con la prioridad a secas, una hoja que sube (capa, que es
+   navegación) mandaría sobre el dedo que la agarra. Las dos: **entre animaciones manda la prioridad; sobre el dedo
+   no manda ninguna** — `tomarControl` para lo que movía la propiedad, leído antes, sea de quien sea. La F5 ya lo
+   hacía con dos nombres de animación (`asa-hoja`, `capa-entra`); una con otro nombre se habría quedado.
+3. **Las animaciones CSS no pasan por el orquestador.** Una clase de `index.css` ya obedece sola a los modos y a la
+   velocidad (F1), y la única pareja que podía chocar con una de JavaScript —la cascada de una portada y la tarjeta
+   que se posa al volver (F7)— ya la resuelve la F2 terminando las entradas al volver. Meterlas aquí sería el
+   framework que el apartado 40 prohíbe. Está en `NO_EN_F11`.
+
+🐛 **Lo que destapó al construirse**: la auditoría de limpieza (apartado 17) contaba llamadas, y un bucle de
+`requestAnimationFrame` que reasigna su manejador parecía una fuga: cuenta por manejador. Y el tipo de capa
+`alerta` no existe —es una capa de z-index, no un tipo—, así que lo crítico se lee del z-index real.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

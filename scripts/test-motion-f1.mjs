@@ -380,7 +380,11 @@ ok(!/\d+ms|cubic-bezier|\bease\b/.test(C), '🚨 …y ni una duración ni una cu
 ok(/siguientePresencia\(e, visible \? 'mostrar' : 'ocultar'\)/.test(C) && /animar\(el,/.test(C), '…Presencia es la máquina de estados del motor y anima con `animar`, así que interrumpe desde donde está');
 ok(/useEfectoDeDiseno = typeof window !== 'undefined' \? useLayoutEffect : useEffect/.test(C), '…y en el banco de renderizado no avisa por usar `useLayoutEffect` en el servidor');
 const L = sinComentarios(LIB);
-ok(!/^import /m.test(L), '🚨 el motor no importa nada: lo puede leer cualquier capa sin un ciclo');
+/* 🔓 MS F11 — el motor pasa sus animaciones por el orquestador, que es una HOJA del árbol de imports: la
+   promesa (ningún ciclo) sigue en pie, y ahora se comprueba en los dos archivos. */
+ok([...L.matchAll(/^import [^;]+ from '([^']+)';/gm)].map((m) => m[1]).join() === './orquestadorMotion'
+  && !/^import /m.test(sinComentarios(leer('src/lib/orquestadorMotion.js'))),
+  '🚨 el motor solo importa el orquestador (MS F11), que no importa nada: lo puede leer cualquier capa sin un ciclo');
 ok(!/localStorage|saveData|setItem/.test(L), '…y no guarda nada: los ajustes viven en `apariencia`');
 
 /* ═════════════════════════════════════════════════════════════════════════ */
