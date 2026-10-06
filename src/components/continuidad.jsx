@@ -34,7 +34,7 @@ const scrollY = () => {
 /** Apunta el rectángulo de un elemento como origen de `id` (al tocarlo, antes de navegar; `efimero` si es porque se va). */
 export function apuntarOrigen(id, el, opciones) {
   if (!el || typeof el.getBoundingClientRect !== 'function') return false;
-  return registrarOrigen(id, { rect: el.getBoundingClientRect(), radio: radioDe(el), fuente: fuenteDe(el) }, undefined, opciones);
+  return registrarOrigen(id, { rect: el.getBoundingClientRect(), radio: radioDe(el), fuente: fuenteDe(el), elemento: el }, undefined, opciones);
 }
 
 /**
@@ -71,8 +71,11 @@ export function Compartido({ id, forma = 'texto', as: Etiqueta = 'span', classNa
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el || !id) return undefined;
+    /* 🐛 Un elemento no sale de SU PROPIO origen. React (en desarrollo, `StrictMode`) monta, deshace y
+       vuelve a montar cada efecto sobre el mismo nodo: la despedida de abajo apuntaba dónde estaba y la
+       vuelta lo tomaba, así que los veinte nombres de una lista «viajaban» a su propio sitio. */
     const origen = tomarOrigen(`compartido:${id}`);
-    if (origen) {
+    if (origen && origen.elemento !== el) {
       const destino = el.getBoundingClientRect();
       const ctx = contextoDelDocumento();
       const datos = { origen, forma, radioDestino: radioDe(el), fuenteDestino: fuenteDe(el), ctx };

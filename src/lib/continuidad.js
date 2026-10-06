@@ -74,7 +74,7 @@ const rectValido = (r) => !!r && [r.top, r.left, r.width, r.height].every((n) =>
  * se queda su duración y solo se actualiza el rectángulo (lo que se ve justo
  * antes de irse es lo más fiel).
  */
-export function registrarOrigen(id, { rect, radio = 0, fuente = null } = {}, ahora = ahoraMs(), { efimero = false } = {}) {
+export function registrarOrigen(id, { rect, radio = 0, fuente = null, elemento = null } = {}, ahora = ahoraMs(), { efimero = false } = {}) {
   if (!id || !rectValido(rect)) return false;
   const antes = ORIGENES.get(id);
   const deUnToque = !!antes && !antes.efimero && ahora - antes.t <= TTL_ORIGEN_MS;
@@ -84,6 +84,8 @@ export function registrarOrigen(id, { rect, radio = 0, fuente = null } = {}, aho
     fuente: Number(fuente) > 0 ? Number(fuente) : null,
     t: deUnToque ? antes.t : ahora,
     efimero: !!efimero && !deUnToque,
+    /* Quién lo dejó: un elemento no sale de su propio origen (ver `Compartido`). */
+    elemento,
   });
   return true;
 }

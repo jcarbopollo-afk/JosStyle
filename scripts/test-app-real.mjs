@@ -13080,7 +13080,16 @@ const tarjeta_ms7 = await page.evaluate(() => {
 });
 ok(!!tarjeta_ms7, `MS F7 — la tarjeta de Sueño está en la portada (${JSON.stringify(tarjeta_ms7)})`);
 const e_ms7 = await abrirDesdeTarjeta_ms7('sueno');
-const insets_ms7 = e_ms7 && e_ms7.desde ? (/inset\(([\d.]+)px ([\d.]+)px ([\d.]+)px ([\d.]+)px round ([\d.]+)px\)/.exec(e_ms7.desde) || []).slice(1).map(Number) : [];
+/* ⚠️ Chromium devuelve el recorte con la forma corta de CSS: de uno a cuatro lados (`inset(182.5px 0px 262.5px round 24px)`
+   es arriba, los dos lados y abajo). Se despliega a [arriba, derecha, abajo, izquierda, radio]. */
+const desplegarInset_ms7 = (txt) => {
+  const m = /^inset\(([\d.\spx]+?)(?:\s+round\s+([\d.]+)px)?\)$/.exec(txt || '');
+  if (!m) return [];
+  const v = m[1].trim().split(/\s+/).map((x) => Number(x.replace('px', '')));
+  const [a, b = a, c = a, d = b] = v;
+  return v.length > 4 || v.some((n) => !Number.isFinite(n)) ? [] : [a, b, c, d, Number(m[2] || 0)];
+};
+const insets_ms7 = e_ms7 && e_ms7.desde ? desplegarInset_ms7(e_ms7.desde) : [];
 ok(e_ms7 && e_ms7.tipo === 'entrar' && e_ms7.continuidad === 'desde-tarjeta' && !/module-enter/.test(e_ms7.clase) && !e_ms7.css.includes('moduleSlideIn'),
   `🚨 MS F7 — abrir un módulo desde su tarjeta es ENTRAR EN ELLA: la pantalla no llega además desde la derecha (${JSON.stringify(e_ms7 && { tipo: e_ms7.tipo, continuidad: e_ms7.continuidad, css: e_ms7.css })}; apartados 5 y 21)`);
 ok(insets_ms7.length === 5 && tarjeta_ms7 && Math.abs(insets_ms7[3] - (tarjeta_ms7.left - e_ms7.contLeft)) < 30 && Math.abs(insets_ms7[0] - (tarjeta_ms7.top - e_ms7.contTop)) < 40 && insets_ms7[4] >= 16,
@@ -13326,11 +13335,19 @@ const error_ms9 = await page.evaluate(() => {
     finInvalido: fin && fin.getAttribute('aria-invalid'), describe: fin && fin.getAttribute('aria-describedby'), bordeFin: fin && getComputedStyle(fin).borderTopColor,
   } : null;
 });
-const negativo_ms9 = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-negativo').trim());
+/* ⚠️ El token es un hex (`#C77C7C`) y el borde llega calculado (`rgb(…)`): se pasa por el navegador, como el acento. */
+const negativo_ms9 = await page.evaluate(() => {
+  const d = document.createElement('div');
+  d.style.color = getComputedStyle(document.documentElement).getPropertyValue('--color-negativo').trim();
+  document.body.appendChild(d);
+  const c = getComputedStyle(d).color;
+  d.remove();
+  return c;
+});
 ok(error_ms9 && /anterior a la de inicio/.test(error_ms9.texto) && error_ms9.rol === 'alert',
   `🚨 MS F9 — el error aparece bajo el formulario, dicho y anunciado (${JSON.stringify(error_ms9 && { texto: error_ms9.texto, rol: error_ms9.rol })}; apartados 8 y 22)`);
-ok(error_ms9 && error_ms9.finInvalido === 'true' && error_ms9.describe === error_ms9.id && rgb_ms9(error_ms9.bordeFin) === rgb_ms9(negativo_ms9),
-  `🚨 MS F9 — …y el campo CULPABLE —la hora de fin— se pinta de rojo y se une al mensaje para VoiceOver (${JSON.stringify(error_ms9 && { finInvalido: error_ms9.finInvalido, bordeFin: error_ms9.bordeFin, negativo: negativo_ms9 })})`);
+ok(error_ms9 && error_ms9.finInvalido === 'true' && !!error_ms9.id && error_ms9.describe === error_ms9.id && !!rgb_ms9(negativo_ms9) && rgb_ms9(error_ms9.bordeFin) === rgb_ms9(negativo_ms9),
+  `🚨 MS F9 — …y el campo CULPABLE —la hora de fin— se pinta de rojo y se une al mensaje para VoiceOver (${JSON.stringify(error_ms9 && { finInvalido: error_ms9.finInvalido, describe: error_ms9.describe, id: error_ms9.id, bordeFin: error_ms9.bordeFin, negativo: negativo_ms9 })})`);
 const titulo_ms9 = await page.evaluate(() => document.querySelector('[role="dialog"] input[placeholder="Entrenamiento"]').getAttribute('aria-invalid'));
 ok(titulo_ms9 === null, 'MS F9 — …y SOLO ése: el título, que está bien, no');
 await page.keyboard.press('Escape');

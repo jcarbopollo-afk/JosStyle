@@ -78,6 +78,11 @@ registrarOrigen('compartido:d', { rect: R }, 3000);
 registrarOrigen('compartido:d', { rect: { ...R, top: 77 } }, 3050, { efimero: true });
 const d_f7 = tomarOrigen('compartido:d', 3600);
 ok(d_f7 !== null && d_f7.rect.top === 77, '…y si lo que se va es lo que se TOCÓ, su origen sigue siendo el del toque (dura lo de un toque) con el rectángulo de justo antes de irse');
+{
+  const nodo = {};
+  registrarOrigen('compartido:e', { rect: R, elemento: nodo }, 4000, { efimero: true });
+  ok(tomarOrigen('compartido:e', 4001)?.elemento === nodo, 'el origen dice QUÉ elemento lo dejó…');
+}
 olvidarOrigenes();
 
 /* ═════════════════════════════════════════════════════════════════════════ */
@@ -144,6 +149,7 @@ const APP_L = sinComentarios(APP);
 const HUB = sinComentarios(leer('src/views/HubView.jsx'));
 const COMP = leer('src/components/continuidad.jsx');
 const COMP_L = sinComentarios(COMP);
+ok(/if \(origen && origen\.elemento !== el\)/.test(COMP_L) && /elemento: el \}/.test(COMP_L), '🐛 …y un elemento no sale de su propio origen: con el efecto que se deshace y se rehace (StrictMode) no viajaba a su propio sitio');
 ok(/apuntarOrigen\(`pantalla:\$\{id\}`, tarjetas\.current\[id\]\);\s*onOpenModulo\(id\);/.test(HUB),
   '🚨 la tarjeta de la portada apunta su rectángulo JUSTO antes de navegar, ya crecida');
 ok(/ref=\{\(el\) => \{ tarjetas\.current\[id\] = el; \}\}/.test(HUB) && /data-modulo=\{id\}/.test(HUB), '…cada tarjeta se guarda por su id');
