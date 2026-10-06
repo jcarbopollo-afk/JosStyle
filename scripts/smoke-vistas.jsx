@@ -440,7 +440,7 @@ import { MINI_APPS, miniApp, indicadorDe } from '../src/lib/biblioteca.js';
 import { AvatarPerfil, BloqueFondo, EditorFoto, BloqueLegibilidad, PaletaDetectada, BloqueRecomendado, BloquePresets, BloqueLegibilidadAuto, VistaPreviaGlobal, AjusteMovimiento } from '../src/views/SettingsView.jsx';
 import { Presencia, ChevronDespliegue, LatidoAlMarcar, CifraQueCambia } from '../src/components/motion.jsx';
 import { AsaHoja } from '../src/components/gestosMotion.jsx';
-import { Switch, PistaInterruptor, ToggleTab, BotonBorrar } from '../src/components/ui.jsx';
+import { Switch, PistaInterruptor, ToggleTab, BotonBorrar, PrimaryButton, GhostBtn, TextoDeBoton, MensajeDeCampo, TextInput, Textarea } from '../src/components/ui.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
@@ -3195,6 +3195,21 @@ const CASOS = [
   ['CifraQueCambia (relevo, sin texto)', CifraQueCambia, () => ({ valor: 4 })],
   ['CifraQueCambia (decimales, por formato)', CifraQueCambia, () => ({ valor: 12.5, modo: 'cuenta', formato: (v) => `${v.toFixed(1)} g` })],
   ['CifraQueCambia (sin dato)', CifraQueCambia, () => ({ valor: null, children: '—' })],
+  /* MS F9 — los estados de un control: un botón en reposo, cargando, hecho y con fallo (con su texto y con el
+     de siempre), uno que no sabe su estado (un valor raro se lee como reposo), el texto de un botón propio, el
+     mensaje de un campo y un campo con el error marcado. */
+  ['PrimaryButton (sin estado: el de siempre)', PrimaryButton, () => ({ accent, onClick: noop, children: 'Guardar prenda' })],
+  ['PrimaryButton (reposo)', PrimaryButton, () => ({ accent, onClick: noop, estado: 'reposo', children: 'Guardar prenda' })],
+  ['PrimaryButton (cargando, con su texto)', PrimaryButton, () => ({ accent, onClick: noop, estado: 'cargando', textoCargando: 'Subiendo…', children: 'Añadir foto' })],
+  ['PrimaryButton (hecho)', PrimaryButton, () => ({ accent, onClick: noop, estado: 'hecho', children: 'Guardar' })],
+  ['PrimaryButton (fallo)', PrimaryButton, () => ({ accent, onClick: noop, estado: 'fallo', children: 'Guardar' })],
+  ['PrimaryButton (un estado que no existe)', PrimaryButton, () => ({ accent, onClick: noop, estado: 'inventado', children: 'Guardar' })],
+  ['GhostBtn (cargando)', GhostBtn, () => ({ onClick: noop, estado: 'cargando', textoCargando: 'Comprobando…', children: 'Activar biometría' })],
+  ['TextoDeBoton (en un botón propio, con icono)', TextoDeBoton, () => ({ estado: 'cargando', icono: <span>+</span>, textoCargando: 'Generando…', children: 'Generar con IA' })],
+  ['MensajeDeCampo (error)', MensajeDeCampo, () => ({ id: 'm1', children: 'La hora de fin es anterior a la de inicio.' })],
+  ['MensajeDeCampo (bien)', MensajeDeCampo, () => ({ tipo: 'exito', children: 'Guardado.' })],
+  ['TextInput (con un error)', TextInput, () => ({ value: '25:99', onChange: noop, 'aria-invalid': true, 'aria-describedby': 'm1' })],
+  ['Textarea (campo)', Textarea, () => ({ value: 'Una nota', onChange: noop })],
   /* MS F5 — el asa de una hoja: con su margen por defecto, pegada (las del Armario con foto arriba) y
      sin caja todavía (el primer render, antes de que el `ref` llegue). */
   ['AsaHoja (por defecto)', AsaHoja, () => ({ cajaRef: { current: null }, onCerrar: noop })],

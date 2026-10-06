@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, ReferenceLine } from 'recharts';
-import { Camera, Droplet, Star, Loader2, Barcode, Plus, Trash2, ChevronLeft, ChevronRight, CalendarDays, Settings, Check, Search, Pencil, Repeat, BarChart3 } from 'lucide-react';
+import { Camera, Droplet, Star, Barcode, Plus, Trash2, ChevronLeft, ChevronRight, CalendarDays, Settings, Check, Search, Pencil, Repeat, BarChart3 } from 'lucide-react';
 import { COLORS, VASO_ML } from '../tokens';
 import { uid, todayISO, addDays, hexToRgba, calcularEdad } from '../lib/helpers';
 /* Entrega 3 · F33 (NU F1) — el catálogo de indicadores y momentos, el resumen del
@@ -56,7 +56,7 @@ import {
 } from '../lib/inteligenciaNutricion';
 import { buscarProductoPorCodigoBarras, buscarAlimentosPorNombre } from '../lib/openFoodFacts';
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
-import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
+import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, TextoDeBoton } from '../components/ui';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { CambioDeContenido, LatidoAlMarcar, useAnimacionDeGrafica, CifraQueCambia } from '../components/motion';
 import { escalonado } from '../lib/motion';
@@ -186,13 +186,13 @@ function MealForm({ onSave, onSaveFavorite, accent, fecha, momentoId }) {
     <Card>
       <div className="grid grid-cols-2 gap-3 mb-3">
         <GhostBtn onClick={() => setScanning(true)} icon={Barcode}>Escanear código</GhostBtn>
-        <label className="block">
+        <label className="block" aria-busy={analizandoFoto || undefined}>
+          {/* MS F9 — mientras analiza, «Analizando…» en su sitio, sin apagarse (`TextoDeBoton`). */}
           <div
             className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold cursor-pointer"
-            style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}`, opacity: analizandoFoto ? 0.6 : 1 }}
+            style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
           >
-            {analizandoFoto ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
-            {analizandoFoto ? 'Analizando…' : 'Foto del plato'}
+            <TextoDeBoton estado={analizandoFoto ? 'cargando' : 'reposo'} icono={<Camera size={14} />} textoCargando="Analizando…">Foto del plato</TextoDeBoton>
           </div>
           <input type="file" accept="image/*" capture="environment" onChange={handleFotoComida} disabled={analizandoFoto} className="hidden" />
         </label>
@@ -854,8 +854,8 @@ function AnadirAlimento({ momentoId, fecha, accent, onAdd, onAddFavorito, onCerr
       {avisoOFF && <p className="text-xs" style={{ color: COLORS.textMuted }}>{avisoOFF}</p>}
 
       {texto.trim().length >= 3 && (
-        <GhostBtn onClick={buscarEnOFF} icon={buscandoOFF ? Loader2 : Search} disabled={buscandoOFF}>
-          {buscandoOFF ? 'Buscando…' : 'Buscar productos con marca'}
+        <GhostBtn onClick={buscarEnOFF} icon={Search} estado={buscandoOFF ? 'cargando' : 'reposo'} textoCargando="Buscando…">
+          Buscar productos con marca
         </GhostBtn>
       )}
 

@@ -2,6 +2,12 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.139.0 — Motion System F9/20: estados y feedback de interfaz):**
+> Un botón que espera ya no parece roto: con `estado="cargando"` dice «Guardando…» **en su sitio**, sin cambiar de
+> ancho ni apagarse, y el toque no repite la acción. Un **campo enfocado se nota** (antes no cambiaba nada: el
+> borde pasa al acento) y uno con un error se pone rojo y lo dice debajo, sin temblar. El aviso de «hecho» **sale**
+> en vez de desaparecer de golpe. **La siguiente es la F10** (layout motion, scroll, listas y contenido dinámico).
+
 > **📅 ACTUALIZACIÓN (v3.138.0 — Motion System F8/20: física e interacción directa):**
 > Los gestos ya tenían física (F5); la F8 les pone orden: una **jerarquía de muelles** medida (ninguno de los que se
 > usan rebota), una **máquina de estados** del gesto —con el estado «umbral»— escrita en el mismo `data-arrastre`, el

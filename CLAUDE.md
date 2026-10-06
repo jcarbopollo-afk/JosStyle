@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.138.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.139.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -37,8 +37,8 @@ se te vuelva a restablecer, sigue."* El índice con la línea de cada fase está
 C-51), y **se construye de la F0 a la F20**. **Hechas la F0 (v3.130.0)** —el mapa, la auditoría y el
 plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegación—, la **F3 (v3.133.0)**
 —las microinteracciones—, la **F4 (v3.134.0)** —los datos que cambian—, la **F5 (v3.135.0)** —los gestos—, la
-**F6 (v3.136.0)** —la profundidad y las capas—, la **F7 (v3.137.0)** —la continuidad espacial— y la **F8
-(v3.138.0)** —la física y la interacción directa—.
+**F6 (v3.136.0)** —la profundidad y las capas—, la **F7 (v3.137.0)** —la continuidad espacial—, la **F8
+(v3.138.0)** —la física y la interacción directa— y la **F9 (v3.139.0)** —los estados y el feedback—.
 Lo que vale para cualquier cambio a partir de hoy:
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
@@ -140,6 +140,14 @@ Lo que vale para cualquier cambio a partir de hoy:
   `bouncy` no lo usa nadie, y un toque (interruptor, botón) no es un muelle: va por tiempo. ⚠️ **El iPhone SÍ puede
   dar un toque háptico** (el interruptor de iOS 17.4+ del motor de audio): lo que vibra va por el bus, nunca desde
   un gesto.
+- 🚨 **UN BOTÓN QUE ESPERA ES `estado="cargando"`, NUNCA UN «GUARDANDO…» ESCRITO A MANO** (F9, `ui.jsx` y
+  `estadosInteraccion.js`): `PrimaryButton` y `GhostBtn` cambian el texto en su sitio sin cambiar de ancho, **no se
+  apagan** (`aria-busy`, y el toque no repite la acción) y el giro solo sale si tarda; dentro de un botón propio,
+  `TextoDeBoton`. `auditarEstadosInteraccion` caza el que lo escriba a mano, y un temblor como respuesta a un error.
+  **Un campo con un error** lleva `aria-invalid` y `<MensajeDeCampo id>` con `aria-describedby`; el foco de un campo
+  lo pone la clase `campo` (el borde al acento: ni un píxel de letra cambia, C-32). ⚠️ **`AvisoAccion` se monta
+  SIEMPRE** (con `accion` vacía) para que pueda salir (`toastExit`), y **`--accent` vive también en
+  `documentElement`**: las hojas son portales y no lo heredaban del `div` de la aplicación.
 - 🐛 **UNA ANIMACIÓN DE VUELTA SE CANCELA CUANDO EL DEDO VUELVE A AGARRAR** (F5, apartado 19): si no, manda sobre
   el `transform` hasta acabar y el dedo no mueve nada. **Y un muelle que mueve píxeles reposa a un cuarto de
   píxel** (`muestrearSpring(…, { reposo })`): con el reposo genérico una vuelta de 30 px «duraba» 900 ms.
@@ -2123,8 +2131,8 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F9 DEL MOTION SYSTEM** (*"Microinteracciones, estados y feedback de interfaz"*, líneas
-   11380–12127 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F10… hasta la F20, en
+0. 🎬 **LA SIGUIENTE ES LA F10 DEL MOTION SYSTEM** (*"Layout motion, scroll, listas y contenido dinámico"*, líneas
+   12128–12784 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F11… hasta la F20, en
    el orden de
    `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
    `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { signIn, signUp } from '../lib/supabase';
 import { COLORS, ACCENTS } from '../tokens';
+import { TextoDeBoton } from './ui';
 /* ⚠️ La versión, ANTES de iniciar sesión. Existe por un problema real: durante
    semanas la web se veía igual después de cada entrega y no había manera de
    saber, sin entrar y navegar hasta Ajustes, si lo que estaba cargado era lo
@@ -67,13 +68,18 @@ export default function Auth() {
         {error && <p className="text-xs mb-3" style={{ color: COLORS.negative }}>{error}</p>}
         {info && <p className="text-xs mb-3" style={{ color: COLORS.positive }}>{info}</p>}
 
+        {/* MS F9 — mientras entra, «Entrando…» en su sitio: el botón no se apaga (parecería roto) y el
+            toque no repite la acción (`aria-busy`). */}
         <button
-          onClick={submit}
-          disabled={loading || !email || !password}
+          onClick={loading ? undefined : submit}
+          disabled={!loading && (!email || !password)}
+          aria-busy={loading || undefined}
           className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold mb-3 disabled:opacity-60"
           style={{ background: ACCENTS[0].value, color: COLORS.textOnAccent }}
         >
-          {loading ? 'Cargando…' : mode === 'signin' ? 'Entrar' : 'Crear cuenta'}
+          <TextoDeBoton estado={loading ? 'cargando' : 'reposo'} textoCargando={mode === 'signin' ? 'Entrando…' : 'Creando la cuenta…'}>
+            {mode === 'signin' ? 'Entrar' : 'Crear cuenta'}
+          </TextoDeBoton>
         </button>
 
         <button

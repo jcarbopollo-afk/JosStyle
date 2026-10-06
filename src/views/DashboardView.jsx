@@ -940,7 +940,7 @@ export default function DashboardView({
       )}
 
       {/* Apartado 19 — *"mostrar feedback pequeño… no usar modales grandes"*. */}
-      {avisoHoy && <AvisoAccion accion={avisoHoy} accent={accent} onCerrar={() => setAvisoHoy(null)} />}
+      <AvisoAccion accion={avisoHoy} accent={accent} onCerrar={() => setAvisoHoy(null)} />
 
     </div>
   );

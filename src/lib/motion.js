@@ -547,6 +547,10 @@ export const PRESETS_MOTION = {
   collapse: { que: 'Cerrar un desplegable', duracion: 'fast', curva: 'smooth', acordeon: true },
   dataChange: { que: 'Una cifra cambia', duracion: 'normal', curva: 'standard', desde: { opacidad: 'secondary', y: 'micro' } },
   heroReveal: { que: 'Un momento importante', clase: 'fit-rango-sube', duracion: 'momento', curva: 'emphasized', desde: { opacidad: 'subtle', escala: 'hero' }, sobrepaso: true },
+  /* MS F9, apartado 33 — un aviso entra (`aviso-entra`, CSS) y SE VA por donde vino: hacia abajo, en
+     `fast` y con la curva de salida. Antes desaparecía de golpe. */
+  toastEnter: { que: 'Un aviso aparece', clase: 'aviso-entra', duracion: 'medium', curva: 'standard', desde: { opacidad: 'hidden', y: 'small' } },
+  toastExit: { que: 'Un aviso se va', duracion: 'fast', curva: 'exit', hasta: { opacidad: 'hidden', y: 'small' } },
 };
 
 const signoYToken = (v) => {

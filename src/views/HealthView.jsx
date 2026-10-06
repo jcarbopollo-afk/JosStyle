@@ -14,7 +14,7 @@ import {
 } from '../lib/salud';
 import {
   BotonBorrar, BotonBorrarDefinitivo, Card, SectionTitle, Field, TextInput, Select, PrimaryButton,
-  EmptyHint, AIPanel, PinGate,
+  EmptyHint, AIPanel, PinGate, TextoDeBoton,
 } from '../components/ui';
 import { escalonado } from '../lib/motion';
 
@@ -367,13 +367,12 @@ function BloqueFotos({ fotos, onAddFoto, onDeleteFoto, accent }) {
         <Field label="Nota (opcional, para esta próxima foto)">
           <TextInput value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej: después de 3 meses de rutina" />
         </Field>
-        <label className="block">
+        <label className="block" aria-busy={uploading || undefined}>
           <div
             className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full cursor-pointer"
-            style={{ background: accent, color: COLORS.textOnAccent, opacity: uploading ? 0.6 : 1 }}
+            style={{ background: accent, color: COLORS.textOnAccent }}
           >
-            <Camera size={16} strokeWidth={2.5} />
-            {uploading ? 'Subiendo…' : 'Añadir foto de progreso'}
+            <TextoDeBoton estado={uploading ? 'cargando' : 'reposo'} icono={<Camera size={16} strokeWidth={2.5} />} textoCargando="Subiendo…">Añadir foto de progreso</TextoDeBoton>
           </div>
           <input type="file" accept="image/*" capture="environment" onChange={handleFile} disabled={uploading} className="hidden" />
         </label>

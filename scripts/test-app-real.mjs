@@ -147,6 +147,9 @@ const FALLAR_ESCRITURA = new Set();
 /* FIT F41 — y las que contestan «demasiado grande», como un servidor sin sitio
    para la fila (apartado 34): 413, y tampoco se guarda. */
 const LLENO_ESCRITURA = new Set();
+/* MS F9 — cuánto tarda en contestar una SUBIDA de archivo (0: al momento). Con un retraso, un botón que
+   espera se queda en «cargando» el rato justo para medirlo, como con una cobertura floja. */
+const RETRASO_SUBIDA = { ms: 0 };
 
 /* 🐛 ⚠️ La ruta del navegador estaba **escrita a mano** (`/opt/pw-browsers/
    chromium`), que es donde lo tenía el entorno de aquellas sesiones. En Windows
@@ -257,6 +260,7 @@ await page.route(`${SUPA}/**`, async (route) => {
     if (metodo === 'GET') {
       return route.fulfill({ status: 200, contentType: 'image/png', body: PNG_DE_PRUEBA });
     }
+    if (metodo === 'POST' && RETRASO_SUBIDA.ms > 0) await new Promise((ok) => setTimeout(ok, RETRASO_SUBIDA.ms));
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   }
   return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
@@ -13195,6 +13199,140 @@ await page.waitForTimeout(400);
 
 ok(errores.length === erroresAntes_ms8, `MS F8 — …sin un error en la consola${errores.length > erroresAntes_ms8 ? `: ${errores.slice(erroresAntes_ms8).join(' | ').slice(0, 200)}` : ''}`);
 almacen.ajustes = ajustesDeAntes_ms8;
+
+/* ── MS F9 · Estados y feedback: el campo enfocado, el botón que espera, el error bajo su campo y el aviso que se va ──
+   Lo que solo se ve en la página de verdad: que un campo enfocado cambie de borde (también dentro de una hoja,
+   que es un portal fuera del contenedor de la aplicación), que un botón que espera diga «Guardando…» en su sitio
+   sin cambiar de ancho ni apagarse y que tocarlo otra vez no repita la acción, que el error de un formulario
+   aparezca bajo su campo con el campo en rojo, y que el aviso de «añadido» salga en vez de desaparecer.
+   ⚠️ Sufijo `_ms9`. */
+console.log('\n── MS F9 · Microinteracciones, estados y feedback ──');
+const ajustesDeAntes_ms9 = almacen.ajustes;
+const armarioDeAntes_ms9 = almacen.armario;
+almacen.ajustes = { ...(ajustesDeAntes_ms9 || {}), apariencia: { ...((ajustesDeAntes_ms9 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+almacen.armario = { prendas: [], outfits: [], usos: [] };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms9 = errores.length;
+/* El color de un estilo calculado, en «r,g,b» para comparar sin pelearse con espacios. */
+const rgb_ms9 = (c) => (/rgba?\(([^)]+)\)/.exec(c || '') || [])[1]?.split(',').slice(0, 3).map((x) => Math.round(Number(x))).join(',') || null;
+const acento_ms9 = await page.evaluate(() => {
+  const d = document.createElement('div');
+  d.style.color = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  document.body.appendChild(d);
+  const c = getComputedStyle(d).color;
+  d.remove();
+  return c;
+});
+ok(!!rgb_ms9(acento_ms9), `MS F9 — el acento también está en el documento, no solo en el contenedor de la aplicación (${acento_ms9})`);
+
+/* 1 · Un campo enfocado se nota: el nombre de una prenda nueva (se enfoca solo al abrir el formulario). */
+ok(await pulsar('Gestión') && await pulsar('Armario'), 'MS F9 — Gestión → Armario');
+ok(await pulsar('Añadir primera prenda') || await pulsar('Añadir prenda'), 'MS F9 — …se abre el formulario de una prenda');
+await page.waitForTimeout(300);
+const foco_ms9 = await page.evaluate(() => {
+  const c = document.activeElement;
+  if (!c || !c.classList.contains('campo')) return { clase: c && c.className };
+  const e = getComputedStyle(c);
+  return { borde: e.borderTopColor, halo: e.boxShadow, dura: e.transitionDuration };
+});
+ok(foco_ms9 && rgb_ms9(foco_ms9.borde) === rgb_ms9(acento_ms9) && foco_ms9.halo && foco_ms9.halo !== 'none' && /0\.16s/.test(foco_ms9.dura || ''),
+  `🐛 MS F9 — un campo ENFOCADO se nota: su borde pasa al acento con un halo, en \`fast\` (${JSON.stringify(foco_ms9)}; apartados 20 y 21)`);
+
+/* 2 · El botón que espera: con la subida de la foto tardando, «Guardando…» en su sitio, sin apagarse ni
+   cambiar de ancho, y tocarlo otra vez (y otra) no crea dos prendas. */
+await page.keyboard.type('Camiseta MS9');
+await page.setInputFiles('input[type="file"][accept*="image"]', { name: 'camiseta.png', mimeType: 'image/png', buffer: PNG_DE_PRUEBA });
+await page.waitForTimeout(200);
+RETRASO_SUBIDA.ms = 1500;
+const espera_ms9 = await page.evaluate(async () => {
+  const b = [...document.querySelectorAll('button')].find((x) => x.innerText.trim() === 'Guardar prenda');
+  if (!b) return null;
+  const ancho = Math.round(b.getBoundingClientRect().width);
+  b.click();
+  await new Promise((ok) => setTimeout(ok, 30));
+  const giro = () => { const g = b.querySelector('.boton-giro'); return g ? Number(getComputedStyle(g).opacity) : null; };
+  const al = { busy: b.getAttribute('aria-busy'), estado: b.dataset.estado, texto: b.innerText.trim(), ancho: Math.round(b.getBoundingClientRect().width), opacidad: getComputedStyle(b).opacity, giro: giro(), desactivado: b.disabled };
+  b.click(); b.click();
+  await new Promise((ok) => setTimeout(ok, 600));
+  return { ancho, al, giroTarde: giro() };
+});
+ok(espera_ms9 && espera_ms9.al.busy === 'true' && espera_ms9.al.estado === 'cargando' && espera_ms9.al.texto === 'Guardando…',
+  `🚨 MS F9 — mientras sube, el botón dice «Guardando…» y está ocupado (\`aria-busy\`) (${JSON.stringify(espera_ms9 && espera_ms9.al)}; apartados 4 y 6)`);
+ok(espera_ms9 && espera_ms9.al.ancho === espera_ms9.ancho && espera_ms9.al.opacidad === '1' && !espera_ms9.al.desactivado,
+  `🐛 MS F9 — …sin cambiar de ancho (${espera_ms9 && espera_ms9.ancho} → ${espera_ms9 && espera_ms9.al.ancho} px) ni APAGARSE: antes se quedaba a medio color y parecía roto`);
+ok(espera_ms9 && espera_ms9.al.giro !== null && espera_ms9.al.giro < 0.2 && espera_ms9.giroTarde > 0.8,
+  `MS F9 — …y el giro solo aparece si tarda: ${espera_ms9 && espera_ms9.al.giro} al tocar, ${espera_ms9 && espera_ms9.giroTarde} pasado \`slow\` (apartado 31)`);
+await page.waitForTimeout(1600);
+RETRASO_SUBIDA.ms = 0;
+const prendas_ms9 = ((almacen.armario && almacen.armario.prendas) || []).filter((p) => p.nombre === 'Camiseta MS9').length;
+ok(prendas_ms9 === 1, `🚨 MS F9 — tocar «Guardar» tres veces mientras sube deja UNA prenda (${prendas_ms9}; apartados 6 y 50)`);
+
+/* 3 · El error de un formulario, bajo su campo y con el campo en rojo (el ＋ de Hoy, que es una hoja). */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+ok(await pulsar('Añadir') && /Apunte/.test(await esperarTexto(/Apunte/)), 'MS F9 — se abre el ＋ de Hoy');
+ok(await pulsar('Evento'), 'MS F9 — …un evento');
+await page.waitForTimeout(300);
+await page.fill('[role="dialog"] input[placeholder="Entrenamiento"]', 'Partido MS9');
+await page.focus('[role="dialog"] input[placeholder="Entrenamiento"]');
+await page.waitForTimeout(250);
+const bordeHoja_ms9 = await page.evaluate(() => getComputedStyle(document.querySelector('[role="dialog"] input[placeholder="Entrenamiento"]')).borderTopColor);
+ok(rgb_ms9(bordeHoja_ms9) === rgb_ms9(acento_ms9),
+  `🐛 MS F9 — …y DENTRO de una hoja (un portal, fuera del contenedor de la aplicación) también lleva el acento (${bordeHoja_ms9})`);
+const horas_ms9 = await page.$$('[role="dialog"] input[type="time"]');
+ok(horas_ms9.length === 2, 'MS F9 — …con su hora de inicio y su hora de fin');
+if (horas_ms9.length === 2) { await horas_ms9[0].fill('10:00'); await horas_ms9[1].fill('09:00'); }
+await page.waitForTimeout(80);
+const error_ms9 = await page.evaluate(() => {
+  const m = document.querySelector('[role="dialog"] .campo-mensaje-entra');
+  const fin = document.querySelectorAll('[role="dialog"] input[type="time"]')[1];
+  return m ? {
+    texto: m.innerText.trim(), rol: m.getAttribute('role'), id: m.id, anim: m.getAnimations().length > 0 || getComputedStyle(m).animationName,
+    finInvalido: fin && fin.getAttribute('aria-invalid'), describe: fin && fin.getAttribute('aria-describedby'), bordeFin: fin && getComputedStyle(fin).borderTopColor,
+  } : null;
+});
+const negativo_ms9 = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--color-negativo').trim());
+ok(error_ms9 && /anterior a la de inicio/.test(error_ms9.texto) && error_ms9.rol === 'alert',
+  `🚨 MS F9 — el error aparece bajo el formulario, dicho y anunciado (${JSON.stringify(error_ms9 && { texto: error_ms9.texto, rol: error_ms9.rol })}; apartados 8 y 22)`);
+ok(error_ms9 && error_ms9.finInvalido === 'true' && error_ms9.describe === error_ms9.id && rgb_ms9(error_ms9.bordeFin) === rgb_ms9(negativo_ms9),
+  `🚨 MS F9 — …y el campo CULPABLE —la hora de fin— se pinta de rojo y se une al mensaje para VoiceOver (${JSON.stringify(error_ms9 && { finInvalido: error_ms9.finInvalido, bordeFin: error_ms9.bordeFin, negativo: negativo_ms9 })})`);
+const titulo_ms9 = await page.evaluate(() => document.querySelector('[role="dialog"] input[placeholder="Entrenamiento"]').getAttribute('aria-invalid'));
+ok(titulo_ms9 === null, 'MS F9 — …y SOLO ése: el título, que está bien, no');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(400);
+
+/* 4 · El aviso de «añadido» entra y SE VA. */
+ok(await pulsar('Añadir') && /Apunte/.test(await esperarTexto(/Apunte/)), 'MS F9 — otra vez el ＋');
+ok(await pulsar('Tarea'), 'MS F9 — …una tarea');
+await page.waitForTimeout(250);
+await page.fill('[role="dialog"] input[placeholder="Estudiar Biología"]', 'Tarea MS9');
+ok(await pulsar('Añadir'), 'MS F9 — …y se añade');
+const aviso_ms9 = await page.evaluate(async () => {
+  const visto = !!document.querySelector('[data-aviso="visible"]');
+  const t0 = performance.now();
+  while (performance.now() - t0 < 8000) {
+    const s = document.querySelector('[data-aviso="saliendo"]');
+    if (s) {
+      const caja = s.firstElementChild;
+      const anims = caja ? caja.getAnimations().map((a) => Math.round(a.effect.getComputedTiming().duration)) : [];
+      return { visto, saliendo: true, anims, tras: Math.round(performance.now() - t0) };
+    }
+    await new Promise((ok) => setTimeout(ok, 20));
+  }
+  return { visto, saliendo: false };
+});
+ok(aviso_ms9 && aviso_ms9.visto && aviso_ms9.saliendo && aviso_ms9.anims.length === 1 && aviso_ms9.anims[0] === 160,
+  `🐛 MS F9 — el aviso de «añadido» SE VA con su salida (\`toastExit\`, 160 ms): antes desaparecía de golpe (${JSON.stringify(aviso_ms9)}; apartado 33)`);
+await page.waitForTimeout(500);
+const fuera_ms9 = await page.evaluate(() => document.querySelectorAll('[data-aviso]').length);
+ok(fuera_ms9 === 0, `MS F9 — …y después no queda nada (${fuera_ms9})`);
+
+ok(errores.length === erroresAntes_ms9, `MS F9 — …sin un error en la consola${errores.length > erroresAntes_ms9 ? `: ${errores.slice(erroresAntes_ms9).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms9;
+almacen.armario = armarioDeAntes_ms9;
 
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });

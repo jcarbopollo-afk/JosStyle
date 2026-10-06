@@ -1562,7 +1562,7 @@ export default function CalendarView({
       )}
 
       {/* Apartado 19 — el aviso pequeño, con Deshacer donde de verdad se puede. */}
-      {aviso && <AvisoAccion accion={aviso} accent={accent} onDeshacer={onDeshacer} onCerrar={() => setAviso(null)} />}
+      <AvisoAccion accion={aviso} accent={accent} onDeshacer={onDeshacer} onCerrar={() => setAviso(null)} />
 
       {buscando && (
         <BuscadorEventos

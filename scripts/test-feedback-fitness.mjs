@@ -178,7 +178,9 @@ ok(/export default function FitnessView\(props\)[\s\S]{0,2500}resultadoDeGuardad
   && ['guardado_fallido', 'guardado_sin_espacio'].includes(avisoDeFallo(null)) && avisoDeFallo({ name: 'QuotaExceededError' }) === 'guardado_sin_espacio'
   && avisoDeFallo(new Error('Failed to fetch')) === 'guardado_fallido',
   '…y FitnessView lo lee: si falla, aviso de error SIEMPRE (y desde la F41, «sin espacio» cuando es eso)');
-ok(/<AvisoAccion accion=\{aviso\}/.test(fv) && /onGuardarFitness=\{guardarF\} \/>\s*<\/AreaSegura>\s*\{aviso &&/.test(fv),
+/* 🔓 MS F9 — el aviso se monta SIEMPRE (con `accion` vacía no pinta nada), para que pueda salir con su
+   transición en vez de desaparecer de golpe: ya no va detrás de `{aviso && …}`. Sigue siendo uno. */
+ok((fv.match(/<AvisoAccion accion=\{aviso\}/g) || []).length === 1 && /onGuardarFitness=\{guardarF\} \/>\s*<\/AreaSegura>\s*<AvisoAccion accion=\{aviso\}/.test(fv),
   '…con un solo aviso por encima de todas las salidas y del límite de error');
 ok(/'plan_activado'\)/.test(fv) && /'cambios_guardados'\)/.test(fv) && /'plantilla_duplicada'\)/.test(fv),
   '…y confirma el plan activado (apartado 36), los cambios del constructor y la plantilla duplicada');

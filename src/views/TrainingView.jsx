@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Sparkles, Loader2, Video, Trash2, AlertTriangle, CheckCircle2, Circle, Plus } from 'lucide-react';
+import { Trophy, Sparkles, Video, Trash2, AlertTriangle, CheckCircle2, Circle, Plus } from 'lucide-react';
 import { ChevronDespliegue } from '../components/motion';
 import { COLORS, SKILLS } from '../tokens';
 import { uid, formatFecha, todayISO, fechaLocalISO } from '../lib/helpers';
 import { askAI, askAIWithImages, AI_SYSTEM } from '../lib/ai';
 import { extractFramesFromSrc } from '../lib/videoFrames';
 import { getSignedVideoUrl } from '../lib/supabase';
-import { BotonBorrar, BotonBorrarDefinitivo, Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
+import { BotonBorrar, BotonBorrarDefinitivo, Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, TextoDeBoton } from '../components/ui';
 
 // Cuántos días seguidos (incluyendo hoy) hay que llevar entrenando la misma habilidad
 // para que aparezca el aviso de "descanso recomendado".
@@ -79,8 +79,8 @@ function ProgresionTab({ skill, data, onUpdate, accent }) {
         </div>
       </div>
 
-      <GhostBtn onClick={generarConIA} icon={generando ? Loader2 : Sparkles}>
-        {generando ? 'Generando…' : 'Generar progresión con IA'}
+      <GhostBtn onClick={generarConIA} icon={Sparkles} estado={generando ? 'cargando' : 'reposo'} textoCargando="Generando…">
+        Generar progresión con IA
       </GhostBtn>
       {error && <p className="text-xs" style={{ color: COLORS.textMuted }}>{error}</p>}
 
@@ -254,9 +254,8 @@ function VideosTab({ skill, videos, onAddVideo, onDeleteVideo, onSetVideoFeedbac
           <TextInput value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej: segundo intento del día" />
         </Field>
         <label className="block">
-          <div className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full cursor-pointer" style={{ background: accent, color: COLORS.textOnAccent, opacity: subiendo ? 0.6 : 1 }}>
-            <Video size={16} strokeWidth={2.5} />
-            {subiendo ? 'Subiendo…' : `Subir vídeo de ${skill}`}
+          <div className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full cursor-pointer" style={{ background: accent, color: COLORS.textOnAccent }} aria-busy={subiendo || undefined}>
+            <TextoDeBoton estado={subiendo ? 'cargando' : 'reposo'} icono={<Video size={16} strokeWidth={2.5} />} textoCargando="Subiendo…">{`Subir vídeo de ${skill}`}</TextoDeBoton>
           </div>
           <input type="file" accept="video/*" onChange={handleFile} disabled={subiendo} className="hidden" />
         </label>
@@ -297,8 +296,8 @@ function VideosTab({ skill, videos, onAddVideo, onDeleteVideo, onSetVideoFeedbac
             </div>
             {v.nota && <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{v.nota}</p>}
             <div className="flex gap-2 mt-2">
-              <GhostBtn onClick={() => analizar(v)} icon={analizando === v.id ? Loader2 : Sparkles}>
-                {analizando === v.id ? 'Analizando…' : 'Analizar con IA'}
+              <GhostBtn onClick={() => analizar(v)} icon={Sparkles} estado={analizando === v.id ? 'cargando' : 'reposo'} textoCargando="Analizando…">
+                Analizar con IA
               </GhostBtn>
               {/* Entrega 3 · F1, apartado 3 — el vídeo se borra del almacenamiento y no pasa
                   por la papelera: un toque sin querer se lo llevaba para siempre. */}

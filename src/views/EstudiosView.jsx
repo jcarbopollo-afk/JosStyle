@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GraduationCap, Clock, Plus, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, HelpCircle, TrendingUp, Loader2, Sparkles, X, Eye, EyeOff, Pencil } from 'lucide-react';
+import { GraduationCap, Clock, Plus, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, HelpCircle, TrendingUp, Sparkles, X, Eye, EyeOff, Pencil } from 'lucide-react';
 import { ChevronDespliegue } from '../components/motion';
 import { COLORS } from '../tokens';
 import { uid, formatFecha, todayISO, hexToRgba } from '../lib/helpers';
@@ -44,7 +44,7 @@ import {
   panelDelHome, VACIO_PROXIMO, FILTROS_EVENTOS, todasLasFechas, resumenRapido,
   proximoDeAsignatura, proximoDeApp, rutaDeFecha,
 } from '../lib/cierreEstudios';
-import { Card, SectionTitle, Field, TextInput, SelectInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel } from '../components/ui';
+import { Card, SectionTitle, Field, TextInput, SelectInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel, TextoDeBoton } from '../components/ui';
 
 function diasHasta(fechaISO) {
   return Math.ceil((new Date(fechaISO + 'T00:00:00').getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -91,8 +91,8 @@ function ExplicarConcepto({ accent }) {
           placeholder="Ej: la meiosis, un acorde disminuido..."
         />
         <div style={{ width: 84, flexShrink: 0 }}>
-          <PrimaryButton accent={accent} disabled={loading || !pregunta.trim()} onClick={preguntar}>
-            {loading ? <Loader2 size={16} className="animate-spin mx-auto" /> : 'Preguntar'}
+          <PrimaryButton accent={accent} disabled={!loading && !pregunta.trim()} estado={loading ? 'cargando' : 'reposo'} textoCargando="Pensando…" onClick={preguntar}>
+            Preguntar
           </PrimaryButton>
         </div>
       </div>
@@ -149,9 +149,8 @@ function PlanRepaso({ examen, onUpdatePlan, accent }) {
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>Plan de repaso</p>
         {plan.length === 0 && (
-          <button onClick={generar} disabled={loading} className="flex items-center gap-1 text-xs font-semibold disabled:opacity-60" style={{ color: accent }}>
-            {loading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-            {loading ? 'Generando…' : 'Generar con IA'}
+          <button onClick={loading ? undefined : generar} aria-busy={loading || undefined} className="flex items-center gap-1 text-xs font-semibold" style={{ color: accent }}>
+            <TextoDeBoton estado={loading ? 'cargando' : 'reposo'} icono={<Sparkles size={12} />} textoCargando="Generando…">Generar con IA</TextoDeBoton>
           </button>
         )}
       </div>

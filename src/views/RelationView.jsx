@@ -366,10 +366,10 @@ export function AlbumTab({ relacion, accent, onSubir, onFirmar, onBorrar }) {
           <PrimaryButton
             onClick={() => { if (!subiendo) fileRef.current?.click(); }}
             accent={accent}
-            icon={subiendo ? Loader2 : ImagePlus}
-            disabled={subiendo}
+            icon={ImagePlus}
+            estado={subiendo ? 'cargando' : 'reposo'}
           >
-            {subiendo ? 'Guardando…' : 'Añadir foto'}
+            Añadir foto
           </PrimaryButton>
         </div>
         {error && <p className="text-xs mt-2" style={{ color: COLORS.negative }}>{error}</p>}

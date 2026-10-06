@@ -710,7 +710,7 @@ export default function FitnessView(props) {
       <AreaSegura clave="fitness" nombre="Fitness" accent={accent}>
         <FitnessViewContenido {...props} onGuardarFitness={guardarF} />
       </AreaSegura>
-      {aviso && <AvisoAccion accion={aviso} accent={accent} onCerrar={() => setAviso(null)} />}
+      <AvisoAccion accion={aviso} accent={accent} onCerrar={() => setAviso(null)} />
     </div>
   );
 }

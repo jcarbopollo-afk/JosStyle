@@ -1233,6 +1233,31 @@ la velocidad, la resistencia, cerrar o volver— y pide además cosas que chocan
    600 ms **y sin su puntero capturado** se da por perdido —con la captura, un dedo quieto no se confunde con uno
    que ya no está—.
 
+### C-60 — ✅ RESUELTA AL CONSTRUIR (Motion System F9, v3.139.0) · El foco de un campo contra la C-32, un botón que carga sin apagarse y un aviso que no sabía irse
+
+La F9 (*"Microinteracciones, estados y feedback de interfaz"*) pide que cada componente comunique su estado —foco,
+cargando, éxito, error— y choca con tres cosas ya decididas:
+
+1. **El foco de un campo y la C-32.** La C-32 (SF F1) deja a Josué decidir el tamaño de letra de los formularios y el
+   `maximum-scale` del viewport, porque cambiarlos cambia el aspecto de todos. El apartado 21 pide que el foco *"no
+   aparezca de manera violenta"*. Lectura que respeta las dos: **ni un píxel de letra ni de relleno cambia**; lo único
+   que cambia es el COLOR del borde al enfocar (al acento, con un halo suave, `fast`) y el rojo con `aria-invalid`.
+   🐛 Y era un hallazgo, no un adorno: con `outline-none` un campo enfocado no cambiaba nada fuera de Fitness (FIT F39).
+2. **Un botón que carga no se apaga.** Cuatro botones decían «Guardando…» a mano y se ponían a opacidad 0,6, que es
+   como se pinta un botón que no se puede pulsar. El apartado 6 pide lo contrario (*"no desactivar sin motivo"*), y
+   la regla de siempre pide no repetir la acción. Las dos: `estado="cargando"` **no lo apaga**, lleva `aria-busy` y
+   el toque no llama a nada mientras tanto. Los botones que cambiaban su texto a mano —Armario, Relación, Fotos,
+   Nutrición, Biblioteca, Entrenamiento, Salud, Ajustes, Estudios y la entrada— pasan por `TextoDeBoton`, y una
+   auditoría caza al siguiente que lo escriba a mano.
+3. 🐛 **El acento no llegaba a las hojas.** `--accent` vivía en el `div` de la aplicación, y las hojas son portales
+   sobre el `body` (regla 3), así que el foco de un campo dentro de una hoja caía al color del texto. Ahora también
+   se pone en `documentElement`, en un efecto **antes** de los `return` condicionales (regla 4).
+4. **El aviso que desaparecía de golpe.** `AvisoAccion` se montaba con `{aviso && …}`, así que al irse no había nada
+   que animar. Ahora se monta siempre y sale con `toastExit`; «Deshacer» solo está mientras el aviso está vivo.
+
+⚠️ **Lo que no se hace aquí** (`NO_EN_F9`): temblar un campo con un error, quitar un elemento de una lista con su
+hueco (F10), los estados del sistema (F16), los contadores (F17) y una bandeja de notificaciones, que no existe.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

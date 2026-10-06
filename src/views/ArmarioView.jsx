@@ -225,8 +225,9 @@ function FormularioPrenda({ inicial, accent, guardando, errorFoto, onGuardar, on
       )}
 
       <div className="flex gap-2">
-        <PrimaryButton accent={accent} onClick={() => onGuardar(form)} disabled={!puedeGuardar}>
-          {guardando ? 'Guardando…' : 'Guardar prenda'}
+        {/* MS F9 — mientras guarda, el botón dice «Guardando…» en su sitio y no se apaga: está trabajando. */}
+        <PrimaryButton accent={accent} onClick={() => onGuardar(form)} disabled={!puedeGuardar && !guardando} estado={guardando ? 'cargando' : 'reposo'}>
+          Guardar prenda
         </PrimaryButton>
         <div style={{ width: 100, flexShrink: 0 }}>
           <GhostBtn onClick={onCancelar}>Cancelar</GhostBtn>
@@ -743,8 +744,8 @@ function FormularioOutfit({ inicial, prendas, accent, guardando, errorFoto, foto
       )}
 
       <div className="flex gap-2">
-        <PrimaryButton accent={accent} onClick={() => onGuardar(form)} disabled={!puedeGuardar}>
-          {guardando ? 'Guardando…' : 'Guardar outfit'}
+        <PrimaryButton accent={accent} onClick={() => onGuardar(form)} disabled={!puedeGuardar && !guardando} estado={guardando ? 'cargando' : 'reposo'}>
+          Guardar outfit
         </PrimaryButton>
         <div style={{ width: 100, flexShrink: 0 }}>
           <GhostBtn onClick={onCancelar}>Cancelar</GhostBtn>

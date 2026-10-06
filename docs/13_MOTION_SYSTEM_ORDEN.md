@@ -29,7 +29,7 @@ se ordena es **el trabajo**.
 | **F6** ✅ **v3.136.0** | Profundidad, capas, z-index y contexto visual | 9146–9922 | 777 |
 | **F7** ✅ **v3.137.0** | Continuidad espacial, shared elements y transiciones entre vistas | 9923–10687 | 765 |
 | **F8** ✅ **v3.138.0** | Física, springs, gestos e interacción directa | 10688–11379 | 692 |
-| **F9** | Microinteracciones, estados y feedback de interfaz | 11380–12127 | 748 |
+| **F9** ✅ **v3.139.0** | Microinteracciones, estados y feedback de interfaz | 11380–12127 | 748 |
 | **F10** | Layout motion, scroll, listas y contenido dinámico | 12128–12784 | 657 |
 | **F11** | Orquestación global, coordinación y motion engine avanzado | 13290–14127 | 838 |
 | **F12** | Accesibilidad, reduced motion, adaptive motion y calidad de experiencia | 14966–15717 | 752 |
@@ -79,3 +79,5 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | La prueba de la F7 | `scripts/test-motion-f7.mjs`, y la sección «MS F7» del recorrido de Chromium |
 | La física: la jerarquía de muelles, la máquina de estados de un gesto, el velo que sigue al dedo, un solo dedo y los puntos hápticos | `src/lib/fisicaMotion.js` (F8), cableado en `AsaHoja` y `useDeslizarParaCambiar` (`src/components/gestosMotion.jsx`) y en el comparador de fotos |
 | La prueba de la F8 | `scripts/test-motion-f8.mjs`, la sección «MS F8» del recorrido de Chromium y el divisor con dos dedos de la «FIT F27» |
+| Los estados: el catálogo de estados de un componente, el botón que carga, el campo enfocado y con error, el aviso que sale y el barrido de lo que no puede volver | `src/lib/estadosInteraccion.js` (F9), con `TextoDeBoton`, `MensajeDeCampo` y el `estado` de `PrimaryButton` / `GhostBtn` en `src/components/ui.jsx` |
+| La prueba de la F9 | `scripts/test-motion-f9.mjs`, y la sección «MS F9» del recorrido de Chromium |

@@ -68,7 +68,7 @@ import {
   filtrarLibros, ordenarLibros, estadisticasLectura, historialLectura,
   tituloDeLibroValido, revisarPortada, inicialesDe,
 } from '../lib/libros';
-import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, GhostBtn, EmptyHint, BotonBorrar, BotonBorrarDefinitivo } from '../components/ui';
+import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, GhostBtn, EmptyHint, BotonBorrar, BotonBorrarDefinitivo, TextoDeBoton } from '../components/ui';
 import { escalonado, transicion } from '../lib/motion';
 
 // Fase 11 — Biblioteca: PDFs, vídeos, fotos, apuntes y enlaces conviven en un único listado
@@ -245,13 +245,14 @@ function AnadirArchivo({ tipo, onAdd, accent }) {
       <Field label="Título (opcional — si lo dejas vacío se usa el nombre del archivo)">
         <TextInput value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder={`Ej: Apuntes de Biología — Tema 3`} />
       </Field>
-      <label className="block">
+      <label className="block" aria-busy={subiendo || undefined}>
         <div
           className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full cursor-pointer"
-          style={{ background: accent, color: COLORS.textOnAccent, opacity: subiendo ? 0.6 : 1 }}
+          style={{ background: accent, color: COLORS.textOnAccent }}
         >
-          <Upload size={16} strokeWidth={2.5} />
-          {subiendo ? (tipo === 'pdf' ? 'Subiendo y leyendo el PDF…' : 'Subiendo…') : `Subir ${meta.label.toLowerCase()}`}
+          <TextoDeBoton estado={subiendo ? 'cargando' : 'reposo'} icono={<Upload size={16} strokeWidth={2.5} />} textoCargando={tipo === 'pdf' ? 'Subiendo y leyendo el PDF…' : 'Subiendo…'}>
+            {`Subir ${meta.label.toLowerCase()}`}
+          </TextoDeBoton>
         </div>
         <input type="file" accept={meta.accept} onChange={handleFile} disabled={subiendo} className="hidden" />
       </label>
@@ -847,13 +848,14 @@ export function FormularioLibro({ libro = null, accent, onGuardar, onCancelar, o
           <div style={{ width: 56, flexShrink: 0 }}>
             <Portada libro={{ titulo: form.titulo || '?' }} url={null} alto={76} accent={accent} />
           </div>
-          <label className="flex-1">
+          <label className="flex-1" aria-busy={subiendo || undefined}>
             <div
               className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold cursor-pointer toque-44"
-              style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}`, opacity: subiendo ? 0.6 : 1 }}
+              style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
             >
-              <Upload size={14} />
-              {subiendo ? 'Subiendo…' : portada ? 'Cambiar la portada' : 'Elegir una imagen'}
+              <TextoDeBoton estado={subiendo ? 'cargando' : 'reposo'} icono={<Upload size={14} />} textoCargando="Subiendo…">
+                {portada ? 'Cambiar la portada' : 'Elegir una imagen'}
+              </TextoDeBoton>
             </div>
             <input type="file" accept="image/*" onChange={elegirPortada} disabled={subiendo} className="hidden" />
           </label>

@@ -164,24 +164,41 @@ export function accionesDe(elemento) {
    invisible en las tres pantallas, porque ningún día coincide con ella. Es la
    cuarta vez de esta lección, tras `'25:99'`. */
 
-export function validarTarea({ texto, fecha, hora } = {}) {
-  if (!String(texto || '').trim()) return 'Escribe un título para la tarea.';
-  if (!fechaValida(fecha)) return 'La fecha no es válida. Usa un día que exista, como 2026-09-15.';
-  if (hora && !horaValida(hora)) return 'La hora no existe. Usa un formato como 16:00.';
-  return null;
+/* 🔓 MS F9 — cada regla dice también DE QUÉ CAMPO es (apartado 8: *"campo → error"*), así que el
+   texto y el campo que se pinta de rojo salen de la misma línea y no pueden decir cosas distintas.
+   `campo: null` es un error del formulario entero (la fecha viene de fuera: de Hoy, la Agenda o el día). */
+const REGLAS_TAREA = [
+  { campo: 'titulo', falla: (d) => !String(d.texto || '').trim(), texto: 'Escribe un título para la tarea.' },
+  { campo: null, falla: (d) => !fechaValida(d.fecha), texto: 'La fecha no es válida. Usa un día que exista, como 2026-09-15.' },
+  { campo: 'hora', falla: (d) => d.hora && !horaValida(d.hora), texto: 'La hora no existe. Usa un formato como 16:00.' },
+];
+
+const REGLAS_EVENTO = [
+  { campo: 'titulo', falla: (d) => !String(d.titulo || '').trim(), texto: 'Escribe un título para el evento.' },
+  { campo: null, falla: (d) => !fechaValida(d.fecha), texto: 'La fecha no es válida. Usa un día que exista, como 2026-09-15.' },
+  { campo: null, falla: (d) => d.todoElDia, texto: null }, /* todo el día: las horas no cuentan */
+  { campo: 'inicio', falla: (d) => d.horaInicio && !horaValida(d.horaInicio), texto: 'La hora de inicio no existe. Usa un formato como 16:00.' },
+  { campo: 'fin', falla: (d) => d.horaFin && !horaValida(d.horaFin), texto: 'La hora de fin no existe. Usa un formato como 17:30.' },
+  // 🚨 El caso que nombra el enunciado.
+  { campo: 'fin', falla: (d) => horaValida(d.horaInicio) && horaValida(d.horaFin) && d.horaFin < d.horaInicio, texto: 'La hora de fin es anterior a la de inicio.' },
+];
+
+const primeraQueFalla = (reglas, d) => reglas.find((r) => r.falla(d || {})) || null;
+
+export function validarTarea(d = {}) {
+  const r = primeraQueFalla(REGLAS_TAREA, d);
+  return r ? r.texto : null;
 }
 
-export function validarEvento({ titulo, fecha, horaInicio, horaFin, todoElDia } = {}) {
-  if (!String(titulo || '').trim()) return 'Escribe un título para el evento.';
-  if (!fechaValida(fecha)) return 'La fecha no es válida. Usa un día que exista, como 2026-09-15.';
-  if (todoElDia) return null;
-  if (horaInicio && !horaValida(horaInicio)) return 'La hora de inicio no existe. Usa un formato como 16:00.';
-  if (horaFin && !horaValida(horaFin)) return 'La hora de fin no existe. Usa un formato como 17:30.';
-  // 🚨 El caso que nombra el enunciado.
-  if (horaValida(horaInicio) && horaValida(horaFin) && horaFin < horaInicio) {
-    return 'La hora de fin es anterior a la de inicio.';
-  }
-  return null;
+export function validarEvento(d = {}) {
+  const r = primeraQueFalla(REGLAS_EVENTO, d);
+  return r ? r.texto : null;
+}
+
+/** MS F9 — el campo al que pertenece el error de ahora (`'titulo'`, `'hora'`, `'inicio'`, `'fin'`), o `null`. */
+export function campoConError(tipo, d = {}) {
+  const r = primeraQueFalla(tipo === 'evento' ? REGLAS_EVENTO : REGLAS_TAREA, d);
+  return r && r.texto ? r.campo : null;
 }
 
 export function validarApunte({ texto } = {}) {

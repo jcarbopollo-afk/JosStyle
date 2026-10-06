@@ -20,11 +20,12 @@ import { X, Plus, Check, Undo2, AlertTriangle } from 'lucide-react';
 import { COLORS, CAPAS } from '../tokens';
 import {
   contextoDeAdd, horaParaTipo, tipoQuickAdd,
-  validarTarea, validarEvento, validarApunte,
+  validarTarea, validarEvento, validarApunte, campoConError,
   accionesDe, avisoDe, SEGUNDOS_AVISO,
 } from '../lib/accionesHoyAgenda';
-import { Card, Field, TextInput, PrimaryButton } from './ui';
+import { Card, Field, TextInput, PrimaryButton, MensajeDeCampo } from './ui';
 import { AsaHoja } from './gestosMotion';
+import { Presencia } from './motion';
 
 /* ── La hoja inferior que comparten todos (apartado 33) ────────────────────
    *"Bottom sheets en móvil… no abrir cinco pantallas para crear una tarea."*
@@ -73,12 +74,14 @@ function Hoja({ titulo, sub, onCerrar, children }) {
 /* El aviso de que un formulario no puede guardarse todavía. Apartado 21:
    *"nunca perder información silenciosamente"*, y EH F62: un error dice **qué
    corregir**, nunca "Error" a secas. El texto lo pone `accionesHoyAgenda.js`. */
-function Motivo({ texto }) {
-  if (!texto) return null;
-  return (
-    <p className="text-xs" style={{ color: COLORS.negative }} role="alert">{texto}</p>
-  );
+/* 🔓 MS F9 — con `MensajeDeCampo`: aparece con un fundido corto y su icono (apartados 8 y 22), y el
+   campo culpable se pinta de rojo (`campoConError`, la misma regla que escribe el texto). */
+function Motivo({ texto, id }) {
+  return <MensajeDeCampo id={id} className="mb-2">{texto}</MensajeDeCampo>;
 }
+
+/* Las props de un campo que puede tener el error: rojo y unido al mensaje para VoiceOver. */
+const errorEn = (campoMal, campo, id) => (campoMal === campo ? { 'aria-invalid': true, 'aria-describedby': id } : {});
 
 /* ── ＋ Añadir: el menú (apartados 1, 2, 3 y 4) ────────────────────────────
    Las opciones y la fecha ya vienen decididas por `contextoDeAdd`: esta
@@ -110,15 +113,16 @@ export function FormularioTarea({ fecha, hora = '', titulo, accent, onGuardar, o
   const [texto, setTexto] = useState('');
   const [h, setH] = useState(hora);
   const motivo = validarTarea({ texto, fecha, hora: h });
+  const campoMal = texto ? campoConError('tarea', { texto, fecha, hora: h }) : null;
   return (
     <Hoja titulo="Nueva tarea" sub={titulo} onCerrar={onCerrar}>
       <Field label="Título">
-        <TextInput value={texto} onChange={(ev) => setTexto(ev.target.value)} placeholder="Estudiar Biología" />
+        <TextInput value={texto} onChange={(ev) => setTexto(ev.target.value)} placeholder="Estudiar Biología" {...errorEn(campoMal, 'titulo', 'motivo-tarea')} />
       </Field>
       <Field label="Hora (opcional)">
-        <TextInput type="time" value={h} onChange={(ev) => setH(ev.target.value)} />
+        <TextInput type="time" value={h} onChange={(ev) => setH(ev.target.value)} {...errorEn(campoMal, 'hora', 'motivo-tarea')} />
       </Field>
-      <Motivo texto={texto ? motivo : null} />
+      <Motivo id="motivo-tarea" texto={texto ? motivo : null} />
       <PrimaryButton accent={accent} disabled={!!motivo} onClick={() => onGuardar({ texto: texto.trim(), fecha, hora: h })}>
         Añadir
       </PrimaryButton>
@@ -136,22 +140,23 @@ export function FormularioEvento({ fecha, hora = '', titulo, tipo = 'personal', 
   const [inicio, setInicio] = useState(hora || '09:00');
   const [fin, setFin] = useState('');
   const motivo = validarEvento({ titulo: tit, fecha, horaInicio: inicio, horaFin: fin });
+  const campoMal = tit ? campoConError('evento', { titulo: tit, fecha, horaInicio: inicio, horaFin: fin }) : null;
   const esRecordatorio = tipo === 'recordatorio';
   return (
     <Hoja titulo={esRecordatorio ? 'Nuevo recordatorio' : 'Nuevo evento'} sub={titulo} onCerrar={onCerrar}>
       <Field label="Título">
-        <TextInput value={tit} onChange={(ev) => setTit(ev.target.value)} placeholder={esRecordatorio ? 'Tomar la pastilla' : 'Entrenamiento'} />
+        <TextInput value={tit} onChange={(ev) => setTit(ev.target.value)} placeholder={esRecordatorio ? 'Tomar la pastilla' : 'Entrenamiento'} {...errorEn(campoMal, 'titulo', 'motivo-evento')} />
       </Field>
       <Field label="Hora de inicio">
-        <TextInput type="time" value={inicio} onChange={(ev) => setInicio(ev.target.value)} />
+        <TextInput type="time" value={inicio} onChange={(ev) => setInicio(ev.target.value)} {...errorEn(campoMal, 'inicio', 'motivo-evento')} />
       </Field>
       {/* ⚠️ Un recordatorio es un instante, no un rato: no se le pide hora de fin. */}
       {!esRecordatorio && (
         <Field label="Hora de fin (opcional)">
-          <TextInput type="time" value={fin} onChange={(ev) => setFin(ev.target.value)} />
+          <TextInput type="time" value={fin} onChange={(ev) => setFin(ev.target.value)} {...errorEn(campoMal, 'fin', 'motivo-evento')} />
         </Field>
       )}
-      <Motivo texto={tit ? motivo : null} />
+      <Motivo id="motivo-evento" texto={tit ? motivo : null} />
       <PrimaryButton
         accent={accent}
         disabled={!!motivo}
@@ -247,9 +252,15 @@ export function CambiarHora({ elemento, valor, accent, onGuardar, onCerrar }) {
    segunda pila. Ofrecerlo sin poder cumplirlo sería un control decorativo
    (regla 8). */
 export function AvisoAccion({ accion, accent, onDeshacer, onCerrar }) {
-  const aviso = avisoDe(accion);
+  const avisoActual = avisoDe(accion);
+  /* 🔓 MS F9, apartado 33 — un aviso aparece, se queda y SE VA. Antes desaparecía de golpe: quien lo
+     pinta lo desmontaba al vaciar `accion`. Ahora se monta siempre, y al vaciarse se queda con el último
+     aviso mientras sale (`toastExit`); después, nada. */
+  const [ultimo, setUltimo] = useState(avisoActual);
+  useEffect(() => { if (avisoActual) setUltimo(avisoActual); }, [accion]); // eslint-disable-line react-hooks/exhaustive-deps
+  const aviso = avisoActual || ultimo;
   useEffect(() => {
-    if (!aviso) return undefined;
+    if (!avisoActual) return undefined;
     const t = setTimeout(onCerrar, SEGUNDOS_AVISO * 1000);
     return () => clearTimeout(t);
   }, [accion]);
@@ -261,7 +272,9 @@ export function AvisoAccion({ accion, accent, onDeshacer, onCerrar }) {
       style={{ bottom: 'calc(var(--safe-bottom) + 5.5rem)' }}
       role={aviso.error ? 'alert' : 'status'}
       aria-live={aviso.error ? 'assertive' : 'polite'}
+      data-aviso={avisoActual ? 'visible' : 'saliendo'}
     >
+      <Presencia visible={!!avisoActual} animarAlMontar={false} salida="toastExit" onSalida={() => setUltimo(null)}>
       <div
         className="flex items-center gap-3 px-4 py-2.5 rounded-full shadow-lg pointer-events-auto aviso-entra"
         style={{ background: COLORS.surface2, border: `1px solid ${aviso.error ? COLORS.negative : COLORS.border}` }}
@@ -272,12 +285,13 @@ export function AvisoAccion({ accion, accent, onDeshacer, onCerrar }) {
           ? <AlertTriangle size={15} style={{ color: COLORS.negative }} aria-hidden="true" />
           : <Check size={15} style={{ color: accent }} aria-hidden="true" />}
         <span className="text-sm font-semibold" style={{ color: COLORS.text }}>{aviso.texto}</span>
-        {aviso.deshacer && onDeshacer && (
+        {aviso.deshacer && onDeshacer && avisoActual && (
           <button onClick={() => { onDeshacer(); onCerrar(); }} className="flex items-center gap-1 text-sm font-bold toque-44" style={{ color: accent }}>
             <Undo2 size={14} aria-hidden="true" /> Deshacer
           </button>
         )}
       </div>
+      </Presencia>
     </div>,
     document.body,
   );

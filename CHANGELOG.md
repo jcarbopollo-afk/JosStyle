@@ -1,5 +1,61 @@
 # CHANGELOG.md
 
+## v3.139.0 — Motion System F9/20: microinteracciones, estados y feedback de interfaz
+
+La F9 del Motion System (*"Microinteracciones, estados y feedback de interfaz"*, líneas 11380–12127 de
+`especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). Su frase: *"Cada interacción debe comunicar algo."* La F3 hizo que
+pulsar respondiera; ésta hace que **esperar, equivocarse y confirmar** también lo hagan. Vive en
+`src/lib/estadosInteraccion.js` y en `src/components/ui.jsx` (C-60).
+
+### El catálogo de estados y el inventario (apartados 1-3)
+
+`ESTADOS_COMPONENTE` son los diez estados del enunciado con quién lleva cada uno, y los dos que no se usan —`hover`
+y `active`— dicen por qué: en un iPhone no hay puntero que se pose, y «activo» es pulsar. `INVENTARIO_F9` recorre los
+diecisiete tipos de componente de la aplicación y dice qué estados tiene cada uno y quién se los da.
+
+### 🔓 Un botón que carga ya no parece roto (apartados 4 y 6)
+
+`PrimaryButton` y `GhostBtn` aceptan `estado` —`reposo`, `cargando`, `hecho`, `fallo`—. Cargando: el texto cambia
+**en su sitio** (las capas se apilan, así que **el botón no cambia de ancho**), **no se apaga**, lleva `aria-busy` y
+el toque no repite la acción; el giro solo aparece si tarda más que `RETARDO_INDICADOR`. Sin `estado`, se pintan
+exactamente como antes. 🐛 Antes cuatro botones decían «Guardando…» a mano y se ponían a opacidad 0,6, que es como
+se pinta uno que no se puede pulsar. Los que lo escribían a mano —Armario, Relación, Fotos de progreso, Nutrición,
+Biblioteca, Entrenamiento, Salud, Ajustes, Estudios, la IA de un panel y la entrada— pasan por `TextoDeBoton`.
+
+### 🐛 Un campo enfocado no cambiaba nada (apartados 8, 20-23)
+
+`outline-none` le quitaba el anillo del navegador y no había otro, así que con el teclado no se sabía dónde se estaba
+escribiendo (salvo en Fitness, FIT F39). Ahora `TextInput`, `Textarea`, `SelectInput` y `Select` llevan la clase
+`campo`: al enfocar, el borde pasa al acento con un halo suave (`fast`); con `aria-invalid`, a rojo. Y
+`MensajeDeCampo` dice el error debajo, con un fundido corto y **sin temblar**. ⚠️ **Ni un píxel de letra ni de
+relleno cambia**: la C-32 sigue siendo de Josué. El ＋ de Hoy, la Agenda y el Calendario lo estrena: un fin antes que
+el inicio marca **ese** campo y lo dice debajo (`campoConError`, con las reglas de validación ahora en una tabla).
+
+### 🐛 El acento no llegaba a las hojas
+
+`--accent` vivía en el `div` de la aplicación y las hojas son portales sobre el `body` (regla 3): el foco de un campo
+dentro de una caía al color del texto. Ahora también va en `documentElement`, con `--color-negativo`.
+
+### 🔓 El aviso de «hecho» ya sabe irse (apartados 33 y 34)
+
+`AvisoAccion` se montaba con `{aviso && …}` y al irse desaparecía de golpe. Ahora se monta siempre y sale con
+`toastExit` (nuevo preset, `fast` con la curva de salida); «Deshacer» solo está mientras el aviso está vivo. Y
+`aviso-entra` termina con `backwards`, no con `both`.
+
+### Lo que no puede volver (apartado 51)
+
+`auditarEstadosInteraccion` caza un botón que escribe su «Guardando…» a mano y un temblor como respuesta a un error,
+con su línea, sobre todas las vistas.
+
+### Lo que no se construye (`NO_EN_F9`)
+
+Temblar un campo, quitar un elemento de una lista con su hueco (F10), los estados del sistema (F16), los contadores
+(F17), un indicador que viaje entre pestañas (F10) y una bandeja de notificaciones, que no existe.
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.138.0 — Motion System F8/20: física, muelles, estados del gesto e interacción directa
 
 La F8 del Motion System (*"Física, springs, gestos e interacción directa"*, líneas 10688–11379 de

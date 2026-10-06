@@ -5,7 +5,7 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**79 elementos**: ✅ Existe 70 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 7 · 🚨 Fuera de control 0.
+**82 elementos**: ✅ Existe 74 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 6 · 🚨 Fuera de control 0.
 
 ## Resumen
 
@@ -39,7 +39,10 @@
 | Tarjetas de una lista que entran en cascada (Biblioteca, Productividad, Nutrición, Salud) | J | 3 · Protagonista | 420 ms | ✅ Existe | F10 |
 | Marcar un favorito | E | 1 · Micro | 220 ms | ✅ Existe | F3 |
 | «Pensando…» y los botones que esperan | M | 1 · Micro | 1000 ms | ✅ Existe | F16 |
-| Campos de texto al enfocar | F | 0 · Estático | — | ⬜ Sin movimiento | F9 |
+| Campos de texto al enfocar | F | 1 · Micro | 160 ms | ✅ Existe | F9 |
+| Un error aparece debajo de su campo | P | 1 · Micro | 160 ms | ✅ Existe | F9 |
+| Un botón que espera: «Guardar» → «Guardando…» → ✓ | E | 1 · Micro | 160 ms | ✅ Existe | F9 |
+| El giro de un botón que tarda | M | 1 · Micro | 160 ms | ✅ Existe | F9 |
 | Una hoja de Fitness entra (en el iPhone, desde su borde) | H | 2 · Suave | 220 ms | ✅ Existe | F6 |
 | Una hoja sube desde su borde | H | 2 · Suave | 220 ms | ✅ Existe | F6 |
 | El fondo de una hoja se oscurece | G | 2 · Suave | 220 ms | ✅ Existe | F6 |
@@ -853,37 +856,67 @@
 | Escritorio | Igual |
 | Movimiento reducido | No late: el pulso vale 1, y el color ya lo dice. |
 
-### F · Campos
+#### Un botón que espera: «Guardar» → «Guardando…» → ✓
 
-#### Campos de texto al enfocar
-
-`campos` · ⬜ Sin movimiento · lo trata la **F9**
+`boton_estado` · ✅ Existe · lo trata la **F9**
 
 | Campo | Valor |
 |---|---|
-| Ubicación | src/components/ui.jsx |
-| Componente | TextInput, Textarea |
-| Clase CSS | — |
+| Ubicación | src/components/ui.jsx (PrimaryButton, GhostBtn) · src/index.css |
+| Componente | PrimaryButton |
+| Clase CSS | `.boton-capa` |
 | @keyframes | — |
 | En ANIMACIONES_HC | — |
-| Función | Enfocar un campo. |
-| Estado inicial | — |
-| Estado final | — |
-| Entrada | — |
+| Función | Que se vea que la acción se está haciendo y que no se puede repetir (apartados 4, 6 y 7). |
+| Estado inicial | Su texto |
+| Estado final | «Guardando…» (y ✓ o el fallo si el botón sigue en pantalla) |
+| Entrada | Fundido en su sitio, sin cambiar de ancho: las capas están apiladas |
 | Salida | — |
-| Interacción | — |
-| Transición | Ninguna: el anillo de foco aparece de golpe |
-| Duración | — |
+| Interacción | Pulsar algo que tarda (subir una foto, guardar una prenda) |
+| Transición | opacity y visibility, `fast` |
+| Duración | 160 ms |
 | Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
-| Intensidad | 0 · Estático |
-| Prioridad | media |
-| Relación | — |
+| Intensidad | 1 · Micro |
+| Prioridad | alta |
+| Relación | MS F9 — antes cuatro botones escribían «Guardando…» a mano y se apagaban: parecían rotos mientras trabajaban. Ahora no se apagan, llevan `aria-busy` y el toque no repite la acción. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+| Movimiento reducido | Igual: un fundido en su sitio. |
+
+### F · Campos
+
+#### Campos de texto al enfocar
+
+`campos` · ✅ Existe · lo trata la **F9**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/ui.jsx · src/index.css |
+| Componente | TextInput, Textarea, SelectInput, Select |
+| Clase CSS | `.campo` |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Que se note en qué campo se está escribiendo (apartados 20 y 21). |
+| Estado inicial | Su borde de siempre |
+| Estado final | Borde del acento con un halo suave; con `aria-invalid`, en rojo |
+| Entrada | — |
+| Salida | — |
+| Interacción | Enfocar (tocar o tabular) |
+| Transición | border-color y box-shadow, `fast` |
+| Duración | 160 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | alta |
+| Relación | 🐛 MS F9 — llevaban `outline-none` y nada en su lugar: un campo enfocado no cambiaba (salvo en Fitness, FIT F39). La letra y el tamaño no se tocan: eso es la C-32. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Igual: es un cambio de color en su sitio. |
 
 ### G · Modales
 
@@ -1679,6 +1712,36 @@
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
+#### El giro de un botón que tarda
+
+`boton_giro` · ✅ Existe · lo trata la **F9**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/ui.jsx · src/index.css |
+| Componente | PrimaryButton |
+| Clase CSS | `.boton-giro` |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Que se vea que algo trabaja SOLO si tarda (apartado 31). |
+| Estado inicial | Invisible |
+| Estado final | Girando |
+| Entrada | Aparece con un fundido pasado `slow` (`RETARDO_INDICADOR`): una acción casi instantánea no lo enseña |
+| Salida | — |
+| Interacción | — |
+| Transición | opacity `fast` con retraso `slow`; el giro, el de `animate-spin` |
+| Duración | 160 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | media |
+| Relación | Ocupa su sitio aunque no se vea: cuando aparece, el texto no se mueve. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Igual. |
+
 ### N · Esqueletos
 
 #### El latido del esqueleto
@@ -1745,6 +1808,36 @@
 
 ### P · Errores
 
+#### Un error aparece debajo de su campo
+
+`mensaje_campo` · ✅ Existe · lo trata la **F9**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/ui.jsx (MensajeDeCampo) · src/index.css |
+| Componente | MensajeDeCampo |
+| Clase CSS | `.campo-mensaje-entra` |
+| @keyframes | `campoMensajeEntra` |
+| En ANIMACIONES_HC | — |
+| Función | Decir qué corregir donde se espera encontrarlo (apartados 8 y 22). |
+| Estado inicial | Invisible, 4 px más arriba |
+| Estado final | En su sitio |
+| Entrada | Fundido corto que baja un poco desde el campo |
+| Salida | — |
+| Interacción | Guardar con algo que no vale |
+| Transición | opacity, transform |
+| Duración | 160 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | media |
+| Relación | Sin temblar (apartado 23): el error se lee, no se sacude. El campo lleva `aria-invalid`. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Solo el fundido. |
+
 #### Avisos de error (guardado, archivo, conexión)
 
 `errores` · ⬜ Sin movimiento · lo trata la **F16**
@@ -1783,16 +1876,16 @@
 
 | Campo | Valor |
 |---|---|
-| Ubicación | src/index.css |
-| Componente | — |
+| Ubicación | src/index.css · src/components/quickAdd.jsx (AvisoAccion) |
+| Componente | AvisoAccion |
 | Clase CSS | `.aviso-entra` |
 | @keyframes | `avisoEntra` |
 | En ANIMACIONES_HC | `aviso` |
-| Función | Confirmar una acción sin pararte. |
+| Función | Confirmar una acción sin pararte, con «Deshacer» si se puede (apartados 33 y 34). |
 | Estado inicial | — |
 | Estado final | — |
 | Entrada | Sube y aparece |
-| Salida | Ninguna |
+| Salida | Baja y se va (`toastExit`, `fast`, curva de salida): antes desaparecía de golpe |
 | Interacción | — |
 | Transición | — |
 | Duración | 280 ms |
@@ -1802,7 +1895,7 @@
 | Escalonado | — |
 | Intensidad | 2 · Suave |
 | Prioridad | media |
-| Relación | — |
+| Relación | MS F9 — se monta siempre (`Presencia`), así que puede salir; y su entrada termina con `backwards`, no con `both`. |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |

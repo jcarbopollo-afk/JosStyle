@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail, Plus, Trash2, ChevronRight, CornerDownLeft, ChevronDown } from 'lucide-react';
+import { Sparkles, Loader2, ShieldCheck, Lock, Paperclip, X, FileText, Image as ImageIcon, Lightbulb, Search, Mail, Plus, Trash2, ChevronRight, CornerDownLeft, ChevronDown, Check, AlertTriangle } from 'lucide-react';
 import { COLORS, CAPAS } from '../tokens';
 import { hexToRgba, shade, fileToBase64 } from '../lib/helpers';
 import { resolverConsulta, sugerenciasIniciales } from '../lib/indiceBusqueda';
@@ -9,6 +9,7 @@ import { extractPdfText } from '../lib/pdfText';
 import { verificarPin } from '../lib/pin';
 import { transicion } from '../lib/motion';
 import { desenfoque, sombra } from '../lib/profundidad';
+import { estadoDeBoton, TEXTOS_ESTADO_BOTON } from '../lib/estadosInteraccion';
 
 export function Card({ children, style, className = '', id }) {
   return (
@@ -272,7 +273,7 @@ export const TextInput = React.forwardRef(function TextInput(props, ref) {
     <input
       {...rest}
       ref={ref}
-      className={`w-full rounded-xl px-3 py-2.5 text-sm outline-none ${className || ''}`}
+      className={`campo w-full rounded-xl px-3 py-2.5 text-sm outline-none ${className || ''}`}
       style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text, ...style }}
     />
   );
@@ -294,7 +295,7 @@ export function SelectInput({ children, style, className = '', ...rest }) {
     <div className="relative">
       <select
         {...rest}
-        className={`w-full rounded-xl px-3 py-2.5 text-sm outline-none ${className}`}
+        className={`campo w-full rounded-xl px-3 py-2.5 text-sm outline-none ${className}`}
         style={{
           background: COLORS.surface2,
           border: `1px solid ${COLORS.border}`,
@@ -329,7 +330,7 @@ export const Textarea = React.forwardRef(function Textarea(props, ref) {
       {...rest}
       ref={ref}
       rows={rows}
-      className={`w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none ${className || ''}`}
+      className={`campo w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none ${className || ''}`}
       style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text, fontFamily: 'inherit', ...style }}
     />
   );
@@ -339,7 +340,7 @@ export function Select({ children, ...rest }) {
   return (
     <select
       {...rest}
-      className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+      className="campo w-full rounded-xl px-3 py-2.5 text-sm outline-none"
       style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.text }}
     >
       {children}
@@ -347,16 +348,52 @@ export function Select({ children, ...rest }) {
   );
 }
 
-export function PrimaryButton({ children, onClick, accent, disabled, icon: Icon }) {
+/* MS F9 — EL ESTADO DE UN BOTÓN QUE ESPERA (apartados 4, 6 y 7). Con `estado` (`cargando`, `hecho`,
+   `fallo`), lo que se lee cambia EN SU SITIO: todas las capas están apiladas en la misma celda, así que el
+   botón no cambia de ancho al pasar de «Guardar» a «Guardando…». Cargando NO se apaga —un botón a medio
+   color mientras trabaja parece roto—, lleva `aria-busy` y el toque no repite la acción. El giro solo
+   aparece si tarda (`RETARDO_INDICADOR`, lo pone el CSS). Sin `estado`, el botón es el de siempre. */
+export function TextoDeBoton({ estado, children, icono = null, textoCargando, textoHecho, textoFallo }) {
+  const { capa } = estadoDeBoton(estado);
+  const t = {
+    cargando: textoCargando || TEXTOS_ESTADO_BOTON.cargando,
+    hecho: textoHecho || TEXTOS_ESTADO_BOTON.hecho,
+    fallo: textoFallo || TEXTOS_ESTADO_BOTON.fallo,
+  };
+  /* El icono va DENTRO de la capa del texto, y el giro dentro de la de «cargando»: las dos ocupan lo mismo,
+     así que cambiar de una a otra no mueve nada. El giro ocupa su sitio aunque todavía no se vea. */
+  const capas = [
+    ['texto', <>{icono}{children}</>],
+    ['cargando', <><Loader2 size={14} className="animate-spin boton-giro" aria-hidden="true" />{t.cargando}</>],
+  ];
+  /* «Hecho» y «fallo» solo se apilan cuando tocan: su texto no tiene por qué ensanchar un botón que no los usa. */
+  if (capa === 'hecho') capas.push(['hecho', <><Check size={14} aria-hidden="true" />{t.hecho}</>]);
+  if (capa === 'fallo') capas.push(['fallo', <><AlertTriangle size={14} aria-hidden="true" />{t.fallo}</>]);
+  return (
+    <span className="boton-capas">
+      {capas.map(([id, contenido]) => (
+        <span key={id} className="boton-capa" data-capa-boton={id} data-visible={capa === id ? 'si' : 'no'} aria-hidden={capa === id ? undefined : true}>{contenido}</span>
+      ))}
+    </span>
+  );
+}
+
+export function PrimaryButton({ children, onClick, accent, disabled, icon: Icon, estado, textoCargando, textoHecho, textoFallo }) {
+  const conEstado = estado !== undefined;
+  const { ocupado, ariaBusy } = estadoDeBoton(estado);
+  const icono = Icon ? <Icon size={16} strokeWidth={2.5} /> : null;
   return (
     <button
-      onClick={onClick}
+      onClick={ocupado ? undefined : onClick}
       disabled={disabled}
+      aria-busy={ariaBusy}
+      data-estado={conEstado ? estadoDeBoton(estado).estado : undefined}
       className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-transform active:scale-95 disabled:opacity-60 w-full"
       style={{ background: accent, color: COLORS.textOnAccent }}
     >
-      {Icon && <Icon size={16} strokeWidth={2.5} />}
-      {children}
+      {conEstado
+        ? <TextoDeBoton estado={estado} icono={icono} textoCargando={textoCargando} textoHecho={textoHecho} textoFallo={textoFallo}>{children}</TextoDeBoton>
+        : <>{icono}{children}</>}
     </button>
   );
 }
@@ -368,17 +405,42 @@ export function PrimaryButton({ children, onClick, accent, disabled, icon: Icon 
    que se comía `Textarea` (E3 F20): la pantalla se pinta perfecta y la prop no
    hace nada. Mismo `disabled:opacity-60` que `PrimaryButton`, para que además se
    vea que está apagado. */
-export function GhostBtn({ children, onClick, icon: Icon, disabled }) {
+export function GhostBtn({ children, onClick, icon: Icon, disabled, estado, textoCargando, textoHecho, textoFallo }) {
+  const conEstado = estado !== undefined;
+  const { ocupado, ariaBusy } = estadoDeBoton(estado);
   return (
     <button
-      onClick={onClick}
+      onClick={ocupado ? undefined : onClick}
       disabled={disabled}
+      aria-busy={ariaBusy}
+      data-estado={conEstado ? estadoDeBoton(estado).estado : undefined}
       className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold disabled:opacity-60"
       style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
     >
-      {Icon && <Icon size={14} />}
-      {children}
+      {conEstado
+        ? <TextoDeBoton estado={estado} icono={Icon ? <Icon size={14} /> : null} textoCargando={textoCargando} textoHecho={textoHecho} textoFallo={textoFallo}>{children}</TextoDeBoton>
+        : <>{Icon && <Icon size={14} />}{children}</>}
     </button>
+  );
+}
+
+/* MS F9 — UN ERROR VA DONDE SE ESPERA ENCONTRARLO (apartados 8, 20, 22 y 23): debajo de su campo, con
+   un fundido corto y sin temblar. `tipo="error"` lo anuncia (`role="alert"`); `"exito"`, con calma
+   (`role="status"`). Al campo se le pone `aria-invalid` —el CSS lo pinta de rojo— y `aria-describedby`
+   con el `id` de este mensaje, para que VoiceOver lea los dos juntos. */
+export function MensajeDeCampo({ tipo = 'error', id, children, className = '' }) {
+  if (!children) return null;
+  const error = tipo === 'error';
+  return (
+    <p
+      id={id}
+      className={`campo-mensaje-entra text-xs mt-1.5 flex items-start gap-1.5 ${className}`}
+      style={{ color: error ? COLORS.negative : COLORS.textMuted }}
+      role={error ? 'alert' : 'status'}
+    >
+      {error && <AlertTriangle size={13} className="flex-shrink-0 mt-px" aria-hidden="true" />}
+      <span>{children}</span>
+    </p>
   );
 }
 
@@ -689,8 +751,8 @@ export function RecuperarPinModal({ accent, emailCuenta, onEnviar, onCancel }) {
             />
             {error && <p className="text-xs mt-2 text-center" style={{ color: COLORS.negative }}>{error}</p>}
             <div style={{ marginTop: 12 }}>
-              <PrimaryButton accent={accent} disabled={!email.trim() || estado === 'enviando'} onClick={enviar}>
-                {estado === 'enviando' ? 'Enviando…' : 'Enviar enlace'}
+              <PrimaryButton accent={accent} disabled={!email.trim()} estado={estado === 'enviando' ? 'cargando' : 'reposo'} textoCargando="Enviando…" onClick={enviar}>
+                Enviar enlace
               </PrimaryButton>
             </div>
           </>
@@ -754,9 +816,8 @@ export function AIPanel({ label, accent, buildPrompt }) {
   return (
     <div className="rounded-2xl p-4" style={{ background: hexToRgba(accent, 0.08), border: `1px solid ${hexToRgba(accent, 0.25)}` }}>
       <div className="flex items-center justify-between gap-2">
-        <button onClick={handleAsk} disabled={loading} className="flex items-center gap-2 text-sm font-semibold disabled:opacity-70" style={{ color: accent }}>
-          {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-          {loading ? 'Pensando…' : label}
+        <button onClick={loading ? undefined : handleAsk} aria-busy={loading || undefined} className="flex items-center gap-2 text-sm font-semibold" style={{ color: accent }}>
+          <TextoDeBoton estado={loading ? 'cargando' : 'reposo'} icono={<Sparkles size={16} />} textoCargando="Pensando…">{label}</TextoDeBoton>
         </button>
         <label className="flex items-center gap-1 text-xs cursor-pointer flex-shrink-0" style={{ color: COLORS.textMuted }} title="Adjuntar foto, captura o PDF">
           <Paperclip size={13} />

@@ -951,6 +951,15 @@ export default function App() {
     avisarCambioDeMotion();
   }, [apariencia.tamanoTexto, apariencia.radioBorde, apariencia.densidad, apariencia.animaciones, apariencia.reducirMovimiento, apariencia.velocidadMovimiento]);
 
+  /* MS F9 — el acento y el color de error, también en el documento. Las variables del tema viven en el
+     contenedor de la aplicación (más abajo), y las hojas, las ventanas y los avisos son portales sobre el
+     `body`: fuera de él. Sin esto, el anillo de foco de la F3 y el borde de un campo enfocado (F9) caían
+     en su color de respaldo justo dentro de una hoja, que es donde más se escribe. */
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent', accent);
+    document.documentElement.style.setProperty('--color-negativo', COLORS.negative);
+  }, [accent, COLORS.negative]);
+
   // Fase A5 — Bloqueo automático (apartado 146): sin PIN no hay nada que auto-bloquear; con
   // "nunca" (por defecto) tampoco se arma ningún temporizador. Reinicia el temporizador con
   // cualquier interacción — mismo criterio que un móvil real. Fase de Seguridad Centralizada:

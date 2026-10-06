@@ -354,6 +354,25 @@ enunciado pide no ponerlos por moda. 🚨 **En Reducido** el dedo sigue moviendo
 pero al soltar no hay muelle ni inercia. ⚠️ **Ningún gesto es la única forma** (apartado 39): toda hoja con asa
 tiene su botón de cerrar, y el divisor del comparador se mueve con las flechas.
 
+## 8.8 · Estados, carga, errores y avisos (F9)
+
+*"Cada interacción debe comunicar algo."* La F3 hizo que pulsar respondiera; la F9 hace que **esperar,
+equivocarse y confirmar** también lo hagan. Vive en `src/lib/estadosInteraccion.js` y en `ui.jsx`.
+
+| Si es… | Usa | Cómo se comporta |
+|---|---|---|
+| Un botón que espera algo que tarda | `<PrimaryButton estado="cargando" textoCargando="Subiendo…">` (o `GhostBtn`; dentro de un botón propio, `TextoDeBoton`) | El texto cambia **en su sitio** —las capas se apilan, así que el botón **no cambia de ancho**—, **no se apaga** (apagado parecería roto), lleva `aria-busy` y el toque no repite la acción. El giro solo aparece si tarda más que `RETARDO_INDICADOR` (`slow`) |
+| Una acción que terminó y el botón sigue ahí | `estado="hecho"` (✓ breve) o `estado="fallo"` | Si la pantalla se cierra, ya lo confirma el aviso o el propio cierre: nunca una celebración por guardar |
+| Un campo enfocado | Nada: `TextInput`, `Textarea`, `SelectInput` y `Select` llevan la clase `campo` | El borde pasa al acento con un halo suave (`fast`). 🐛 Antes no cambiaba nada: `outline-none` quitaba el anillo y no había otro |
+| Un campo que no vale | `aria-invalid` + `<MensajeDeCampo id=…>` con `aria-describedby` | Borde rojo y la frase debajo, que diga **qué corregir** (EH F62), con un fundido corto. **Sin temblar** (apartado 23) |
+| Un aviso de «hecho» con deshacer | `AvisoAccion`, montado **siempre** (con `accion` vacía) | Entra (`aviso-entra`) y **sale** (`toastExit`, `fast` con la curva de salida). Antes desaparecía de golpe |
+
+🚨 **El acento existe también fuera de la pantalla** (`--accent` y `--color-negativo` en `documentElement`, App.jsx):
+las hojas son portales sobre el `body`, y el borde de foco de un campo dentro de una caía al color del texto.
+⚠️ **Un temblor y un «Guardando…» escrito a mano ponen la suite roja** (`auditarEstadosInteraccion`). Lo que la F9
+no hace —quitar un elemento de una lista con su hueco, los estados del sistema, los contadores, una bandeja de
+notificaciones— está en `NO_EN_F9` con la fase que lo hace.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en

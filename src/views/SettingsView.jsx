@@ -365,8 +365,8 @@ function SelectorFoto({ fondo, accent, urlFotoActual, onSubirFoto, onCambiar, on
             Así quedará. Todavía no se ha aplicado.
           </p>
           <div className="flex gap-2">
-            <PrimaryButton accent={accent} onClick={aplicar} disabled={subiendo}>
-              {subiendo ? 'Aplicando…' : 'Aplicar'}
+            <PrimaryButton accent={accent} onClick={aplicar} estado={subiendo ? 'cargando' : 'reposo'} textoCargando="Aplicando…">
+              Aplicar
             </PrimaryButton>
             <div style={{ width: 110, flexShrink: 0 }}>
               <GhostBtn onClick={cancelar} disabled={subiendo}>Cancelar</GhostBtn>
@@ -1874,10 +1874,11 @@ export function AvatarPerfil({ perfil, accent, onCambiar, onQuitar }) {
                 en el manejador: el estado visual y el efectivo, los dos. */}
             <GhostBtn
               onClick={() => { if (!cargando) fileRef.current?.click(); }}
-              icon={cargando ? Loader2 : ImageIcon}
-              disabled={cargando}
+              icon={ImageIcon}
+              estado={cargando ? 'cargando' : 'reposo'}
+              textoCargando="Preparando…"
             >
-              {cargando ? 'Preparando…' : foto ? 'Cambiar foto' : 'Elegir foto'}
+              {foto ? 'Cambiar foto' : 'Elegir foto'}
             </GhostBtn>
             {foto && !confirmandoQuitar && (
               <GhostBtn onClick={() => setConfirmandoQuitar(true)} icon={Trash2}>Quitar</GhostBtn>
@@ -2854,8 +2855,8 @@ export default function SettingsView({
                   <p className="text-xs mb-3 leading-relaxed" style={{ color: COLORS.textMuted }}>
                     Face ID / Touch ID / huella como desbloqueo rápido adicional, con el PIN siempre como respaldo. Te pedirá verificarte con el sistema al activarla.
                   </p>
-                  <GhostBtn onClick={activarBiometria} icon={ShieldCheck}>
-                    {registrandoBiometria ? 'Comprobando…' : 'Activar biometría'}
+                  <GhostBtn onClick={activarBiometria} icon={ShieldCheck} estado={registrandoBiometria ? 'cargando' : 'reposo'} textoCargando="Comprobando…">
+                    Activar biometría
                   </GhostBtn>
                   {biometriaError && <p className="text-xs mt-2" style={{ color: COLORS.negative }}>{biometriaError}</p>}
                 </>

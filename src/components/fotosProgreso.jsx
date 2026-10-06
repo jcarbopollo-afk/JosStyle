@@ -229,10 +229,10 @@ export function ProgressPhotoForm({ accent, hoy, onGuardar, onCancelar, guardand
             <PrimaryButton
               onClick={() => onGuardar({ files: elegidas.map((e) => e.file), fecha, nota, tags })}
               accent={accent}
-              disabled={guardando}
+              estado={guardando ? 'cargando' : 'reposo'}
               icon={Camera}
             >
-              {guardando ? 'Guardando…' : `Guardar ${elegidas.length === 1 ? 'la foto' : `las ${elegidas.length} fotos`}`}
+              {`Guardar ${elegidas.length === 1 ? 'la foto' : `las ${elegidas.length} fotos`}`}
             </PrimaryButton>
             <GhostBtn onClick={onCancelar} disabled={guardando}>Cancelar</GhostBtn>
           </div>

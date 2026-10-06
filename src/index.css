@@ -709,6 +709,58 @@ html[data-motion='reducido'] .chevron-gira {
   outline-offset: 2px;
 }
 
+/* MS F9, apartados 20 y 21 — UN CAMPO ENFOCADO SE NOTA. Los campos llevan `outline-none` para que el
+   borde del navegador no rompa el diseño, y con eso un campo enfocado no cambiaba NADA: con el teclado no se
+   sabía dónde se estaba escribiendo (Fitness lo tenía desde la FIT F39; el resto, no). Ahora su borde pasa
+   al acento con un halo suave, en `fast`: rápido y sin violencia. No toca la letra ni el tamaño (eso es la
+   C-32, de Josué). `!important` porque el borde de cada campo va en su `style`. Con `aria-invalid`, en rojo. */
+.campo {
+  transition: border-color var(--motion-dur-fast) var(--ease-premium), box-shadow var(--motion-dur-fast) var(--ease-premium);
+}
+.campo:focus {
+  border-color: var(--accent, currentColor) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, currentColor) 22%, transparent);
+}
+.campo[aria-invalid='true'] {
+  border-color: var(--color-negativo, currentColor) !important;
+}
+.campo[aria-invalid='true']:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-negativo, currentColor) 22%, transparent);
+}
+
+/* MS F9, apartados 4, 6 y 7 — EL ESTADO DE UN BOTÓN, EN SU SITIO. Las capas (el texto, «Guardando…», ✓)
+   están en la misma celda: el botón no cambia de ancho y la que se va se funde mientras llega la otra. La
+   que no se ve está `visibility: hidden` —fuera de lo que se lee y de VoiceOver—, y lo hace AL FINAL del
+   fundido. El giro solo aparece si la acción tarda más que una transición de página (`slow`). */
+.boton-capas { display: inline-grid; }
+.boton-capa {
+  grid-area: 1 / 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: opacity var(--motion-dur-fast) var(--ease-premium), visibility var(--motion-dur-fast) var(--ease-premium);
+}
+.boton-capa[data-visible='no'] { opacity: 0; visibility: hidden; }
+.boton-giro {
+  opacity: 0;
+  transition: opacity var(--motion-dur-fast) var(--ease-premium);
+}
+.boton-capa[data-visible='si'] .boton-giro {
+  opacity: 1;
+  transition-delay: var(--motion-dur-slow);
+}
+
+/* MS F9, apartados 8, 22 y 23 — un mensaje de error aparece debajo de su campo: un fundido corto que baja
+   un poco desde el campo. Sin temblar. En Reducido, solo el fundido (`--motion-dist-micro` es 0). */
+@keyframes campoMensajeEntra {
+  from { opacity: 0; transform: translateY(calc(-1 * var(--motion-dist-micro))); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.campo-mensaje-entra {
+  animation: campoMensajeEntra var(--motion-dur-fast) var(--ease-premium) backwards;
+}
+
 /* Entrada en cascada de las tarjetas de un hub (Salud, Vida, Gestión, Más), 80ms de retraso entre
    cada una (aplicado inline por índice en HubView.jsx, sin tocar en N2). Fase N2 añade un ligerísimo
    escalado (0.97→1) junto al desplazamiento vertical — hace que cada tarjeta se sienta como si
@@ -1014,8 +1066,10 @@ html[data-motion='reducido'] .nav-indicador {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* 🐛 MS F9 — con `backwards`, no `both` (la lección de la F3): el último fotograma no se queda puesto, y la
+   salida del aviso (`toastExit`, por la Web Animations API) no tiene que pelearse con él. */
 .aviso-entra {
-  animation: avisoEntra var(--motion-dur-medium) var(--ease-premium) both;
+  animation: avisoEntra var(--motion-dur-medium) var(--ease-premium) backwards;
 }
 
 /* Entrega 3 · F17 (BL F2) — Libros.
