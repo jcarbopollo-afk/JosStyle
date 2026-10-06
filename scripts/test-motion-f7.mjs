@@ -83,6 +83,22 @@ ok(d_f7 !== null && d_f7.rect.top === 77, '…y si lo que se va es lo que se TOC
   registrarOrigen('compartido:e', { rect: R, elemento: nodo }, 4000, { efimero: true });
   ok(tomarOrigen('compartido:e', 4001)?.elemento === nodo, 'el origen dice QUÉ elemento lo dejó…');
 }
+/* 🐛 Lo cazó el recorrido entero: el mismo ejercicio dos veces en la biblioteca (Recientes y la lista). */
+{
+  const tocado = {}, hermana = {};
+  registrarOrigen('compartido:f', { rect: { ...R, top: 100 }, elemento: tocado }, 5000);
+  registrarOrigen('compartido:f', { rect: { ...R, top: 120 }, elemento: tocado }, 5010, { efimero: true });
+  ok(registrarOrigen('compartido:f', { rect: { ...R, top: 600 }, elemento: hermana }, 5020, { efimero: true }) === false,
+    '🐛 una copia con el MISMO id que se va no pisa el toque de la otra…');
+  const f_f7 = tomarOrigen('compartido:f', 5100);
+  ok(f_f7 && f_f7.rect.top === 120 && f_f7.elemento === tocado, '…y el nombre sale de donde se puso el dedo, con su rectángulo de justo antes de irse (no 600)');
+  registrarOrigen('compartido:g', { rect: { ...R, top: 100 }, elemento: tocado }, 6000);
+  registrarOrigen('compartido:g', { rect: { ...R, top: 300 } }, 6010, { efimero: true });
+  ok(tomarOrigen('compartido:g', 6020)?.rect.top === 300, 'sin elemento que comparar (un origen apuntado a mano), se actualiza como siempre');
+  registrarOrigen('compartido:h', { rect: { ...R, top: 50 }, elemento: tocado }, 7000, { efimero: true });
+  registrarOrigen('compartido:h', { rect: { ...R, top: 90 }, elemento: hermana }, 7010, { efimero: true });
+  ok(tomarOrigen('compartido:h', 7020)?.elemento === hermana, 'entre dos despedidas no hay toque que proteger: manda la última (lo que React quita en el mismo cambio)');
+}
 olvidarOrigenes();
 
 /* ═════════════════════════════════════════════════════════════════════════ */
@@ -149,7 +165,9 @@ const APP_L = sinComentarios(APP);
 const HUB = sinComentarios(leer('src/views/HubView.jsx'));
 const COMP = leer('src/components/continuidad.jsx');
 const COMP_L = sinComentarios(COMP);
-ok(/if \(origen && origen\.elemento !== el\)/.test(COMP_L) && /elemento: el \}/.test(COMP_L), '🐛 …y un elemento no sale de su propio origen: con el efecto que se deshace y se rehace (StrictMode) no viajaba a su propio sitio');
+ok(/if \(origen && origen\.elemento !== el && !deUnaHermanaQueSigue\)/.test(COMP_L) && /elemento: el \}/.test(COMP_L), '🐛 …y un elemento no sale de su propio origen: con el efecto que se deshace y se rehace (StrictMode) no viajaba a su propio sitio');
+ok(/const deUnaHermanaQueSigue = !!origen && origen\.efimero && !!origen\.elemento && origen\.elemento\.isConnected;/.test(COMP_L),
+  '🐛 …ni de la despedida de una HERMANA que sigue en la pantalla (el ensayo de StrictMode con el mismo id dos veces): al volver viajaba más de un nombre');
 ok(/apuntarOrigen\(`pantalla:\$\{id\}`, tarjetas\.current\[id\]\);\s*onOpenModulo\(id\);/.test(HUB),
   '🚨 la tarjeta de la portada apunta su rectángulo JUSTO antes de navegar, ya crecida');
 ok(/ref=\{\(el\) => \{ tarjetas\.current\[id\] = el; \}\}/.test(HUB) && /data-modulo=\{id\}/.test(HUB), '…cada tarjeta se guarda por su id');

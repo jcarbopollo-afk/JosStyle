@@ -78,6 +78,10 @@ export function registrarOrigen(id, { rect, radio = 0, fuente = null, elemento =
   if (!id || !rectValido(rect)) return false;
   const antes = ORIGENES.get(id);
   const deUnToque = !!antes && !antes.efimero && ahora - antes.t <= TTL_ORIGEN_MS;
+  /* 🐛 **El mismo id puede estar dos veces en la pantalla** (un ejercicio en «Recientes» y en la lista):
+     al irse, la copia que NO se tocó apuntaba su rectángulo encima del de la tocada, y el nombre salía
+     de un sitio donde nadie había puesto el dedo. Un toque vivo solo lo actualiza el elemento que lo dejó. */
+  if (deUnToque && antes.elemento && elemento && antes.elemento !== elemento) return false;
   ORIGENES.set(id, {
     rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
     radio: Math.max(0, Number(radio) || 0),

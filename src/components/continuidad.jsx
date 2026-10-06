@@ -76,8 +76,13 @@ export function Compartido({ id, forma = 'texto', as: Etiqueta = 'span', classNa
     /* 🐛 Un elemento no sale de SU PROPIO origen. React (en desarrollo, `StrictMode`) monta, deshace y
        vuelve a montar cada efecto sobre el mismo nodo: la despedida de abajo apuntaba dónde estaba y la
        vuelta lo tomaba, así que los veinte nombres de una lista «viajaban» a su propio sitio. */
+    /* Y tampoco del de una HERMANA que sigue en la pantalla: si una despedida la dejó un elemento que
+       sigue conectado, no se fue —era el ensayo de `StrictMode`— y con el mismo id dos veces en una
+       lista, la segunda copia la tomaba la primera y viajaban las dos. Un toque sí vale desde algo que
+       se queda (una tarjeta que abre una hoja encima). */
     const origen = tomarOrigen(`compartido:${id}`);
-    if (origen && origen.elemento !== el) {
+    const deUnaHermanaQueSigue = !!origen && origen.efimero && !!origen.elemento && origen.elemento.isConnected;
+    if (origen && origen.elemento !== el && !deUnaHermanaQueSigue) {
       const destino = el.getBoundingClientRect();
       const ctx = contextoDelDocumento();
       const datos = { origen, forma, radioDestino: radioDe(el), fuenteDestino: fuenteDe(el), ctx };
