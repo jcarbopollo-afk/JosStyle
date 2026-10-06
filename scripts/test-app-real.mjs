@@ -13754,6 +13754,214 @@ ok(errores.length === erroresAntes_ms12, `MS F12 — …sin un error en la conso
 almacen.ajustes = ajustesDeAntes_ms12;
 almacen.productividad = prodDeAntes_ms12;
 
+/* ── MS F13 · Rendimiento: lo que cuesta cada movimiento, medido ──
+   *"No optimices a ciegas"* (apartado 1): esta sección MIDE en Chromium, con el protocolo de las
+   herramientas de desarrollo (pintados de la traza, recálculos de estilo, memoria tras recoger la
+   basura), lo que la F13 arregló y lo que no puede volver: pulsar una tarjeta de la portada ya no
+   repinta su sombra en cada fotograma, el fundido bajo la cabecera no fuerza un recálculo por tarjeta,
+   tres rondas de abrir, cerrar y navegar no dejan memoria ni animaciones vivas detrás, el registro de
+   orígenes de la F7 no guarda nodos desmontados, y el monitor de fotogramas (solo en desarrollo) se
+   para con la pestaña escondida. ⚠️ Las cifras de tiempo de Chromium sin pantalla NO son las del
+   iPhone: lo que se comprueba es lo estructural (cuántos pintados, cuántos recálculos, cuánta memoria
+   que no vuelve), y los tiempos se escriben en el registro como referencia. Sufijo `_ms13`. */
+console.log('\n── MS F13 · Rendimiento extremo, GPU, frame budget y optimización ──');
+const ajustesDeAntes_ms13 = almacen.ajustes;
+almacen.ajustes = { ...(ajustesDeAntes_ms13 || {}), apariencia: { ...((ajustesDeAntes_ms13 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 375, height: 667 });
+await page.evaluate(() => { try { localStorage.removeItem('josstyle:motion-debug'); } catch { /* sin almacenamiento */ } });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms13 = errores.length;
+const cdp_ms13 = await page.context().newCDPSession(page);
+await cdp_ms13.send('Performance.enable');
+const metricas_ms13 = async () => Object.fromEntries((await cdp_ms13.send('Performance.getMetrics')).metrics.map((m) => [m.name, m.value]));
+/* Los pintados de una traza mientras se hacía algo: cuántos `Paint` y en cuántos MOMENTOS distintos
+   (un momento son las capas que se pintan en el mismo fotograma). Una animación que repinta lo hace
+   en cada fotograma; una que solo compone pinta al empezar y al acabar. */
+const pintadosDurante_ms13 = async (accion) => {
+  await browser.startTracing(page, { categories: ['devtools.timeline'] });
+  await accion();
+  const buf = await browser.stopTracing();
+  const ev = (JSON.parse(buf.toString()).traceEvents || []).filter((e) => e.name === 'Paint');
+  return { pintados: ev.length, momentos: new Set(ev.map((e) => Math.round(e.ts / 4000))).size };
+};
+
+/* 1 · Pulsar una tarjeta de la portada: la sombra se funde, no se repinta. */
+ok(await pulsar('Bienestar') && await esperarTexto(/Sueño/), 'MS F13 — Inicio → Bienestar');
+await page.waitForTimeout(900);
+const tarjeta_ms13 = await page.evaluate(() => {
+  const t = document.querySelector('button.hub-card[data-modulo]');
+  if (!t) return null;
+  t.scrollIntoView({ block: 'center' });
+  const r = t.getBoundingClientRect();
+  return { modulo: t.dataset.modulo, x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2), sombra: getComputedStyle(t).boxShadow };
+});
+ok(!!tarjeta_ms13, 'MS F13 — hay una tarjeta de la portada que pulsar');
+const quieto_ms13 = await pintadosDurante_ms13(() => page.waitForTimeout(300));
+let pulsada_ms13 = null;
+const pintadosPulsar_ms13 = await pintadosDurante_ms13(async () => {
+  await page.mouse.move(tarjeta_ms13.x, tarjeta_ms13.y);
+  await page.mouse.down();
+  await page.waitForTimeout(300);
+  pulsada_ms13 = await page.evaluate((m) => {
+    const t = document.querySelector(`button.hub-card[data-modulo="${m}"]`);
+    return { sombra: getComputedStyle(t).boxShadow, levantada: getComputedStyle(t, '::after').opacity, transforma: getComputedStyle(t).transform };
+  }, tarjeta_ms13.modulo);
+});
+console.log(`   · pintados en 300 ms: quieta ${JSON.stringify(quieto_ms13)}, pulsando ${JSON.stringify(pintadosPulsar_ms13)}`);
+ok(pulsada_ms13 && pulsada_ms13.transforma !== 'none' && pulsada_ms13.sombra === tarjeta_ms13.sombra && pulsada_ms13.levantada === '1',
+  `🚨 MS F13 — al pulsar una tarjeta de la portada encoge y su sombra se LEVANTA, pero la sombra de la caja no cambia: la levantada es un pseudo-elemento que se funde (${JSON.stringify(pulsada_ms13)}; apartado 15)`);
+ok(pintadosPulsar_ms13.momentos <= quieto_ms13.momentos + 3,
+  `🚨 MS F13 — …y no se repinta en cada fotograma: pinta en ${pintadosPulsar_ms13.momentos} momentos mientras dura la pulsación —al empezar y al acabar— (${pintadosPulsar_ms13.pintados} capas; quieta, ${quieto_ms13.momentos}). Con \`box-shadow\` animado eran 24 pintados, uno por fotograma (apartados 9 y 15)`);
+let expansion_ms13 = null;
+const pintadosExpandir_ms13 = await pintadosDurante_ms13(async () => {
+  await page.mouse.up();
+  await page.waitForTimeout(30);
+  expansion_ms13 = await page.evaluate((m) => {
+    const t = document.querySelector(`button.hub-card[data-modulo="${m}"]`);
+    if (!t) return { sinTarjeta: true };
+    const a = t.getAnimations().find((x) => x.animationName === 'hubCardExpand');
+    const props = a ? [...new Set(a.effect.getKeyframes().flatMap((k) => Object.keys(k)))].filter((k) => !['offset', 'easing', 'composite', 'computedOffset'].includes(k)) : null;
+    return { props, maxima: getComputedStyle(t, '::before').boxShadow !== 'none' };
+  }, tarjeta_ms13.modulo);
+  await page.waitForTimeout(400);
+});
+ok(expansion_ms13 && Array.isArray(expansion_ms13.props) && !expansion_ms13.props.includes('boxShadow') && expansion_ms13.props.includes('transform') && expansion_ms13.maxima,
+  `MS F13 — al soltar, la tarjeta CRECE (transform y brillo) y la sombra máxima es otro pseudo-elemento que se funde: la expansión no anima \`box-shadow\` (${JSON.stringify(expansion_ms13)})`);
+console.log(`   · pintados al soltar y navegar: ${JSON.stringify(pintadosExpandir_ms13)}`);
+const volver_ms13 = await page.evaluate(() => { const b = document.querySelector('button.back-bar'); if (b) b.click(); return !!b; });
+ok(volver_ms13 && await esperarTexto(/Sueño/), 'MS F13 — y se vuelve a la portada');
+await page.waitForTimeout(700);
+
+/* 2 · El fundido bajo la cabecera: un recálculo por fotograma, no uno por tarjeta. */
+await page.setViewportSize({ width: 375, height: 480 });
+await page.waitForTimeout(400);
+const scroll_ms13 = await page.evaluate(() => ({ cabe: document.documentElement.scrollHeight - innerHeight, tarjetas: document.querySelectorAll('.hub-card').length }));
+const recalcAntes_ms13 = await metricas_ms13();
+const pasos_ms13 = await page.evaluate(async () => {
+  window.scrollTo(0, 0);
+  let n = 0;
+  for (let i = 0; i < 24; i += 1) {
+    window.scrollBy(0, 8);
+    await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
+    n += 1;
+  }
+  const conMascara = [...document.querySelectorAll('.hub-card')].filter((t) => t.style.maskImage).length;
+  return { n, y: Math.round(scrollY), conMascara };
+});
+const recalcDespues_ms13 = await metricas_ms13();
+const porPaso_ms13 = (recalcDespues_ms13.RecalcStyleCount - recalcAntes_ms13.RecalcStyleCount) / pasos_ms13.n;
+console.log(`   · scroll bajo la cabecera: ${JSON.stringify({ ...scroll_ms13, ...pasos_ms13 })}, recálculos de estilo por paso ${porPaso_ms13.toFixed(2)}, diseños por paso ${((recalcDespues_ms13.LayoutCount - recalcAntes_ms13.LayoutCount) / pasos_ms13.n).toFixed(2)}`);
+ok(scroll_ms13.cabe > 40 && pasos_ms13.conMascara >= 1,
+  `MS F13 — la portada se desplaza bajo su cabecera y alguna tarjeta lleva su máscara (${JSON.stringify({ ...scroll_ms13, ...pasos_ms13 })})`);
+ok(porPaso_ms13 <= 1.2,
+  `🐛 MS F13 — desplazar la portada no fuerza un recálculo de estilo por tarjeta: ${porPaso_ms13.toFixed(2)} por paso (dos fotogramas cada uno; leyendo y escribiendo tarjeta a tarjeta eran 1,33 con dos bajo la cabecera), porque lee todas antes de escribir ninguna (apartados 6 y 7)`);
+await page.evaluate(() => window.scrollTo(0, 0));
+await page.setViewportSize({ width: 375, height: 667 });
+await page.waitForTimeout(300);
+
+/* 3 · Tres rondas de abrir, cerrar y navegar: ni memoria que no vuelve, ni nada vivo. */
+const ronda_ms13 = async () => {
+  await page.evaluate(async () => {
+    const nav = (t) => [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === t);
+    const boton = () => [...document.querySelectorAll('button')].find((x) => !x.closest('[inert], [data-capa-saliendo]') && (x.getAttribute('aria-label') === 'Añadir' || x.innerText.trim() === 'Añadir'));
+    for (let i = 0; i < 6; i += 1) {
+      const b = boton();
+      if (b) b.click();
+      await new Promise((ok) => setTimeout(ok, 60));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await new Promise((ok) => setTimeout(ok, 60));
+    }
+    for (const t of ['Bienestar', 'Vida', 'Gestión', 'Inicio', 'Bienestar', 'Inicio']) {
+      const b = nav(t);
+      if (b) b.click();
+      await new Promise((ok) => setTimeout(ok, 90));
+    }
+  });
+  await page.waitForTimeout(1200);
+};
+const memoria_ms13 = async () => {
+  await cdp_ms13.send('HeapProfiler.enable');
+  await cdp_ms13.send('HeapProfiler.collectGarbage');
+  await page.waitForTimeout(150);
+  await cdp_ms13.send('HeapProfiler.collectGarbage');
+  return (await metricas_ms13()).JSHeapUsedSize;
+};
+const marco_ms13 = await page.evaluate(() => {
+  window.__muestras_ms13 = [];
+  let ultimo = null;
+  let vivo = true;
+  const paso = (t) => { if (!vivo) return; if (ultimo !== null) window.__muestras_ms13.push(t - ultimo); ultimo = t; requestAnimationFrame(paso); };
+  requestAnimationFrame(paso);
+  window.__pararMuestras_ms13 = () => { vivo = false; };
+  return true;
+});
+await ronda_ms13();
+const heap1_ms13 = await memoria_ms13();
+await ronda_ms13();
+const heap2_ms13 = await memoria_ms13();
+await ronda_ms13();
+const heap3_ms13 = await memoria_ms13();
+const tras_ms13 = await page.evaluate(async () => {
+  window.__pararMuestras_ms13();
+  const m = await import('/src/lib/rendimientoMotion.js');
+  const o = await import('/src/lib/orquestadorMotion.js');
+  const resumen = m.resumenDeFotogramas(window.__muestras_ms13, { hz: m.hzProbable(window.__muestras_ms13) });
+  const vivas = document.getAnimations().filter((a) => a.playState === 'running' && Number.isFinite(a.effect && a.effect.getComputedTiming().endTime));
+  return { resumen, enMarcha: o.estadoGlobalMotion().enMarcha, vivas: vivas.length, dialogos: document.querySelectorAll('[role="dialog"]').length, copias: document.querySelectorAll('[data-capa-saliendo], [data-lista-saliendo]').length };
+});
+const crece_ms13 = (heap3_ms13 - heap2_ms13) / 1048576;
+console.log(`   · memoria tras recoger la basura: ${(heap1_ms13 / 1048576).toFixed(1)} → ${(heap2_ms13 / 1048576).toFixed(1)} → ${(heap3_ms13 / 1048576).toFixed(1)} MB · fotogramas: ${JSON.stringify(tras_ms13.resumen)}`);
+ok(marco_ms13 && tras_ms13.enMarcha === 0 && tras_ms13.vivas === 0 && tras_ms13.dialogos === 0 && tras_ms13.copias === 0,
+  `🚨 MS F13 — tres rondas de abrir y cerrar el ＋ seis veces y cambiar seis veces de pestaña no dejan NADA vivo: ni animaciones, ni capas, ni copias (${JSON.stringify({ enMarcha: tras_ms13.enMarcha, vivas: tras_ms13.vivas, dialogos: tras_ms13.dialogos, copias: tras_ms13.copias })}; apartados 22, 49 y 50)`);
+ok(crece_ms13 < 3,
+  `🚨 MS F13 — …ni memoria que no vuelve: de la segunda a la tercera ronda el montón crece ${crece_ms13.toFixed(2)} MB tras recoger la basura (apartado 21)`);
+ok(tras_ms13.resumen.fotogramas > 30 && tras_ms13.resumen.peorMs < 2000,
+  `MS F13 — y la página no se congela en ningún momento: ${tras_ms13.resumen.fotogramas} fotogramas, el peor de ${tras_ms13.resumen.peorMs} ms (apartado 4; los tiempos de Chromium sin pantalla son referencia, no el iPhone)`);
+
+/* 4 · El registro de orígenes de la F7 no guarda nodos desmontados. */
+const origenes_ms13 = await page.evaluate(async () => {
+  const c = await import('/src/lib/continuidad.js');
+  return { cuantos: typeof c.cuantosOrigenes === 'function' ? c.cuantosOrigenes() : null };
+});
+ok(origenes_ms13.cuantos !== null && origenes_ms13.cuantos <= 2,
+  `🐛 MS F13 — el registro de orígenes de la continuidad no guarda lo que ya caducó: ${origenes_ms13.cuantos} tras tanto ir y venir (antes, un nodo desmontado por nombre de la biblioteca para siempre; apartado 21)`);
+
+/* 5 · El monitor de fotogramas: solo con la marca, y se para con la pestaña escondida. */
+const sinMonitor_ms13 = await page.evaluate(() => typeof (window.__motion && window.__motion.fotogramas));
+await page.evaluate(() => { try { localStorage.setItem('josstyle:motion-debug', '1'); } catch { /* sin almacenamiento */ } });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const monitor_ms13 = await page.evaluate(async () => {
+  const f = window.__motion && window.__motion.fotogramas;
+  if (!f) return null;
+  f.empezar();
+  await new Promise((ok) => setTimeout(ok, 500));
+  const vivo = f.leer();
+  Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+  document.dispatchEvent(new Event('visibilitychange'));
+  const alEsconder = f.leer().fotogramas;
+  await new Promise((ok) => setTimeout(ok, 400));
+  const escondido = f.leer();
+  Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+  document.dispatchEvent(new Event('visibilitychange'));
+  await new Promise((ok) => setTimeout(ok, 300));
+  const vuelto = f.leer();
+  const fin = f.parar();
+  delete document.visibilityState;
+  return { vivo: { fotogramas: vivo.fotogramas, pantalla: vivo.pantalla, calidad: vivo.calidad, animaciones: vivo.animaciones, largas: typeof vivo.tareasLargas }, alEsconder, escondido: { fotogramas: escondido.fotogramas, pausado: escondido.pausado }, vuelto: { fotogramas: vuelto.fotogramas, pausado: vuelto.pausado }, fin: fin.activo };
+});
+ok(sinMonitor_ms13 === 'undefined' && monitor_ms13 && monitor_ms13.vivo.fotogramas > 10 && monitor_ms13.vivo.pantalla && monitor_ms13.vivo.calidad === 'standard' && monitor_ms13.vivo.largas === 'number' && typeof monitor_ms13.vivo.animaciones === 'number',
+  `MS F13 — el monitor de fotogramas solo existe con la marca de depuración, y dice fotogramas, pantalla, calidad (Normal es «standard»), animaciones y tareas largas (${JSON.stringify({ sin: sinMonitor_ms13, ...(monitor_ms13 && monitor_ms13.vivo) })}; apartado 46)`);
+ok(monitor_ms13 && monitor_ms13.escondido.pausado && monitor_ms13.escondido.fotogramas === monitor_ms13.alEsconder && !monitor_ms13.vuelto.pausado && monitor_ms13.vuelto.fotogramas > monitor_ms13.escondido.fotogramas && monitor_ms13.fin === false,
+  `🚨 MS F13 — …y con la pestaña escondida se PARA (no cuenta ni un fotograma), vuelve al enseñarla y se apaga al pararlo (${JSON.stringify(monitor_ms13 && { alEsconder: monitor_ms13.alEsconder, escondido: monitor_ms13.escondido, vuelto: monitor_ms13.vuelto })}; apartados 41 y 42)`);
+await page.evaluate(() => { try { localStorage.removeItem('josstyle:motion-debug'); } catch { /* sin almacenamiento */ } });
+
+ok(errores.length === erroresAntes_ms13, `MS F13 — …sin un error en la consola${errores.length > erroresAntes_ms13 ? `: ${errores.slice(erroresAntes_ms13).join(' | ').slice(0, 200)}` : ''}`);
+await cdp_ms13.detach().catch(() => {});
+almacen.ajustes = ajustesDeAntes_ms13;
+
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

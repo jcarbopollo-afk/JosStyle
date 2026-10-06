@@ -237,6 +237,10 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
        cantaron seis suites—. **Décima** exclusión a mano, por el mismo motivo de
        siempre. */
     && f !== 'microinteraccionesMotion'
+    /* ⚠️ Y `rendimientoMotion` es del **Motion System** (MS F13), no de Imagen
+       personal: lo caza `rendimiento`, por el `rendimiento.js` de la EH F44,
+       como a `rendimientoFitness`. **Undécima** exclusión a mano. */
+    && f !== 'rendimientoMotion'
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],

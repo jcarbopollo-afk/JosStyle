@@ -74,8 +74,20 @@ const rectValido = (r) => !!r && [r.top, r.left, r.width, r.height].every((n) =>
  * se queda su duración y solo se actualiza el rectángulo (lo que se ve justo
  * antes de irse es lo más fiel).
  */
+/* 🐛 MS F13 (apartado 21) — LO CADUCADO SE TIRA. Un origen solo se quitaba al tomarlo, así que el de
+   cada nombre de la biblioteca que se iba (y nadie tomaba) se quedaba para siempre, CON SU NODO
+   desmontado dentro (`elemento`): memoria que no volvía nunca. Cada vez que se apunta uno se podan los
+   que ya no valen. */
+function podarOrigenes(ahora) {
+  ORIGENES.forEach((o, id) => { if (ahora - o.t > ttlDe(o)) ORIGENES.delete(id); });
+}
+
+/** Cuántos orígenes hay apuntados (para medirlo: tras ir y venir, solo los vivos). */
+export const cuantosOrigenes = (ahora = ahoraMs()) => { podarOrigenes(ahora); return ORIGENES.size; };
+
 export function registrarOrigen(id, { rect, radio = 0, fuente = null, elemento = null } = {}, ahora = ahoraMs(), { efimero = false } = {}) {
   if (!id || !rectValido(rect)) return false;
+  podarOrigenes(ahora);
   const antes = ORIGENES.get(id);
   const deUnToque = !!antes && !antes.efimero && ahora - antes.t <= TTL_ORIGEN_MS;
   /* 🐛 **El mismo id puede estar dos veces en la pantalla** (un ejercicio en «Recientes» y en la lista):

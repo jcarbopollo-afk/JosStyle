@@ -602,7 +602,7 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | Tocar |
-| Transición | transform, filter, box-shadow |
+| Transición | transform, filter (la sombra máxima, un pseudo-elemento que se funde: MS F13) |
 | Duración | 160 ms |
 | Curva | --ease-premium |
 | Spring | — |
@@ -662,7 +662,7 @@
 | Entrada | — |
 | Salida | — |
 | Interacción | Mantener pulsado |
-| Transición | transform, filter, box-shadow, opacity |
+| Transición | transform, filter, opacity |
 | Duración | 160 ms |
 | Curva | --ease-premium |
 | Spring | — |
@@ -670,7 +670,7 @@
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | alta |
-| Relación | Anima `filter` y `box-shadow`, que no son baratos en un iPhone (la F13 lo mide). 🐛 Hasta la MS F3 la entrada (`hubCardIn`) terminaba con `both` y su último fotograma ganaba a `:active` y a `.hub-card-receding`: ni encogía ni las demás retrocedían. |
+| Relación | 🔓 MS F13 — la sombra que se levanta ya no anima `box-shadow` (24 pintados en 300 ms medidos en Chromium): es un pseudo-elemento que se funde. El brillo (`filter`) se queda, declarado en `COSTES_DECLARADOS`. 🐛 Hasta la MS F3 la entrada (`hubCardIn`) terminaba con `both` y su último fotograma ganaba a `:active` y a `.hub-card-receding`: ni encogía ni las demás retrocedían. |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |

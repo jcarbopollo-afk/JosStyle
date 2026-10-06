@@ -1340,6 +1340,25 @@ La F12 (*"Accesibilidad, reduced motion, adaptive motion y calidad de experienci
 ignoraban la preferencia; cinco giros de carga iban solos (sin texto para VoiceOver ni para cuando están quietos); y
 cambiar de pantalla no le decía nada a VoiceOver.
 
+### C-64 — ✅ RESUELTA AL CONSTRUIR (Motion System F13, v3.143.0) · Una rebaja para aparatos limitados contra lo que decidió la F12
+
+La F13 pide (apartado 44): *"Si el sistema detecta condiciones claramente limitadas: utilizar una variante de motion
+simplificada cuando sea seguro hacerlo"*, y una calidad adaptativa interna (apartado 45). La F12 ya había decidido
+(`ADAPTACION`, con su apartado 37: *"no intentar adivinar demasiado"*) que **la batería, la memoria y los núcleos no
+cuentan**: Safari de iOS no da los dos primeros, y adivinar castiga a quien no lo necesita.
+
+**La lectura que respeta las dos:** se rebaja con lo que el sistema **ve**, nunca con una suposición sobre el aparato.
+Las rebajas que ya se miden son la F13 de verdad (`REBAJAS_AUTOMATICAS`): demasiadas animaciones a la vez (el
+presupuesto del orquestador, F11), una lista que cambia entera (el de las listas, F10), una cascada larga (los seis
+escalones de la F1) y Reducir movimiento. La calidad (`CALIDADES_MOTION`: full, standard, reduced, minimal) sale del
+modo de la F1, sin un ajuste visible. ⚠️ Se llegó a escribir una rebaja por núcleos y memoria (Ultra sin el
+desenfoque del velo) y se retiró antes de subirla al chocar con la F12; queda en `NO_EN_F13` con este motivo.
+
+🐛 **Lo que destapó la medida** (y se arregló): pulsar una tarjeta de la portada animaba `box-shadow` (24 pintados en
+300 ms; ahora la sombra se funde, 2 momentos de pintado), el fundido bajo la cabecera leía y escribía tarjeta a
+tarjeta (un recálculo forzado por tarjeta en cada fotograma de scroll), y el registro de orígenes de la F7 guardaba el
+nodo desmontado de cada nombre de la biblioteca para siempre.
+
 ## PARTE B — DUPLICADOS (15)
 
 Dos categorías: **deliberados** (decisiones tomadas, no tocar) y **reales** (código o datos

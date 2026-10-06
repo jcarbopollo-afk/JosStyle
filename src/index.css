@@ -950,7 +950,7 @@ html[data-motion='reducido'] .plegable {
       salto brusco a la pantalla siguiente. Las demás tarjetas del hub retroceden levemente
       (`.hub-card-receding`) para que quede claro que el foco está en la que se pulsó. */
 .hub-card {
-  transition: transform var(--motion-dur-fast) var(--ease-premium), box-shadow var(--motion-dur-fast) var(--ease-premium), filter var(--motion-dur-fast) var(--ease-premium), opacity var(--motion-dur-fast) var(--ease-premium);
+  transition: transform var(--motion-dur-fast) var(--ease-premium), filter var(--motion-dur-fast) var(--ease-premium), opacity var(--motion-dur-fast) var(--ease-premium);
   box-shadow: var(--sombra-reposo);
 }
 /* 🐛 MS F3 — SOLO un botón, y solo si no trae su propio escalón. Mientras la entrada con `both`
@@ -961,11 +961,48 @@ html[data-motion='reducido'] .plegable {
 button.hub-card:not([class*='active:scale']):active:not(:disabled) {
   transform: scale(var(--motion-escala-subtle));
   filter: brightness(1.1);
+}
+/* 🔓 MS F13 (apartado 15) — LA SOMBRA QUE SE LEVANTA NO SE ANIMA: SE FUNDE. Animar `box-shadow`
+   repinta la tarjeta y sus 26-40 px de sombra en CADA fotograma (medido en Chromium: 24 pintados
+   en los 300 ms de una pulsación, 0 con la tarjeta quieta). Las dos sombras de la Fase N3 —la
+   levantada al pulsar y la máxima al expandirse— están ya pintadas en dos pseudo-elementos con la
+   forma de la tarjeta, y lo único que cambia es su opacidad: el navegador las compone sin
+   repintar. Fundir de la de reposo a la levantada se ve igual que interpolarla.
+   ⚠️ `inset: -1px` para que la sombra empiece fuera del borde de 1 px, como la de la caja; y la
+   tarjeta aísla su apilamiento para que la sombra (la capa `fondo` de la F6) quede detrás de su
+   contenido sin pasar por detrás de la página. Solo en las tarjetas de portada, que son las que se pulsan así. */
+button.hub-card:not([class*='active:scale']) {
+  position: relative;
+  isolation: isolate;
+}
+button.hub-card:not([class*='active:scale'])::before,
+button.hub-card:not([class*='active:scale'])::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: var(--z-fondo);
+  opacity: 0;
+  transition: opacity var(--motion-dur-fast) var(--ease-premium);
+}
+button.hub-card:not([class*='active:scale'])::after {
   box-shadow: var(--sombra-elevada);
 }
+button.hub-card:not([class*='active:scale'])::before {
+  box-shadow: var(--sombra-maxima);
+}
+button.hub-card:not([class*='active:scale']):active:not(:disabled)::after {
+  opacity: 1;
+}
+/* Al expandirse, la levantada se va mientras llega la máxima: a mitad, media de cada una, que es
+   lo que hacía la interpolación de antes (de `--sombra-elevada` a `--sombra-maxima`). */
+.hub-card-expanding::before {
+  opacity: 1;
+}
 @keyframes hubCardExpand {
-  0% { transform: scale(var(--motion-escala-subtle)); filter: brightness(1.1); box-shadow: var(--sombra-elevada); }
-  100% { transform: scale(var(--motion-pulso-sobrepaso)); filter: brightness(1.16); box-shadow: var(--sombra-maxima); }
+  0% { transform: scale(var(--motion-escala-subtle)); filter: brightness(1.1); }
+  100% { transform: scale(var(--motion-pulso-sobrepaso)); filter: brightness(1.16); }
 }
 .hub-card-expanding {
   position: relative;

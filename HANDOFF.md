@@ -2,6 +2,12 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.143.0 — Motion System F13/20: rendimiento):**
+> Se ha MEDIDO el movimiento en Chromium y se ha arreglado lo caro sin quitar ninguna animación: pulsar una tarjeta de
+> la portada ya no repinta su sombra en cada fotograma (de 24 pintados a 6), desplazar una portada bajo su cabecera
+> fuerza menos trabajo, y la continuidad ya no guarda nodos viejos en memoria. Hay una auditoría que no deja entrar
+> nada caro sin motivo y un monitor de fotogramas para desarrollo. **La siguiente es la F14** (curvas, ritmo y lenguaje).
+
 > **📅 ACTUALIZACIÓN (v3.142.0 — Motion System F12/20: accesibilidad del movimiento):**
 > Con «Reducir movimiento» ya no queda nada girando ni latiendo, y llevar la vista a algo salta en vez de deslizarse.
 > Con el teclado, borrar una tarea o plegar un desplegable **no pierde el foco**. Con VoiceOver, **cambiar de pantalla

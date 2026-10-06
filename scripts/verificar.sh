@@ -1017,6 +1017,11 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f12.mjs >/tmp/j
 else
   fallo "Falla la accesibilidad del Motion System (F12)"; grep '✗' /tmp/jc_motion_f12.log
 fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f13.mjs >/tmp/jc_motion_f13.log 2>&1; then
+  ok "El Motion System, F13: el coste de cada movimiento, lo caro declarado, la sombra que se funde y el monitor de fotogramas — $(grep -c '✓' /tmp/jc_motion_f13.log) comprobaciones"
+else
+  fallo "Falla el rendimiento del Motion System (F13)"; grep '✗' /tmp/jc_motion_f13.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

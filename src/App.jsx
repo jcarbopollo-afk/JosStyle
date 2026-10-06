@@ -196,6 +196,9 @@ import { eliminarGusto, restaurarGusto } from './lib/gustos';
    `estiloHombre` y de `productividad`, así que el plan lo aplica aquí. */
 import { aplicarTarea } from './lib/integracionEstilo';
 import { atributoMotion, velocidadMotion, avisarCambioDeMotion, contextoDelDocumento } from './lib/motion';
+/* MS F13 (apartado 46) — solo por lo que hace al cargar: con la marca de depuración de la F11, y en
+   desarrollo, deja el monitor de fotogramas en `window.__motion.fotogramas`. En producción, nada. */
+import './lib/rendimientoMotion';
 import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el componente en sí ahora se usa dentro de SettingsView.jsx (Fase A1)
 
 // FO Fase 12 — firmar una foto de fondo cualquiera por su ruta, no solo la activa.

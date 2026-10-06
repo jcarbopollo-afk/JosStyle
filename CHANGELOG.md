@@ -1,5 +1,49 @@
 # CHANGELOG.md
 
+## v3.143.0 — Motion System F13/20: rendimiento extremo, GPU, frame budget y optimización
+
+La F13 del Motion System (*"Rendimiento extremo, GPU, frame budget y optimización del Motion System"*, líneas
+15718–16452 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). Su principio: *"mantener la máxima calidad visual
+utilizando el mínimo coste técnico necesario"* — no se quita ninguna animación: se mide, se localiza y se cambia el
+cómo. Vive en `src/lib/rendimientoMotion.js` (C-64).
+
+### Medir primero (apartados 1, 2 y 47)
+
+Una sección nueva del recorrido de Chromium («MS F13») mide con el protocolo de las herramientas de desarrollo los
+pintados de una traza, los recálculos de estilo y la memoria tras recoger la basura. Y una referencia que no deja
+empeorar: `auditarCosteMotion` clasifica cada propiedad animada de `index.css` (componer, pintar, recolocar) y pone la
+suite roja con algo caro sin su motivo en `COSTES_DECLARADOS`, un desenfoque animado, un `will-change`, un escuchador
+de scroll que no dice si es pasivo o un intervalo en una pieza de movimiento.
+
+### 🐛 Lo que destapó la medida
+
+- **Pulsar una tarjeta de la portada animaba `box-shadow`**: 24 pintados en 11 fotogramas en 300 ms. Ahora la sombra
+  levantada y la máxima son dos pseudo-elementos pintados una vez que se **funden**: 2 momentos de pintado (al
+  empezar y al acabar). Soltar y abrir el módulo: de 64 pintados en 27 momentos a 42 en 16.
+- **El fundido bajo la cabecera (SF2) leía y escribía tarjeta a tarjeta**: un recálculo de estilo forzado por tarjeta
+  en cada fotograma de scroll. Ahora lee todas y luego escribe: de 1,33 recálculos por paso a 0,96.
+- **El registro de orígenes de la F7 guardaba el nodo desmontado de cada nombre de la biblioteca para siempre**: un
+  origen solo salía al tomarlo. Ahora los caducados se podan al apuntar uno nuevo.
+- **Las tipografías se pedían desde dentro del CSS**: `preconnect` en `index.html` abre la conexión a la vez que la
+  página.
+
+### Calidad adaptativa, monitor y regla permanente (apartados 41-46 y 53)
+
+Cuatro calidades (full, standard, reduced, minimal) que salen de los modos de la F1, sin un ajuste visible, y las
+rebajas automáticas son las que se miden (el presupuesto del orquestador, el de las listas, la cascada, Reducir
+movimiento). 🔓 **C-64**: rebajar por los núcleos o la memoria del aparato chocaba con la F12, que ya lo descartó; se
+llegó a escribir y se retiró antes de subirlo. El monitor de fotogramas (`window.__motion.fotogramas`, solo en
+desarrollo y con la marca de la F11) dice FPS, perdidos, tareas largas, pantalla, calidad y animaciones, y **se para con
+la pestaña escondida**. Los cinco criterios de toda animación nueva —calidad, accesibilidad, rendimiento, que se pueda
+interrumpir y que se limpie— tienen cada uno su auditoría.
+
+Tres rondas de abrir y cerrar el ＋ seis veces y cambiar de pestaña seis no dejan ni una animación viva ni memoria que no
+vuelva (0 MB de la segunda a la tercera).
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.142.0 — Motion System F12/20: accesibilidad, reduced motion, adaptive motion y calidad de experiencia
 
 La F12 del Motion System (*"Accesibilidad, reduced motion, adaptive motion y calidad de experiencia"*, líneas

@@ -46,10 +46,13 @@ export function useFundidoBajoCabecera(cabeceraRef, listaRef, clave) {
       const cab = cabeceraRef.current;
       const lista = listaRef.current;
       if (!cab || !lista) return;
+      /* 🐛 MS F13 (apartados 6 y 7) — PRIMERO SE LEE TODO, LUEGO SE ESCRIBE. Leía una tarjeta,
+         le escribía la máscara y leía la siguiente: cada lectura después de una escritura obliga al
+         navegador a recalcular el estilo en el acto, uno por tarjeta en cada fotograma de scroll. */
       const borde = cab.getBoundingClientRect().bottom;
-      lista.querySelectorAll('.hub-card').forEach((el) => {
-        ponerMascara(el, mascaraBajoCabecera(borde - el.getBoundingClientRect().top));
-      });
+      const tarjetas = [...lista.querySelectorAll('.hub-card')];
+      const bordes = tarjetas.map((el) => borde - el.getBoundingClientRect().top);
+      tarjetas.forEach((el, i) => ponerMascara(el, mascaraBajoCabecera(bordes[i])));
     };
     const pedir = () => {
       if (!pendiente) pendiente = window.requestAnimationFrame(medir);

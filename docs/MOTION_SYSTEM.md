@@ -456,6 +456,64 @@ se oye**: el contenedor de cada pantalla es una región con su nombre y `Anuncio
 hace falta, qué pasa en Reducido, con teclado, con VoiceOver, en táctil, con menos rendimiento, si se puede
 interrumpir y si se puede quitar sin romper nada). Si no tiene buenas respuestas, no se añade.
 
+## 8.12 · Rendimiento: lo que cuesta cada movimiento (F13)
+
+*"Mantener la máxima calidad visual utilizando el mínimo coste técnico necesario."* No se quita una animación para
+ganar fotogramas: se mide, se localiza y se cambia el **cómo**. Vive en `src/lib/rendimientoMotion.js`.
+
+**El presupuesto** (`PRESUPUESTO_FOTOGRAMA`): **16,67 ms** por fotograma a 60 Hz y **8,33 ms** a 120 Hz (el iPhone con
+ProMotion). Ir a 60 FPS en una pantalla de 120 Hz es perder uno de cada dos. Un fotograma de más de 50 ms es una
+tarea larga. `resumenDeFotogramas(intervalos, { hz })` resume unos intervalos medidos (FPS, percentil 95, el peor,
+perdidos y largos).
+
+**Lo que cuesta cada propiedad** (`costeDe`): `composicion` (`transform`, `opacity`: la GPU mueve una capa ya
+pintada), `pintado` (`box-shadow`, `filter`, un color, `clip-path`: se repinta la caja) y `diseno` (`width`,
+`height`, `margin`, `grid-template-rows`: se recoloca la página). **Componer antes que pintar, pintar antes que
+recolocar.**
+
+| Regla | Cómo se cumple |
+|---|---|
+| Una animación de pintado o de diseño en `index.css` | Se puede, pero con su línea en `COSTES_DECLARADOS` (qué regla, qué propiedad y por qué es el coste justo). Sin línea, la suite se pone roja |
+| Un desenfoque (`backdrop-filter`, `blur`) | **Fijo, como material, nunca animado** (la barra de abajo, el cristal de la portada, el velo de Ultra) |
+| `will-change` o forzar capas de GPU | **Ni uno.** El navegador sube a su capa lo que anima `transform` u `opacity` mientras dura; una capa permanente cuesta memoria |
+| Un escuchador de `scroll`, `wheel` o un toque | Dice `passive` (`passive: false` es una decisión, no decir nada no lo es) |
+| Algo que se pinta en cada fotograma | `requestAnimationFrame`, que se para solo con la pestaña escondida; ni un `setInterval` en una pieza de movimiento |
+| Leer el tamaño de varias cosas y escribirles algo | **Primero se lee todo y luego se escribe todo**: leer después de escribir obliga a recalcular en el acto |
+| Algo que guarda nodos para más tarde | Se poda al caducar: ningún nodo desmontado se queda en un registro |
+
+`auditarCosteMotion({ css, fuentes })` caza las seis cosas sobre `index.css` y todo `src/`, y cada una de sus reglas
+(`REGLAS_COSTE`) trae su ejemplo malo con la prueba de que lo caza.
+
+**Lo que se midió en Chromium** (la sección «MS F13» del recorrido, con el protocolo de las herramientas de desarrollo):
+
+| Qué | Antes | Ahora | Qué se hizo |
+|---|---|---|---|
+| Pulsar una tarjeta de la portada (300 ms) | 24 pintados en 11 fotogramas | 6 pintados en 2 (al empezar y al acabar) | La sombra levantada ya no anima `box-shadow`: es un pseudo-elemento pintado una vez que se **funde** (`opacity`); la máxima, otro encima |
+| Soltarla y abrir su módulo | 64 pintados en 27 momentos | 42 en 16 | La expansión crece con `transform` y brillo; la sombra máxima se funde |
+| Desplazar una portada bajo su cabecera | 1,33 recálculos de estilo por paso | 0,96 | El fundido (SF2) lee todas las tarjetas antes de escribir ninguna máscara |
+| Tres rondas de abrir, cerrar y navegar | — | 0 MB que no vuelvan, 0 animaciones vivas | Los orígenes de la F7 caducan (`podarOrigenes`): antes, cada nombre de la biblioteca dejaba su nodo desmontado guardado para siempre |
+
+⚠️ **Los tiempos de Chromium sin pantalla no son los del iPhone**: lo que se comprueba es lo estructural (cuántos
+pintados, cuántos recálculos, cuánta memoria que no vuelve) y los fotogramas se escriben en el registro como
+referencia.
+
+**La calidad adaptativa** (`CALIDADES_MOTION`): `full` (Premium y Ultra), `standard` (Normal), `reduced` (Reducido) y
+`minimal` (Sin movimiento). **No es un ajuste**: sale del modo. Y las rebajas automáticas son las que **se miden**
+(`REBAJAS_AUTOMATICAS`: demasiadas animaciones a la vez, una lista que cambia entera, una cascada larga, Reducir
+movimiento), nunca una suposición sobre el aparato —ni los núcleos, ni la memoria, ni la batería— (🔓 C-64, que
+respeta la F12).
+
+**El monitor de fotogramas** (solo en desarrollo, con `localStorage["josstyle:motion-debug"] = "1"`):
+`window.__motion.fotogramas.empezar()`, `.leer()` y `.parar()`. Dice los fotogramas (FPS, peor, perdidos), las tareas
+largas, la pantalla, la calidad y las animaciones del orquestador por sistema. 🚨 **Con la pestaña escondida se para**:
+no deja un fotograma pedido.
+
+**Regla permanente (apartado 53):** toda animación nueva cumple los cinco criterios de `CINCO_CRITERIOS` —calidad
+visual (`auditarMotion`), accesibilidad (`auditarAccesibilidadMotion`), rendimiento (`auditarCosteMotion`), que se
+pueda interrumpir (el orquestador, `resolverConflicto`) y que se limpie (`auditarOrquestacion`)—. Si falla uno, se
+revisa antes de entrar. Lo que se miró y está bien está en `REVISADO_Y_BIEN_F13`; lo que no se hace (typecheck y
+lint, listas virtuales, capas forzadas, un ajuste de calidad, rebajar por el aparato), en `NO_EN_F13`.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en
