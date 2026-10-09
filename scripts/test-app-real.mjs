@@ -14683,12 +14683,22 @@ console.log('\n── MS F17 · Motion de datos: cifras, barras y gráficas ─�
 const ajustesDeAntes_ms17 = almacen.ajustes;
 const economiaDeAntes_ms17 = almacen.economia;
 const suenoDeAntes_ms17 = almacen.sueno;
+const productividadDeAntes_ms17 = almacen.productividad;
 const dia_ms17 = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('sv-SE'); };
 almacen.ajustes = { ...(ajustesDeAntes_ms17 || {}), apariencia: { ...((ajustesDeAntes_ms17 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
 almacen.economia = { saldoInicial: 1000, hucha: 0, aportaciones: [], movimientos: [
   { id: 'mv1_ms17', fecha: dia_ms17(1), tipo: 'gasto', concepto: 'Libro', cantidad: 300 },
   { id: 'mv2_ms17', fecha: dia_ms17(2), tipo: 'gasto', concepto: 'Bici', cantidad: 600 },
 ] };
+/* La barra del día de Productividad solo existe con algo que completar hoy (`null` no es 0, E3 F29): sin
+   sembrar, la sección miraba una pantalla sin barras y no medía nada. */
+almacen.productividad = {
+  tareas: [
+    { id: 'ta1_ms17', texto: 'Repasar apuntes', fecha: dia_ms17(0), hecha: true },
+    { id: 'ta2_ms17', texto: 'Ordenar el escritorio', fecha: dia_ms17(0), hecha: false },
+  ],
+  habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [],
+};
 almacen.sueno = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((n) => ({ id: `su_ms17_${n}`, fecha: dia_ms17(n), horaDormir: '23:00', horaDespertar: n % 2 ? '07:30' : '06:30', calidad: 4, interrupciones: 0, siestaAyer: false, siestaMinutos: 0 }));
 await page.emulateMedia({ reducedMotion: 'no-preference' });
 await page.setViewportSize({ width: 390, height: 844 });
@@ -14708,7 +14718,9 @@ ok(s0_ms17 === 100, `MS F17 — el saldo de partida (${s0_ms17})`);
 const cuenta_ms17 = await page.evaluate(async (f) => {
   const leer = new Function(`return (${f})()`);
   const botones = () => [...document.querySelectorAll('button[aria-label="Eliminar movimiento"]')].filter((b) => !b.closest('[data-lista-saliendo], [inert]'));
-  const fila = (b) => (b.closest('[data-flip-id]') || b.parentElement).textContent;
+  /* La fila de un movimiento es un `ListRow` (no una `ListaAnimada`): el padre del botón solo trae la
+     cantidad, y el concepto vive un nivel más arriba. */
+  const fila = (b) => (b.closest('[data-flip-id]') || (b.parentElement && b.parentElement.parentElement) || b).textContent;
   const primero = botones().find((b) => /Libro/.test(fila(b)));
   if (!primero) return null;
   primero.click();
@@ -14771,6 +14783,7 @@ ok(errores.length === erroresAntes_ms17, `MS F17 — …sin un error en la conso
 almacen.ajustes = ajustesDeAntes_ms17;
 almacen.economia = economiaDeAntes_ms17;
 almacen.sueno = suenoDeAntes_ms17;
+almacen.productividad = productividadDeAntes_ms17;
 
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });

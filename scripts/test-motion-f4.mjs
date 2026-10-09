@@ -169,8 +169,11 @@ ok(a.sinMapa.length === 0 && a.keyframesHuerfanos.length === 0 && a.mapaSinCss.l
 });
 ok(NO_EN_F4.some((x) => /F10/.test(x.porque)) && NO_EN_F4.some((x) => /F17/.test(x.porque)) && NO_EN_F4.some((x) => /F16/.test(x.porque)),
   'lo que no es de la F4 dice de quién es: las listas (F10), todas las cifras (F17) y la sincronización (F16)');
-ok(HALLAZGOS_F0.find((h) => h.id === 'cifras_de_golpe')?.fase === 17 && !HALLAZGOS_F0.find((h) => h.id === 'cifras_de_golpe').resuelto,
-  '⚠️ `cifras_de_golpe` sigue siendo de la F17: la F4 deja el sistema y las cifras principales, no las cierra todas');
+/* 🔓 MS F17 — esta comprobación vigilaba que la F4 no diera el hallazgo por cerrado: dejaba el sistema y
+   las cifras principales, y el resto era de la F17. La F17 lo cierra, así que se da la vuelta: sigue
+   siendo de la F17, y ahora resuelto por ella (no por la F4). */
+ok(HALLAZGOS_F0.find((h) => h.id === 'cifras_de_golpe')?.fase === 17 && HALLAZGOS_F0.find((h) => h.id === 'cifras_de_golpe').resuelto === 17,
+  '🔓 `cifras_de_golpe` es de la F17 y lo cierra la F17: la F4 dejó el sistema y las cifras principales, no las cerró todas');
 /* Ninguna cifra cuenta al montar: el texto de una cuenta solo existe DESPUÉS de un cambio. */
 ok(/useRef\(valor\)/.test(cifra) && /previo\.current = valor/.test(cifra), 'lo de antes se recuerda desde el primer pintado, así que al aparecer no hay nada que contar');
 
