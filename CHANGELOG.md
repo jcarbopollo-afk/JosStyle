@@ -24,6 +24,14 @@ Clasificado de P0 (bloquea) a P3 (pulido). **Ninguno P0 ni P1.**
   ningún evento llevaba a él, y la operación de la conexión decía pasar por «Reintentando», que es de una carga.
   `sinConexion` lleva ahí desde el reposo, lo cargado, lo guardado, lo cancelado y lo pendiente; la conexión pasa
   por «Guardando».
+- 🐛 **El número nuevo se asomaba un fotograma antes de contar** (P2, y lo cazó el recorrido): `CifraQueCambia`
+  decidía la cuenta en un `useEffect`, **después de pintar**, así que al borrar un gasto el saldo enseñaba un
+  fotograma el 400 de destino y luego volvía al 100 para subir (400 → 100 → 142…); un relevo enseñaba el número
+  nuevo un fotograma antes de su fundido. Lo tapaba la comprobación de la F17, que leía a los **70 ms fijos** —y que
+  con la máquina cargada (la pasada entera de la F18) leía todavía el 100, el único rojo de esa pasada—. Ahora se
+  decide antes de pintar (`useEfectoDeDiseno`, como `useFlip`) y el primer fotograma de la cuenta ya es el de
+  partida; el recorrido mira fotograma a fotograma que el 400 no aparezca antes de contar —**y se puso rojo con la
+  pieza de antes**—, y `test-motion-f19` caza la versión con `useEffect`.
 - 🐛 **Un muelle podía devolver fotogramas `NaN`** (P3, `barridoDeMuelles`): con una velocidad, un origen o un
   destino que no son números, o una masa a 0, `muestrearSpring` daba 73 fotogramas `NaN`; con `fps` 0, una duración
   infinita; con una amortiguación negativa, una oscilación que crecía hasta 16 veces su recorrido. Ningún camino de
@@ -60,6 +68,12 @@ tocado cuatro veces (12), la cifra 1 → 20 → 5 → 80 → 40 (33: acaba en 40
 filtra a la vez (34), desmontar a media animación (31), el ancho cambiado seis veces (18), tres giros con una hoja
 abierta (19), la cabecera fija con el scroll a tope (50), una sesión entera (56), la cámara lenta (41-42) y la
 aplicación en Reducido mirando cada animación viva (26).
+
+⚠️ **Y lo que provoca un toque en un hub se mide cuando la pantalla NUEVA está montada, nunca a un tiempo fijo**: la
+tarjeta crece primero y navega después (`esperaDeExpansion`, F7), así que a los 40 ó 70 ms se veía todavía la de
+antes. Lo mismo con la cámara lenta: Chromium puede tener una animación del CSS «pendiente» unos fotogramas antes de
+arrancarla, y su ritmo se mide cuando ha arrancado (`ready`). Y **«Reducir movimiento» del iPhone no cambia
+`data-motion`**: lo aplica el CSS poniendo las distancias a cero, así que Reducido se lee de `--motion-dist-medium`.
 
 ### Las herramientas de depuración (apartados 41-43)
 

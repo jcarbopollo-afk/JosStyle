@@ -14728,24 +14728,31 @@ const cuenta_ms17 = await page.evaluate(async (f) => {
      el 100 de antes y la comprobación salía roja con la cuenta bien. Se espera, fotograma a fotograma,
      al primero que cambia, y ése es el que tiene que estar a mitad (ni 100 ni el 400 de un salto). */
   let aMitad = leer();
-  for (let t0 = performance.now(); aMitad === 100 && performance.now() - t0 < 3000;) {
+  /* 🐛 F19 — y por el camino, ni un fotograma con el 400 de destino antes de contar: `CifraQueCambia`
+     decidía la cuenta después de pintar y el valor nuevo se asomaba un fotograma (400 → 100 → 142…). */
+  const antesDeContar = [aMitad];
+  for (let t0 = performance.now(); !(aMitad > 100 && aMitad < 400) && performance.now() - t0 < 3000;) {
     await new Promise((r) => requestAnimationFrame(r));
     aMitad = leer();
+    antesDeContar.push(aMitad);
   }
+  const asoma = antesDeContar.slice(0, -1).some((v) => v === 400);
   const cifra = document.querySelector('.cifra[data-cifra="cuenta"]');
   const final = cifra && cifra.nextElementSibling && cifra.nextElementSibling.classList.contains('sr-only') ? cifra.nextElementSibling.textContent.trim() : null;
   const oculta = cifra ? cifra.getAttribute('aria-hidden') : null;
   const segundo = botones().find((b) => /Bici/.test(fila(b)));
-  if (!segundo) return { aMitad, sinSegundo: true };
+  if (!segundo) return { aMitad, asoma, sinSegundo: true };
   segundo.click();
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   const trasCambio = leer();
   const serie = [aMitad, trasCambio];
   for (let i = 0; i < 40; i += 1) { await new Promise((r) => requestAnimationFrame(r)); serie.push(leer()); }
-  return { aMitad, trasCambio, final, oculta, serie };
+  return { aMitad, asoma, antesDeContar: antesDeContar.length, trasCambio, final, oculta, serie };
 }, leerSaldo_ms17.toString());
 ok(cuenta_ms17 && cuenta_ms17.aMitad > 100 && cuenta_ms17.aMitad < 400,
   `MS F17 — al borrar el primer gasto, el saldo cuenta hacia 400 (${cuenta_ms17 && cuenta_ms17.aMitad})`);
+ok(cuenta_ms17 && cuenta_ms17.asoma === false,
+  `🐛 MS F19, apartado 6 — antes de empezar a contar, ningún fotograma enseña ya el 400 de destino: la cuenta se decide antes de pintar (${JSON.stringify(cuenta_ms17 && { asoma: cuenta_ms17.asoma, fotogramas: cuenta_ms17.antesDeContar })})`);
 ok(cuenta_ms17 && cuenta_ms17.trasCambio !== null && cuenta_ms17.trasCambio < 400,
   `🐛 MS F17, apartado 6 — y si el valor cambia a mitad (otro gasto borrado), la cuenta SIGUE desde lo que se ve: no salta al 400 de antes (${cuenta_ms17 && cuenta_ms17.trasCambio})`);
 const serie_ms17 = (cuenta_ms17 && cuenta_ms17.serie || []).filter((v) => v !== null);
@@ -14929,18 +14936,26 @@ await page.waitForTimeout(400);
 const doble_ms19 = await page.evaluate(async (fuente) => {
   const tarjeta = new Function(`return (${fuente})`)()('Productividad');
   if (!tarjeta) return null;
+  /* 🐛 F19: la tarjeta de un hub crece primero y navega DESPUÉS (`esperaDeExpansion`, F7), así que a los
+     40 ms todavía se veía Vida. Se espera, fotograma a fotograma, a que la pantalla montada sea OTRA, y
+     ahí —con A entrando— se pulsa B. */
+  const antes = document.querySelector('.pantalla-segura > [data-navegacion]');
   tarjeta.click();
-  await new Promise((r) => setTimeout(r, 40));
-  const a = document.querySelector('.pantalla-segura > [data-navegacion]');
-  const tipoA = a ? a.dataset.navegacion : null;
+  let a = antes;
+  for (let t0 = performance.now(); a === antes && performance.now() - t0 < 3000;) {
+    await new Promise((r) => requestAnimationFrame(r));
+    a = document.querySelector('.pantalla-segura > [data-navegacion]');
+  }
+  const tipoA = a && a !== antes ? a.dataset.navegacion : null;
+  const animandoA = !!a && a.getAnimations().some((x) => x.playState === 'running');
   const nav = [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === 'Gestión');
-  if (!nav) return { tipoA, sinNav: true };
+  if (!nav) return { tipoA, animandoA, sinNav: true };
   nav.click();
-  return { tipoA };
+  return { tipoA, animandoA };
 }, TARJETA_MS19.toString());
 await page.waitForTimeout(900);
 const trasDoble_ms19 = await pantalla_ms19();
-ok(doble_ms19 && doble_ms19.tipoA === 'entrar', `MS F19 — A (Productividad) estaba entrando cuando se pulsó B (${JSON.stringify(doble_ms19)})`);
+ok(doble_ms19 && doble_ms19.tipoA === 'entrar' && doble_ms19.animandoA, `MS F19 — A (Productividad) estaba entrando cuando se pulsó B (${JSON.stringify(doble_ms19)})`);
 ok(quieta_ms19(trasDoble_ms19) && trasDoble_ms19.tipo === 'seccion' && /Organizaci/.test(await ver()),
   `🚨 MS F19, apartado 13 — navegar a A y a B antes de que acabe A acaba en B, determinista: una sola pantalla, quieta y entera (${JSON.stringify(trasDoble_ms19)})`);
 
@@ -14950,16 +14965,22 @@ await page.waitForTimeout(400);
 const vuelta_ms19 = await page.evaluate(async (fuente) => {
   const tarjeta = new Function(`return (${fuente})`)()('Productividad');
   if (!tarjeta) return null;
+  const antes = document.querySelector('.pantalla-segura > [data-navegacion]');
   tarjeta.click();
-  await new Promise((r) => setTimeout(r, 70));
+  let a = antes;
+  for (let t0 = performance.now(); a === antes && performance.now() - t0 < 3000;) {
+    await new Promise((r) => requestAnimationFrame(r));
+    a = document.querySelector('.pantalla-segura > [data-navegacion]');
+  }
+  const entrando = !!a && a !== antes && a.dataset.navegacion === 'entrar' && a.getAnimations().some((x) => x.playState === 'running');
   const volver = document.querySelector('.pantalla-segura .back-bar');
-  if (!volver) return { sinVolver: true };
+  if (!volver) return { sinVolver: true, entrando };
   volver.click();
-  return { volvio: true };
+  return { volvio: true, entrando };
 }, TARJETA_MS19.toString());
 await page.waitForTimeout(900);
 const trasVuelta_ms19 = await pantalla_ms19();
-ok(vuelta_ms19 && vuelta_ms19.volvio && quieta_ms19(trasVuelta_ms19) && trasVuelta_ms19.tipo === 'volver' && /Estudios/.test(await ver()),
+ok(vuelta_ms19 && vuelta_ms19.volvio && vuelta_ms19.entrando && quieta_ms19(trasVuelta_ms19) && trasVuelta_ms19.tipo === 'volver' && /Estudios/.test(await ver()),
   `🚨 MS F19, apartado 14 — volver mientras la pantalla entra deja el área entera: ni la de antes a medias ni un transform puesto (${JSON.stringify({ ...vuelta_ms19, ...trasVuelta_ms19 })})`);
 
 /* El laboratorio: las piezas de verdad, con la React de la aplicación. */
@@ -15184,22 +15205,30 @@ const paso_ms19 = (accion) => page.evaluate(async (a) => {
       : a.etiqueta ? visibles.find((b) => b.getAttribute('aria-label') === a.etiqueta || b.innerText.trim() === a.etiqueta)
         : visibles.find((b) => !b.closest('nav') && b.innerText.trim().split('\n')[0].trim() === a.texto);
   if (!boton) return { sinBoton: a };
+  /* Una tarjeta de hub navega después de crecer (F7): lo que se mide es la pantalla NUEVA, en cuanto
+     está montada —no la de antes ni un tiempo fijo—. Completar una tarea no navega: no se espera. */
+  const antes = document.querySelector('.pantalla-segura > [data-navegacion]');
   boton.click();
   await new Promise((r) => setTimeout(r, 0));
+  let p = document.querySelector('.pantalla-segura > [data-navegacion]');
+  for (let t0 = performance.now(); a.navega && p === antes && performance.now() - t0 < 3000;) {
+    await new Promise((r) => requestAnimationFrame(r));
+    p = document.querySelector('.pantalla-segura > [data-navegacion]');
+  }
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  const p = document.querySelector('.pantalla-segura > [data-navegacion]');
+  p = document.querySelector('.pantalla-segura > [data-navegacion]');
   return { tipo: p ? p.dataset.navegacion : null, clase: p ? p.className : '', continuidad: p ? p.dataset.continuidad || null : null, nombre: p ? p.getAttribute('aria-label') : null };
 }, accion);
 const CLASE_MS19 = { entrar: 'module-enter', volver: 'nav-vuelve', seccion: 'nav-seccion' };
 const recorrido_ms19 = [];
 const pasos_ms19 = [
-  { que: 'Gestión', accion: { nav: 'Gestión' }, tipo: 'seccion' },
-  { que: 'Organización', accion: { texto: 'Organización' }, tipo: 'entrar' },
-  { que: 'Tareas', accion: { texto: 'Tareas' }, tipo: 'entrar' },
+  { que: 'Gestión', accion: { nav: 'Gestión', navega: true }, tipo: 'seccion' },
+  { que: 'Organización', accion: { texto: 'Organización', navega: true }, tipo: 'entrar' },
+  { que: 'Tareas', accion: { texto: 'Tareas', navega: true }, tipo: 'entrar' },
   { que: 'completar la tarea', accion: { etiqueta: 'Completar Tarea del recorrido F19' }, tipo: null },
-  { que: 'volver', accion: { selector: '.pantalla-segura .back-bar' }, tipo: 'volver' },
-  { que: 'Ajustes', accion: { nav: 'Ajustes' }, tipo: 'seccion' },
-  { que: 'Inicio', accion: { nav: 'Inicio' }, tipo: 'seccion' },
+  { que: 'volver', accion: { selector: '.pantalla-segura .back-bar', navega: true }, tipo: 'volver' },
+  { que: 'Ajustes', accion: { nav: 'Ajustes', navega: true }, tipo: 'seccion' },
+  { que: 'Inicio', accion: { nav: 'Inicio', navega: true }, tipo: 'seccion' },
 ];
 for (const p of pasos_ms19) {
   const r = await paso_ms19(p.accion);
@@ -15217,10 +15246,18 @@ const camara_ms19 = await page.evaluate(async () => {
   if (!window.__motion || typeof window.__motion.camaraLenta !== 'function') return null;
   const fotogramas = (n) => new Promise((r) => { const paso = (k) => (k ? requestAnimationFrame(() => paso(k - 1)) : r()); paso(n); });
   const nav = (t) => [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === t);
+  /* La cámara lenta ajusta cada animación del CSS en su `animationstart`, y Chromium puede tenerla
+     «pendiente» unos fotogramas antes de arrancarla (con la máquina cargada, más): se mide cuando ha
+     arrancado de verdad (`ready`), no a los tres fotogramas. */
+  const arrancadas = async (el) => {
+    await Promise.all((el ? el.getAnimations() : []).map((a) => a.ready.catch(() => null)));
+    await fotogramas(2);
+  };
   const veces = window.__motion.camaraLenta(4);
   nav('Vida').click();
   await new Promise((r) => setTimeout(r, 0));
   await fotogramas(3);
+  await arrancadas(document.querySelector('.pantalla-segura > [data-navegacion]'));
   const p = document.querySelector('.pantalla-segura > [data-navegacion]');
   const lenta = p ? p.getAnimations().filter((a) => a.playState === 'running').map((a) => a.playbackRate) : [];
   const vuelta = window.__motion.camaraLenta(1);
@@ -15229,6 +15266,7 @@ const camara_ms19 = await page.evaluate(async () => {
   nav('Gestión').click();
   await new Promise((r) => setTimeout(r, 0));
   await fotogramas(3);
+  await arrancadas(document.querySelector('.pantalla-segura > [data-navegacion]'));
   const p2 = document.querySelector('.pantalla-segura > [data-navegacion]');
   const normal = p2 ? p2.getAnimations().filter((a) => a.playState === 'running').map((a) => a.playbackRate) : [];
   return { veces, lenta, vuelta, tras, normal };
@@ -15269,7 +15307,10 @@ const vigilar_ms19 = (accion) => page.evaluate(async ({ a, permitidos }) => {
     });
     await new Promise((r) => requestAnimationFrame(r));
   }
-  return { motion: document.documentElement.dataset.motion, movidas: [...vistos].filter(([, v]) => v.size > 1).map(([k, v]) => `${k}: ${[...v].slice(0, 3).join(' | ')}`), bucles: [...bucles] };
+  /* «Reducir movimiento» del iPhone NO cambia `data-motion` (lo eligió él en Ajustes o no): lo aplica el
+     CSS, poniendo las distancias a cero (F1). Así que Reducido se lee de lo que manda de verdad. */
+  const distancia = getComputedStyle(document.documentElement).getPropertyValue('--motion-dist-medium').trim();
+  return { motion: document.documentElement.dataset.motion, distancia, movidas: [...vistos].filter(([, v]) => v.size > 1).map(([k, v]) => `${k}: ${[...v].slice(0, 3).join(' | ')}`), bucles: [...bucles] };
 }, { a: accion, permitidos: bucles_ms19 });
 const reducido_ms19 = [];
 for (const [que, accion] of [['Inicio', null], ['Vida', { nav: 'Vida' }], ['Productividad', { texto: 'Productividad' }], ['volver', { selector: '.pantalla-segura .back-bar' }], ['Gestión', { nav: 'Gestión' }], ['Inicio otra vez', { nav: 'Inicio' }], ['el ＋', { etiqueta: 'Añadir' }]]) {
@@ -15279,7 +15320,7 @@ for (const [que, accion] of [['Inicio', null], ['Vida', { nav: 'Vida' }], ['Prod
 }
 await page.keyboard.press('Escape');
 await page.waitForTimeout(500);
-const malReducido_ms19 = reducido_ms19.filter((r) => r.sinBoton || r.motion !== 'reducido' || r.movidas.length || r.bucles.length);
+const malReducido_ms19 = reducido_ms19.filter((r) => r.sinBoton || (r.motion !== 'reducido' && r.distancia !== '0px') || r.movidas.length || r.bucles.length);
 ok(malReducido_ms19.length === 0,
   `🚨 MS F19, apartado 26 — la aplicación entera en Reducido (${reducido_ms19.map((r) => r.que).join(' → ')}): mientras algo se anima no se desplaza ni escala nada, y lo único que repite sin fin son los bucles declarados (${JSON.stringify(malReducido_ms19).slice(0, 600)})`);
 

@@ -195,7 +195,11 @@ export function CifraQueCambia({ valor, children, formato, modo = 'relevo', dura
   const ultimoRelevo = useRef(null);
   const [paso, setPaso] = useState(null);
   const [relevo, setRelevo] = useState({ n: 0, clase: '' });
-  useEffect(() => {
+  /* 🐛 MS F19 — se decide ANTES de pintar (efecto de diseño, como `useFlip`). Con `useEffect` el
+     navegador pintaba un fotograma con el valor NUEVO quieto y después la cuenta volvía al de antes
+     para subir (400 → 100 → 142…), y un relevo enseñaba el número nuevo un fotograma antes de su
+     fundido. Lo cazó el recorrido de la F17 al dejar de leer a los 70 ms fijos. */
+  useEfectoDeDiseno(() => {
     const desde = visible.current !== null ? visible.current : previo.current;
     previo.current = valor;
     const quiereContar = modo === 'cuenta';
@@ -227,6 +231,9 @@ export function CifraQueCambia({ valor, children, formato, modo = 'relevo', dura
     let inicio = null;
     let id = 0;
     const escribir = formato || ((v) => v.toFixed(plan.decimales));
+    /* El primer fotograma ya es el de partida: el valor nuevo no se asoma antes de contar. */
+    visible.current = plan.desde;
+    setPaso(escribir(plan.desde));
     const avanzar = (instante) => {
       if (!vivo) return;
       if (inicio === null) inicio = instante;

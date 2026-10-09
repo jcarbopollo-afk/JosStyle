@@ -237,6 +237,11 @@ Lo que vale para cualquier cambio a partir de hoy:
   `marcaAparece`), ni una `var(--…)` que no defina nadie, ni un estado de máquina al que no se llegue (🐛 «Sin conexión»),
   ni un archivo `*Motion*` sin su capa en `CAPAS_MOTION` (hojas → motor → sistemas → piezas; las auditorías no las importa
   la aplicación, C-68). Para mirar despacio: **`window.__motion.camaraLenta(4)`** e `inspeccionarTodo()`, solo en desarrollo.
+- 🐛 **UNA PIEZA QUE DECIDE CÓMO SE ANIMA LO DECIDE ANTES DE PINTAR** (F19): `CifraQueCambia` lo hacía en un `useEffect` y
+  el saldo enseñaba un fotograma el valor nuevo antes de volver al de antes para contar. Va en `useEfectoDeDiseno` (como
+  `useFlip`). ⚠️ **Y en el recorrido, lo que provoca un toque se mide cuando ha llegado, nunca a un tiempo fijo**: una
+  tarjeta de hub navega DESPUÉS de crecer (`esperaDeExpansion`), una animación del CSS puede estar «pendiente» unos
+  fotogramas (`ready`), y los 70 ms fijos de la F17 taparon este fallo hasta que la máquina fue lenta.
 - 🐛 **DOS HERMANOS CON LA MISMA `key` DEJAN EL VIEJO PUESTO** (F14): los indicadores de Nutrición y su
   `ListaAnimada` iban los dos por la fecha, y al cambiar de día se leían las cifras de hoy y las de ayer. **Un bloque
   con `key` por fecha lleva su prefijo.** Y 🐛 **una decisión de llegada se toma UNA vez por navegación**

@@ -388,6 +388,15 @@ const RECORRIDO = ARCHIVOS['scripts/test-app-real.mjs'];
   ok(Object.keys(informe.partes).length === 13, 'trece cosas que mira, cada una con su cuenta');
   ok(HALLAZGOS_F19.length >= 6 && HALLAZGOS_F19.every((h) => ['P0', 'P1', 'P2', 'P3'].includes(h.prioridad) && h.arreglo && h.caza && h.resuelto === 19),
     `apartados 66 y 67 — cada hallazgo clasificado (P0-P3), con su arreglo y la auditoría que lo caza, y resuelto en esta fase (${HALLAZGOS_F19.map((h) => `${h.id}:${h.prioridad}`).join(', ')})`);
+  /* 🐛 hallazgo `cifra_asoma` — la cifra decide su cuenta ANTES de pintar; con `useEffect` el valor nuevo se
+     asomaba un fotograma. Se mira el cuerpo de la pieza, y la versión de antes se caza. */
+  const motionJsx = leer('src/components/motion.jsx');
+  const cuerpoCifra = (src) => { const i = src.indexOf('export function CifraQueCambia'); const j = src.indexOf('\nfunction cajaRelativa', i); return i < 0 ? '' : src.slice(i, j < 0 ? undefined : j); };
+  const decideAntesDePintar = (src) => { const c = cuerpoCifra(src); return /useEfectoDeDiseno\(\(\) => \{/.test(c) && !/\buseEffect\(/.test(c) && /setPaso\(escribir\(plan\.desde\)\)/.test(c); };
+  ok(cuerpoCifra(motionJsx).length > 500 && decideAntesDePintar(motionJsx),
+    '🐛 hallazgo `cifra_asoma` — `CifraQueCambia` decide antes de pintar y su primer fotograma ya es el de partida: el valor nuevo no se asoma');
+  ok(!decideAntesDePintar(motionJsx.replace('useEfectoDeDiseno(() => {\n    const desde', 'useEffect(() => {\n    const desde')),
+    '…y con la versión de antes (`useEffect`) se caza');
   ok(!HALLAZGOS_F19.some((h) => h.prioridad === 'P0' || h.prioridad === 'P1'), 'ninguno bloqueaba ni rompía la experiencia: los de esta fase son de coherencia (P2) y de pulido (P3)');
   ok(REVISADO_Y_BIEN_F19.length >= 8 && NO_EN_F19.every((n) => n.porque && n.porque.length > 40), 'lo revisado y bien, y lo que no se hace, cada uno con su motivo');
   ok(PRUEBAS_DE_ESTRES.every((p) => RECORRIDO.includes(`MS F19, apartado ${p.apartado}`)), `cada prueba de estrés está en la sección «MS F19» del recorrido (${PRUEBAS_DE_ESTRES.length})`);
