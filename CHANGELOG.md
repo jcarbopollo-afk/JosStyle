@@ -177,7 +177,14 @@ herramientas, las limitaciones y la regla permanente del apartado 69); la deuda 
 
 ### Verificación
 
-{{VERIFICACION_F19}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre `3f53181` —la F18 y la F19 juntas, con los
+arreglos de la pasada—: **24 240 pruebas** con Node en **227 suites**, **3964 casos** de renderizado real, **11 reglas
+invariantes** y **3408 comprobaciones** en Chromium — **31 623 comprobaciones**. El salto desde la v3.147.0 son 218
+pruebas más en Node —las suites de la F18 (86) y de la F19 (132)— y las secciones «MS F18» y «MS F19» del recorrido
+(37 más en Chromium). ⚠️ **La primera pasada de la F18 salió con un rojo** que no era suyo: la comprobación de la F17
+que leía la cuenta del saldo a los 70 ms fijos, con la máquina cargada, leía antes de que React pintara. Al medirlo
+fotograma a fotograma salió el fallo de verdad —la cifra enseñaba un fotograma el valor final antes de contar— y se
+arregló en la F19 (`CifraQueCambia` decide antes de pintar), con su comprobación roja con la pieza de antes.
 
 ## v3.148.0 — Motion System F18/20: pulido visual, lenguaje de marca, transiciones premium y coherencia sensorial
 
@@ -229,7 +236,11 @@ su prioridad y el elemento. El orquestador sigue sin importar nada: los tokens s
 
 ### Verificación
 
-{{VERIFICACION_F18}}
+Su primera pasada (`c74122f`) salió con **un rojo de la F17** —la cuenta del saldo leída a los 70 ms fijos con la máquina
+cargada—, que destapó un fallo de verdad de `CifraQueCambia` y se arregló en la F19. Así que la F18 llegó a `main` junto
+con la F19, sobre la pasada verde de `3f53181`: **24 240 pruebas** con Node en **227 suites**, **3964 casos** de
+renderizado, **11 reglas invariantes** y **3408 comprobaciones** en Chromium — **31 623 comprobaciones** (ver la
+v3.149.0).
 
 ## v3.147.0 — Motion System F17/20: motion de datos, paneles, métricas, gráficas y visualización
 
