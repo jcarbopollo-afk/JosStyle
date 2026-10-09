@@ -1,5 +1,46 @@
 # CHANGELOG.md
 
+## v3.147.0 — Motion System F17/20: motion de datos, paneles, métricas, gráficas y visualización
+
+La F17 del Motion System (*"Motion de datos, dashboard, métricas, gráficas y visualización de información"*, líneas
+760–1458 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). *"El movimiento debe ayudar a comprender el dato, no
+distraer del dato."* **No hay un segundo motor** (apartado 2): se mejora el de la F4 (`src/lib/datosMotion.js`,
+`CifraQueCambia`) y se lleva al resto.
+
+### El motor, mejorado (apartados 4-9)
+
+- **La clase de cada cifra** (`CLASES_DE_CIFRA`): la principal cuenta, la que va con su barra cuenta a su ritmo, el
+  resto se releva, y un reloj, un identificador o una cifra que no cambia no se animan nunca.
+- **La cuenta dura según cuánto cambia** (`tallaDeCuenta`): relativo a la cifra, entre `fast` y `slow`.
+- 🐛 **Una cuenta interrumpida sigue desde lo que se ve**: si el valor cambiaba a mitad, saltaba al objetivo de antes
+  y contaba desde ahí.
+- **Los relevos seguidos se agrupan**, y **el lector de pantalla oye el valor final** mientras cuenta (`aria-hidden`
+  en lo que se ve, `sr-only` al lado).
+
+### Lo que cambiaba de golpe (hallazgo `cifras_de_golpe` de la F0, resuelto)
+
+La racha de cada tarjeta y la principal, el porcentaje de cada indicador de Nutrición, «2 / 3 completado» de
+Productividad y el texto de cada meta y objetivo —todos junto a una barra que sí se movía— se relevan ya; las
+calorías cuentan al ritmo de su barra.
+
+### Barras, gráficas y rankings (apartados 10, 11, 31, 32, 41-43)
+
+- **Seis barras escribían `transicion('width', 'slow')` en su `style`** mientras las de CSS iban a `medium` (F14):
+  ahora todas llevan `barra-progreso`. `width` se queda (una barra redondeada se deforma con `scaleX`).
+- **Un eje que no baila** (`dominioEstable`): Sueño 0-10 h al mover la semana, el peso de 2 en 2 kg, las calorías
+  con el objetivo dentro. Recharts interpola la línea; el eje ya no salta a otra escala.
+- **El ranking de ejercicios que contribuyen a un músculo**, que se filtra por tendencia, es una `ListaAnimada`.
+
+### El mapa, el presupuesto y la auditoría
+
+`MAPA_DATOS` (cada dato que cambia, con su clase; la prueba busca cada uno en su archivo), `PRESUPUESTO_DATOS` (en
+una actualización se mueve la cifra, su barra y la lista si cambia de orden, y nada más) y `auditarDatos` (una barra
+con su ritmo escrito, una cifra de reloj animada, una gráfica con `key`, más de dos cuentas en un archivo).
+
+### Verificación
+
+{{VERIFICACION_F17}}
+
 ## v3.146.0 — Motion System F16/20: estados de sistema, carga, error, sin conexión, guardado y transiciones asíncronas
 
 La F16 del Motion System (*"Estados de sistema, loading, error, offline, sync y transiciones asíncronas"*, líneas

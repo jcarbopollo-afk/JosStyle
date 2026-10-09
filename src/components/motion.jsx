@@ -169,24 +169,38 @@ export function useAnimacionDeGrafica() {
  *     se pinta exactamente `children`, así que el formato final no depende de la cuenta.
  * Nunca al aparecer, nunca desde un hueco (`null`), y como mucho `CUENTAS_A_LA_VEZ` a la vez.
  */
-export function CifraQueCambia({ valor, children, formato, modo = 'relevo', duracion = 'normal', className = '' }) {
+export function CifraQueCambia({ valor, children, formato, modo = 'relevo', duracion = 'auto', className = '' }) {
   const previo = useRef(valor);
+  /* MS F17, apartado 6 — lo que se VE ahora mismo mientras cuenta: si el valor cambia a mitad, la
+     cuenta nueva sale de aquí, no del objetivo de antes (ni de cero). */
+  const visible = useRef(null);
+  /* MS F17, apartado 7 — cuándo fue el último relevo: los que llegan seguidos se agrupan. */
+  const ultimoRelevo = useRef(null);
   const [paso, setPaso] = useState(null);
   const [relevo, setRelevo] = useState({ n: 0, clase: '' });
   useEffect(() => {
-    const desde = previo.current;
+    const desde = visible.current !== null ? visible.current : previo.current;
     previo.current = valor;
     const quiereContar = modo === 'cuenta';
     const turno = quiereContar ? reservarCuenta() : false;
-    const plan = planDeCifra(desde, valor, { modo, ctx: contextoDelDocumento(), duracion, hayTurno: turno });
+    const ahora = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const plan = planDeCifra(desde, valor, {
+      modo, ctx: contextoDelDocumento(), duracion, hayTurno: turno,
+      desdeUltimo: ultimoRelevo.current === null ? null : ahora - ultimoRelevo.current,
+    });
     if (!plan || plan.tipo !== 'cuenta') {
       if (turno) liberarCuenta();
+      visible.current = null;
       setPaso(null);
-      if (plan) setRelevo((r) => ({ n: r.n + 1, clase: plan.clase }));
+      if (plan && plan.tipo === 'relevo') {
+        ultimoRelevo.current = ahora;
+        setRelevo((r) => ({ n: r.n + 1, clase: plan.clase }));
+      }
       return undefined;
     }
     if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function' || plan.duracion <= 0) {
       liberarCuenta();
+      visible.current = null;
       return undefined;
     }
     /* Un relevo de antes se quita: si su clase volviera a ponerse al acabar la cuenta, el
@@ -196,12 +210,14 @@ export function CifraQueCambia({ valor, children, formato, modo = 'relevo', dura
     let inicio = null;
     let id = 0;
     const escribir = formato || ((v) => v.toFixed(plan.decimales));
-    const avanzar = (ahora) => {
+    const avanzar = (instante) => {
       if (!vivo) return;
-      if (inicio === null) inicio = ahora;
-      const t = (ahora - inicio) / plan.duracion;
-      if (t >= 1) { setPaso(null); liberarCuenta(); vivo = false; return; }
-      setPaso(escribir(interpolarCifra(plan.desde, plan.hasta, curvaDeCuenta(t), plan.decimales)));
+      if (inicio === null) inicio = instante;
+      const t = (instante - inicio) / plan.duracion;
+      if (t >= 1) { visible.current = null; setPaso(null); liberarCuenta(); vivo = false; return; }
+      const v = interpolarCifra(plan.desde, plan.hasta, curvaDeCuenta(t), plan.decimales);
+      visible.current = v;
+      setPaso(escribir(v));
       id = window.requestAnimationFrame(avanzar);
     };
     id = window.requestAnimationFrame(avanzar);
@@ -211,15 +227,23 @@ export function CifraQueCambia({ valor, children, formato, modo = 'relevo', dura
       setPaso(null);
     };
   }, [valor]);
-  const texto = paso !== null ? paso : (children !== undefined ? children : (formato ? formato(valor) : valor));
+  const final = children !== undefined ? children : (formato ? formato(valor) : valor);
+  const contando = paso !== null;
+  const texto = contando ? paso : final;
+  /* ♿ MS F17, apartado 9 — mientras cuenta, lo que se ve es decoración (`aria-hidden`) y el lector de
+     pantalla tiene el valor FINAL al lado: no lee cada fotograma. Quieta, una sola cifra. */
   return (
-    <span
-      key={relevo.n}
-      className={`cifra ${paso === null ? relevo.clase : ''} ${className}`.replace(/\s+/g, ' ').trim()}
-      data-cifra={paso !== null ? 'cuenta' : (relevo.clase || 'quieta')}
-    >
-      {texto}
-    </span>
+    <>
+      <span
+        key={relevo.n}
+        className={`cifra ${contando ? '' : relevo.clase} ${className}`.replace(/\s+/g, ' ').trim()}
+        data-cifra={contando ? 'cuenta' : (relevo.clase || 'quieta')}
+        aria-hidden={contando || undefined}
+      >
+        {texto}
+      </span>
+      {contando && <span className="sr-only">{final}</span>}
+    </>
   );
 }
 

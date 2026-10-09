@@ -37,7 +37,7 @@ se ordena es **el trabajo**.
 | **F14** ✅ **v3.144.0** | Easings, curvas, ritmo, aceleración y lenguaje visual del movimiento | 16453–17154 | 702 |
 | **F15** ✅ **v3.145.0** | Motion responsive, orientación, safe areas y multidispositivo | 17155–17913 | 759 |
 | **F16** ✅ **v3.146.0** | Estados de sistema, loading, error, offline, sync y transiciones asíncronas | 1–759 | 759 |
-| **F17** | Motion de datos, dashboard, métricas, gráficas y visualización | 760–1458 | 699 |
+| **F17** ✅ **v3.147.0** | Motion de datos, dashboard, métricas, gráficas y visualización | 760–1458 | 699 |
 | **F18** | Motion visual polish, brand language y coherencia sensorial | 1459–2241 | 783 |
 | **F19** | Testing extremo, validación, regresión y motion QA automatizado | 2242–3117 | 876 |
 | **F20** | Finalización, consolidación, contratos y sellado | 3118–4045 | 928 |
@@ -95,3 +95,5 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | La prueba de la F15 | `scripts/test-motion-f15.mjs`, y la sección «MS F15» del recorrido de Chromium (la matriz, girar a mitad de una entrada, redimensionar a golpes, el teclado, el zoom al 200 %) |
 | Los estados del sistema: lo que no se pudo cargar no se guarda, lo que no llega queda pendiente y se vuelve a mandar, los guardados de una clave en orden, el indicador de arriba, el arranque que tarda o no carga, la sesión que caduca, la última petición gana y el vacío que llega después del contenido | `src/lib/sincronizacion.js` y `src/lib/estadosAsincronos.js` (F16), `src/components/estadosAsincronos.jsx` (`IndicadorDeSincronizacion`, `ErrorDeArranque`, `useEspera`, `useTurnos`, `VacioQueLlega`), `src/components/vacioMotion.js` y `supabase.js` (`loadData`, `saveData`, `reintentarGuardados`) |
 | La prueba de la F16 | `scripts/test-motion-f16.mjs`, y la sección «MS F16» del recorrido de Chromium (un guardado que falla y se reintenta, sin conexión, una carga que falla sin pisar la cuenta, ninguna carga, el arranque lento, el vacío que espera y la sesión que caduca) |
+| El motor de datos mejorado y llevado a todas las cifras: la clase de cada cifra, la cuenta según cuánto cambia, interrumpida desde lo que se ve, los relevos agrupados, el valor final para el lector, las barras al mismo ritmo, el eje estable de las gráficas y el ranking que se filtra | `src/lib/datosMotion.js` (F4 + F17: `CLASES_DE_CIFRA`, `tallaDeCuenta`, `dominioEstable`, `MAPA_DATOS`, `auditarDatos`), `CifraQueCambia` (`src/components/motion.jsx`), `barra-progreso` (`index.css`) |
+| La prueba de la F17 | `scripts/test-motion-f17.mjs`, y la sección «MS F17» del recorrido de Chromium (la cuenta interrumpida, el valor final, el ritmo de las barras y el eje de Sueño) |

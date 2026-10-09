@@ -17,6 +17,7 @@ import {
   EmptyHint, AIPanel, PinGate, TextoDeBoton,
 } from '../components/ui';
 import { escalonado } from '../lib/motion';
+import { dominioEstable } from '../lib/datosMotion';
 import { Plegable } from '../components/layoutMotion';
 
 /* Entrega 3 · Fase 30 (BN) — «Rediseño y reorganización del apartado Bienestar».
@@ -155,6 +156,9 @@ function BloqueMedidas({ medidas, onAdd, onDeleteMedida, accent, abrirFormulario
   }, [abrirFormulario, onFormularioAbierto]);
 
   const chartData = evolucionPeso(medidas);
+  /* MS F17, apartados 31 y 32 — un eje redondo alrededor de los pesos (de 2 en 2 kg): una medida nueva
+     interpola la línea sin que la escala salte a un número raro. */
+  const dominioPeso = dominioEstable(chartData.map((p) => p.peso), { desdeCero: false, paso: 2 });
 
   const submit = () => {
     if (!form.peso && !form.grasaCorporal && !form.frecuenciaCardiaca && !form.tensionSistolica) return;
@@ -204,7 +208,7 @@ function BloqueMedidas({ medidas, onAdd, onDeleteMedida, accent, abrirFormulario
             <LineChart data={chartData}>
               <CartesianGrid stroke={COLORS.border} vertical={false} />
               <XAxis dataKey="fecha" stroke={COLORS.textMuted} fontSize={11} />
-              <YAxis stroke={COLORS.textMuted} fontSize={11} width={30} domain={['auto', 'auto']} />
+              <YAxis stroke={COLORS.textMuted} fontSize={11} width={30} domain={dominioPeso} />
               <Tooltip contentStyle={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text }} isAnimationActive={animGrafica.tooltip.isAnimationActive} animationDuration={animGrafica.tooltip.animationDuration} animationEasing={animGrafica.tooltip.animationEasing} />
               <Line type="monotone" dataKey="peso" stroke={accent} strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={animGrafica.linea.isAnimationActive} animationBegin={animGrafica.linea.animationBegin} animationDuration={animGrafica.linea.animationDuration} animationEasing={animGrafica.linea.animationEasing} />
             </LineChart>

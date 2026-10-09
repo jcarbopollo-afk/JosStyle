@@ -18,6 +18,7 @@ import {
   FILTROS_OBJETIVO, filtrarObjetivos, ordenarObjetivos, VACIO_OBJETIVOS,
 } from '../lib/metasObjetivos';
 import { transicion } from '../lib/motion';
+import { CifraQueCambia } from '../components/motion';
 import { desplazarHasta } from '../lib/accesibilidadMotion';
 import { GiroDeCarga } from '../components/accesibilidadMotion';
 
@@ -100,7 +101,7 @@ function BarraProgreso({ porcentaje, accent }) {
   if (porcentaje === null || porcentaje === undefined) return null;
   return (
     <div className="h-2 rounded-full mt-2 overflow-hidden" style={{ background: COLORS.border }}>
-      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: transicion('width', 'slow') }} />
+      <div className="h-full rounded-full barra-progreso" style={{ width: `${porcentaje}%`, background: accent }} />
     </div>
   );
 }
@@ -131,7 +132,7 @@ function TarjetaObjetivo({ objetivo, metas, accent, destacada, onAbrir }) {
             {cat ? `${cat.icono} ` : '🎯 '}{objetivo.texto}
           </p>
         </div>
-        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{prog.texto}</p>
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}><CifraQueCambia valor={prog.porcentaje}>{prog.texto}</CifraQueCambia></p>
         <BarraProgreso porcentaje={prog.porcentaje} accent={accent} />
         <div className="flex items-center gap-3 mt-2 flex-wrap">
           <span className="text-xs" style={{ color: COLORS.textMuted }}>{objetivo.plazo}</span>

@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.147.0 — Motion System F17/20: los datos que cambian):**
+> Los números que cambiaban de golpe junto a una barra que sí se movía —la racha, los porcentajes de Nutrición,
+> «2 / 3 completado», el texto de las metas y los objetivos— ya se mueven con ella. Una cifra que cuenta y cambia
+> otra vez a mitad **sigue desde donde estaba** (antes saltaba), VoiceOver lee el número final y no cada paso, todas
+> las barras de progreso van al mismo ritmo, y el eje de la gráfica de Sueño ya no cambia de escala al mover la
+> semana. **La siguiente es la F18** (pulido visual, lenguaje de marca y coherencia).
+
 > **📅 ACTUALIZACIÓN (v3.146.0 — Motion System F16/20: estados del sistema, carga, error, sin conexión y guardado):**
 > 🚨 **Un fallo grave arreglado:** si una parte de los datos no se podía cargar al abrir la app, arrancaba vacía y el
 > siguiente guardado **pisaba lo que había en la cuenta** —y en el caso de Ajustes lo hacía sola al arrancar, con el

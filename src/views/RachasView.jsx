@@ -36,7 +36,7 @@ import {
   panelGamificacion, diasDelMes, progresoHaciaHito,
   ESTADOS_LOGRO, definicionLogro, EVENTOS_GAMIFICACION, NIVELES_CELEBRACION,
 } from '../lib/rachasGamificacion';
-import { transicion } from '../lib/motion';
+import { CifraQueCambia } from '../components/motion';
 
 /* ---------------------------------------------------------------------------
    Apartado 5 — *"No uses únicamente colores. Combina iconos, texto, animación,
@@ -84,7 +84,7 @@ function BarraHito({ hito, accent }) {
         {/* La transición la gobierna el ajuste global de animaciones y
             `prefers-reduced-motion` desde `index.css`: no hay un segundo sistema
             de animaciones (apartado 17). */}
-        <div style={{ width: `${hito.progreso}%`, height: '100%', background: accent, transition: transicion('width', 'slow') }} />
+        <div className="barra-progreso" style={{ width: `${hito.progreso}%`, height: '100%', background: accent }} />
       </div>
       <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>
         {hito.faltan} {plural(hito.faltan, 'día', 'días')} para los {hito.objetivo}
@@ -119,8 +119,10 @@ export function TarjetaRacha({ resumen, accent, onAbrir, compacta = false }) {
           </p>
         </div>
         <div className="text-right flex-shrink-0">
+          {/* MS F17, apartado 14 — subir un día es una microinteracción rápida y discreta: el número
+              nuevo entra desde abajo (relevo), nunca cuenta. La llama y el «+1» son de la racha (F1). */}
           <p className="text-xl font-bold leading-none" style={{ color: resumen.actual > 0 ? accent : COLORS.textMuted }}>
-            {resumen.actual}
+            <CifraQueCambia valor={resumen.actual}>{resumen.actual}</CifraQueCambia>
           </p>
           <p className="text-[10px] mt-0.5" style={{ color: COLORS.textMuted }}>
             {plural(resumen.actual, 'día', 'días')}
@@ -223,7 +225,7 @@ export function ResumenRachaHoy({ rachas, habitos, accent, onAbrir, hoy = todayI
             <div className="min-w-0">
               <p className="text-sm font-semibold flex items-center gap-1.5" style={{ color: COLORS.text }}>
                 {!texto && <Flame size={15} style={{ color: accent, flexShrink: 0 }} />}
-                {principal.actual} {plural(principal.actual, 'día', 'días')} · {principal.nombre}
+                <CifraQueCambia valor={principal.actual}>{principal.actual}</CifraQueCambia> {plural(principal.actual, 'día', 'días')} · {principal.nombre}
               </p>
               <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>
                 {pendiente

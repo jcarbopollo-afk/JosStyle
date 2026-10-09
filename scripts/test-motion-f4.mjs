@@ -91,8 +91,11 @@ ok(planDeCifra(null, 72) === null && planDeCifra(undefined, 72) === null, '🚨 
 ok(planDeCifra(72, null) === null, '…ni hacia un hueco: sin dato no se anima nada');
 ok(planDeCifra(72, 72) === null, '…ni si no ha cambiado');
 ok(planDeCifra(72, 73, { ctx: OFF }) === null, '…y con «Sin movimiento» el valor cambia sin más');
-let p = planDeCifra(72, 73, { modo: 'cuenta', ctx: NORMAL });
-ok(p.tipo === 'cuenta' && p.direccion === 1 && p.decimales === 0 && p.duracion === DURACIONES_MOTION.normal, '72 → 73 cuenta, hacia arriba, sin decimales, en `normal`');
+/* 🔓 MS F17 (apartado 5) — la duración de una cuenta depende de cuánto cambia: con la duración por
+   defecto (`auto`) 72 → 73 es un cambio pequeño y va en `fast`; con una duración dada, la de siempre. */
+let p = planDeCifra(72, 73, { modo: 'cuenta', ctx: NORMAL, duracion: 'normal' });
+ok(p.tipo === 'cuenta' && p.direccion === 1 && p.decimales === 0 && p.duracion === DURACIONES_MOTION.normal, '72 → 73 cuenta, hacia arriba, sin decimales, en `normal` cuando se pide');
+ok(planDeCifra(72, 73, { modo: 'cuenta', ctx: NORMAL }).duracion === DURACIONES_MOTION.fast, '🔓 …y por defecto (MS F17) un cambio pequeño es una cuenta corta');
 p = planDeCifra(88, 100, { modo: 'cuenta', ctx: NORMAL, duracion: 'cinematic' });
 ok(p.duracion === DURACIONES_MOTION.cinematic, '…y la de la puntuación, al ritmo del aro (`cinematic`)');
 p = planDeCifra(420, 465.5, { modo: 'cuenta', ctx: NORMAL });
@@ -144,7 +147,7 @@ const usos = [
   ['src/views/DashboardView.jsx', /<CifraQueCambia valor=\{puntuacion\.valor\} modo="cuenta" duracion="cinematic">/, 'la puntuación del día cuenta al ritmo de su aro'],
   ['src/views/DashboardView.jsx', /<CifraQueCambia valor=\{progreso\.porcentaje\} modo="cuenta">/, 'el porcentaje de Hoy cuenta'],
   ['src/views/DashboardView.jsx', /<CifraQueCambia valor=\{progreso\.hechos\}>/, '«2/3 hechos» se releva'],
-  ['src/views/NutritionView.jsx', /<CifraQueCambia valor=\{dato\.consumido\} modo="cuenta">/, 'las calorías y los macros de Nutrición cuentan'],
+  ['src/views/NutritionView.jsx', /<CifraQueCambia valor=\{dato\.consumido\} modo="cuenta"/, 'las calorías y los macros de Nutrición cuentan (MS F17: al ritmo de su barra)'],
   ['src/views/FinanceView.jsx', /<CifraQueCambia valor=\{saldo\} modo="cuenta" formato=\{\(v\) => v\.toFixed\(2\)\}>\{saldo\.toFixed\(2\)\}<\/CifraQueCambia>/, 'el saldo cuenta con sus dos decimales'],
 ];
 usos.forEach(([f, re, msg]) => ok(re.test(VISTAS[f]), msg));

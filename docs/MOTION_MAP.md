@@ -5,7 +5,7 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**84 elementos**: ✅ Existe 80 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 2 · 🚨 Fuera de control 0.
+**84 elementos**: ✅ Existe 81 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 1 · 🚨 Fuera de control 0.
 
 ## Resumen
 
@@ -68,7 +68,7 @@
 | Barras de progreso escritas en la vista (Objetivos, Productividad, Rachas, Bienestar digital) | L | 3 · Protagonista | 340 ms | ⚠️ Inconsistente | F17 |
 | El aro de progreso de `ui.jsx` | L | 3 · Protagonista | 420 ms | ✅ Existe | F17 |
 | El aro del temporizador | L | 2 · Suave | 280 ms | ✅ Existe | F17 |
-| Cifras que cambian (rachas, kcal, puntuación, saldo) | L | 0 · Estático | — | ⬜ Sin movimiento | F17 |
+| Cifras que cambian (rachas, kcal, puntuación, saldo, porcentajes) | L | 1 · Micro | 220 ms | ✅ Existe | F17 |
 | El latido del esqueleto | N | 1 · Micro | 1400 ms | ✅ Existe | F16 |
 | Estados vacíos: el que llega con su pantalla y el que llega después del contenido | O | 1 · Micro | 160 ms | ✅ Existe | F16 |
 | Avisos de error (guardado, archivo, conexión) | P | 2 · Suave | 280 ms | ✅ Existe | F16 |
@@ -1677,40 +1677,40 @@
 | Escalonado | — |
 | Intensidad | 2 · Suave |
 | Prioridad | media |
-| Relación | — |
+| Relación | MS F17 — revisado: es un reloj (`CLASES_DE_CIFRA.reloj`), así que se queda lineal y su número NO se anima. |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
-#### Cifras que cambian (rachas, kcal, puntuación, saldo)
+#### Cifras que cambian (rachas, kcal, puntuación, saldo, porcentajes)
 
-`cifras` · ⬜ Sin movimiento · lo trata la **F17**
+`cifras` · ✅ Existe · lo trata la **F17**
 
 | Campo | Valor |
 |---|---|
-| Ubicación | Toda la aplicación |
-| Componente | — |
-| Clase CSS | — |
+| Ubicación | src/components/motion.jsx (CifraQueCambia) · src/lib/datosMotion.js · Inicio, Economía, Nutrición, Rachas, Productividad, Objetivos |
+| Componente | CifraQueCambia |
+| Clase CSS | `.cifra-sube` |
 | @keyframes | — |
 | En ANIMACIONES_HC | — |
-| Función | Un número que sube o baja. |
+| Función | Que se entienda qué ha cambiado, cuánto y en qué sentido (apartados 3-9). |
 | Estado inicial | — |
 | Estado final | — |
-| Entrada | — |
+| Entrada | La principal CUENTA (duración según cuánto cambia, o al ritmo de su barra); el resto se RELEVA desde abajo si sube y desde arriba si baja |
 | Salida | — |
 | Interacción | — |
-| Transición | Ninguna: el número cambia de golpe |
-| Duración | — |
-| Curva | --ease-premium |
+| Transición | Cuenta por fotogramas (`requestAnimationFrame`) o relevo (`cifra-sube` / `cifra-baja`) |
+| Duración | 220 ms |
+| Curva | --motion-curva-standard |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
-| Intensidad | 0 · Estático |
+| Intensidad | 1 · Micro |
 | Prioridad | media |
-| Relación | — |
+| Relación | MS F17 — la cuenta sigue desde lo que se ve si cambia a mitad, los relevos seguidos se agrupan, el lector de pantalla oye el valor final, y ya están en la racha, los porcentajes y los textos de metas y objetivos (hallazgo `cifras_de_golpe`). Un reloj no se anima nunca. |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+| Movimiento reducido | Relevo con fundido, sin moverse; con «Sin movimiento», nada. |
 
 ### M · Carga
 

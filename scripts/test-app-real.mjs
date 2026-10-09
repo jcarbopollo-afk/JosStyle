@@ -14674,6 +14674,104 @@ FALLAR_LECTURA.clear();
 RETRASO_LECTURA.ms = 0;
 almacen.ajustes = ajustesDeAntes_ms16;
 
+/* ── MS F17 · Datos que cambian: la cuenta interrumpida, el valor final, el ritmo de las barras y el eje ──
+   Lo que solo se ve con los fotogramas de verdad: una cuenta que cambia de objetivo a mitad SIGUE desde lo
+   que se ve (antes saltaba al objetivo de antes y contaba desde ahí), el lector de pantalla tiene el valor
+   final mientras cuenta, las barras de progreso van todas al mismo ritmo, y el eje de Sueño no cambia de
+   escala al mover la semana. ⚠️ Sufijo `_ms17`. */
+console.log('\n── MS F17 · Motion de datos: cifras, barras y gráficas ──');
+const ajustesDeAntes_ms17 = almacen.ajustes;
+const economiaDeAntes_ms17 = almacen.economia;
+const suenoDeAntes_ms17 = almacen.sueno;
+const dia_ms17 = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toLocaleDateString('sv-SE'); };
+almacen.ajustes = { ...(ajustesDeAntes_ms17 || {}), apariencia: { ...((ajustesDeAntes_ms17 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+almacen.economia = { saldoInicial: 1000, hucha: 0, aportaciones: [], movimientos: [
+  { id: 'mv1_ms17', fecha: dia_ms17(1), tipo: 'gasto', concepto: 'Libro', cantidad: 300 },
+  { id: 'mv2_ms17', fecha: dia_ms17(2), tipo: 'gasto', concepto: 'Bici', cantidad: 600 },
+] };
+almacen.sueno = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((n) => ({ id: `su_ms17_${n}`, fecha: dia_ms17(n), horaDormir: '23:00', horaDespertar: n % 2 ? '07:30' : '06:30', calidad: 4, interrupciones: 0, siestaAyer: false, siestaMinutos: 0 }));
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms17 = errores.length;
+
+/* 1 · La cuenta interrumpida sigue desde lo que se ve. */
+ok(await pulsar('Gestión') && await pulsar('Economía'), 'MS F17 — Gestión → Economía');
+await esperarTexto(/Libro/);
+const leerSaldo_ms17 = () => {
+  const c = [...document.querySelectorAll('.cifra')].find((x) => /^-?\d+\.\d\d$/.test(x.textContent.trim()) && x.closest('p')?.textContent.includes('€'));
+  return c ? Number(c.textContent.trim()) : null;
+};
+const s0_ms17 = await page.evaluate(leerSaldo_ms17);
+ok(s0_ms17 === 100, `MS F17 — el saldo de partida (${s0_ms17})`);
+const cuenta_ms17 = await page.evaluate(async (f) => {
+  const leer = new Function(`return (${f})()`);
+  const botones = () => [...document.querySelectorAll('button[aria-label="Eliminar movimiento"]')].filter((b) => !b.closest('[data-lista-saliendo], [inert]'));
+  const fila = (b) => (b.closest('[data-flip-id]') || b.parentElement).textContent;
+  const primero = botones().find((b) => /Libro/.test(fila(b)));
+  if (!primero) return null;
+  primero.click();
+  await new Promise((r) => setTimeout(r, 70));
+  const aMitad = leer();
+  const cifra = document.querySelector('.cifra[data-cifra="cuenta"]');
+  const final = cifra && cifra.nextElementSibling && cifra.nextElementSibling.classList.contains('sr-only') ? cifra.nextElementSibling.textContent.trim() : null;
+  const oculta = cifra ? cifra.getAttribute('aria-hidden') : null;
+  const segundo = botones().find((b) => /Bici/.test(fila(b)));
+  if (!segundo) return { aMitad, sinSegundo: true };
+  segundo.click();
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const trasCambio = leer();
+  const serie = [aMitad, trasCambio];
+  for (let i = 0; i < 40; i += 1) { await new Promise((r) => requestAnimationFrame(r)); serie.push(leer()); }
+  return { aMitad, trasCambio, final, oculta, serie };
+}, leerSaldo_ms17.toString());
+ok(cuenta_ms17 && cuenta_ms17.aMitad > 100 && cuenta_ms17.aMitad < 400,
+  `MS F17 — al borrar el primer gasto, el saldo cuenta hacia 400 (${cuenta_ms17 && cuenta_ms17.aMitad})`);
+ok(cuenta_ms17 && cuenta_ms17.trasCambio !== null && cuenta_ms17.trasCambio < 400,
+  `🐛 MS F17, apartado 6 — y si el valor cambia a mitad (otro gasto borrado), la cuenta SIGUE desde lo que se ve: no salta al 400 de antes (${cuenta_ms17 && cuenta_ms17.trasCambio})`);
+const serie_ms17 = (cuenta_ms17 && cuenta_ms17.serie || []).filter((v) => v !== null);
+ok(serie_ms17.length > 5 && serie_ms17.every((v, i) => i === 0 || v >= serie_ms17[i - 1]),
+  `MS F17 — una sola subida continua, sin volver atrás (${serie_ms17.slice(0, 8).join(' → ')}…)`);
+ok(cuenta_ms17 && cuenta_ms17.oculta === 'true' && /^\d+\.\d\d$/.test(cuenta_ms17.final || ''),
+  `♿ MS F17, apartado 9 — mientras cuenta, lo que se ve es decoración y el lector de pantalla tiene un valor final al lado (${cuenta_ms17 && cuenta_ms17.final})`);
+await page.waitForTimeout(700);
+const s2_ms17 = await page.evaluate(() => {
+  const c = [...document.querySelectorAll('.cifra')].find((x) => /^-?\d+\.\d\d$/.test(x.textContent.trim()) && x.closest('p')?.textContent.includes('€'));
+  return c ? { texto: c.textContent.trim(), modo: c.dataset.cifra, oculta: c.getAttribute('aria-hidden'), srOnly: !!(c.nextElementSibling && c.nextElementSibling.classList.contains('sr-only')) } : null;
+});
+ok(s2_ms17 && s2_ms17.texto === '1000.00' && s2_ms17.modo !== 'cuenta' && s2_ms17.oculta === null && !s2_ms17.srOnly,
+  `MS F17 — y acaba EXACTAMENTE en el valor nuevo, una sola cifra que se lee (${JSON.stringify(s2_ms17)})`);
+
+/* 2 · Las barras de progreso, todas al mismo ritmo (y su cifra con ellas). */
+await pulsar('Vida');
+ok(await pulsar('Productividad'), 'MS F17 — Productividad');
+await esperarTexto(/Tu productividad hoy/i);
+const barras_ms17 = await page.evaluate(() => [...document.querySelectorAll('.barra-progreso')].map((b) => getComputedStyle(b).transitionDuration));
+ok(barras_ms17.length > 0 && barras_ms17.every((d) => d.split(',')[0].trim() === '0.28s'),
+  `🚨 MS F17, apartados 10 y 11 — las barras de Productividad van al ritmo de todas (\`medium\`, F14), no a \`slow\` escrito en su estilo (${JSON.stringify(barras_ms17)})`);
+
+/* 3 · El eje de Sueño no cambia de escala al mover la semana. */
+await pulsar('Bienestar');
+ok(await pulsar('Sueño'), 'MS F17 — Sueño');
+await esperarTexto(/Semana anterior|semana/i);
+const eje_ms17 = () => page.evaluate(() => {
+  const marcas = [...document.querySelectorAll('.recharts-yAxis .recharts-cartesian-axis-tick-value')].map((t) => Number(t.textContent)).filter((n) => Number.isFinite(n));
+  return marcas.length ? Math.max(...marcas) : null;
+});
+await page.waitForTimeout(800);
+const eje1_ms17 = await eje_ms17();
+ok(await pulsar('Semana anterior'), 'MS F17 — la semana anterior');
+await page.waitForTimeout(800);
+const eje2_ms17 = await eje_ms17();
+ok(eje1_ms17 === 10 && eje2_ms17 === 10,
+  `🚨 MS F17, apartados 31 y 32 — el eje de Sueño se queda en 0-10 h al mover la semana: la línea viaja, la escala no baila (${eje1_ms17} → ${eje2_ms17})`);
+
+ok(errores.length === erroresAntes_ms17, `MS F17 — …sin un error en la consola${errores.length > erroresAntes_ms17 ? `: ${errores.slice(erroresAntes_ms17).join(' | ').slice(0, 200)}` : ''}`);
+almacen.ajustes = ajustesDeAntes_ms17;
+almacen.economia = economiaDeAntes_ms17;
+almacen.sueno = suenoDeAntes_ms17;
+
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

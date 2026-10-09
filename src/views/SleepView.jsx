@@ -13,6 +13,7 @@ import {
   TITULO_ACTUAL, mediaDeVentana, huecosDeVentana,
 } from '../lib/sueno';
 import { Card, ListCard, ListRow, BotonBorrar, SectionTitle, TextInput, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
+import { dominioEstable } from '../lib/datosMotion';
 
 /* Entrega 3 · Fase 31 (SU F1) — «Sueño: registro simple y experiencia premium».
    ═══════════════════════════════════════════════════════════════════════════
@@ -216,6 +217,9 @@ export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFoco
      `horas: null` en los días sin registrar, que recharts pinta como un hueco:
      **no se rellena nada** (apartados 3 y 18). */
   const chartData = ventana.puntos.map((p) => ({ fecha: p.etiqueta, horas: p.horas, esHoy: p.esHoy }));
+  /* MS F17, apartados 31 y 32 — un eje que no baila: de 0 a un múltiplo de dos horas, nunca por debajo
+     de 10. Mover la ventana una semana interpola la línea sin cambiar la escala que la lee. */
+  const dominioSueno = dominioEstable(chartData.map((p) => p.horas), { desdeCero: true, paso: 2, alMenos: 10 });
   const media = mediaDeVentana(ventana);
   const huecos = huecosDeVentana(ventana);
   const atras = puedeRetroceder(sueno, { desplazamiento, dias: VENTANA_GRAFICA });
@@ -280,7 +284,7 @@ export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFoco
               <CartesianGrid stroke={COLORS.border} vertical={false} />
               {/* ⚠️ Apartado 9 — fechas de verdad («L 24 · M 25»), nunca «1 2 3». */}
               <XAxis dataKey="fecha" stroke={COLORS.textMuted} fontSize={11} interval={0} />
-              <YAxis stroke={COLORS.textMuted} fontSize={11} width={26} />
+              <YAxis stroke={COLORS.textMuted} fontSize={11} width={26} domain={dominioSueno} />
               <Tooltip contentStyle={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text }} isAnimationActive={animGrafica.tooltip.isAnimationActive} animationDuration={animGrafica.tooltip.animationDuration} animationEasing={animGrafica.tooltip.animationEasing} />
               {/* 🚨 `connectNulls` NO se activa: un día sin registrar tiene que
                   verse como un hueco, no como una línea recta que lo cruza — sería

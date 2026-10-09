@@ -4,7 +4,6 @@ import { COLORS, CATEGORIAS_TIEMPO_USO, DURACIONES_CONCENTRACION } from '../toke
 import { uid, todayISO, addDays, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, ToggleTab, EmptyHint } from '../components/ui';
 import { CambioDeContenido, ChevronDespliegue } from '../components/motion';
-import { transicion } from '../lib/motion';
 import { Plegable } from '../components/layoutMotion';
 
 /* ---------- Resumen: tres índices puramente descriptivos sobre el propio registro ----------
@@ -37,7 +36,7 @@ function BarraIndice({ label, valor, color }) {
         <p className="text-sm font-semibold" style={{ color }}>{valor}%</p>
       </div>
       <div className="h-2.5 rounded-full" style={{ background: COLORS.surface2 }}>
-        <div className="h-2.5 rounded-full" style={{ width: `${valor}%`, background: color, transition: transicion('width', 'slow') }} />
+        <div className="h-2.5 rounded-full barra-progreso" style={{ width: `${valor}%`, background: color }} />
       </div>
     </div>
   );

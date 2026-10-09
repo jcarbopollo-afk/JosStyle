@@ -5,7 +5,7 @@ import {
   ChevronDown, ChevronUp, ArrowLeft, Timer, Compass, Repeat, Pencil, ArrowUpRight,
   Droplet, BookOpen, Dumbbell, Moon, Apple, Brain, Heart, Archive,
 } from 'lucide-react';
-import { ChevronDespliegue } from '../components/motion';
+import { ChevronDespliegue, CifraQueCambia } from '../components/motion';
 import { COLORS, PERIODOS_META } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { resumenHabito, alternarHabito } from '../lib/rachas';
@@ -659,7 +659,7 @@ function HabitosTab({ habitos, onAdd, onUpdate, onDelete, accent }) {
 function BarraFlujo({ porcentaje, accent }) {
   return (
     <div className="h-2 rounded-full overflow-hidden" style={{ background: COLORS.border }}>
-      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: transicion('width', 'slow') }} />
+      <div className="h-full rounded-full barra-progreso" style={{ width: `${porcentaje}%`, background: accent }} />
     </div>
   );
 }
@@ -1988,7 +1988,7 @@ export function TareasTab({ tareas, onAdd, onUpdate, onToggle, onDelete, onConce
 function BarraMeta({ porcentaje, accent }) {
   return (
     <div className="h-2 rounded-full mt-2 overflow-hidden" style={{ background: COLORS.border }}>
-      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: transicion('width', 'slow') }} />
+      <div className="h-full rounded-full barra-progreso" style={{ width: `${porcentaje}%`, background: accent }} />
     </div>
   );
 }
@@ -2012,7 +2012,7 @@ function TarjetaMeta({ meta, objetivos, accent, onAbrir, onCompletar }) {
           {meta.nombre}
         </p>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span className="text-xs" style={{ color: COLORS.textMuted }}>{p.texto}</span>
+          <span className="text-xs" style={{ color: COLORS.textMuted }}><CifraQueCambia valor={p.porcentaje}>{p.texto}</CifraQueCambia></span>
           {p.superado && <span className="text-xs" style={{ color: COLORS.textMuted }}>Objetivo superado</span>}
           {fecha && <span className="text-xs" style={{ color: fecha === 'Vencida' ? COLORS.danger : COLORS.textMuted }}>{fecha}</span>}
         </div>
@@ -2401,7 +2401,7 @@ function BarraDia({ porcentaje, accent }) {
   if (porcentaje === null) return null;
   return (
     <div className="h-2.5 rounded-full mt-2 overflow-hidden" style={{ background: COLORS.border }}>
-      <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: accent, transition: transicion('width', 'slow') }} />
+      <div className="h-full rounded-full barra-progreso" style={{ width: `${porcentaje}%`, background: accent }} />
     </div>
   );
 }
@@ -2427,7 +2427,7 @@ function CentroDeControlPR({ productividad, objetivos, accent, onAbrir, onToggle
       <Card>
         <p className="text-xs" style={{ color: COLORS.textMuted }}>Tu productividad hoy</p>
         {resumen.texto
-          ? <p className="text-xl font-bold mt-0.5" style={{ color: COLORS.text }}>{resumen.texto}</p>
+          ? <p className="text-xl font-bold mt-0.5" style={{ color: COLORS.text }}><CifraQueCambia valor={resumen.hechos}>{resumen.texto}</CifraQueCambia></p>
           : <p className="text-sm font-semibold mt-0.5" style={{ color: COLORS.text }}>{resumen.frase}</p>}
         <BarraDia porcentaje={resumen.porcentaje} accent={accent} />
         {resumen.texto && <p className="text-xs mt-1.5" style={{ color: COLORS.textMuted }}>{resumen.frase}</p>}

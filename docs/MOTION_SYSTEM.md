@@ -774,6 +774,69 @@ Realtime; el último en escribir gana, declarado desde la EH F41), refrescar y �
 una barra de progreso de las subidas (`supabase-js` no informa del avance: sería fingido) y deshacer en pantalla lo
 que no llegó (se queda pendiente).
 
+## 8.16 · Datos que cambian: cifras, barras, gráficas y paneles (F17)
+
+> **La regla permanente (apartado 63):** toda nueva visualización de datos responde
+> *¿Qué aporta este movimiento a la comprensión del dato?* Si la respuesta es «nada», no se anima.
+
+**No hay un segundo motor** (apartado 2). La F4 dejó `planDeCifra`, `CifraQueCambia` y las gráficas gobernadas
+(`useAnimacionDeGrafica`) en las cifras principales; la F17 **mejora** ese motor (`src/lib/datosMotion.js`) y lo
+**lleva** al resto.
+
+**Qué clase de cifra es** (`CLASES_DE_CIFRA`, apartado 4). Cada cifra es de una clase, y la clase decide:
+
+| Clase | Cómo se mueve | Ejemplos |
+|---|---|---|
+| `principal` | **Cuenta** (`modo="cuenta"`), con duración según cuánto cambia | La puntuación, el saldo, el porcentaje de Hoy |
+| `con_barra` | Cuenta **al ritmo de su barra** (`duracion="medium"`) | Las calorías y los macros con su barra |
+| `secundaria` | **Relevo**: el valor nuevo entra desde abajo si sube y desde arriba si baja | «2/3 hechos», los días de una racha, el texto de una meta |
+| `estatica`, `reloj`, `identificador` | **Nada** | Un total del catálogo, el reloj de un entrenamiento, una versión |
+
+**La cuenta, mejorada:**
+
+- **Dura según cuánto cambia** (`tallaDeCuenta`, apartado 5): relativo a la cifra (12 de 88 no es 12 de 1850),
+  entre `fast` y `slow`. 1 → 100 000 no es interminable.
+- **Interrumpida, sigue desde lo que se ve** (apartado 6). 🐛 Antes, si el valor cambiaba a mitad, la cuenta nueva
+  salía del objetivo de antes: la cifra **saltaba** y después contaba.
+- **Los relevos seguidos se agrupan** (apartado 7): uno que llega mientras el anterior aún se ve escribe el valor sin
+  repetir el fundido.
+- **El lector de pantalla oye el valor final** (apartado 9): mientras cuenta, lo que se ve va con `aria-hidden` y el
+  final está al lado (`sr-only`).
+- El formato final es **exactamente** lo de siempre (apartado 8): la unidad, los decimales y la moneda los pone quien
+  la usa.
+
+**Ya está en** (hallazgo `cifras_de_golpe` de la F0, resuelto): la racha de cada tarjeta y la principal, el
+porcentaje de cada indicador de Nutrición, «2 / 3 completado» de Productividad y el texto de cada meta y objetivo
+—todos junto a una barra que sí se movía—, además de las cuatro de la F4.
+
+**Las barras** (apartados 10 y 11). Seis escribían `transicion('width', 'slow')` en su `style` y las de CSS iban a
+`medium` (F14): la misma cosa a dos ritmos. Ahora todas llevan **`barra-progreso`** (o `fit-barra`, `nu-progreso`),
+y la cifra que acompaña a una barra cuenta a su ritmo. Se quedan con `width` y no `transform: scaleX`: una barra
+redondeada se deforma al escalar, son pocas y la F13 midió su coste.
+
+**Las gráficas** (apartados 22-37). Las tres de Recharts siguen gobernadas por la F4 (420 ms, sin `key`, interpolan,
+en Reducido no dibujan). Lo nuevo es **un eje que no baila** (`dominioEstable`, apartados 31 y 32): Recharts
+interpola la línea pero el eje salta, así que con el dominio calculado en cada pintado mover la semana de Sueño
+cambiaba la escala. Ahora es redondo y con un mínimo —Sueño 0-10 h, el peso de 2 en 2 kg alrededor de sus valores,
+las calorías con el objetivo dentro—. **No se inventan datos** (apartado 30): los huecos siguen siendo huecos.
+
+**Rankings y listas filtradas** (apartados 41-43). Los ejercicios que contribuyen a un músculo, que se filtran por
+tendencia, son una **`ListaAnimada`**: lo que el filtro quita sale con su copia, lo que queda se recoloca, cada uno
+con su `exerciseId`, y la lista se queda montada aunque el filtro la vacíe (F16).
+
+**El presupuesto** (`PRESUPUESTO_DATOS`, apartados 45-47 y 58): en una actualización se mueve la cifra que cambió, su
+barra o su aro, la lista si cambia de orden, **y nada más**. Como mucho cuatro cuentas a la vez y dos `modo="cuenta"`
+por archivo.
+
+**El mapa y la auditoría** (`MAPA_DATOS`, `auditarDatos`). Cada sitio donde se pinta un dato que cambia, con su clase,
+y la prueba busca en su archivo el trozo que lo cumple. La auditoría caza una barra con su ritmo escrito en el
+`style`, una `CifraQueCambia` sobre un reloj, una gráfica con `key` (se rehace entera en vez de interpolar) y más de
+dos cuentas en un archivo.
+
+**Lo que no se hace, y por qué** (`NO_EN_F17`): gráficas de barras y donuts (no hay), una animación por punto al pasar
+de 7 a 30 días (sería decorar), un cursor propio sobre la gráfica (el tooltip de Recharts ya responde al toque) y
+datos en vivo (solo los relojes cambian solos, y no se animan).
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en
@@ -826,3 +889,6 @@ que no llegó (se queda pendiente).
   sin guardar · Guardar ahora» → «Guardado»), sin conexión (y al volver se manda solo), una carga que falla sin que
   el arranque pise los ajustes, ninguna carga («No se han podido cargar tus datos»), el arranque lento, el vacío
   que espera a que salga lo último y la sesión que caduca. `auditarAsincronia` (F16) lee las vistas.
+- La sección «MS F17» del recorrido mide los datos fotograma a fotograma: una cuenta interrumpida que sigue desde lo
+  que se ve sin volver atrás, el valor final para VoiceOver mientras cuenta, las barras de Productividad al ritmo de
+  todas y el eje de Sueño que no cambia al mover la semana. `auditarDatos` (F17) lee las vistas.

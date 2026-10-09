@@ -18,6 +18,7 @@ import { COLORS } from '../tokens';
 import { PastillaFiltro } from './piezasFitness';
 import { hexToRgba } from '../lib/helpers';
 import { SectionTitle, EmptyHint } from './ui';
+import { ListaAnimada } from './layoutMotion';
 import { RankBadge } from './rangos';
 import { ETIQUETA_PARTICIPACION } from '../lib/contribucionMuscular';
 /* 🔓 Los filtros por estado son los de la F18: esta lista la sustituye, así que
@@ -173,15 +174,17 @@ export function MuscleContributionList({
           })}
         </div>
       )}
-      {visibles.length === 0 ? (
-        <EmptyHint text={c.vacio} />
-      ) : (
-        <div className="space-y-2">
-          {visibles.map((x) => (
-            <MuscleContributionCard key={x.exerciseId} contribucion={x} accent={accent} onAbrir={onAbrir} onPorQue={onPorQue} />
-          ))}
-        </div>
-      )}
+      {/* 🔓 MS F17, apartados 41-43 — un ranking que se filtra no se rehace entero: lo que el filtro
+          quita sale con su copia, lo que queda se recoloca y cada tarjeta conserva su identidad (su
+          `exerciseId`). La lista se queda montada aunque se vacíe, y el vacío llega después (F16). */}
+      {visibles.length === 0 && <EmptyHint text={c.vacio} />}
+      <ListaAnimada className="space-y-2">
+        {visibles.map((x) => (
+          <div key={x.exerciseId} data-flip-id={`contribucion-${x.exerciseId}`}>
+            <MuscleContributionCard contribucion={x} accent={accent} onAbrir={onAbrir} onPorQue={onPorQue} />
+          </div>
+        ))}
+      </ListaAnimada>
       {conSinDatos && (
         <MuscleContributionEmpty ejercicios={c.sinDatos} accent={accent} onAbrir={onAbrir} vacio={c.vacio} />
       )}

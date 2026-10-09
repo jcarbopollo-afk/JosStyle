@@ -60,6 +60,7 @@ import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, Ghost
 import BarcodeScanner from '../components/BarcodeScanner';
 import { CambioDeContenido, LatidoAlMarcar, useAnimacionDeGrafica, CifraQueCambia } from '../components/motion';
 import { escalonado } from '../lib/motion';
+import { dominioEstable } from '../lib/datosMotion';
 import { ListaAnimada } from '../components/layoutMotion';
 import { useTurnos } from '../components/estadosAsincronos';
 
@@ -279,7 +280,9 @@ function Indicador({ dato, accent, principal = false, indice = 0 }) {
         style={{ color: principal ? accent : COLORS.text, fontFamily: "'Manrope', sans-serif" }}
       >
         {/* MS F4 — al añadir una comida, la cifra cuenta hasta la nueva (nunca al abrir la pantalla). */}
-        <CifraQueCambia valor={dato.consumido} modo="cuenta">{dato.consumido}</CifraQueCambia>
+        {/* MS F17, apartado 11 — y si tiene su barra, cuenta AL RITMO DE LA BARRA (`medium`, F14): nunca
+            «68» con la barra todavía en 42. */}
+        <CifraQueCambia valor={dato.consumido} modo="cuenta" duracion={dato.objetivo !== null ? 'medium' : 'auto'}>{dato.consumido}</CifraQueCambia>
         <span className={`${principal ? 'text-sm' : 'text-xs'} font-bold ml-1`} style={{ color: COLORS.textMuted }}>{dato.unidad}</span>
       </p>
       {/* Solo cuando de verdad hay un objetivo (apartados 3 y 4). */}
@@ -296,7 +299,7 @@ function Indicador({ dato, accent, principal = false, indice = 0 }) {
             />
           </div>
           <p className="text-xs mt-1" style={{ color: estado.id === 'superado' ? COLORS.warning : COLORS.textMuted }}>
-            {dato.porcentaje} %{sobra !== null ? ` · ${sobra} ${dato.unidad} por encima` : ''}
+            <CifraQueCambia valor={dato.porcentaje}>{dato.porcentaje}</CifraQueCambia> %{sobra !== null ? ` · ${sobra} ${dato.unidad} por encima` : ''}
           </p>
         </>
       )}
@@ -1625,7 +1628,9 @@ function EstadisticasNutricion({ nutricion, accent }) {
         <LineChart data={evo.puntos}>
           <CartesianGrid stroke={COLORS.border} vertical={false} />
           <XAxis dataKey="etiqueta" stroke={COLORS.textMuted} fontSize={11} interval="preserveStartEnd" />
-          <YAxis stroke={COLORS.textMuted} fontSize={11} width={38} />
+          {/* MS F17, apartados 31 y 32 — un eje redondo, con el objetivo dentro: cambiar de periodo
+              interpola la línea sin que la escala baile. */}
+          <YAxis stroke={COLORS.textMuted} fontSize={11} width={38} domain={dominioEstable([...evo.puntos.map((p) => p.valor), evo.objetivo], { desdeCero: true })} />
           <Tooltip
             contentStyle={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 12, fontSize: 12 }}
             labelStyle={{ color: COLORS.textMuted }}

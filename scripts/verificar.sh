@@ -1037,6 +1037,11 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f16.mjs >/tmp/j
 else
   fallo "Fallan los estados del sistema del Motion System (F16)"; grep '✗' /tmp/jc_motion_f16.log
 fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f17.mjs >/tmp/jc_motion_f17.log 2>&1; then
+  ok "El Motion System, F17: los datos que cambian —la clase de cada cifra, la cuenta según cuánto cambia e interrumpida desde lo que se ve, los relevos agrupados, el valor final para el lector, las barras al mismo ritmo, el eje que no baila y el ranking que se filtra— — $(grep -c '✓' /tmp/jc_motion_f17.log) comprobaciones"
+else
+  fallo "Falla el motion de datos del Motion System (F17)"; grep '✗' /tmp/jc_motion_f17.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else
