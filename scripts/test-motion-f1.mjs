@@ -351,7 +351,8 @@ console.log('\n── 11. Cableado: Ajustes, App.jsx y las vistas (apartados 13,
 ok(/dataset\.motion = atributoMotion\(apariencia\)/.test(APP) && /dataset\.velocidad = velocidadMotion\(apariencia\.velocidadMovimiento\)\.id/.test(APP),
   'App.jsx escribe el modo y la velocidad en <html>: un solo punto que leen el CSS y el motor');
 ok(/avisarCambioDeMotion\(\)/.test(APP) && /apariencia\.velocidadMovimiento\]\)/.test(APP), '…avisa al cambiar, y la velocidad está en sus dependencias');
-ok(/dataset\.animaciones = apariencia\.animaciones/.test(APP), '…y sigue escribiendo `data-animaciones`, que leen el CSS y la comprobación de verificar.sh');
+ok(!/dataset\.animaciones = /.test(APP) && /html\[data-motion='off'\] \*/.test(CSS) && !/data-animaciones=/.test(sinComentariosCss(CSS)),
+  '🔓 F20 — y ya no escribe `data-animaciones`: «Sin movimiento» es solo `data-motion=\'off\'` (eran el mismo estado con dos nombres)');
 const AJ = sinComentarios(AJUSTES);
 const pieza = AJ.slice(AJ.indexOf('function AjusteMovimiento('), AJ.indexOf('function OpcionesFila('));
 ok(/<AjusteMovimiento apariencia=\{apariencia\}/.test(AJ), 'Apariencia pinta el ajuste del movimiento');
@@ -369,7 +370,7 @@ ok(/\.\.\.escalonado\(i\)/.test(HUB_C) && !/animationDelay/.test(HUB_C), '…y l
 const sinCascadaPropia = Object.entries(VISTAS).filter(([, src]) => /animationDelay|retrasoDeTarjeta/.test(sinComentarios(src))).map(([r]) => r);
 ok(sinCascadaPropia.length === 0, `🚨 ninguna vista calcula su propio retraso de cascada${sinCascadaPropia.length ? `: ${sinCascadaPropia.join(', ')}` : ''}`);
 const VERIF = leer('scripts/verificar.sh');
-ok(/for attr in radio densidad animaciones motion velocidad; do/.test(VERIF), 'verificar.sh comprueba que `data-motion` y `data-velocidad` tienen CSS de verdad');
+ok(/for attr in radio densidad motion velocidad; do/.test(VERIF), 'verificar.sh comprueba que `data-motion` y `data-velocidad` tienen CSS de verdad');
 ok(/test-motion-f1\.mjs/.test(VERIF), '…y ejecuta esta suite');
 ok(DEPENDENCIAS_PERMITIDAS.some((d) => d.modulo === 'motion' && d.porque), 'Fitness declara el motor como dependencia, con su motivo (FIT F44)');
 

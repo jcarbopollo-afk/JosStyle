@@ -97,8 +97,6 @@ export const COSTE_PROPIEDAD = Object.freeze({
   diseno: ['width', 'height', 'min-width', 'min-height', 'max-width', 'max-height', 'top', 'left', 'right', 'bottom', 'inset', 'margin', 'padding', 'grid-template-rows', 'grid-template-columns', 'font-size', 'line-height', 'letter-spacing', 'gap', 'flex-basis', 'border-width'],
 });
 
-export const COSTES = Object.freeze({ composicion: 0, pintado: 1, diseno: 2, todo: 3, desconocido: 1 });
-
 /** La clase de coste de una propiedad animada (`margin-top` es de la familia `margin`). */
 export function costeDe(propiedad) {
   const p = String(propiedad || '').trim().toLowerCase();

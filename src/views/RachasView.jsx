@@ -31,7 +31,8 @@ import { hexToRgba, todayISO } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, GhostBtn, ListRow } from '../components/ui';
 import { TIPOS_RACHA, ESTADOS_RACHA, ESTADOS_DIA, CLASES_REGLA } from '../lib/rachas';
 import { panelRachas, panelHabitos } from '../lib/rachasServicio';
-import { mantenimientoHoy, textoMantenimiento, feedbackDeSubida, DURACION_FEEDBACK_MS } from '../lib/rachasHoy';
+import { mantenimientoHoy, textoMantenimiento, feedbackDeSubida, esperaDelFeedback } from '../lib/rachasHoy';
+import { contextoDelDocumento } from '../lib/motion';
 import {
   panelGamificacion, diasDelMes, progresoHaciaHito,
   ESTADOS_LOGRO, definicionLogro, EVENTOS_GAMIFICACION, NIVELES_CELEBRACION,
@@ -545,7 +546,7 @@ function CrearRacha({ accent, onCrear, onCancelar }) {
    rápida y satisfactoria."*
 
    El fuego pega un pulso y el "+1" sube y se apaga, todo en menos de un segundo
-   (`DURACION_FEEDBACK_MS`). Las dos animaciones viven en `index.css` y respetan
+   (`esperaDelFeedback`, el token `firma` a la velocidad elegida). Las dos animaciones viven en `index.css` y respetan
    solas "Reducir movimiento".
 
    ⚠️ **No es gamificación** (D2-02): ni puntos, ni niveles, ni monedas. Es el
@@ -769,7 +770,7 @@ export default function RachasView({
     if (!fb) return undefined;
     esperandoSubida.current = null;
     setSubida({ id: esperando.id, ...fb });
-    const t = setTimeout(() => setSubida(null), DURACION_FEEDBACK_MS);
+    const t = setTimeout(() => setSubida(null), esperaDelFeedback(contextoDelDocumento()));
     return () => clearTimeout(t);
   }, [todas]);
 

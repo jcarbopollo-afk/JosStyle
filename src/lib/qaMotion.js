@@ -150,6 +150,7 @@ export const REGRESION_POR_FASE = Object.freeze([
   fase(17, 'Los datos: cifras, barras, gráficas y rankings'),
   fase(18, 'El pulido: el lenguaje de marca'),
   fase(19, 'El QA: estrés, regresión y salud del sistema'),
+  fase(20, 'El sellado: contratos, consolidación y la sesión entera'),
 ]);
 
 /** Las fases a las que les falta algo: la suite, su línea en `verificar.sh` o su sección del recorrido. */
@@ -194,6 +195,7 @@ export const ARCHIVOS_CON_EJEMPLOS = Object.freeze([
   'src/lib/qaMotion.js', 'src/lib/pulidoMotion.js', 'src/lib/rendimientoMotion.js', 'src/lib/lenguajeMotion.js',
   'src/lib/motionMapa.js', 'src/lib/accesibilidadMotion.js', 'src/lib/responsiveMotion.js', 'src/lib/datosMotion.js',
   'src/lib/estadosAsincronos.js', 'src/lib/orquestadorMotion.js', 'src/lib/feedbackFitness.js', 'src/lib/acabadoFitness.js',
+  'src/lib/contratosMotion.js',
 ]);
 
 export function referenciasRotas({ css = '', archivos = {} } = {}) {
@@ -546,7 +548,7 @@ export const CAPAS_MOTION = Object.freeze([
     'src/components/capasMotion.js', 'src/components/navegacionMotion.js', 'src/components/responsiveMotion.js', 'src/components/vacioMotion.js',
     'src/components/continuidad.jsx', 'src/components/estadosAsincronos.jsx',
   ] },
-  { capa: 9, id: 'auditorias', que: 'Lo que mira el sistema desde fuera: el mapa, el lenguaje, el pulido y este QA. La aplicación no lo importa.', archivos: ['src/lib/motionMapa.js', 'src/lib/lenguajeMotion.js', 'src/lib/pulidoMotion.js', 'src/lib/qaMotion.js'] },
+  { capa: 9, id: 'auditorias', que: 'Lo que mira el sistema desde fuera: el mapa, el lenguaje, el pulido y este QA. La aplicación no lo importa.', archivos: ['src/lib/motionMapa.js', 'src/lib/lenguajeMotion.js', 'src/lib/pulidoMotion.js', 'src/lib/qaMotion.js', 'src/lib/contratosMotion.js'] },
 ]);
 export const capaDe = (archivo) => (CAPAS_MOTION.find((c) => c.archivos.includes(archivo)) || {}).capa;
 

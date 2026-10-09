@@ -15329,6 +15329,293 @@ await page.evaluate(() => { try { localStorage.removeItem('josstyle:motion-debug
 almacen.ajustes = ajustesDeAntes_ms19;
 almacen.productividad = productividadDeAntes_ms19;
 
+/* ── MS F20 · El sellado: la sesión entera, en cuatro tamaños, en Reducido, interrumpida y medida ──
+   Los apartados 40 a 44 y el 47: *"Realizar una última navegación completa por Jos Style"*, adaptada a la
+   de verdad —Inicio → Bienestar → Fitness → la plantilla → su detalle → Editar → cambiar las series → Guardar
+   → volver → Vida → Gestión → Ajustes → Apariencia → Texto y movimiento → volver → Inicio—, y repetida en un
+   iPhone en vertical, en horizontal, en un iPad y en un escritorio, y otra vez con «Reducir movimiento».
+   En cada paso se espera a que la pantalla se ASIENTE (ni una animación viva salvo los bucles declarados,
+   ni una copia que se va, el orquestador vacío, la pantalla sin `transform` y entera) y se mide que nada se
+   salga de lado; los pasos de navegación, con su tipo. Después, se interrumpe a propósito: abrir, cerrar,
+   navegar, guardar, arrastrar y una cifra que cuenta. Y se mide: fotogramas, tareas largas, el DOM que queda
+   y la consola. La plantilla la hace el CONSTRUCTOR de la aplicación (`constructor.js`), no un objeto a mano.
+   ⚠️ Sufijo `_ms20`. */
+console.log('\n── MS F20 · El sellado: la sesión entera, en cuatro tamaños, en Reducido, interrumpida y medida ──');
+const ajustesDeAntes_ms20 = almacen.ajustes;
+const fitnessDeAntes_ms20 = almacen.fitness;
+const economiaDeAntes_ms20 = almacen.economia;
+almacen.ajustes = { ...(ajustesDeAntes_ms20 || {}), apariencia: { ...((ajustesDeAntes_ms20 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.evaluate(() => { try { localStorage.setItem('josstyle:motion-debug', '1'); localStorage.removeItem('fitness-borrador-rutina'); } catch { /* sin almacenamiento */ } });
+const plantillas_ms20 = await page.evaluate(async () => {
+  const c = await import('/src/lib/constructor.js');
+  let r = c.crearRutina({ id: 'pl-ms20', nombre: 'Sellado F20' });
+  r = c.anadirEjercicio(r, 'press-banca-barra');
+  const g = c.guardarRutina([], r);
+  return g.ok ? g.planes : null;
+});
+ok(Array.isArray(plantillas_ms20) && plantillas_ms20.length === 1 && (plantillas_ms20[0].ejercicios || []).length === 1,
+  'MS F20 — la plantilla del recorrido, hecha con el constructor de la aplicación (no con un objeto a mano)');
+almacen.fitness = {
+  ...(fitnessDeAntes_ms20 || {}),
+  sesiones: [], plantillas: plantillas_ms20 || [], planActivo: null, planesAnteriores: [], objetivos: [],
+  clasificaciones: [], ejercicios: [], cuarentena: [], favoritosEjercicios: [],
+};
+const erroresAntes_ms20 = errores.length;
+
+/* Cuándo una pantalla está ASENTADA: una sola, sin `transform`, opaca, sin copias que se van, sin una
+   animación viva (los bucles —el esqueleto, el giro— no cuentan) y con el orquestador vacío. */
+const asentada_ms20 = () => page.waitForFunction(() => {
+  const ps = document.querySelectorAll('.pantalla-segura > [data-navegacion]');
+  if (ps.length !== 1) return false;
+  const cs = getComputedStyle(ps[0]);
+  const vivas = document.getAnimations().filter((a) => a.playState === 'running' && a.effect && a.effect.getComputedTiming().iterations !== Infinity);
+  return vivas.length === 0 && cs.transform === 'none' && cs.opacity === '1'
+    && !document.querySelector('[data-capa-saliendo], [data-lista-saliendo]')
+    && (!window.__motion || window.__motion.estado().enMarcha === 0);
+}, null, { timeout: 6000, polling: 50 }).then(() => true, () => false);
+const sinDesborde_ms20 = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+const marcar_ms20 = () => page.evaluate(() => { window.__antes_ms20 = document.querySelector('.pantalla-segura > [data-navegacion]'); });
+const tipoNuevo_ms20 = () => page.waitForFunction(() => {
+  const p = document.querySelector('.pantalla-segura > [data-navegacion]');
+  return p && p !== window.__antes_ms20 ? p.dataset.navegacion : false;
+}, null, { timeout: 5000, polling: 30 }).then((h) => h.jsonValue(), () => null);
+const pulsarSelector_ms20 = (sel) => page.evaluate((s) => {
+  const b = [...document.querySelectorAll(s)].find((x) => !x.closest('[inert], [data-capa-saliendo], [data-lista-saliendo]'));
+  if (!b) return false;
+  b.click();
+  return true;
+}, sel);
+const series_ms20 = () => (((almacen.fitness || {}).plantillas || []).find((p) => p.id === 'pl-ms20') || { ejercicios: [] }).ejercicios
+  .reduce((n, e) => n + (Number(e.series) || 0), 0);
+
+/* El recorrido entero. `nav` es el tipo de navegación que tiene que tener el paso. */
+const PASOS_MS20 = [
+  { que: 'Bienestar', nav: 'seccion', hacer: () => pulsar('Bienestar') },
+  { que: 'Fitness', nav: 'entrar', hacer: () => pulsar('Fitness') },
+  { que: 'la plantilla', hacer: async () => (await pulsar('Ver Sellado F20')) && /Tus plantillas/i.test(await esperarTexto(/Tus plantillas/i)) },
+  { que: 'su detalle', hacer: async () => (await pulsar('Ver Sellado F20')) && /Distribuci[oó]n muscular/i.test(await esperarTexto(/Distribuci[oó]n muscular/i)) },
+  { que: 'Editar', hacer: async () => (await pulsar('Editar')) && /A[ñn]adir ejercicio/i.test(await esperarTexto(/A[ñn]adir ejercicio/i)) },
+  { que: 'cambiar las series', hacer: async () => (await pulsar('Configurar')) && (await pulsar('Subir Series')) && pulsar('Hecho') },
+  { que: 'Guardar', guarda: true, hacer: async () => (await pulsar('Guardar')) && /Entrenamiento guardado/i.test(await esperarTexto(/Entrenamiento guardado/i)) },
+  { que: 'salir del constructor', hacer: () => pulsar('Volver a Entrenamiento') },
+  { que: 'volver de Fitness', nav: 'volver', hacer: () => pulsarSelector_ms20('.pantalla-segura .back-bar') },
+  { que: 'Vida', nav: 'seccion', hacer: () => pulsar('Vida') },
+  { que: 'Gestión', nav: 'seccion', hacer: () => pulsar('Gestión') },
+  { que: 'Ajustes', nav: 'seccion', hacer: () => pulsar('Ajustes') },
+  { que: 'Apariencia', hacer: () => pulsar('Apariencia') },
+  { que: 'Texto y movimiento', hacer: async () => (await pulsar('Texto y movimiento')) && /Velocidad|movimiento/i.test(await ver()) },
+  { que: 'cerrar Texto y movimiento', hacer: () => pulsar('Texto y movimiento') },
+  { que: 'volver de Apariencia', hacer: () => pulsar('Volver a Ajustes') },
+  { que: 'Inicio', nav: 'seccion', hacer: () => pulsar('Inicio') },
+];
+const sesion_ms20 = async () => {
+  const fallos = [];
+  for (const p of PASOS_MS20) {
+    const antes = p.guarda ? series_ms20() : null;
+    if (p.nav) await marcar_ms20();
+    const hecho = await p.hacer();
+    const tipo = p.nav ? await tipoNuevo_ms20() : null;
+    const quieta = await asentada_ms20();
+    const ancho = await sinDesborde_ms20();
+    const guardado = p.guarda ? series_ms20() === antes + 1 : true;
+    if (!hecho || !quieta || !ancho || !guardado || (p.nav && tipo !== p.nav)) fallos.push({ que: p.que, hecho: !!hecho, quieta, ancho, guardado, ...(p.nav ? { tipo, quiere: p.nav } : {}) });
+  }
+  return fallos;
+};
+const arrancar_ms20 = async (ancho, alto) => {
+  await page.setViewportSize({ width: ancho, height: alto });
+  await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+  await esperarTexto(/Hoy|Buenos|Buenas/);
+  return asentada_ms20();
+};
+
+/* 1 · La sesión entera en un iPhone en vertical, midiendo (apartados 40 y 44). */
+ok(await arrancar_ms20(390, 844), 'MS F20 — se abre la aplicación y Hoy se asienta');
+const domAntes_ms20 = await page.evaluate(() => document.getElementsByTagName('*').length);
+await page.evaluate(() => {
+  window.__fotogramas_ms20 = [];
+  window.__largas_ms20 = [];
+  window.__transforms_ms20 = new Set();
+  let ultimo = performance.now();
+  const paso = (t) => {
+    window.__fotogramas_ms20.push(t - ultimo); ultimo = t;
+    const p = document.querySelector('.pantalla-segura > [data-navegacion]');
+    if (p) window.__transforms_ms20.add(getComputedStyle(p).transform);
+    window.__raf_ms20 = requestAnimationFrame(paso);
+  };
+  window.__raf_ms20 = requestAnimationFrame(paso);
+  try { window.__obs_ms20 = new PerformanceObserver((l) => l.getEntries().forEach((e) => window.__largas_ms20.push(Math.round(e.duration)))); window.__obs_ms20.observe({ type: 'longtask' }); } catch { /* sin observador */ }
+});
+const series0_ms20 = series_ms20();
+const vertical_ms20 = await sesion_ms20();
+ok(vertical_ms20.length === 0,
+  `🚨 MS F20, apartado 40 — la sesión entera en un iPhone en vertical: cada paso hecho, asentado, sin salirse de lado y, al navegar, con su tipo (${JSON.stringify(vertical_ms20).slice(0, 700)})`);
+ok(series_ms20() === series0_ms20 + 1, `MS F20 — …y lo editado se guardó de verdad en la cuenta (${series0_ms20} → ${series_ms20()} series)`);
+const medida_ms20 = await page.evaluate(() => {
+  cancelAnimationFrame(window.__raf_ms20);
+  try { window.__obs_ms20.disconnect(); } catch { /* sin observador */ }
+  const f = window.__fotogramas_ms20.slice(1).sort((a, b) => a - b);
+  const mediana = f.length ? f[Math.floor(f.length / 2)] : null;
+  return {
+    fotogramas: f.length, mediana: mediana === null ? null : Math.round(mediana), largas: window.__largas_ms20.length,
+    peor: window.__largas_ms20.length ? Math.max(...window.__largas_ms20) : 0,
+    transforms: [...window.__transforms_ms20].length, dom: document.getElementsByTagName('*').length,
+    vivas: document.getAnimations().filter((a) => a.playState === 'running' && a.effect && a.effect.getComputedTiming().iterations !== Infinity).length,
+    enMarcha: window.__motion ? window.__motion.estado().enMarcha : null,
+    copias: document.querySelectorAll('[data-capa-saliendo], [data-lista-saliendo]').length,
+  };
+});
+ok(medida_ms20.fotogramas > 60 && medida_ms20.mediana !== null && medida_ms20.mediana <= 34,
+  `MS F20, apartado 44 — los fotogramas de toda la sesión: la mitad llegan en 34 ms o menos (${medida_ms20.fotogramas} fotogramas, mediana ${medida_ms20.mediana} ms)`);
+ok(medida_ms20.peor < 2000, `MS F20, apartado 44 — ninguna tarea larga congela la pantalla dos segundos (${medida_ms20.largas} de más de 50 ms; la peor, ${medida_ms20.peor} ms)`);
+ok(medida_ms20.transforms > 1, `MS F20 — y la pantalla SE MOVÍA al navegar: la medida en Reducido de abajo no sale a cero por no mirar (${medida_ms20.transforms} transforms distintos)`);
+ok(medida_ms20.vivas === 0 && medida_ms20.enMarcha === 0 && medida_ms20.copias === 0
+  && Math.abs(medida_ms20.dom - domAntes_ms20) <= Math.max(60, domAntes_ms20 * 0.2),
+  `🚨 MS F20, apartado 44 — de vuelta en Inicio no queda nada vivo: ni una animación, ni el orquestador, ni una copia, y el DOM vuelve a su tamaño (${domAntes_ms20} → ${medida_ms20.dom} nodos)`);
+
+/* 2 · La misma sesión en horizontal, en un iPad y en un escritorio (apartado 42). */
+const tamanos_ms20 = await page.evaluate(async () => (await import('/src/lib/responsiveMotion.js')).CONTEXTOS_FISICOS
+  .filter((c) => ['horizontal', 'ipad', 'escritorio'].includes(c.id)).map((c) => ({ id: c.id, ancho: c.ancho, alto: c.alto })));
+ok(tamanos_ms20.length === 3, `MS F20 — los tamaños salen de la matriz de la F15 (${tamanos_ms20.map((t) => `${t.id} ${t.ancho}×${t.alto}`).join(', ')})`);
+for (const t of tamanos_ms20) {
+  const listo = await arrancar_ms20(t.ancho, t.alto);
+  const fallos = listo ? await sesion_ms20() : [{ que: 'arrancar' }];
+  ok(fallos.length === 0, `🚨 MS F20, apartado 42 — la sesión entera en ${t.id} (${t.ancho}×${t.alto}) (${JSON.stringify(fallos).slice(0, 600)})`);
+}
+
+/* 3 · La misma sesión con «Reducir movimiento» (apartado 43): se usa entera, y nada se desplaza. */
+await page.emulateMedia({ reducedMotion: 'reduce' });
+ok(await arrancar_ms20(390, 844), 'MS F20 — con «Reducir movimiento» del sistema');
+await page.evaluate(() => {
+  window.__transforms_ms20 = new Set();
+  const paso = () => {
+    const p = document.querySelector('.pantalla-segura > [data-navegacion]');
+    if (p) window.__transforms_ms20.add(getComputedStyle(p).transform);
+    window.__raf_ms20 = requestAnimationFrame(paso);
+  };
+  window.__raf_ms20 = requestAnimationFrame(paso);
+});
+const reducido_ms20 = await sesion_ms20();
+const transformsReducido_ms20 = await page.evaluate(() => { cancelAnimationFrame(window.__raf_ms20); return [...window.__transforms_ms20]; });
+ok(reducido_ms20.length === 0, `🚨 MS F20, apartado 43 — la sesión entera en Reducido: perfectamente utilizable (${JSON.stringify(reducido_ms20).slice(0, 600)})`);
+ok(transformsReducido_ms20.length === 1 && transformsReducido_ms20[0] === 'none',
+  `🚨 MS F20, apartado 43 — …y ninguna pantalla se desplaza ni escala en toda la sesión: solo se funde (${JSON.stringify(transformsReducido_ms20)})`);
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+/* 4 · Interrumpir a propósito (apartado 41). */
+ok(await arrancar_ms20(390, 844), 'MS F20 — de vuelta al iPhone, para interrumpir');
+/* a · Abrir: la tarjeta de Fitness, y Vida antes de que acabe de abrirse. */
+ok(await pulsar('Bienestar') && await asentada_ms20(), 'MS F20 — Bienestar');
+await marcar_ms20();
+const abrir_ms20 = await page.evaluate(async () => {
+  const t = [...document.querySelectorAll('button')].find((b) => (b.getAttribute('aria-label') || '') === 'Abrir Fitness' || b.innerText.trim().split('\n')[0] === 'Fitness');
+  if (!t) return null;
+  t.click();
+  await new Promise((r) => setTimeout(r, 30));
+  const nav = [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === 'Vida');
+  if (!nav) return null;
+  nav.click();
+  return true;
+});
+ok(abrir_ms20 && await asentada_ms20() && /Estudios/.test(await ver()),
+  '🚨 MS F20, apartado 41 — abrir Fitness e irse a Vida antes de que acabe: acaba en Vida, asentada, sin nada a medias');
+/* b · Cerrar: el ＋ se cierra y se vuelve a abrir antes de que se vaya. */
+ok(await pulsar('Inicio') && await asentada_ms20(), 'MS F20 — Inicio');
+ok(await pulsar('Añadir') && /Apunte/.test(await esperarTexto(/Apunte/)), 'MS F20 — el ＋ abierto');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(40);
+ok(await pulsar('Añadir', 2000), 'MS F20 — …se cierra y se vuelve a abrir mientras se va');
+await asentada_ms20();
+const unaHoja_ms20 = await page.evaluate(() => ({ dialogos: document.querySelectorAll('[role="dialog"]').length, copias: document.querySelectorAll('[data-capa-saliendo]').length }));
+ok(unaHoja_ms20.dialogos === 1 && unaHoja_ms20.copias === 0, `🚨 MS F20, apartado 41 — cerrar y abrir a la vez deja UNA hoja, quieta (${JSON.stringify(unaHoja_ms20)})`);
+/* c · Un gesto interrumpido: arrastrar el asa, soltar y volver a agarrarla mientras vuelve. */
+const gesto_ms20 = await page.evaluate(async () => {
+  const asa = [...document.querySelectorAll('[data-asa-hoja]')].find((a) => a.getBoundingClientRect().height > 0);
+  if (!asa) return null;
+  const caja = asa.parentElement;
+  const r = asa.getBoundingClientRect();
+  const x0 = r.left + r.width / 2; const y0 = r.top + r.height / 2;
+  const ev = (tipo, dy) => asa.dispatchEvent(new PointerEvent(tipo, { bubbles: true, clientX: x0, clientY: y0 + dy, pointerType: 'touch', pointerId: 21 }));
+  const espera = (ms) => new Promise((ok) => setTimeout(ok, ms));
+  ev('pointerdown', 0);
+  for (const dy of [20, 40, 60]) { await espera(30); ev('pointermove', dy); }
+  await espera(160); ev('pointermove', 60);
+  ev('pointerup', 60);
+  await espera(40);
+  const volviendo = caja.dataset.arrastre;
+  ev('pointerdown', 0); await espera(20); ev('pointermove', 10); await espera(160); ev('pointermove', 10); ev('pointerup', 10);
+  return { volviendo };
+});
+ok(gesto_ms20 && gesto_ms20.volviendo === 'volviendo', `MS F20 — el asa se arrastra y, al soltarla, la hoja vuelve (${JSON.stringify(gesto_ms20)})`);
+await page.waitForTimeout(900);
+const trasGesto_ms20 = await page.evaluate(() => {
+  const asa = [...document.querySelectorAll('[data-asa-hoja]')].find((a) => a.getBoundingClientRect().height > 0);
+  const caja = asa && asa.parentElement;
+  return caja ? { estado: caja.dataset.arrastre, transform: caja.style.transform, vivas: caja.getAnimations().filter((a) => a.playState === 'running').length, abierta: !!document.querySelector('[role="dialog"]') } : null;
+});
+ok(trasGesto_ms20 && trasGesto_ms20.abierta && trasGesto_ms20.estado === 'quieta' && !trasGesto_ms20.transform && trasGesto_ms20.vivas === 0,
+  `🚨 MS F20, apartado 41 — volver a agarrarla mientras vuelve no la deja a medias: quieta, en su sitio y abierta (${JSON.stringify(trasGesto_ms20)})`);
+await page.keyboard.press('Escape');
+ok(await asentada_ms20() && await page.evaluate(() => !document.querySelector('[role="dialog"]')), 'MS F20 — …y se cierra del todo');
+/* d · Navegar: volver mientras Fitness entra. */
+ok(await pulsar('Bienestar') && await asentada_ms20(), 'MS F20 — Bienestar otra vez');
+await marcar_ms20();
+await page.evaluate(() => { const t = [...document.querySelectorAll('button')].find((b) => (b.getAttribute('aria-label') || '') === 'Abrir Fitness' || b.innerText.trim().split('\n')[0] === 'Fitness'); if (t) t.click(); });
+const entro_ms20 = await tipoNuevo_ms20();
+await marcar_ms20();
+const volvio_ms20 = await pulsarSelector_ms20('.pantalla-segura .back-bar');
+const tipoVuelta_ms20 = await tipoNuevo_ms20();
+ok(entro_ms20 === 'entrar' && volvio_ms20 && tipoVuelta_ms20 === 'volver' && await asentada_ms20() && /Nutrici/.test(await ver()),
+  `🚨 MS F20, apartado 41 — volver mientras Fitness entra deja Bienestar entero (${entro_ms20} → ${tipoVuelta_ms20})`);
+/* e · Guardar: «Guardar» y, sin esperar, a Inicio. Lo guardado llega y nada se queda diciendo «Guardando». */
+ok(await pulsar('Fitness') && await pulsar('Ver Sellado F20') && await pulsar('Ver Sellado F20') && await pulsar('Editar')
+  && /A[ñn]adir ejercicio/i.test(await esperarTexto(/A[ñn]adir ejercicio/i)), 'MS F20 — el constructor otra vez');
+ok(await pulsar('Configurar') && await pulsar('Subir Series') && await pulsar('Hecho'), 'MS F20 — …con una serie más');
+const seriesAntes_ms20 = series_ms20();
+await page.evaluate(() => {
+  const g = [...document.querySelectorAll('button')].find((b) => b.innerText.trim() === 'Guardar' && !b.closest('[inert]'));
+  if (g) g.click();
+  const inicio = [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === 'Inicio');
+  if (inicio) inicio.click();
+});
+await asentada_ms20();
+await page.waitForTimeout(800);
+const trasGuardar_ms20 = await ver();
+ok(series_ms20() === seriesAntes_ms20 + 1 && !/Guardando|No se ha guardado|Sin conexi[oó]n/i.test(trasGuardar_ms20) && /Hoy|Buenos|Buenas/.test(trasGuardar_ms20),
+  `🚨 MS F20, apartado 41 — guardar e irse en el mismo instante: lo guardado llega (${seriesAntes_ms20} → ${series_ms20()}) y nada se queda «Guardando»`);
+/* f · Una cifra que cuenta, y se navega fuera a mitad. */
+almacen.economia = { saldoInicial: 1000, hucha: 0, aportaciones: [], movimientos: [
+  { id: 'mv1_ms20', fecha: new Date(Date.now() - 864e5).toLocaleDateString('sv-SE'), tipo: 'gasto', concepto: 'Libro', cantidad: 300 },
+] };
+ok(await arrancar_ms20(390, 844) && await pulsar('Gestión') && await pulsar('Economía') && /Libro/.test(await esperarTexto(/Libro/)), 'MS F20 — Economía, con un gasto');
+const cifra_ms20 = await page.evaluate(async () => {
+  const b = [...document.querySelectorAll('button[aria-label="Eliminar movimiento"]')].find((x) => !x.closest('[inert], [data-lista-saliendo]'));
+  if (!b) return null;
+  b.click();
+  let contando = false;
+  for (let t0 = performance.now(); !contando && performance.now() - t0 < 2000;) {
+    await new Promise((r) => requestAnimationFrame(r));
+    contando = !!document.querySelector('.cifra[data-cifra="cuenta"]');
+  }
+  const nav = [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === 'Inicio');
+  if (nav) nav.click();
+  return { contando };
+});
+ok(cifra_ms20 && cifra_ms20.contando, 'MS F20 — la cifra del saldo estaba contando');
+const trasCifra_ms20 = await asentada_ms20();
+const turnos_ms20 = await page.evaluate(async () => (await import('/src/lib/datosMotion.js')).cuentasActivas());
+ok(trasCifra_ms20 && turnos_ms20 === 0, `🚨 MS F20, apartado 41 — irse con la cifra a mitad de su cuenta no deja nada: la pantalla nueva asentada y ni un turno de cuenta reservado (${turnos_ms20})`);
+
+/* 5 · La consola, al final de todo (apartado 47): ni un error ni una promesa sin atender. */
+ok(errores.length === erroresAntes_ms20, `MS F20, apartado 47 — …sin un error, un aviso de React ni una promesa sin atender en toda la sección${errores.length > erroresAntes_ms20 ? `: ${errores.slice(erroresAntes_ms20).join(' | ').slice(0, 300)}` : ''}`);
+await page.evaluate(() => { try { localStorage.removeItem('josstyle:motion-debug'); } catch { /* sin almacenamiento */ } });
+almacen.ajustes = ajustesDeAntes_ms20;
+almacen.fitness = fitnessDeAntes_ms20;
+almacen.economia = economiaDeAntes_ms20;
+
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

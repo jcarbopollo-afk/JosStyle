@@ -882,7 +882,7 @@ fi
 #     con la densidad) el caso de un ajuste que se guarda, se anuncia como funcional en un
 #     comentario del código y no hace absolutamente nada.
 SIN_CSS=""
-for attr in radio densidad animaciones motion velocidad; do
+for attr in radio densidad motion velocidad; do
   grep -q "dataset\.$attr" src/App.jsx || { SIN_CSS="$SIN_CSS $attr(no-se-aplica)"; continue; }
   grep -q "data-$attr" src/index.css   || SIN_CSS="$SIN_CSS $attr(sin-CSS)"
 done
@@ -1055,6 +1055,11 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f19.mjs >/tmp/j
   ok "El Motion System, F19: el QA del sistema entero —la matriz con su prueba, la regresión de cada fase, las primitivas por sus propiedades, los tokens y los @keyframes sin un fallo, el mapa contra el CSS, las máquinas de estado recorridas, los muelles imposibles, las capas y la cámara lenta— — $(grep -c '✓' /tmp/jc_motion_f19.log) comprobaciones"
 else
   fallo "Falla el QA del Motion System (F19)"; grep '✗' /tmp/jc_motion_f19.log
+fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f20.mjs >/tmp/jc_motion_f20.log 2>&1; then
+  ok "El Motion System, F20: el sellado —el mapa definitivo, una sola fuente por categoría, nada repetido ni muerto, el legado retirado, los diecinueve contratos con su garantía, los diez antipatrones cazados, los tokens y los muelles revisados, la última búsqueda del código y MOTION SYSTEM — SEALED calculado— — $(grep -c '✓' /tmp/jc_motion_f20.log) comprobaciones"
+else
+  fallo "Falla el sellado del Motion System (F20)"; grep '✗' /tmp/jc_motion_f20.log
 fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"

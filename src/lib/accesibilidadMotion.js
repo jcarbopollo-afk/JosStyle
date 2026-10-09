@@ -191,6 +191,13 @@ export const LEEN_REDUCIR = Object.freeze(['src/lib/motion.js', 'src/components/
 /** Quien puede vibrar: el motor de audio. */
 export const VIBRAN = Object.freeze(['src/lib/audioEngine.js']);
 
+/** MS F20 — los ejemplos malos de esta auditoría, aquí y no copiados donde se citan (el sellado los importa):
+ *  escritos en otro archivo, la propia auditoría los encontraría allí como si fueran código de verdad. */
+export const EJEMPLOS_MALOS_F12 = Object.freeze({
+  scrollSuave: "window.scrollTo({ top: 0, behavior: 'smooth' });",
+  bucle: '@keyframes brillo { from { opacity: 0.5; } to { opacity: 1; } }\n.brilla { animation: brillo 1s infinite; }',
+});
+
 export function auditarAccesibilidadMotion({ archivos = {}, css = '' } = {}) {
   const hallazgos = [];
   Object.entries(archivos).forEach(([archivo, src]) => {

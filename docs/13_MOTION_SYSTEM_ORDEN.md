@@ -40,7 +40,7 @@ se ordena es **el trabajo**.
 | **F17** ✅ **v3.147.0** | Motion de datos, dashboard, métricas, gráficas y visualización | 760–1458 | 699 |
 | **F18** ✅ **v3.148.0** | Motion visual polish, brand language y coherencia sensorial | 1459–2241 | 783 |
 | **F19** ✅ **v3.149.0** | Testing extremo, validación, regresión y motion QA automatizado | 2242–3117 | 876 |
-| **F20** | Finalización, consolidación, contratos y sellado | 3118–4045 | 928 |
+| **F20** ✅ **v3.150.0** | Finalización, consolidación, contratos y sellado | 3118–4045 | 928 |
 
 🏁 **La F20 es la última**: su texto dice *"No generar una FASE 21 del Motion System"*.
 
@@ -101,6 +101,8 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | La prueba de la F18 | `scripts/test-motion-f18.mjs`, y la sección «MS F18» del recorrido de Chromium (el ✓ que no late al abrir y sí al marcar, play ↔ pausa, la barra de volver sin `transform` puesto y la inspección) |
 | El QA del sistema entero: la infraestructura, la matriz (cada fila con su prueba), la regresión de las diecinueve fases, los tokens (referencias rotas, repetidos, literales), los `@keyframes`, el mapa contra el CSS, las máquinas de estado, los muelles con valores imposibles, las capas contra los imports, los hallazgos clasificados y la regla permanente | `src/lib/qaMotion.js` (F19), con `camaraLenta` e `inspeccionarTodo` en `src/lib/orquestadorMotion.js` |
 | La prueba de la F19 | `scripts/test-motion-f19.mjs`, y la sección «MS F19» del recorrido de Chromium (dos navegaciones seguidas, volver a mitad, un interruptor tocado cuatro veces, la cifra 1 → 20 → 5 → 80 → 40, una lista que lo hace todo a la vez, desmontar a mitad, el ancho seis veces, girar con una hoja, la cabecera con el scroll a tope, una sesión entera, la cámara lenta y Reducido) |
+| El sellado: el mapa definitivo, una sola fuente por categoría, lo repetido y lo muerto entre todos los archivos, el legado (KEEP · MIGRATE · REMOVE), los diecinueve contratos con su garantía, los diez antipatrones cazados con su ejemplo, la revisión final de tokens y muelles, la última búsqueda del código, la documentación, las reglas y `MOTION SYSTEM — SEALED` calculado | `src/lib/contratosMotion.js` (F20; la aplicación no lo importa) |
+| La prueba de la F20 | `scripts/test-motion-f20.mjs`, y la sección «MS F20» del recorrido de Chromium (la sesión entera en un iPhone en vertical, en horizontal, en un iPad y en un escritorio, otra vez en Reducido, interrumpida a propósito y medida) |
 
 ## Deuda técnica (F19, apartado 59)
 
@@ -121,3 +123,30 @@ hechas.
 - **El conflicto entre dispositivos**: el último que guarda gana (F16 lo dice arriba cuando algo no llega, pero no
   fusiona dos versiones). Necesita una columna nueva en `app_data`.
 
+## 🏁 El informe final (F20, apartado 59) — MOTION SYSTEM — SEALED
+
+> El estado no lo dice esta línea: lo calcula `auditoriaSellado` (`src/lib/contratosMotion.js`), y
+> `scripts/test-motion-f20.mjs` se pone roja si una sola de sus cuentas no sale a cero. Es `informeFinal()`.
+
+- **Qué se consolidó.** Un mapa definitivo con los nombres que existen (`MAPA_DEFINITIVO`); una sola fuente por
+  categoría, con quién caza la segunda (`FUENTE_UNICA` sobre `CATEGORIAS_TOKENS`, que ganó las reglas responsive);
+  diecinueve contratos atados a las auditorías que los vigilan; los diez antipatrones, cazados con su ejemplo (cuatro
+  son los guardarraíles de la F18); «Sin movimiento» en un solo atributo (`data-motion`).
+- **Qué se eliminó.** `data-animaciones` (repetía `data-motion='off'`), `data-reducir-movimiento` (no lo leía nadie
+  desde la F1), `COSTES` (F13) y tres alias de la F14 que no leía nadie.
+- **Qué se creó.** `desplazamientosSinToken`, `piezasSinRevisarLimpieza`, `exportacionesMuertas`,
+  `auditarDuplicacion`, `auditoriaFuenteFinal`, `auditoriaSellado` e `informeFinal`; la sección «MS F20» del
+  recorrido; y en `docs/MOTION_SYSTEM.md`, las siete preguntas, los contratos, los antipatrones y los diez ejemplos.
+- **Qué pruebas se ejecutaron.** `bash scripts/verificar.sh` entero: el build, todas las suites de Node (la de cada
+  una de las veintiuna fases), el banco de renderizado, las reglas invariantes y el recorrido de Chromium. Lint y
+  typecheck no existen en el proyecto (C-48).
+- **Qué se encontró y se arregló.** Tres piezas fuera de la revisión de limpieza de la F11 (y esa revisión contaba un
+  `addEventListener` escrito en una cadena); dos atributos para «Sin movimiento»; cuatro exportaciones muertas; el
+  «+1» de una racha, que se cortaba con la velocidad «Pausada» porque su espera era el token `firma` escrito a mano;
+  la descripción de la arquitectura de la F0, que seguía diciendo `data-animaciones`. Y en la pasada de la F18 y la
+  F19: **la cifra que cuenta enseñaba un fotograma el valor final antes de empezar** (decidía después de pintar).
+- **Qué limitaciones quedan** (`LIMITACIONES_MOTION`): el gesto de atrás de Safari (C-53) y deslizar para volver
+  (C-56), sin capturas comparadas, sin lint ni tipos (C-48), el iPhone de verdad (R1) y los repintados de React sin
+  el Profiler.
+- **Estado final: MOTION SYSTEM — SEALED.** Sin Fase 21 (apartado 61): lo que venga entra como extensión, arreglo,
+  refactor o funcionalidad nueva, dentro de esta arquitectura.

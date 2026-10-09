@@ -715,6 +715,8 @@ export const CATEGORIAS_TOKENS = Object.freeze([
   { categoria: 'motion intensity', donde: 'src/lib/motion.js', nombre: 'MODOS_MOTION' },
   { categoria: 'gesture thresholds', donde: 'src/lib/umbralesGesto.js', nombre: 'UMBRALES_GESTO' },
   { categoria: 'layout budget', donde: 'src/lib/layoutMotion.js', nombre: 'PRESUPUESTO_LAYOUT' },
+  /* MS F20, apartado 3 — las reglas responsive también tienen UN sitio: los cortes que cambian el movimiento. */
+  { categoria: 'responsive', donde: 'src/lib/responsiveMotion.js', nombre: 'MOTION_BREAKPOINTS' },
 ]);
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -730,6 +732,12 @@ const sinComentarios = (src) => String(src)
   .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
   .replace(/(^|[^:'"`])\/\/.*$/gm, (m, a) => a + ' '.repeat(m.length - a.length));
 const lineaDe = (src, i) => src.slice(0, i).split('\n').length;
+/* 🐛 MS F20 — y sin el contenido de las cadenas: el `ejemploMalo` de la F13 lleva escrito
+   `addEventListener('scroll', medir)` y contaba como un escuchador sin quitar. La llamada se queda (está
+   fuera de las comillas); lo que se vacía es lo de dentro, conservando los saltos de línea. */
+const sinCadenas = (src) => String(src)
+  .replace(/`(?:\\[\s\S]|[^\\`])*`/g, (m) => m.replace(/[^\n]/g, ' '))
+  .replace(/'(?:\\.|[^\\'\n])*'|"(?:\\.|[^\\"\n])*"/g, (m) => ' '.repeat(m.length));
 
 /** Los únicos sitios que llaman a `.animate(` directamente. */
 export const ANIMAN_DIRECTAMENTE = Object.freeze(['src/lib/orquestadorMotion.js']);
@@ -740,6 +748,10 @@ export const PIEZAS_DE_MOVIMIENTO = Object.freeze([
   'src/components/continuidad.jsx', 'src/components/layoutMotion.jsx', 'src/components/navegacionMotion.js',
   'src/lib/motion.js', 'src/lib/orquestadorMotion.js', 'src/components/responsiveMotion.js',
   'src/components/estadosAsincronos.jsx', 'src/components/vacioMotion.js',
+  /* 🐛 MS F20 — tres que usaban temporizadores, escuchadores u observadores y nunca se habían revisado:
+     la lista se escribió en la F11 y las piezas de después no entraron. Ahora la F20 exige que toda pieza
+     del mapa de capas que los use esté aquí (`piezasSinRevisarLimpieza`, `contratosMotion.js`). */
+  'src/lib/sincronizacion.js', 'src/lib/rendimientoMotion.js', 'src/components/accesibilidadMotion.jsx',
 ]);
 
 /** Lo que no se limpia a propósito, y por qué no hace falta. */
@@ -755,7 +767,7 @@ export function auditarOrquestacion({ archivos = {} } = {}) {
   const hallazgos = [];
   Object.entries(archivos).forEach(([archivo, src]) => {
     if (!/\.(jsx?|mjs)$/.test(archivo) || !/^src\//.test(archivo)) return;
-    const limpio = sinComentarios(src);
+    const limpio = sinCadenas(sinComentarios(src));
     if (!ANIMAN_DIRECTAMENTE.includes(archivo)) {
       const re = /\.animate\(/g;
       let m;

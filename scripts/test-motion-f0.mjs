@@ -176,7 +176,9 @@ ok(AJUSTES_MOVIMIENTO.niveles.map((n) => n.id).join() === NIVELES_ANIMACION.map(
 ok(NIVELES_ANIMACION.some((n) => n.value === DEFAULT_APARIENCIA.animaciones), '…y el de serie es uno de ellos');
 ok(/app_data/.test(AJUSTES_MOVIMIENTO.dondeSeGuarda) && /localStorage/.test(AJUSTES_MOVIMIENTO.dondeSeGuarda),
   'se guardan donde el resto de Apariencia, y se dice por qué no en localStorage');
-ok(/dataset\.animaciones = apariencia\.animaciones/.test(APP) && /dataset\.reducirMovimiento = /.test(APP), '…y App.jsx ya los lleva a <html> (data-animaciones, data-reducir-movimiento)');
+/* 🔓 MS F20 — los dos atributos de entonces se consolidaron en `data-motion` (que lleva dentro los dos
+   ajustes): la promesa —que App.jsx los lleve a <html>— se muda con ellos. */
+ok(/dataset\.motion = atributoMotion\(apariencia\)/.test(APP) && !/dataset\.(animaciones|reducirMovimiento) = /.test(APP), '…y App.jsx los lleva a <html> en un solo atributo, `data-motion` (los dos de antes se consolidaron en la F20)');
 const PKG = JSON.parse(leer('package.json'));
 const deps = Object.keys({ ...PKG.dependencies, ...PKG.devDependencies });
 ok(!deps.some((d) => /framer-motion|^motion$|react-spring|gsap|popmotion|animejs/.test(d)),

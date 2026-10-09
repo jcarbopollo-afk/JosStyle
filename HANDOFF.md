@@ -2,6 +2,14 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.150.0 — Motion System F20/20: 🏁 TERMINADO Y SELLADO):**
+> El sistema de movimiento está acabado: las veintiuna fases. La última no añade animaciones: comprueba que todo
+> habla el mismo idioma —cada regla con algo que la vigila de verdad, los diez errores típicos cazados, lo que
+> sobraba retirado— y repite una sesión entera (de Inicio a Fitness, editar y guardar una plantilla, Vida, Gestión,
+> Ajustes) en un iPhone vertical y horizontal, un iPad, un escritorio y con «Reducir movimiento», interrumpiéndola a
+> propósito. Encontró y arregló que el «+1» de una racha se cortaba con la velocidad «Pausada». **No hay más fases
+> del Motion System**: lo siguiente lo decide Josué. Lo que sí queda es abrirla en el iPhone (R1).
+
 > **📅 ACTUALIZACIÓN (v3.149.0 — Motion System F19/20: pruebas extremas del movimiento):**
 > El movimiento se ha forzado entero donde se rompen las aplicaciones de verdad: dos pantallas pulsadas seguidas,
 > volver mientras se entra, un interruptor tocado cuatro veces, una cifra que cambia cuatro veces sin esperar (acaba

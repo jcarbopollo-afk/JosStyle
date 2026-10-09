@@ -995,12 +995,12 @@ export default function App() {
     document.documentElement.style.fontSize = `${tam.px}px`;
     document.documentElement.dataset.radio = apariencia.radioBorde;
     document.documentElement.dataset.densidad = apariencia.densidad;
-    document.documentElement.dataset.animaciones = apariencia.animaciones;
-    document.documentElement.dataset.reducirMovimiento = String(apariencia.reducirMovimiento);
     /* MS F1 — el modo de movimiento y la velocidad, en un solo punto: el CSS los lee de aquí
        (`html[data-motion]`, `html[data-velocidad]`) y el motor también (`contextoDelDocumento`).
        `data-motion` ya lleva dentro el interruptor de «Reducir movimiento»; el del sistema operativo
-       lo aplica el propio CSS con su `@media`. */
+       lo aplica el propio CSS con su `@media`.
+       🧹 MS F20 — y SOLO ellos: `data-animaciones` repetía `data-motion='off'` y `data-reducir-movimiento`
+       no lo leía nadie desde la F1. */
     document.documentElement.dataset.motion = atributoMotion(apariencia);
     document.documentElement.dataset.velocidad = velocidadMotion(apariencia.velocidadMovimiento).id;
     avisarCambioDeMotion();

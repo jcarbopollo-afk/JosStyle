@@ -124,7 +124,7 @@ console.log('\n♿ EH · Fase 42/65 — Accesibilidad y usabilidad\n');
   // ⚠️ Y de verdad siguen ahí (pruebas 1, 2 y 13).
   ok(/@media \(prefers-reduced-motion: reduce\)/.test(CSS),
     '⚠️ las animaciones respetan la preferencia del sistema (apartado 7)');
-  ok(/data-animaciones/.test(CSS), 'y el ajuste propio de JosStyle también');
+  ok(/html\[data-motion='off'\]/.test(CSS), 'y el ajuste propio de JosStyle también (`data-motion`, donde la MS F20 consolidó `data-animaciones`)');
   ok(/data-radio|data-densidad/.test(CSS), 'y la densidad, que es de Ajustes');
 
   eq(auditarAccesibilidad().sistemasNuevosDeColor, 0,

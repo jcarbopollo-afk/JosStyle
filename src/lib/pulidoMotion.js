@@ -42,6 +42,7 @@ import { auditarEstadosInteraccion } from './estadosInteraccion';
 import { auditarResponsive } from './responsiveMotion';
 import { auditarAsincronia } from './estadosAsincronos';
 import { auditarDatos } from './datosMotion';
+import { CAPAS_MOTION } from './qaMotion';
 
 /* ───────────────────────────────────────────────────────────────────────────
    1 · LA PERSONALIDAD Y LA TEMPERATURA (apartados 4, 5, 49, 50 y 51)
@@ -337,7 +338,10 @@ const TABLAS_DE_TOKENS = {
 
 export function tokensSinUso({ css = '', archivos = {} } = {}) {
   const presets = JSON.stringify(PRESETS_MOTION);
-  const codigo = Object.entries(archivos).filter(([r]) => /\.jsx?$/.test(r) && !/src\/lib\/motion\.js$/.test(r)).map(([, s]) => sinComentarios(s)).join('\n');
+  /* MS F20 — lo que NOMBRA una auditoría (una tabla de revisión, un ejemplo malo) no es un uso: el sellado revisa
+     `instant` uno a uno, y eso no lo pone a moverse nada. Las auditorías son su capa del mapa (F19). */
+  const auditorias = (CAPAS_MOTION.find((c) => c.id === 'auditorias') || { archivos: [] }).archivos;
+  const codigo = Object.entries(archivos).filter(([r]) => /\.jsx?$/.test(r) && !/src\/lib\/motion\.js$/.test(r) && !auditorias.includes(r)).map(([, s]) => sinComentarios(s)).join('\n');
   const out = [];
   Object.entries(TABLAS_DE_TOKENS).forEach(([grupo, tabla]) => {
     Object.keys(tabla).forEach((id) => {

@@ -15,7 +15,7 @@
    =========================================================================== */
 import { CURVAS_MOTION, DURACIONES_MOTION, DISTANCIAS_MOTION, PRESETS_MOTION, STAGGER_MOTION, TOPES_ESCALA } from './motion';
 import { MOTION_MAP, NIVELES_MOTION, escanearCss } from './motionMapa';
-import { JERARQUIA_MUELLES, MUELLES_EN_USO } from './fisicaMotion';
+import { MUELLES_EN_USO } from './fisicaMotion';
 
 /* ───────────────────────────────────────────────────────────────────────────
    1 · LA FIRMA (apartados 44, 45, 49 y 50)
@@ -316,8 +316,3 @@ export const NO_EN_F14 = Object.freeze([
   { que: 'Tokens nuevos (apartado 51)', porque: 'Ninguno hacía falta: todo lo de esta fase son ids de los de la F1. Si un día falta uno, se crea con nombre en `motion.js` y en `index.css` a la vez.' },
   { que: 'Typecheck y lint (apartado 54)', porque: 'El proyecto no tiene ni uno ni otro (C-48): lo que vigila es esta auditoría y `verificar.sh`.' },
 ]);
-
-/** Los papeles de la jerarquía de muelles de la F8, para el documento (apartado 11). */
-export const MUELLES_DEL_LENGUAJE = JERARQUIA_MUELLES;
-export const NIVELES_DEL_LENGUAJE = NIVELES_MOTION;
-export const CURVAS_DEL_LENGUAJE = CURVAS_MOTION;

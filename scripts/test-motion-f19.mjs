@@ -101,7 +101,7 @@ const RECORRIDO = ARCHIVOS['scripts/test-app-real.mjs'];
    --------------------------------------------------------------------------- */
 {
   console.log('\n3 · La regresión: las diecinueve fases, con su suite y su sección');
-  ok(REGRESION_POR_FASE.length === 20 && REGRESION_POR_FASE.every((f, i) => f.fase === i), 'de la F0 a la F19, en orden');
+  ok(REGRESION_POR_FASE.length >= 20 && REGRESION_POR_FASE.every((f, i) => f.fase === i), 'de la F0 a la F19 (y la F20, que se sumó al sellar), en orden');
   const faltas = regresionIncompleta({ archivos: ARCHIVOS, verificar: VERIFICAR, recorrido: RECORRIDO });
   ok(faltas.length === 0, `🚨 cada fase tiene su suite, \`verificar.sh\` la ejecuta y su sección está en el recorrido${faltas.length ? `: ${JSON.stringify(faltas)}` : ''}`);
   ok(REGRESION_POR_FASE.filter((f) => !f.seccion).every((f) => f.sinSeccion), 'la que no tiene sección (la F0) dice por qué');

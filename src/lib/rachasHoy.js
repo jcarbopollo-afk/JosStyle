@@ -33,6 +33,7 @@
 import { todayISO } from './helpers';
 import { ESTADOS_DIA } from './rachas';
 import { panelRachas, panelHabitos } from './rachasServicio';
+import { DURACIONES_MOTION, duracionMs } from './motion';
 
 /* Los dos estados del apartado 5. Son TEXTOS, no objetos — la lección de EH F21,
    donde leer `.nombre` de una cadena dejó media pantalla en blanco. */
@@ -101,8 +102,17 @@ export function textoMantenimiento(m) {
 
    ⚠️ **Y no es gamificación** (D2-02): no hay puntos, ni niveles, ni monedas.
    Es un "+1" que se apaga en 900 ms — el apartado 7 pide expresamente que sea
-   corto. */
-export const DURACION_FEEDBACK_MS = 900;
+   corto.
+
+   🐛 MS F20 — y los 900 ms SON el token `firma`, que es con lo que se anima el «+1»
+   (`racha-mas-uno`, `index.css`). Escritos a mano no seguían a la velocidad elegida: con
+   «Pausada» (×1,3) la animación dura 1170 ms y se desmontaba al 77 %, todavía a la vista.
+   Ahora el número sale del token y la espera, de la velocidad (`esperaDelFeedback`). */
+export const DURACION_FEEDBACK_MS = DURACIONES_MOTION.firma;
+
+/** Cuánto se queda el «+1» montado: lo que dura su animación a la velocidad elegida, y nunca menos que el
+ *  token (con «Sin movimiento» la animación no dura nada, pero «N días» se sigue leyendo un momento). */
+export const esperaDelFeedback = (ctx) => Math.max(DURACION_FEEDBACK_MS, duracionMs('firma', ctx));
 
 export function feedbackDeSubida(antes, despues) {
   // ⚠️ `null` no es cero (EH F32): si no sabemos cómo estaba antes —primera

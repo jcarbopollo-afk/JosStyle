@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.149.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.150.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -29,7 +29,7 @@ conversación**, que comparte `main`: F9 (UX del entrenamiento en vivo), F10 (hi
 🚨 **Antes de construir nada, `git fetch origin main`**: esta sesión llegó a tener una F9 entera
 escrita **que ya estaba hecha y mejor** —la suya destapó dos fallos reales de mi F7—, y se descartó.
 
-🎬 **Y AHORA, EL MOTION SYSTEM: 21 FASES (F0–F20), EN MARCHA.** Josué lo pasó el 2026-10-04 —17 913
+🎬 **Y EL MOTION SYSTEM: 21 FASES (F0–F20), 🏁 TERMINADO Y SELLADO (v3.150.0).** Josué lo pasó el 2026-10-04 —17 913
 líneas— para construir *"el sistema de movimiento de Jos Style"*, y dijo: *"Están desordenadas, pero
 ordenadlas. Y volverás y ejecutarás todas y no pares hasta acabarlo. Y cuando se te acabe el límite y
 se te vuelva a restablecer, sigue."* El índice con la línea de cada fase está en
@@ -40,8 +40,30 @@ plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegac
 **F6 (v3.136.0)** —la profundidad y las capas—, la **F7 (v3.137.0)** —la continuidad espacial—, la **F8
 (v3.138.0)** —la física y la interacción directa—, la **F9 (v3.139.0)** —los estados y el feedback— y la
 **F10 (v3.140.0)** —el diseño que cambia: listas y desplegables— , la **F11 (v3.141.0)** —el orquestador—, la **F12 (v3.142.0)** —la accesibilidad del
-movimiento—, la **F13 (v3.143.0)** —el rendimiento—, la **F14 (v3.144.0)** —el lenguaje del movimiento: curvas, ritmo y firma— la **F15 (v3.145.0)** —el movimiento en cada contexto físico: áreas seguras, girar y el teclado— la **F16 (v3.146.0)** —los estados del sistema: carga, error, sin conexión y guardado— la **F17 (v3.147.0)** —los datos que cambian: cifras, barras, gráficas y rankings— la **F18 (v3.148.0)** —el sistema revisado como un todo: pulido y lenguaje de marca— y la **F19 (v3.149.0)** —el QA: el sistema entero forzado, auditado y con su regresión—.
+movimiento—, la **F13 (v3.143.0)** —el rendimiento—, la **F14 (v3.144.0)** —el lenguaje del movimiento: curvas, ritmo y firma— la **F15 (v3.145.0)** —el movimiento en cada contexto físico: áreas seguras, girar y el teclado— la **F16 (v3.146.0)** —los estados del sistema: carga, error, sin conexión y guardado— la **F17 (v3.147.0)** —los datos que cambian: cifras, barras, gráficas y rankings— la **F18 (v3.148.0)** —el sistema revisado como un todo: pulido y lenguaje de marca— la **F19 (v3.149.0)** —el QA: el sistema entero forzado, auditado y con su regresión— y la **F20 (v3.150.0)** —la consolidación, los contratos y el sellado—, que 🏁 **CERRÓ EL MOTION SYSTEM: MOTION SYSTEM — SEALED**. 🚨 **No hay una F21** (*"No generar una FASE 21 del Motion System"*): lo que venga entra como extensión, arreglo o funcionalidad nueva dentro de esta arquitectura.
 Lo que vale para cualquier cambio a partir de hoy:
+- 🔒 **MOTION SYSTEM — SEALED, Y EL SELLO SE CALCULA** (F20, `src/lib/contratosMotion.js`): `auditoriaSellado` junta la
+  auditoría total (F18), la del QA (F19) y la de la F20 —el mapa definitivo con los nombres que existen, una sola fuente
+  por categoría, nada repetido ni muerto, el legado retirado, los diecinueve contratos con su garantía, los diez
+  antipatrones cazados con su ejemplo, la revisión de tokens y muelles, la última búsqueda del código, la documentación
+  y estas reglas— y solo dice SEALED con todo a cero. **Un cambio que lo rompa pone `test-motion-f20` roja.** Lo que
+  queda escrito para siempre (apartados 54, 55, 62 y la regla permanente):
+  - 🚨 **ANTES DE CREAR MOTION NUEVO, SE BUSCA EL PATRÓN QUE YA EXISTE** (apartado 54): si existe, se reutiliza; si no,
+    se extiende el sistema central (`motion.js`, sus piezas, su mapa). Nunca una solución paralela sin una razón
+    arquitectónica clara.
+  - 🚨 **MOTION ES INFRAESTRUCTURA, NO DECORACIÓN** (apartado 55): JosStyle nunca sacrifica claridad, interacción o
+    rendimiento por una animación.
+  - 🚨 **UNA FUNCIONALIDAD NUEVA SE INTEGRA EN EL LENGUAJE QUE YA EXISTE** (apartado 62): primero se inspecciona el
+    Motion System, se reutilizan sus primitivas y solo se amplían sus abstracciones si hace falta. Nunca «esta pantalla
+    necesita su propia animación».
+  - 🚨 **LA REGLA PERMANENTE DE MOTION** (el cierre del enunciado): toda pantalla, módulo, tarjeta, gráfica, ventana o
+    botón nuevo se integra solo —entrada, salida, toque, carga, transición y microinteracción— con el lenguaje que ya
+    hay: limpio, sutil, fluido y coherente; nada excesivo ni que ralentice. Empezar por `docs/MOTION_SYSTEM.md` §0 (las
+    siete preguntas) y por «Los ejemplos del proyecto».
+  - 🐛 **Y LO QUE APRENDIÓ LA F20**: una pieza que decide cómo animar lo decide ANTES de pintar (la cifra que contaba
+    enseñaba un fotograma el valor final); una espera que acompaña a una animación sale del TOKEN y de la velocidad, no
+    de un número (el «+1» de una racha se cortaba con «Pausada»); y un barrido que mira lo que el código HACE quita
+    comentarios, cadenas y expresiones regulares con un lexer (`soloCodigo`), no con un `replace`.
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
   `animar(el, 'modalEnter')`; para montar y desmontar, `Presencia`, y para una lista que se reordena,
@@ -2229,11 +2251,9 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F20 DEL MOTION SYSTEM, LA ÚLTIMA** (*"Finalización, consolidación, contratos y
-   sellado"*, líneas 3118–4045 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), en el orden de
-   `docs/13_MOTION_SYSTEM_ORDEN.md`. 🚨 **No hay una F21** (*"No generar una FASE 21 del Motion System"*). Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
-   `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**
-   (`motion.js`): un token o un preset que falte se añade allí, no en la vista.
+0. 🏁 **EL MOTION SYSTEM ESTÁ TERMINADO Y SELLADO (F0–F20, v3.150.0), Y NO HAY F21.** Lo siguiente lo abre Josué. Si
+   un cambio toca movimiento: la regla permanente de arriba, `docs/MOTION_SYSTEM.md` §0 y `bash scripts/verificar.sh`
+   en verde —con `test-motion-f20` diciendo SEALED—. El informe final está al pie de `docs/13_MOTION_SYSTEM_ORDEN.md`.
 1. 🏁 **DE FITNESS NO HAY UNA FASE SIGUIENTE QUE CONSTRUIR SOLO.** La Entrega 4 está cerrada (45/45) y su
    apartado 63 lo dice: *"NO continuar automáticamente con otra fase. No crear una Fase 46. Si
    posteriormente se quieren añadir nuevas funcionalidades: deberán tratarse como un nuevo ciclo de

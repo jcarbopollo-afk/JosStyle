@@ -6,8 +6,40 @@
 > comprueban `scripts/test-motion-f0.mjs` y `scripts/test-motion-f1.mjs`: si este documento y las
 > librerías dejan de decir lo mismo, la prueba se pone roja.
 >
-> **Estado: Motion System · Fase 1 de 20** (el motor). El índice de las 21 fases está en
-> `docs/13_MOTION_SYSTEM_ORDEN.md`, y el mapa de cada elemento en `docs/MOTION_MAP.md`.
+> **Estado: MOTION SYSTEM — SEALED (F20, las 21 fases hechas).** Este documento es la fuente oficial del
+> sistema (F20, apartado 48). El índice de las fases está en `docs/13_MOTION_SYSTEM_ORDEN.md` y el mapa de cada
+> elemento en `docs/MOTION_MAP.md` (se genera). El sello no es un rótulo: lo calcula `auditoriaSellado`
+> (`src/lib/contratosMotion.js`) y `scripts/test-motion-f20.mjs` se pone roja si una sola cuenta no sale a cero.
+
+---
+
+## 0 · Empieza aquí: las siete preguntas (F20, apartado 27)
+
+> *"Un desarrollador nuevo debería poder responder rápidamente…"* Si una de estas respuestas deja de ser
+> verdad, la suite de la F20 lo dice (`PREGUNTAS_DX`).
+
+- **¿Dónde están los tokens?** En `src/lib/motion.js` y, con los mismos valores, en `:root` de `src/index.css`
+  (`--motion-*`). Un token nuevo va a los dos sitios, y `auditarTokensCss` compara uno con otro (§7).
+- **¿Cómo creo una transición?** Con una clase de `index.css` que use `var(--motion-dur-…)` y la curva de su
+  papel, o con `transicion('width', 'medium')` en el `style`. Nunca un número ni un `cubic-bezier` (§8, §8.13).
+- **¿Cómo hago un spring?** `muestrearSpring('normal', { desde, hasta, velocidad })` y sus fotogramas a
+  `animarOrquestado`; la masa elige el muelle (`muelleDe`). Ninguno de los que se usan rebota (§8.7).
+- **¿Cómo respeto reduced motion?** Con los tokens: en Reducido las distancias valen 0 y las escalas 1, así que
+  una regla que los usa se funde en su sitio. En JavaScript, `intensidadDe(ctx)`; para llevar la vista a algo,
+  `desplazarHasta` (§8.11).
+- **¿Cómo creo una animación de navegación?** No se crea: `App.jsx` pinta cada pantalla en su contenedor y
+  `tipoDeNavegacion` decide entrar, volver o cambiar de sección. Una pantalla nueva navega bien sin hacer nada
+  (§8.1).
+- **¿Cómo animo datos?** `<CifraQueCambia valor={n}>{texto}</CifraQueCambia>` con su clase de `CLASES_DE_CIFRA`,
+  `barra-progreso` para una barra y `useAnimacionDeGrafica()` para una gráfica (§8.16).
+- **¿Cómo pruebo motion?** Su suite de Node, una sección del recorrido (tamaños y Reducido) y su fila en
+  `MATRIZ_QA_MOTION`; `auditoriaQA` y `auditoriaSellado` tienen que salir a cero. `bash scripts/verificar.sh`
+  (Motion QA).
+
+**Dónde está cada tema** (apartado 48): arquitectura §9 · tokens §7 · el motor (Motion Engine) §8 · orquestación
+§8.10 · navegación §8.1 · gestos §8.4 y §8.7 · diseño que cambia §8.9 · datos §8.16 · asíncrono §8.15 · responsive
+§8.14 · accesibilidad §8.11 · rendimiento §8.12 · pruebas «Motion QA» · contratos «Los contratos» · antipatrones
+«Los antipatrones».
 
 ---
 
@@ -901,6 +933,108 @@ ninguna fase podía ver desde la suya— y lo fuerza donde se rompen los sistema
 - **Las herramientas nuevas, solo de desarrollo**: `window.__motion.camaraLenta(4)` (todo a un cuarto) e
   `inspeccionarTodo()` (lo que se mueve en la página, con su dueño).
 
+## 8.19 · El sellado: consolidación, contratos y la sesión entera (F20)
+
+> *"No consiste en añadir más efectos. Consiste en convertir todo lo construido durante las fases anteriores en una
+> infraestructura."* (misión de la F20)
+
+La F20 no añade ni un keyframe, ni un token, ni un preset. Vive en `src/lib/contratosMotion.js` (una auditoría:
+la aplicación no lo importa) y en la sección «MS F20» del recorrido, y termina en una cuenta: **MOTION SYSTEM —
+SEALED** solo si todas sus partes salen a cero (`auditoriaSellado`).
+
+- **El mapa definitivo** (`MAPA_DEFINITIVO`, §9): la cadena del enunciado con los nombres que existen, buscados uno
+  a uno exportados en su archivo.
+- **Una sola fuente por categoría** (`FUENTE_UNICA`, sobre `CATEGORIAS_TOKENS` de la F11): duraciones, curvas,
+  muelles, distancias, intensidad, profundidad, cascada y —la que faltaba— las reglas responsive, cada una con la
+  auditoría que cazaría una SEGUNDA fuente.
+- **Lo repetido y lo muerto, entre todos los archivos a la vez**: ni un nombre exportado dos veces, ni dos muelles o
+  dos presets iguales, ni una exportación que no lea nadie. Se retiraron cuatro (`COSTES` y tres alias de la F14).
+- **El legado, clasificado** (`LEGADO_MOTION`, KEEP · MIGRATE · REMOVE): `--ease-premium`, `module-enter`,
+  `ANIMACIONES_HC` o la escalera de pulsar se quedan, porque ya obedecen al sistema. 🐛 **«Sin movimiento» tenía dos
+  atributos** con la misma regla (`data-motion='off'` y `data-animaciones='desactivadas'`, que es el mismo estado) y
+  `data-reducir-movimiento` se escribía sin que lo leyera nadie desde la F1: ahora es solo `data-motion`.
+- 🐛 **El «+1» de una racha se cortaba** con la velocidad «Pausada»: se desmontaba a los 900 ms escritos a mano
+  mientras su animación (el token `firma`) duraba 1170. La espera sale ahora del token (`esperaDelFeedback`).
+- **Lo que el apartado 57 manda implementar**: `desplazamientosSinToken` (un `translate` o un `scale` con un
+  número escrito a mano no se quedaría quieto en Reducido, y no lo cazaba nadie) y `piezasSinRevisarLimpieza` (🐛
+  tres piezas usaban temporizadores u observadores fuera de la revisión de limpieza de la F11; y esa revisión
+  contaba un `addEventListener` escrito en una CADENA de ejemplo).
+- **La última búsqueda del código** (`auditoriaFuenteFinal`, apartado 46): las diez búsquedas del enunciado sobre
+  todo lo que pinta, cada aparición clasificada por una regla o declarada con su motivo —los relojes, el fotograma
+  que devuelve el foco, la espera del teclado del iPhone— o en rojo.
+- **La sesión entera** («MS F20» del recorrido): Inicio → Bienestar → Fitness → una plantilla → editarla y guardarla
+  → volver → Vida → Gestión → Ajustes → Apariencia → Texto y movimiento → volver → Inicio, en un iPhone en vertical,
+  en horizontal, en un iPad y en un escritorio, y otra vez en Reducido (sin que una sola pantalla se desplace).
+  Después se interrumpe a propósito —abrir, cerrar, navegar, guardar, arrastrar y una cifra que cuenta— y se mide:
+  fotogramas, tareas largas, el DOM que queda y la consola.
+- **Las limitaciones que quedan, dichas** (`LIMITACIONES_MOTION`): el gesto de atrás de Safari (C-53), deslizar
+  para volver (C-56), sin capturas comparadas, sin lint ni tipos (C-48), el iPhone de verdad (R1) y los repintados
+  de React, que no se pueden contar sin el Profiler.
+
+## Los contratos
+
+> F20, apartados 8 a 26. Cada contrato tiene sus **garantías**: una auditoría que corre sobre todo lo que pinta, una
+> cuenta de `auditoriaQA` o de `auditoriaSellado`, una suite de `verificar.sh` o una marca del recorrido.
+> `contratosSinGarantia` comprueba que cada una existe: un contrato sin quien lo vigile sería una frase.
+
+| § | Contrato | Lo que exige | Cómo se cumple aquí |
+|---|---|---|---|
+| 8 | Una animación | trigger, intención, prioridad, tipo, duración, curva o muelle, accesibilidad, rendimiento, interrupción | Su línea del `MOTION_MAP` (con esos campos) y su coste si repinta |
+| 9 | Un componente | tokens, Reducido, interrupción, limpieza, responsive, sin movimiento de más | Una pieza de `motion.jsx`/`layoutMotion.jsx`/`gestosMotion.jsx` o una clase de `index.css` |
+| 10 | La navegación | dirección, contexto, push/pop, atrás, elemento compartido, restauración, Reducido | `tipoDeNavegacion`, `MAPA_TRANSICIONES`, el scroll recordado por pantalla |
+| 11 | Un dato que cambia | valor inicial, cambio, carga, error, accesibilidad | `CLASES_DE_CIFRA` y `MAPA_DATOS`; su carga y su error, en `MAPA_ASINCRONO` |
+| 12 | Una operación asíncrona | idle, loading, success, error (y saving, offline, retrying, cancelled…) | `MAPA_ASINCRONO`, y su máquina recorrida entera (F19) |
+| 13 | Responsive | móvil, tableta, escritorio, vertical, horizontal, teclado, áreas seguras | `CONTEXTOS_FISICOS`, `data-teclado`, las clases de área segura |
+| 14 | Accesibilidad | `prefers-reduced-motion` sin perder el significado | Reducido funde en su sitio; el significado lo dice el texto (F12) |
+| 15 | Rendimiento | sin layout ni paint de más, sin blur caro, sin JS continuo | `transform` y `opacity`; lo que repinta, declarado (F13) |
+| 16 | Un gesto | entrada, umbral, velocidad, cancelación, encaje, interrupción, Reducido | `UMBRALES_GESTO`, `ESTADOS_GESTO`, `tomarControl` |
+| 17 | z-index | el sistema, ni un 99999 | `CAPAS_Z` con nombre |
+| 18 | Profundidad | base, raised, floating, overlay, modal, system | Los seis niveles de `NIVELES_PROFUNDIDAD` |
+| 19 | Prioridad | P0–P3; lo de abajo nunca bloquea lo de arriba | Los siete pesos del orquestador en cuatro grupos (`GRUPOS_PRIORIDAD`) |
+| 20 | Interrupción | al navegar, cambiar de estado, cerrar, volver o empezar otra cosa | CSS sale de donde está; JavaScript, del fotograma que se ve |
+| 21 | Limpieza | temporizadores, fotogramas, escuchadores, observadores | `auditarOrquestacion` y `piezasSinRevisarLimpieza` |
+| 22 | Visibilidad | lo continuo que no se ve, parado | Solo dos bucles, ligados a una carga que acaba |
+| 23 | Fondo | ni shimmer, ni parallax, ni partículas | Ningún bucle fuera de `BUCLES_INFINITOS` |
+| 24 | Reducido | completo → reducido → estático, con significado | Normal/Premium/Ultra → Reducido → «Sin movimiento» |
+| 25 | Pruebas | funcional, responsive, Reducido, interacción, regresión | La regla del QA (F19) y `MATRIZ_QA_MOTION` |
+| 26 | Documentación | este documento, con decisiones | Los quince temas de §0, buscados por la suite |
+
+## Los antipatrones
+
+> F20, apartado 29. Cada uno lo **caza** una auditoría que se ejecuta sobre su ejemplo malo
+> (`ANTIPATRONES_MOTION`); cuatro son los guardarraíles de la F18.
+
+- **random duration** — una duración escrita a mano: `auditarMotion` (F0) y `literalesSueltos` (F19).
+- **random easing** — un `cubic-bezier` inventado: `auditarMotion` → `curvasAjenas` (F0).
+- **transition: all** — anima también lo caro: la deuda de la F0 y `transicion_de_todo` (F13).
+- **z-index arbitrary** — un número en vez de una capa con nombre: `auditarProfundidad` (F6).
+- **per-component motion engine** — un `.animate(` por libre: `auditarOrquestacion` (F11).
+- **uncontrolled RAF** — un fotograma que no se cancela: `auditarOrquestacion` y `piezasSinRevisarLimpieza` (F20).
+- **permanent animation** — un bucle sin estrategia: `auditarAccesibilidadMotion` (F12).
+- **motion without reduced-motion** — un desplazamiento con píxeles escritos a mano o un scroll suave a mano:
+  `desplazamientosSinToken` (F20) y `auditarAccesibilidadMotion` (F12).
+- **blocking animation** — una animación que no deja pasar lo importante: `resolverConflicto` (F11) hace que la
+  nueva de más peso la interrumpa, y un botón que espera no se apaga (F9).
+- **decorative motion over interaction** — lo que adorna cede ante el dedo: `resolverConflicto` y `tomarControl`.
+
+## Los ejemplos del proyecto
+
+> F20, apartado 28: *"Utilizar ejemplos del propio proyecto"*. Cada uno apunta a una pieza que existe
+> (`EJEMPLOS_DEL_PROYECTO`).
+
+- **button press** — `PrimaryButton` (`ui.jsx`): la escalera `active:scale-*` la gobierna `index.css` (F3); lo
+  destructivo lleva `toque-destructivo` y no encoge.
+- **modal** — un portal `fixed inset-0 z-capa` con `CAPAS.veloHoja`; entrada y salida, de `useCapasMotion` (F6).
+- **sheet** — `<AsaHoja cajaRef onCerrar>` (F5), con la misma función que su botón de cerrar.
+- **navigation** — `tipoDeNavegacion`: entrar desde la derecha, volver desde la izquierda, sección con un fundido.
+- **card → detail** — la tarjeta que ES lo que abre crece hasta su pantalla (`useContenedorDesdeOrigen`); lo mismo
+  en dos sitios, `<Compartido id>` (F7).
+- **counter** — `CifraQueCambia`: cuenta la principal, releva el resto, nunca al aparecer, decide antes de pintar.
+- **loading** — `GiroDeCarga` con su texto, `estado="cargando"` en un botón y el esqueleto de una pantalla.
+- **success** — `LatidoAlMarcar`: el ✓ late al ponerlo, nunca al abrir (F18).
+- **error** — `MensajeDeCampo` con `aria-invalid` y `aria-describedby`; nada tiembla (F9).
+- **gesture** — `useDeslizarParaCambiar` con `touch-action: pan-y`; las decisiones, del motor (F5 y F8).
+
 ## Jos Style Motion Language
 
 Lo que hace que el movimiento sea reconociblemente de JosStyle, dicho una vez. Cada afirmación tiene detrás una
@@ -1086,6 +1220,16 @@ que vigila `auditarPropiedad`, y una fila en `MATRIZ_QA_MOTION` si es una intera
   sistema paralelo) pone la suite roja (`CAPAS_MOTION`, `auditarCapas`).
 - **Tailwind**: las clases `transition-*` usan por defecto el token `fast` y `--ease-premium`
   (`tailwind.config.js`), así que también respetan los modos.
+- **El mapa definitivo** (F20, apartado 2, `MAPA_DEFINITIVO`): **Motion Tokens** (`DURACIONES_MOTION`,
+  `DISTANCIAS_MOTION`, `ESCALAS_MOTION`, `OPACIDADES_MOTION`, `STAGGER_MOTION` y `:root`) → **Motion Curves**
+  (`CURVAS_MOTION`, `ROLES_MOTION`) → **Motion Physics** (`SPRINGS_MOTION`, `muestrearSpring`, `JERARQUIA_MUELLES`,
+  `decidirSoltar`, `UMBRALES_GESTO`) → **Motion Engine** (`contextoMotion`, `PRESETS_MOTION`, `transicion`,
+  `escalonado`, `animar`) → **Motion Orchestrator** (`animarOrquestado`, `resolverConflicto`, `planificarLinea`,
+  `tomarControl`) → **Interaction / Component** (`Presencia`, `CifraQueCambia`, `LatidoAlMarcar`, `IconoQueCambia`,
+  `ChevronDespliegue`, `ListaAnimada`, `Plegable`, `AsaHoja`) → **Navigation / Layout / Data / Async**
+  (`tipoDeNavegacion`, `MAPA_TRANSICIONES`, `useCapasMotion`, `planDeLista`, `CLASES_DE_CIFRA`, `MAPA_ASINCRONO`,
+  `CONTEXTOS_FISICOS`, `intensidadDe`) → **Visual Output** (las clases de `index.css` y `data-motion` /
+  `data-velocidad` en `<html>`). Cada nombre se busca exportado en su archivo.
 
 ## 10 · Cómo se comprueba
 
@@ -1121,6 +1265,9 @@ que vigila `auditarPropiedad`, y una fila en `MATRIZ_QA_MOTION` si es una intera
   sin guardar · Guardar ahora» → «Guardado»), sin conexión (y al volver se manda solo), una carga que falla sin que
   el arranque pise los ajustes, ninguna carga («No se han podido cargar tus datos»), el arranque lento, el vacío
   que espera a que salga lo último y la sesión que caduca. `auditarAsincronia` (F16) lee las vistas.
+- **El sellado (F20)**: `auditoriaSellado` junta todo —`auditoriaTotalMotion` (F18), `auditoriaQA` (F19) y lo de la
+  F20— y devuelve **MOTION SYSTEM — SEALED** solo con todas sus cuentas a cero. La sección «MS F20» del recorrido
+  hace la sesión entera en cuatro tamaños y en Reducido, la interrumpe a propósito y la mide.
 - La sección «MS F17» del recorrido mide los datos fotograma a fotograma: una cuenta interrumpida que sigue desde lo
   que se ve sin volver atrás, el valor final para VoiceOver mientras cuenta, las barras de Productividad al ritmo de
   todas y el eje de Sueño que no cambia al mover la semana. `auditarDatos` (F17) lee las vistas.

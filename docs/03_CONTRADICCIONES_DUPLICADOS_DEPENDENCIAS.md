@@ -1536,3 +1536,28 @@ van **al revés que ese camino**, y es lo que hace que no haya ciclos: el orques
 que no necesita conocer los tokens. `CAPAS_MOTION` (`src/lib/qaMotion.js`) lo deja comprobado contra los imports de
 verdad: hojas → motor → sistemas → piezas, nadie importa hacia arriba, las auditorías no las importa la aplicación y
 un archivo de movimiento nuevo sin capa pone la suite roja (*"sin sistemas paralelos innecesarios"*).
+
+### C-69 — ✅ RESUELTA AL CONSTRUIR (Motion System F20, v3.150.0) · «Eliminar springs que no aporten» contra los cinco muelles de la F1 y el contraejemplo de la F8
+
+La F20 (apartado 31) pide *"Eliminar springs que no aporten. Cada spring debe tener un propósito"*, y `bouncy` no lo
+usa ninguna pieza. Pero la F1 **exige** los cinco muelles (`soft`, `normal`, `responsive`, `bouncy`, `heavy`) y la F8
+lo usa como **el contraejemplo medido** de lo que rebota: es lo que demuestra que `muelleSinRebote` y `sobrepasoDe`
+pueden ponerse rojos (sin él, la comprobación de que ningún muelle en uso rebota no podría fallar nunca).
+
+**La lectura que respeta las tres:** `bouncy` se queda, **con ese propósito escrito** (`TOKENS_DE_RESERVA`, F18) y
+fuera de cualquier pieza (`MUELLES_EN_USO` no lo incluye y la F8 lo vigila). Lo que pide el apartado 31 se cumple
+así: cada muelle tiene un papel (`JERARQUIA_MUELLES` o su reserva), ninguno tarda en reposar más de 1100 ms y los
+que se usan no rebotan (`muellesSinProposito`, `src/lib/contratosMotion.js`).
+
+### C-70 — ✅ RESUELTA AL CONSTRUIR (Motion System F20, v3.150.0) · Las cuatro prioridades del enunciado contra los siete pesos del orquestador
+
+La F20 (apartado 19) pide asignar **P0 — interacción crítica, P1 — navegación y estado, P2 — contextual, P3 —
+decorativa**, y que *"las prioridades inferiores nunca bloqueen las superiores"*. El orquestador de la F11 tiene
+**siete** pesos (`critica`, `navegacion`, `gesto`, `estado`, `layout`, `micro`, `decorativa`) y decide con ellos
+quién gana cuando dos animaciones quieren la misma propiedad.
+
+**La lectura que respeta las dos:** no se cambia ni un peso; se **agrupan** (`GRUPOS_PRIORIDAD`): P0 = `critica` y
+`gesto`, P1 = `navegacion` y `estado`, P2 = `layout` y `micro`, P3 = `decorativa`. La suite de la F20 comprueba con
+`resolverConflicto` que lo de un grupo inferior **cede** ante el superior y que el superior lo **interrumpe**, en
+todas las parejas. El gesto está en P0 aunque su peso (5) sea menor que el de la navegación (6), porque al dedo no lo
+gobierna el peso: lo gobierna `tomarControl` —*"sobre el dedo no manda ninguna prioridad"* (F11)—.

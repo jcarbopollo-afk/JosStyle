@@ -1,5 +1,92 @@
 # CHANGELOG.md
 
+## v3.150.0 — Motion System F20/20: consolidación, contratos y sellado · 🏁 FINALIZADO · MOTION SYSTEM — SEALED
+
+La F20 del Motion System (*"Motion System Finalization, consolidación, contratos y sellado definitivo"*, líneas
+3118–4045 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), **la última**. *"No consiste en añadir más efectos"*:
+no hay ni un keyframe, ni un token, ni un preset nuevos. Lo que hay es el sistema entero diciendo UNA cosa, con
+cada «toda animación nueva debe…» del enunciado atado a algo que se ejecuta y se pone rojo. Vive en
+`src/lib/contratosMotion.js` (una auditoría: la aplicación no la importa) y en la sección «MS F20» del recorrido.
+
+🏁 **El Motion System queda FINALIZADO: las veintiuna fases (F0–F20), y MOTION SYSTEM — SEALED.** El sello no es
+este rótulo: lo calcula `auditoriaSellado` —la auditoría total de la F18, la del QA de la F19 y las veinticinco
+cuentas de la F20— y `scripts/test-motion-f20.mjs` se pone roja si una sola no sale a cero (apartado 49: *"solo si
+todos los checks requeridos pasan"*). 🚨 **No hay Fase 21** (apartado 61).
+
+### Lo que encontró, y se arregló
+
+- 🐛 **El «+1» de una racha se cortaba con la velocidad «Pausada».** Se anima con el token `firma` (900 ms × la
+  velocidad) y `RachasView` lo desmontaba a los 900 ms **escritos a mano** (`DURACION_FEEDBACK_MS`): con «Pausada»
+  (×1,3) la animación dura 1170 ms y desaparecía al 77 %, todavía a la vista. Ahora la constante ES el token y la
+  espera sale de la velocidad (`esperaDelFeedback`), nunca por debajo de lo de antes. Lo cazó la última búsqueda
+  del código (apartado 46).
+- 🐛 **Tres piezas fuera de la revisión de limpieza.** `sincronizacion.js`, `rendimientoMotion.js` y
+  `components/accesibilidadMotion.jsx` usaban temporizadores, escuchadores u observadores y la revisión de la F11
+  no las miraba: su lista se escribió antes de que existieran. Entran, y una pieza nueva que los use sin entrar se
+  caza (`piezasSinRevisarLimpieza`). Y esa revisión **contaba un `addEventListener` escrito en una cadena** (el
+  ejemplo malo de la F13): ahora quita las cadenas.
+- 🐛 **«Sin movimiento» tenía dos atributos.** `index.css` repetía su regla para `data-motion='off'` y para
+  `data-animaciones='desactivadas'`, que es exactamente el mismo estado (`desactivadas` ES `off`), y `App.jsx`
+  escribía `data-reducir-movimiento`, que nadie leía desde la F1. Queda solo `data-motion`; las comprobaciones de la
+  F0, la F1, la EH F42 y `verificar.sh` que vigilaban los atributos viejos se mudan con su promesa.
+- 🐛 **Cuatro exportaciones que no leía nadie** —`COSTES` (F13) y tres alias de la F14—, retiradas. Y la descripción
+  de la arquitectura de la F0 seguía diciendo `html[data-animaciones=…]`.
+- **Un hueco real, implementado** (apartado 57): un `translate` o un `scale` con un número escrito a mano en
+  `index.css` no se quedaría quieto en Reducido y no lo cazaba nadie. Hoy no hay ninguno; `desplazamientosSinToken`
+  hace que no pueda haberlo.
+
+### Lo que deja escrito y comprobado
+
+- **El mapa definitivo** (apartado 2): Motion Tokens → Curves → Physics → Engine → Orchestrator → Interaction /
+  Component → Navigation / Layout / Data / Async → Visual Output, con **los nombres que existen**, buscados uno a uno
+  exportados en su archivo.
+- **Una sola fuente por categoría** (apartado 3) sobre `CATEGORIAS_TOKENS` de la F11 —que gana las reglas
+  responsive—, cada una con la auditoría que cazaría una segunda.
+- **Lo repetido y lo muerto, entre todos los archivos del sistema a la vez** (apartados 4 y 5), con un lexer
+  (`soloCodigo`) que distingue lo que el código HACE de lo que DICE: un `replace` emparejaba mal las comillas
+  invertidas que este proyecto mete dentro de comillas simples.
+- **El legado** (apartado 6): KEEP (`--ease-premium`, `module-enter`, `ANIMACIONES_HC`, la escalera de pulsar, las
+  animaciones de Fitness…), MIGRATE y REMOVE, y lo que dice que se fue se comprueba que se fue.
+- **Los diecinueve contratos** (apartados 8–26), cada uno con sus garantías —una auditoría, una cuenta, una suite o
+  una marca del recorrido—, y `contratosSinGarantia` comprueba que existen. Las cuatro prioridades del enunciado son
+  los siete pesos del orquestador agrupados (**C-70**), y lo de un grupo inferior cede ante el superior en todas las
+  parejas.
+- **Los diez antipatrones** (apartado 29), cada uno cazado por su auditoría ejecutada sobre su ejemplo malo —cuatro
+  son los guardarraíles de la F18—. Los ejemplos se importan de su auditoría: copiados, las que leen todo `src/` los
+  encontrarían como si fueran código.
+- **La revisión final** de los tokens (apartado 30, con los nombres de JosStyle) y de los muelles (apartado 31):
+  `bouncy` se queda con su propósito, el contraejemplo medido de la F8 (**C-69**).
+- **La última búsqueda del código** (apartado 46): las diez búsquedas del enunciado sobre todo lo que pinta, cada
+  aparición clasificada o declarada con su motivo —los relojes, el fotograma que devuelve el foco, la espera del
+  teclado del iPhone—.
+- **La documentación oficial** (apartados 27, 28 y 48): `docs/MOTION_SYSTEM.md` abre con las siete preguntas de quien
+  llega nuevo, y tiene los contratos, los antipatrones y diez ejemplos del propio proyecto.
+- **Las reglas que quedan** (apartados 54, 55, 62 y la regla permanente), en `CLAUDE.md`.
+
+### La sesión entera (la sección «MS F20» del recorrido, apartados 40–44 y 47)
+
+Inicio → Bienestar → Fitness → una plantilla hecha con el constructor de la aplicación → su detalle → Editar → una
+serie más → Guardar (y se comprueba en la cuenta) → volver → Vida → Gestión → Ajustes → Apariencia → Texto y
+movimiento → volver → Inicio. En cada paso se espera a que la pantalla se **asiente** y se mide que nada se salga de
+lado; al navegar, su tipo. Se repite en un iPhone en vertical, en horizontal, en un iPad y en un escritorio, y otra
+vez con «Reducir movimiento» (sin que ninguna pantalla se desplace ni escale en toda la sesión). Después se
+interrumpe a propósito —abrir y marcharse, cerrar y volver a abrir el ＋, volver a agarrar la hoja mientras vuelve,
+volver mientras Fitness entra, guardar e irse en el mismo instante, irse con una cifra a mitad de su cuenta— y se
+mide: los fotogramas, las tareas largas, que no quede nada vivo, que el DOM vuelva a su tamaño y la consola.
+
+⚠️ **Y en la pasada de la F18 y la F19 salió el hallazgo más fino del ciclo**: `CifraQueCambia` decidía su cuenta
+**después de pintar**, así que enseñaba un fotograma el valor final antes de volver al de partida para contar
+(400 → 100 → 142…). Lo tapaba una comprobación que leía a los 70 ms fijos; está arreglado en la v3.149.0 (F19).
+
+### Limitaciones que quedan (apartado 50)
+
+El gesto de atrás de Safari (C-53) y deslizar para volver (C-56), sin capturas de pantalla comparadas, sin lint ni
+typecheck (C-48), el iPhone de verdad (R1) y los repintados de React, que no se cuentan sin el Profiler.
+
+### Verificación
+
+{{VERIFICACION_F20}}
+
 ## v3.149.0 — Motion System F19/20: testing extremo, validación, regresión y motion QA automatizado
 
 La F19 del Motion System (*"Testing extremo, validación, regresión y motion QA automatizado"*, líneas 2242–3117 de

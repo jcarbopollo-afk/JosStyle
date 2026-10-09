@@ -354,9 +354,12 @@ html[data-densidad='comoda'] .p-4 { padding: 1.3rem !important; }
 
    ⚠️ Y una animación infinita (el latido del esqueleto) se queda en una sola
    vuelta: a 0,01 ms por vuelta y para siempre, el navegador la recalcularía
-   sin parar para no enseñar nada. */
-html[data-motion='off'] *, html[data-motion='off'] *::before, html[data-motion='off'] *::after,
-html[data-animaciones='desactivadas'] *, html[data-animaciones='desactivadas'] *::before, html[data-animaciones='desactivadas'] *::after {
+   sin parar para no enseñar nada.
+
+   🧹 MS F20 — y solo con `data-motion`: la regla repetía el mismo selector para
+   `data-animaciones='desactivadas'`, que es exactamente el mismo estado
+   (`desactivadas` ES `off`). Dos atributos para una cosa son dos sistemas. */
+html[data-motion='off'] *, html[data-motion='off'] *::before, html[data-motion='off'] *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   animation-delay: 0ms !important;
