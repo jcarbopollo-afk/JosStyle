@@ -39,7 +39,7 @@ se ordena es **el trabajo**.
 | **F16** ✅ **v3.146.0** | Estados de sistema, loading, error, offline, sync y transiciones asíncronas | 1–759 | 759 |
 | **F17** ✅ **v3.147.0** | Motion de datos, dashboard, métricas, gráficas y visualización | 760–1458 | 699 |
 | **F18** ✅ **v3.148.0** | Motion visual polish, brand language y coherencia sensorial | 1459–2241 | 783 |
-| **F19** | Testing extremo, validación, regresión y motion QA automatizado | 2242–3117 | 876 |
+| **F19** ✅ **v3.149.0** | Testing extremo, validación, regresión y motion QA automatizado | 2242–3117 | 876 |
 | **F20** | Finalización, consolidación, contratos y sellado | 3118–4045 | 928 |
 
 🏁 **La F20 es la última**: su texto dice *"No generar una FASE 21 del Motion System"*.
@@ -99,3 +99,25 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | La prueba de la F17 | `scripts/test-motion-f17.mjs`, y la sección «MS F17» del recorrido de Chromium (la cuenta interrumpida, el valor final, el ritmo de las barras y el eje de Sueño) |
 | El sistema revisado como un todo y su lenguaje: la auditoría total, el inventario, los atípicos (el ✓ que latía al abrir, el icono que saltaba, las entradas que se quedaban puestas), la personalidad y la temperatura, el lenguaje familia por familia, la jerarquía, los tokens de reserva, los guardarraíles y la inspección | `src/lib/pulidoMotion.js` (F18), `IconoQueCambia` y `LatidoAlMarcar latido` (`src/components/motion.jsx`), `inspeccionar` (orquestador) y «Jos Style Motion Language» en `docs/MOTION_SYSTEM.md` |
 | La prueba de la F18 | `scripts/test-motion-f18.mjs`, y la sección «MS F18» del recorrido de Chromium (el ✓ que no late al abrir y sí al marcar, play ↔ pausa, la barra de volver sin `transform` puesto y la inspección) |
+| El QA del sistema entero: la infraestructura, la matriz (cada fila con su prueba), la regresión de las diecinueve fases, los tokens (referencias rotas, repetidos, literales), los `@keyframes`, el mapa contra el CSS, las máquinas de estado, los muelles con valores imposibles, las capas contra los imports, los hallazgos clasificados y la regla permanente | `src/lib/qaMotion.js` (F19), con `camaraLenta` e `inspeccionarTodo` en `src/lib/orquestadorMotion.js` |
+| La prueba de la F19 | `scripts/test-motion-f19.mjs`, y la sección «MS F19» del recorrido de Chromium (dos navegaciones seguidas, volver a mitad, un interruptor tocado cuatro veces, la cifra 1 → 20 → 5 → 80 → 40, una lista que lo hace todo a la vez, desmontar a mitad, el ancho seis veces, girar con una hoja, la cabecera con el scroll a tope, una sesión entera, la cámara lenta y Reducido) |
+
+## Deuda técnica (F19, apartado 59)
+
+Lo que queda, con quién lo decide. Ninguna de estas cosas rompe el sistema; están dichas para que nadie las dé por
+hechas.
+
+| Qué | Por qué queda | Quién decide |
+|---|---|---|
+| Deslizar para volver (C-56) y el gesto de atrás del sistema (C-53) | JosStyle navega con estado de React, sin `history.pushState`: hace falta para toda la aplicación, no a medias. | Josué (E3 F22) |
+| Dividir el bundle (C-42) | Con Vercel, un trozo de la versión anterior desaparece al publicar la siguiente. | Josué (familia del service worker, DEP-30) |
+| El zoom al enfocar un campo y el pellizco (C-32) | El arreglo cambia el aspecto de todos los formularios. | Josué |
+| Capturas de pantalla para regresión visual | No hay infraestructura y la F19 no instala herramientas (apartado 1). | — |
+
+## Problemas conocidos (F19, apartado 59)
+
+- **Todo se prueba en Chromium y la aplicación se usa en un iPhone** (SF F1): lo que Safari resuelve distinto puede
+  salir verde aquí. La pasada a mano —tocar, deslizar, girar— es de Josué (R1).
+- **El conflicto entre dispositivos**: el último que guarda gana (F16 lo dice arriba cuando algo no llega, pero no
+  fusiona dos versiones). Necesita una columna nueva en `app_data`.
+

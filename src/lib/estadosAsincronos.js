@@ -41,16 +41,20 @@ export const ESTADOS_ASINCRONOS = Object.freeze([
   { id: 'offline', nombre: 'Sin conexión', como: 'Una señal pequeña arriba, sin animación global (apartado 30).' },
 ]);
 
+/* 🐛 MS F19 (apartado 10) — «Sin conexión» estaba declarado y NINGÚN evento llevaba a él: recorriendo la
+   máquina desde el reposo no se alcanzaba nunca, y la operación `conexion` de `MAPA_ASINCRONO` decía pasar
+   por él. Perder la conexión en reposo, con algo ya cargado o guardado, o con algo pendiente lleva ahí; a
+   media carga es un fallo de esa carga (`error`), y a medio guardado lo guardado queda pendiente. */
 export const TRANSICIONES_ASINCRONAS = Object.freeze({
-  idle: { cargar: 'loading', guardar: 'saving' },
+  idle: { cargar: 'loading', guardar: 'saving', sinConexion: 'offline' },
   loading: { exito: 'success', fallo: 'error', cancelar: 'cancelled' },
-  success: { cargar: 'loading', guardar: 'saving' },
+  success: { cargar: 'loading', guardar: 'saving', sinConexion: 'offline' },
   error: { reintentar: 'retrying', cancelar: 'cancelled', cargar: 'loading' },
   retrying: { exito: 'success', fallo: 'error', cancelar: 'cancelled' },
-  cancelled: { cargar: 'loading', guardar: 'saving' },
+  cancelled: { cargar: 'loading', guardar: 'saving', sinConexion: 'offline' },
   saving: { exito: 'saved', fallo: 'pending', sinConexion: 'pending' },
-  saved: { guardar: 'saving', cargar: 'loading' },
-  pending: { reintentar: 'saving', guardar: 'saving' },
+  saved: { guardar: 'saving', cargar: 'loading', sinConexion: 'offline' },
+  pending: { reintentar: 'saving', guardar: 'saving', sinConexion: 'offline' },
   offline: { reconectar: 'saving', guardar: 'pending' },
 });
 
@@ -321,7 +325,7 @@ export const MAPA_ASINCRONO = Object.freeze([
   { id: 'arranque', que: 'Abrir la aplicación: sesión, 35 claves de `app_data` y las fuentes', archivo: 'src/App.jsx', patron: 'Promise.all de `loadData` + `useFuentesListas`', estados: ['loading', 'success', 'error', 'retrying'], dueno: '`LoadingScreen` (esqueleto con la forma de Hoy) → la entrada de sección (F2); `ErrorDeArranque` si no llega nada', antes: 'Si una carga fallaba, la clave arrancaba vacía y el siguiente guardado PISABA la cuenta (y la migración de `ajustes` lo hacía sola). Si fallaban todas, una cuenta nueva. Y el esqueleto latía para siempre.', queda: 'Lo que no carga no se guarda (`sincronizacion.js`); si no carga nada, «No se han podido cargar tus datos · Reintentar»; si tarda, lo dice.' },
   { id: 'sesion', que: 'Entrar, salir y la sesión que se renueva o caduca', archivo: 'src/App.jsx', patron: '`getSession` + `onAuthChange` de Supabase', estados: ['loading', 'success', 'error'], dueno: '`LoadingScreen` mientras se comprueba; `Auth` con su motivo', antes: 'Una sesión que caducaba borraba la pantalla y enseñaba la de entrar sin decir por qué.', queda: '«Tu sesión ha caducado», y cuántos cambios no llegaron a guardarse. Sin destello entrar → app → entrar: mientras se comprueba, esqueleto.' },
   { id: 'guardar', que: 'Guardar cualquier cambio (`saveData`, desde 91 sitios de App.jsx)', archivo: 'src/lib/supabase.js', patron: 'Optimista: `setX` + `saveData` (upsert de la clave entera)', estados: ['saving', 'saved', 'pending', 'retrying'], dueno: '`IndicadorDeSincronizacion` (uno para toda la aplicación); Fitness además lo dice en su pantalla (FIT F37)', antes: 'El resultado lo leía solo Fitness: en el resto, un guardado fallido sonaba (`ACTION_ERROR`) y nada más. Dos guardados de la misma clave podían llegar al revés.', queda: 'Lo que no llega queda pendiente con su último valor, se dice arriba y se vuelve a mandar al pedirlo o al volver la conexión. Los de una clave salen en orden.' },
-  { id: 'conexion', que: 'Perder y recuperar la conexión', archivo: 'src/lib/supabase.js', patron: 'Eventos `online` / `offline` (`vigilarLaConexion`)', estados: ['offline', 'retrying', 'saved'], dueno: '`IndicadorDeSincronizacion`', antes: 'Solo sonaba (SO): `connection_lost` y `connection_restored`.', queda: '«Sin conexión» si dura más de un segundo; al volver, lo pendiente se manda solo y «Guardado» un momento.' },
+  { id: 'conexion', que: 'Perder y recuperar la conexión', archivo: 'src/lib/supabase.js', patron: 'Eventos `online` / `offline` (`vigilarLaConexion`)', estados: ['offline', 'saving', 'saved'], dueno: '`IndicadorDeSincronizacion`', antes: 'Solo sonaba (SO): `connection_lost` y `connection_restored`.', queda: '«Sin conexión» si dura más de un segundo; al volver, lo pendiente se manda solo y «Guardado» un momento.' },
   { id: 'subidas', que: 'Subir fotos, vídeos y archivos (Salud, Fitness, Armario, Biblioteca, Fondos, Relación)', archivo: 'src/components/ui.jsx', patron: '`await upload…` con el botón en `estado="cargando"` (F9)', estados: ['saving', 'saved', 'error'], dueno: 'El botón que lo pidió (F9: texto en su sitio, giro si tarda, no repite)', antes: 'Resuelto en la F9.', queda: 'Así.' },
   { id: 'ia', que: 'Preguntar a la IA (análisis, sugerencias, foto de comida, vídeo de técnica)', archivo: 'src/lib/ai.js', patron: '`fetch` a `/api/ask-ai`, siempre a un toque (regla 7)', estados: ['loading', 'success', 'error'], dueno: 'El botón ocupado (F9) y el texto de error amable de cada panel', antes: 'Ya no se puede pedir dos veces a la vez (F9: el toque no repite).', queda: 'Así. Un panel que se cierra a media respuesta no pinta lo que llegue después (React 18 no avisa, y no hay movimiento que se quede colgado).' },
   { id: 'off', que: 'Buscar un alimento en Open Food Facts', archivo: 'src/views/NutritionView.jsx', patron: '`await buscarAlimentosPorNombre`, a petición', estados: ['loading', 'success', 'error', 'cancelled'], dueno: 'El botón «Buscar en la base de productos» (F9)', antes: '🐛 Si cambiaba el texto mientras buscaba, los resultados de la búsqueda VIEJA salían debajo del texto nuevo.', queda: 'Turnos (`crearTurnos`): solo pinta la búsqueda vigente, y cambiar el texto la deja sin vigencia.' },

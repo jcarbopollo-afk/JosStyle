@@ -329,6 +329,7 @@ export function animarOrquestado(el, fotogramas, opciones = {}, meta = {}) {
     return null;
   }
   if (!anim) return null;
+  if (camara) ajustarRitmo(anim);
   SECUENCIA += 1;
   const r = { n: SECUENCIA, el, anim, id, sistema, prioridad, propiedades, grupo: meta.grupo || null, final: null };
   if (!VIVAS.has(el)) VIVAS.set(el, new Set());
@@ -572,11 +573,69 @@ export function inspeccionar(el) {
   });
 }
 
+/**
+ * 🔓 MS F19 (apartado 43) — lo que se mueve AHORA en toda la página: una línea por animación, como
+ * `inspeccionar`, de cada elemento que tenga alguna. Es la vista general que el apartado pide a un
+ * «overlay», en la consola que ya existe: sin pintar nada encima de la aplicación.
+ */
+export function inspeccionarTodo(doc = typeof document !== 'undefined' ? document : null) {
+  if (!doc || typeof doc.getAnimations !== 'function') return [];
+  let todas = [];
+  try { todas = doc.getAnimations(); } catch { todas = []; }
+  const elementos = [...new Set(todas.map((a) => a.effect && a.effect.target).filter(Boolean))];
+  return elementos.flatMap((el) => inspeccionar(el));
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+   7 ter · LA CÁMARA LENTA (MS F19, apartados 41 y 42)
+
+   *"Un modo lento puede revelar: jumps, bad easing, layout shifts, wrong origin, race conditions. No debe
+   utilizarse en producción."* Los tres modos de prueba del apartado 41 ya existían como ajustes de verdad
+   —«Sin movimiento» es el instantáneo y la velocidad Lenta el ×1,3—, y un ×1,3 no enseña nada. Esto es otra
+   cosa: `window.__motion.camaraLenta(4)` pone a un cuarto de velocidad TODO lo que se mueve —lo de
+   `index.css` (al empezar: `animationstart` y `transitionrun`) y lo que pasa por aquí—, y
+   `camaraLenta(1)` lo devuelve y quita sus escuchadores. Solo existe con la consola de depuración, que solo
+   existe en desarrollo y con la marca puesta. ⚠️ Lo que espera con un reloj en vez de con `finished` se
+   adelanta a la animación lenta: es exactamente la carrera que la cámara lenta está para enseñar.
+   ─────────────────────────────────────────────────────────────────────────── */
+export const CAMARA_LENTA_MAXIMA = 10;
+let camara = null;
+function ajustarRitmo(anim) {
+  if (!camara || !anim) return;
+  /* `playbackRate` directo, no `updatePlaybackRate`: conserva el instante en que va y se aplica YA (el otro
+     espera al siguiente fotograma, y una entrada corta podría acabar entera antes). */
+  try { anim.playbackRate = camara.ritmo; } catch { /* una animación ya terminada no se queja */ }
+}
+export const ritmoDeCamara = () => (camara ? camara.ritmo : 1);
+export function camaraLenta(factor = 1) {
+  if (typeof document === 'undefined' || !depurando()) return 1;
+  if (camara) {
+    document.removeEventListener('animationstart', camara.alEmpezar, true);
+    document.removeEventListener('transitionrun', camara.alEmpezar, true);
+    const todas = typeof document.getAnimations === 'function' ? document.getAnimations() : [];
+    camara = null;
+    todas.forEach((a) => { try { a.playbackRate = 1; } catch { /* terminada */ } });
+  }
+  const f = Number(factor);
+  if (!Number.isFinite(f) || f <= 1) return 1;
+  const veces = Math.min(f, CAMARA_LENTA_MAXIMA);
+  const alEmpezar = (ev) => {
+    const el = ev && ev.target;
+    try { (el && typeof el.getAnimations === 'function' ? el.getAnimations() : []).forEach(ajustarRitmo); } catch { /* sin animaciones */ }
+  };
+  camara = { ritmo: 1 / veces, alEmpezar };
+  document.addEventListener('animationstart', alEmpezar, true);
+  document.addEventListener('transitionrun', alEmpezar, true);
+  (typeof document.getAnimations === 'function' ? document.getAnimations() : []).forEach(ajustarRitmo);
+  return veces;
+}
+
 /* La consola de depuración (apartado 35): `window.__motion`, solo en desarrollo y con la marca puesta.
-   🔓 MS F18 — y `inspeccionar(el)` para preguntarle a un elemento quién lo mueve. */
+   🔓 MS F18 — y `inspeccionar(el)` para preguntarle a un elemento quién lo mueve.
+   🔓 MS F19 — `inspeccionarTodo()` para la página entera y `camaraLenta(n)` para verlo despacio. */
 export const apiDeDepuracion = () => ({
   estado: estadoGlobalMotion, diario: diarioMotion, vaciar: vaciarDiario, grupo: estadoDeGrupo,
-  prioridades: PRIORIDADES_MOTION, sistemas: SISTEMAS_MOTION, inspeccionar,
+  prioridades: PRIORIDADES_MOTION, sistemas: SISTEMAS_MOTION, inspeccionar, inspeccionarTodo, camaraLenta,
 });
 export function exponerDepuracion() {
   if (typeof window === 'undefined' || !depurando()) return false;

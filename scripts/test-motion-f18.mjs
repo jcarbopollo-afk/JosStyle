@@ -191,8 +191,8 @@ const VISTA = (n) => leer(`src/views/${n}.jsx`);
   ok(/export function IconoQueCambia\(\{ clave, children, className = '' \}\)/.test(MOT) && /siguienteIcono\(estado\.current, clave\)/.test(MOT) && /'icono-cambia '/.test(MOT),
     '`IconoQueCambia` lleva la cuenta con `siguienteIcono` y pone `icono-cambia` solo cuando cambia');
   const regla = CSS.match(/\.icono-cambia\s*\{[^}]*\}/);
-  ok(regla && /iconoCambia var\(--motion-dur-fast\) var\(--motion-curva-entrance\) backwards/.test(regla[0]), 'el icono nuevo aparece en `fast` con la curva de lo que aparece, y termina con `backwards`');
-  const kf = CSS.slice(CSS.indexOf('@keyframes iconoCambia'), CSS.indexOf('@keyframes iconoCambia') + 200);
+  ok(regla && /marcaAparece var\(--motion-dur-fast\) var\(--motion-curva-entrance\) backwards/.test(regla[0]), 'el icono nuevo aparece en `fast` con la curva de lo que aparece, y termina con `backwards`');
+  const kf = CSS.slice(CSS.indexOf('@keyframes marcaAparece'), CSS.indexOf('@keyframes marcaAparece') + 200);
   const reducido = CSS.slice(CSS.indexOf("html[data-motion='reducido'] {"), CSS.indexOf("html[data-motion='reducido'] {") + 1500);
   ok(/scale\(var\(--motion-escala-hero\)\)/.test(kf) && /--motion-escala-hero:\s*1;/.test(reducido), 'su escala es la de una marca (`escala-hero`), que en Reducido vale 1: solo se funde');
   const linea = MOTION_MAP.find((x) => x.id === 'icono_cambia');
@@ -261,10 +261,10 @@ const VISTA = (n) => leer(`src/views/${n}.jsx`);
     'una duración medida se nombra como su token, a la velocidad de ahora; un número suelto se queda sin nombre');
   ok(tokenDeCurva('cubic-bezier(0.16, 1, 0.3, 1)') === 'entrance' && tokenDeCurva('cubic-bezier(0.32,0.72,0,1)') === 'standard' && tokenDeCurva('ease') === null,
     'una curva, como la suya (con o sin espacios); `ease` no es de JosStyle');
-  const animCss = { animationName: 'iconoCambia', playState: 'running', effect: { getTiming: () => ({ duration: 160, delay: 0, easing: 'linear' }), getKeyframes: () => [{ easing: 'cubic-bezier(0.16, 1, 0.3, 1)' }, {}] } };
+  const animCss = { animationName: 'marcaAparece', playState: 'running', effect: { getTiming: () => ({ duration: 160, delay: 0, easing: 'linear' }), getKeyframes: () => [{ easing: 'cubic-bezier(0.16, 1, 0.3, 1)' }, {}] } };
   const elCss = { tagName: 'SPAN', classList: ['inline-flex', 'icono-cambia'], getAnimations: () => [animCss] };
   const l = inspeccionar(elCss)[0];
-  ok(l && l.nombre === 'iconoCambia' && l.fuente === 'index.css' && l.sistema === 'css' && l.duracion === 160 && l.tokenDuracion === 'fast' && l.tokenCurva === 'entrance' && l.elemento === 'span.inline-flex.icono-cambia',
+  ok(l && l.nombre === 'marcaAparece' && l.fuente === 'index.css' && l.sistema === 'css' && l.duracion === 160 && l.tokenDuracion === 'fast' && l.tokenCurva === 'entrance' && l.elemento === 'span.inline-flex.icono-cambia',
     `una animación de CSS: nombre, fuente, duración y curva con sus tokens (la curva, de los fotogramas) y el elemento (${JSON.stringify(l)})`);
   olvidarTodo();
   const animJs = { playState: 'running', effect: { getTiming: () => ({ duration: 280, delay: 0, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' }) }, addEventListener: () => {}, cancel() { this.playState = 'idle'; }, finished: Promise.resolve(), onfinish: null, oncancel: null };

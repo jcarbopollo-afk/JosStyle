@@ -14858,7 +14858,7 @@ const icono_ms18 = await page.evaluate(async () => {
   await new Promise((r) => requestAnimationFrame(r));
   const pausar = document.querySelector('button[aria-label="Pausar la concentración"]');
   const env = pausar && pausar.querySelector('[data-icono]');
-  const linea = window.__motion && typeof window.__motion.inspeccionar === 'function' && env ? window.__motion.inspeccionar(env).find((l) => l.nombre === 'iconoCambia') : null;
+  const linea = window.__motion && typeof window.__motion.inspeccionar === 'function' && env ? window.__motion.inspeccionar(env).find((l) => l.nombre === 'marcaAparece') : null;
   return { antes, cambia: !!(env && env.classList.contains('icono-cambia')), clave: env && env.dataset.icono, linea };
 });
 ok(icono_ms18 && icono_ms18.antes === 0, `MS F18 — al abrir la pestaña ningún icono se mueve (${icono_ms18 && icono_ms18.antes})`);
@@ -14872,6 +14872,415 @@ ok(errores.length === erroresAntes_ms18, `MS F18 — …sin un error en la conso
 await page.evaluate(() => { try { localStorage.removeItem('josstyle:motion-debug'); } catch { /* sin almacenamiento */ } });
 almacen.ajustes = ajustesDeAntes_ms18;
 almacen.productividad = productividadDeAntes_ms18;
+
+/* ── MS F19 · QA extremo: interrumpir, repetir, desmontar, girar, reducir y una sesión entera ──
+   Lo que ninguna fase podía ver desde la suya: el sistema forzado donde se rompen los sistemas de verdad.
+   Dos navegaciones antes de que acabe la primera, volver mientras se entra, un interruptor tocado cuatro
+   veces, una cifra que cambia cuatro veces sin esperar, una lista que inserta, borra, reordena y filtra a la
+   vez, una pieza que se desmonta a media animación, el ancho cambiando seis veces, una hoja abierta mientras
+   el teléfono gira, una cabecera fija con el scroll a tope, la aplicación entera en Reducido, una sesión de
+   principio a fin y la cámara lenta. El LABORATORIO monta las piezas de verdad (`CifraQueCambia`,
+   `ListaAnimada`, `Switch`) con la MISMA instancia de React y de los módulos que la aplicación —las URL que
+   Vite le dio a `main.jsx`—, así que el turno de cuenta y el registro del orquestador son los suyos.
+   ⚠️ Sufijo `_ms19`. */
+console.log('\n── MS F19 · QA extremo: interrumpir, repetir, desmontar, girar, reducir y una sesión entera ──');
+const ajustesDeAntes_ms19 = almacen.ajustes;
+const productividadDeAntes_ms19 = almacen.productividad;
+const hoy_ms19 = new Date().toLocaleDateString('sv-SE');
+almacen.ajustes = { ...(ajustesDeAntes_ms19 || {}), apariencia: { ...((ajustesDeAntes_ms19 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+almacen.productividad = {
+  tareas: [{ id: 'ta_ms19', texto: 'Tarea del recorrido F19', fecha: hoy_ms19, hecha: false }],
+  habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [],
+};
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.evaluate(() => { try { localStorage.setItem('josstyle:motion-debug', '1'); } catch { /* sin almacenamiento */ } });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms19 = errores.length;
+
+/* La pantalla montada: cuántas hay, de qué tipo llegó y si le queda algo moviéndose. */
+const pantalla_ms19 = () => page.evaluate(() => {
+  const ps = [...document.querySelectorAll('.pantalla-segura > [data-navegacion]')];
+  const p = ps[0];
+  const cs = p ? getComputedStyle(p) : null;
+  return {
+    pantallas: ps.length, tipo: p ? p.dataset.navegacion : null, nombre: p ? p.getAttribute('aria-label') : null,
+    vivas: p ? p.getAnimations().filter((a) => a.playState === 'running').length : null,
+    transform: cs ? cs.transform : null, opacidad: cs ? cs.opacity : null,
+    enMarcha: window.__motion ? window.__motion.estado().enMarcha : null,
+  };
+});
+const quieta_ms19 = (p) => !!p && p.pantallas === 1 && p.vivas === 0 && p.transform === 'none' && p.opacidad === '1' && p.enMarcha === 0;
+/* Una tarjeta de un hub por su nombre (no la pestaña de abajo, no algo que ya se va). */
+const TARJETA_MS19 = (nombre) => [...document.querySelectorAll('button')]
+  .find((b) => !b.closest('[inert], [data-capa-saliendo], [data-lista-saliendo], nav') && b.innerText.trim().split('\n')[0].trim() === nombre);
+
+/* 1 · Navegar a A y a B antes de que acabe A (apartado 13). */
+ok(await pulsar('Vida') && /Productividad/.test(await esperarTexto(/Productividad/)), 'MS F19 — Vida');
+await page.waitForTimeout(400);
+const doble_ms19 = await page.evaluate(async (fuente) => {
+  const tarjeta = new Function(`return (${fuente})`)()('Productividad');
+  if (!tarjeta) return null;
+  tarjeta.click();
+  await new Promise((r) => setTimeout(r, 40));
+  const a = document.querySelector('.pantalla-segura > [data-navegacion]');
+  const tipoA = a ? a.dataset.navegacion : null;
+  const nav = [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === 'Gestión');
+  if (!nav) return { tipoA, sinNav: true };
+  nav.click();
+  return { tipoA };
+}, TARJETA_MS19.toString());
+await page.waitForTimeout(900);
+const trasDoble_ms19 = await pantalla_ms19();
+ok(doble_ms19 && doble_ms19.tipoA === 'entrar', `MS F19 — A (Productividad) estaba entrando cuando se pulsó B (${JSON.stringify(doble_ms19)})`);
+ok(quieta_ms19(trasDoble_ms19) && trasDoble_ms19.tipo === 'seccion' && /Organizaci/.test(await ver()),
+  `🚨 MS F19, apartado 13 — navegar a A y a B antes de que acabe A acaba en B, determinista: una sola pantalla, quieta y entera (${JSON.stringify(trasDoble_ms19)})`);
+
+/* 2 · Entrar y volver mientras entra (apartado 14). */
+ok(await pulsar('Vida') && /Productividad/.test(await esperarTexto(/Productividad/)), 'MS F19 — otra vez Vida');
+await page.waitForTimeout(400);
+const vuelta_ms19 = await page.evaluate(async (fuente) => {
+  const tarjeta = new Function(`return (${fuente})`)()('Productividad');
+  if (!tarjeta) return null;
+  tarjeta.click();
+  await new Promise((r) => setTimeout(r, 70));
+  const volver = document.querySelector('.pantalla-segura .back-bar');
+  if (!volver) return { sinVolver: true };
+  volver.click();
+  return { volvio: true };
+}, TARJETA_MS19.toString());
+await page.waitForTimeout(900);
+const trasVuelta_ms19 = await pantalla_ms19();
+ok(vuelta_ms19 && vuelta_ms19.volvio && quieta_ms19(trasVuelta_ms19) && trasVuelta_ms19.tipo === 'volver' && /Estudios/.test(await ver()),
+  `🚨 MS F19, apartado 14 — volver mientras la pantalla entra deja el área entera: ni la de antes a medias ni un transform puesto (${JSON.stringify({ ...vuelta_ms19, ...trasVuelta_ms19 })})`);
+
+/* El laboratorio: las piezas de verdad, con la React de la aplicación. */
+const lab_ms19 = await page.evaluate(async () => {
+  const fuente = await (await fetch('/src/main.jsx')).text();
+  const uReact = (fuente.match(/\/node_modules\/\.vite\/deps\/react\.js\?v=\w+/) || [])[0];
+  const uDom = (fuente.match(/\/node_modules\/\.vite\/deps\/react-dom_client\.js\?v=\w+/) || [])[0];
+  if (!uReact || !uDom) return { sinReact: true };
+  const mR = await import(uReact);
+  const mD = await import(uDom);
+  const [motion, layout, ui, datos, orq] = await Promise.all([
+    import('/src/components/motion.jsx'), import('/src/components/layoutMotion.jsx'), import('/src/components/ui.jsx'),
+    import('/src/lib/datosMotion.js'), import('/src/lib/orquestadorMotion.js'),
+  ]);
+  const caja = document.createElement('div');
+  caja.id = 'lab_ms19';
+  caja.style.cssText = 'position:fixed;left:0;top:0;width:300px;z-index:2147483000;background:#111;color:#eee;padding:4px';
+  document.body.appendChild(caja);
+  window.__lab_ms19 = { React: mR.default || mR, ReactDOM: mD.default || mD, motion, layout, ui, datos, orq, caja };
+  return { listo: typeof (mD.default || mD).createRoot === 'function' && typeof motion.CifraQueCambia === 'function' && typeof layout.ListaAnimada === 'function' && typeof ui.Switch === 'function' };
+});
+ok(lab_ms19 && lab_ms19.listo, `MS F19 — el laboratorio monta las piezas con la React de la aplicación (${JSON.stringify(lab_ms19)})`);
+
+/* 3 · Un interruptor, cuatro toques seguidos (apartado 12): toques de verdad, cada uno su evento. */
+await page.evaluate(() => {
+  const { React, ReactDOM, ui, caja } = window.__lab_ms19;
+  const h = React.createElement;
+  function Prueba() {
+    const [on, setOn] = React.useState(false);
+    return h('div', { style: { display: 'flex', gap: '8px' } },
+      h(ui.Switch, { checked: on, onChange: setOn, accent: '#4a8', label: 'Interruptor del recorrido F19' }),
+      h(ui.Switch, { checked: false, onChange: () => {}, accent: '#4a8', label: 'Testigo apagado F19' }));
+  }
+  const el = document.createElement('div');
+  caja.appendChild(el);
+  window.__lab_ms19.raizInterruptor = ReactDOM.createRoot(el);
+  window.__lab_ms19.raizInterruptor.render(h(Prueba));
+});
+await page.waitForTimeout(300);
+for (let i = 0; i < 4; i += 1) {
+  await page.click('button[aria-label="Interruptor del recorrido F19"]');
+  await page.waitForTimeout(45);
+}
+await page.waitForTimeout(500);
+const interruptor_ms19 = await page.evaluate(() => {
+  const b = document.querySelector('button[aria-label="Interruptor del recorrido F19"]');
+  const t = document.querySelector('button[aria-label="Testigo apagado F19"]');
+  const bola = (x) => getComputedStyle(x.querySelector('.interruptor-bola')).transform;
+  const r = { aria: b.getAttribute('aria-checked'), dato: b.dataset.encendido, bola: bola(b), testigo: bola(t), vivas: b.querySelector('.interruptor-bola').getAnimations().length };
+  window.__lab_ms19.raizInterruptor.unmount();
+  return r;
+});
+ok(interruptor_ms19.aria === 'false' && interruptor_ms19.dato === 'false' && interruptor_ms19.bola === interruptor_ms19.testigo && interruptor_ms19.vivas === 0,
+  `🚨 MS F19, apartado 12 — cuatro toques seguidos dejan el interruptor como estaba: lo que dice (\`aria-checked\`) y lo que se ve (la bola, igual que la de uno apagado) coinciden (${JSON.stringify(interruptor_ms19)})`);
+
+/* 4 · Una cifra 1 → 20 → 5 → 80 → 40 sin esperar (apartado 33). */
+const cuenta_ms19 = await page.evaluate(async () => {
+  const { React, ReactDOM, motion, datos, caja } = window.__lab_ms19;
+  const h = React.createElement;
+  const el = document.createElement('div');
+  caja.appendChild(el);
+  const raiz = ReactDOM.createRoot(el);
+  const base = datos.cuentasActivas();
+  const pintar = (n) => raiz.render(h(motion.CifraQueCambia, { valor: n, modo: 'cuenta' }, String(n)));
+  const leer = () => { const c = el.querySelector('.cifra'); return c ? c.textContent.trim() : null; };
+  const vistos = [];
+  let contando = 0;
+  const mirar = async (ms) => {
+    const fin = performance.now() + ms;
+    while (performance.now() < fin) {
+      await new Promise((r) => requestAnimationFrame(r));
+      vistos.push(leer());
+      if (el.querySelector('.cifra[data-cifra="cuenta"]')) contando += 1;
+    }
+  };
+  pintar(1);
+  await new Promise((r) => setTimeout(r, 60));
+  for (const n of [20, 5, 80, 40]) { pintar(n); await mirar(45); }
+  await mirar(1400);
+  const c = el.querySelector('.cifra');
+  const r = { final: leer(), modo: c && c.dataset.cifra, oculta: c && c.getAttribute('aria-hidden'), srOnly: !!el.querySelector('.sr-only'), contando, base, despues: datos.cuentasActivas(), numeros: vistos.map(Number), malos: vistos.filter((v) => v === null || !Number.isFinite(Number(v))).length };
+  raiz.unmount();
+  el.remove();
+  return r;
+});
+ok(cuenta_ms19.contando > 2, `MS F19 — la cifra CUENTA de verdad mientras cambia (${cuenta_ms19.contando} fotogramas contando): se mide una cuenta interrumpida, no cuatro relevos`);
+ok(cuenta_ms19.final === '40' && cuenta_ms19.modo !== 'cuenta' && cuenta_ms19.oculta === null && !cuenta_ms19.srOnly && cuenta_ms19.despues === cuenta_ms19.base,
+  `🚨 MS F19, apartado 33 — 1 → 20 → 5 → 80 → 40 sin esperar acaba EXACTAMENTE en 40, quieta, una sola cifra que se lee, y suelta su turno de cuenta (${JSON.stringify({ final: cuenta_ms19.final, modo: cuenta_ms19.modo, turnos: `${cuenta_ms19.base} → ${cuenta_ms19.despues}` })})`);
+ok(cuenta_ms19.malos === 0 && cuenta_ms19.numeros.every((v) => v >= 1 && v <= 80),
+  `MS F19 — …y por el camino, ni un fotograma que no sea un número ni uno fuera de lo pedido (de 1 a 80; ${Math.min(...cuenta_ms19.numeros)}-${Math.max(...cuenta_ms19.numeros)})`);
+
+/* 5 · Una lista que inserta, borra, reordena y filtra a la vez (apartado 34). */
+const lista_ms19 = await page.evaluate(async () => {
+  const { React, ReactDOM, layout, caja } = window.__lab_ms19;
+  const h = React.createElement;
+  const el = document.createElement('div');
+  caja.appendChild(el);
+  const raiz = ReactDOM.createRoot(el);
+  const pintar = (ids) => raiz.render(h(layout.ListaAnimada, { className: 'space-y-1' },
+    ids.map((id) => h('div', { key: id, 'data-flip-id': `f19-${id}`, style: { height: '22px' } }, id))));
+  pintar(['a', 'b', 'c', 'd', 'e']);
+  await new Promise((r) => setTimeout(r, 150));
+  for (const paso of [['f', 'a', 'c', 'd', 'e'], ['e', 'd', 'c', 'a', 'f'], ['d', 'a'], ['d', 'g', 'a', 'h']]) {
+    pintar(paso);
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  }
+  const aMitad = el.querySelectorAll('[data-lista-saliendo]').length + [...el.querySelectorAll('[data-flip-id]')].reduce((n, f) => n + f.getAnimations().length, 0);
+  await new Promise((r) => setTimeout(r, 1200));
+  const filas = [...el.querySelectorAll('[data-flip-id]')].filter((f) => !f.closest('[data-lista-saliendo]'));
+  const r = {
+    aMitad, orden: filas.map((f) => f.textContent).join(''), copias: el.querySelectorAll('[data-lista-saliendo]').length,
+    movidas: filas.filter((f) => getComputedStyle(f).transform !== 'none' || getComputedStyle(f).opacity !== '1').length,
+    vivas: filas.reduce((n, f) => n + f.getAnimations().length, 0), repetidas: new Set(filas.map((f) => f.dataset.flipId)).size !== filas.length,
+  };
+  raiz.unmount();
+  el.remove();
+  return r;
+});
+ok(lista_ms19.aMitad > 0, `MS F19 — la lista se estaba moviendo a mitad de los cambios (${lista_ms19.aMitad} animaciones o copias): se mide una lista interrumpida`);
+ok(lista_ms19.orden === 'dgah' && lista_ms19.copias === 0 && lista_ms19.movidas === 0 && lista_ms19.vivas === 0 && !lista_ms19.repetidas,
+  `🚨 MS F19, apartado 34 — insertar, borrar, reordenar y filtrar a la vez deja las filas en el orden de los datos, sin copias que se van, sin transforms y sin repetidas (${JSON.stringify(lista_ms19)})`);
+
+/* 6 · Desmontar una pieza a media animación (apartado 31). */
+const erroresDesmontar_ms19 = errores.length;
+const desmontar_ms19 = await page.evaluate(async () => {
+  const { React, ReactDOM, layout, motion, datos, orq, caja } = window.__lab_ms19;
+  const h = React.createElement;
+  const base = datos.cuentasActivas();
+  const el = document.createElement('div');
+  caja.appendChild(el);
+  const raiz = ReactDOM.createRoot(el);
+  const pintar = (ids, n) => raiz.render(h('div', null,
+    h(motion.CifraQueCambia, { valor: n, modo: 'cuenta' }, String(n)),
+    h(layout.ListaAnimada, null, ids.map((id) => h('div', { key: id, 'data-flip-id': `d19-${id}`, style: { height: '20px' } }, id)))));
+  pintar(['a', 'b', 'c'], 10);
+  await new Promise((r) => setTimeout(r, 150));
+  pintar(['c', 'a'], 500);
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const aMitad = { contando: !!el.querySelector('.cifra[data-cifra="cuenta"]'), copias: el.querySelectorAll('[data-lista-saliendo]').length, turnos: datos.cuentasActivas() - base };
+  raiz.unmount();
+  await new Promise((r) => setTimeout(r, 900));
+  const r = { aMitad, turnos: datos.cuentasActivas() - base, enMarcha: orq.estadoGlobalMotion().enMarcha, copias: document.querySelectorAll('[data-lista-saliendo]').length };
+  el.remove();
+  return r;
+});
+ok(desmontar_ms19.aMitad.contando && desmontar_ms19.aMitad.copias > 0, `MS F19 — al desmontar, la cifra contaba y una fila se estaba yendo (${JSON.stringify(desmontar_ms19.aMitad)})`);
+ok(desmontar_ms19.turnos === 0 && desmontar_ms19.enMarcha === 0 && desmontar_ms19.copias === 0 && errores.length === erroresDesmontar_ms19,
+  `🚨 MS F19, apartado 31 — desmontar a media animación no deja nada: ni un turno de cuenta reservado, ni una animación viva en el orquestador, ni una copia, ni un error (${JSON.stringify(desmontar_ms19)}${errores.length > erroresDesmontar_ms19 ? ` · ${errores.slice(erroresDesmontar_ms19).join(' | ').slice(0, 200)}` : ''})`);
+await page.evaluate(() => { const c = document.getElementById('lab_ms19'); if (c) c.remove(); delete window.__lab_ms19; });
+
+/* 7 · El ancho, seis veces seguidas (apartado 18). */
+for (const [ancho, alto] of [[1280, 900], [375, 667], [1024, 768], [320, 640], [844, 390], [390, 844]]) {
+  await page.setViewportSize({ width: ancho, height: alto });
+  await page.waitForTimeout(40);
+}
+await page.waitForTimeout(800);
+const tamano_ms19 = await page.evaluate(() => {
+  const nav = document.querySelector('nav');
+  const r = nav ? nav.getBoundingClientRect() : null;
+  const finitas = document.getAnimations().filter((a) => a.playState === 'running' && a.effect && Number.isFinite(a.effect.getComputedTiming().endTime));
+  return { sobra: document.documentElement.scrollWidth - window.innerWidth, finitas: finitas.length, nav: r ? Math.round(r.bottom) - window.innerHeight : null };
+});
+const pantallaTamano_ms19 = await pantalla_ms19();
+ok(tamano_ms19.sobra <= 0 && tamano_ms19.finitas === 0 && tamano_ms19.nav !== null && tamano_ms19.nav <= 1 && quieta_ms19(pantallaTamano_ms19),
+  `🚨 MS F19, apartado 18 — seis cambios de ancho seguidos: nada se sale de lado, nada sigue moviéndose con medidas viejas y la barra de abajo está en su sitio (${JSON.stringify({ ...tamano_ms19, pantalla: pantallaTamano_ms19.transform })})`);
+
+/* 8 · Girar tres veces con una hoja abierta (apartado 19). */
+ok(await pulsar('Inicio') && /Hoy|Buenos|Buenas/.test(await esperarTexto(/Hoy|Buenos|Buenas/)), 'MS F19 — Inicio');
+ok(await pulsar('Añadir'), 'MS F19 — el ＋ abierto');
+await page.waitForTimeout(400);
+for (const [ancho, alto] of [[844, 390], [390, 844], [844, 390], [390, 844]]) {
+  await page.setViewportSize({ width: ancho, height: alto });
+  await page.waitForTimeout(140);
+}
+await page.waitForTimeout(700);
+const giro_ms19 = await page.evaluate(() => {
+  const dialogos = [...document.querySelectorAll('[role="dialog"]')].filter((d) => !d.closest('[data-capa-saliendo]'));
+  const d = dialogos[0];
+  const capa = d ? (d.dataset.capa !== undefined ? d : d.closest('[data-capa]')) : null;
+  const caja = capa ? capa.firstElementChild : null;
+  const r = caja ? caja.getBoundingClientRect() : null;
+  return {
+    dialogos: dialogos.length, tipo: capa ? capa.dataset.capa : null, copias: document.querySelectorAll('[data-capa-saliendo]').length,
+    dentro: r ? r.top >= -1 && r.bottom <= window.innerHeight + 1 && r.left >= -1 && r.right <= window.innerWidth + 1 : null,
+    transform: caja ? getComputedStyle(caja).transform : null,
+  };
+});
+ok(giro_ms19.dialogos === 1 && giro_ms19.tipo === 'hoja' && giro_ms19.copias === 0 && giro_ms19.dentro && giro_ms19.transform === 'none',
+  `🚨 MS F19, apartado 19 — girar tres veces con la hoja abierta: una sola, de vuelta a hoja en vertical, dentro de la pantalla y quieta (${JSON.stringify(giro_ms19)})`);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(700);
+
+/* 9 · La cabecera fija con el scroll a tope (apartado 50). */
+await page.setViewportSize({ width: 320, height: 568 });
+ok(await pulsar('Vida') && /Productividad/.test(await esperarTexto(/Productividad/)), 'MS F19 — Vida en un iPhone pequeño');
+await page.waitForTimeout(500);
+const scroll_ms19 = await page.evaluate(async () => {
+  const cab = document.querySelector('.hub-sticky');
+  if (!cab) return null;
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  for (let i = 0; i < 24; i += 1) {
+    window.scrollTo(0, i % 2 ? max : 0);
+    await new Promise((r) => requestAnimationFrame(r));
+  }
+  window.scrollTo(0, max);
+  await new Promise((r) => setTimeout(r, 300));
+  const cs = getComputedStyle(cab);
+  const r = { max, posicion: cs.position, transform: cs.transform, arriba: Math.round(cab.getBoundingClientRect().top) };
+  window.scrollTo(0, 0);
+  return r;
+});
+ok(scroll_ms19 && scroll_ms19.max > 0 && scroll_ms19.posicion === 'sticky' && scroll_ms19.transform === 'none' && Math.abs(scroll_ms19.arriba) <= 1,
+  `🚨 MS F19, apartado 50 — subir y bajar a tope veinticuatro veces deja la cabecera fija arriba, sin transform acumulado (${JSON.stringify(scroll_ms19)})`);
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(300);
+
+/* 10 · Una sesión entera (apartado 56): cada paso con el movimiento de su tipo, y ninguno a medias. */
+const paso_ms19 = (accion) => page.evaluate(async (a) => {
+  const visibles = [...document.querySelectorAll('button')].filter((b) => !b.closest('[inert], [data-capa-saliendo], [data-lista-saliendo]'));
+  const boton = a.selector ? document.querySelector(a.selector)
+    : a.nav ? [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === a.nav)
+      : a.etiqueta ? visibles.find((b) => b.getAttribute('aria-label') === a.etiqueta || b.innerText.trim() === a.etiqueta)
+        : visibles.find((b) => !b.closest('nav') && b.innerText.trim().split('\n')[0].trim() === a.texto);
+  if (!boton) return { sinBoton: a };
+  boton.click();
+  await new Promise((r) => setTimeout(r, 0));
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const p = document.querySelector('.pantalla-segura > [data-navegacion]');
+  return { tipo: p ? p.dataset.navegacion : null, clase: p ? p.className : '', continuidad: p ? p.dataset.continuidad || null : null, nombre: p ? p.getAttribute('aria-label') : null };
+}, accion);
+const CLASE_MS19 = { entrar: 'module-enter', volver: 'nav-vuelve', seccion: 'nav-seccion' };
+const recorrido_ms19 = [];
+const pasos_ms19 = [
+  { que: 'Gestión', accion: { nav: 'Gestión' }, tipo: 'seccion' },
+  { que: 'Organización', accion: { texto: 'Organización' }, tipo: 'entrar' },
+  { que: 'Tareas', accion: { texto: 'Tareas' }, tipo: 'entrar' },
+  { que: 'completar la tarea', accion: { etiqueta: 'Completar Tarea del recorrido F19' }, tipo: null },
+  { que: 'volver', accion: { selector: '.pantalla-segura .back-bar' }, tipo: 'volver' },
+  { que: 'Ajustes', accion: { nav: 'Ajustes' }, tipo: 'seccion' },
+  { que: 'Inicio', accion: { nav: 'Inicio' }, tipo: 'seccion' },
+];
+for (const p of pasos_ms19) {
+  const r = await paso_ms19(p.accion);
+  await page.waitForTimeout(850);
+  const quieta = await pantalla_ms19();
+  const bien = !r.sinBoton && quieta_ms19(quieta) && (p.tipo === null || (r.tipo === p.tipo && (r.continuidad ? !/module-enter|nav-vuelve|nav-seccion/.test(r.clase) : r.clase.includes(CLASE_MS19[p.tipo]))));
+  recorrido_ms19.push({ que: p.que, bien, tipo: r.tipo, continuidad: r.continuidad, sinBoton: !!r.sinBoton });
+}
+const tareaGuardada_ms19 = ((almacen.productividad || {}).tareas || []).find((t) => t.id === 'ta_ms19');
+ok(recorrido_ms19.every((x) => x.bien) && tareaGuardada_ms19 && tareaGuardada_ms19.hecha === true,
+  `🚨 MS F19, apartado 56 — una sesión entera (Gestión → Organización → Tareas → completar y guardar → volver → Ajustes → Inicio): cada paso con el movimiento de su tipo y ninguno a medias (${JSON.stringify(recorrido_ms19.filter((x) => !x.bien))}; guardada: ${!!(tareaGuardada_ms19 && tareaGuardada_ms19.hecha)})`);
+
+/* 11 · La cámara lenta (apartados 41 y 42): solo en desarrollo, con la marca. */
+const camara_ms19 = await page.evaluate(async () => {
+  if (!window.__motion || typeof window.__motion.camaraLenta !== 'function') return null;
+  const fotogramas = (n) => new Promise((r) => { const paso = (k) => (k ? requestAnimationFrame(() => paso(k - 1)) : r()); paso(n); });
+  const nav = (t) => [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === t);
+  const veces = window.__motion.camaraLenta(4);
+  nav('Vida').click();
+  await new Promise((r) => setTimeout(r, 0));
+  await fotogramas(3);
+  const p = document.querySelector('.pantalla-segura > [data-navegacion]');
+  const lenta = p ? p.getAnimations().filter((a) => a.playState === 'running').map((a) => a.playbackRate) : [];
+  const vuelta = window.__motion.camaraLenta(1);
+  const tras = p ? p.getAnimations().map((a) => a.playbackRate) : [];
+  await new Promise((r) => setTimeout(r, 900));
+  nav('Gestión').click();
+  await new Promise((r) => setTimeout(r, 0));
+  await fotogramas(3);
+  const p2 = document.querySelector('.pantalla-segura > [data-navegacion]');
+  const normal = p2 ? p2.getAnimations().filter((a) => a.playState === 'running').map((a) => a.playbackRate) : [];
+  return { veces, lenta, vuelta, tras, normal };
+});
+ok(camara_ms19 && camara_ms19.veces === 4 && camara_ms19.lenta.length > 0 && camara_ms19.lenta.every((r) => r === 0.25),
+  `🔓 MS F19, apartados 41 y 42 — \`window.__motion.camaraLenta(4)\` pone a un cuarto lo que mueve el CSS al cambiar de sección (${JSON.stringify(camara_ms19)})`);
+ok(camara_ms19 && camara_ms19.vuelta === 1 && camara_ms19.tras.every((r) => r === 1) && camara_ms19.normal.length > 0 && camara_ms19.normal.every((r) => r === 1),
+  `MS F19 — …y \`camaraLenta(1)\` lo devuelve a su ritmo, también lo que empieza después: sus escuchadores ya no están (${JSON.stringify(camara_ms19 && { tras: camara_ms19.tras, normal: camara_ms19.normal })})`);
+await page.waitForTimeout(700);
+
+/* 12 · La aplicación entera con «Reducir movimiento» (apartado 26). */
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const bucles_ms19 = await page.evaluate(async () => (await import('/src/lib/accesibilidadMotion.js')).BUCLES_INFINITOS.map((b) => b.keyframe));
+const vigilar_ms19 = (accion) => page.evaluate(async ({ a, permitidos }) => {
+  if (a) {
+    const visibles = [...document.querySelectorAll('button')].filter((b) => !b.closest('[inert], [data-capa-saliendo], [data-lista-saliendo]'));
+    const boton = a.selector ? document.querySelector(a.selector)
+      : a.nav ? [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === a.nav)
+        : a.etiqueta ? visibles.find((b) => b.getAttribute('aria-label') === a.etiqueta || b.innerText.trim() === a.etiqueta)
+          : visibles.find((b) => !b.closest('nav') && b.innerText.trim().split('\n')[0].trim() === a.texto);
+    if (!boton) return { sinBoton: a };
+    boton.click();
+  }
+  const vistos = new Map();
+  const bucles = new Set();
+  const fin = performance.now() + 500;
+  while (performance.now() < fin) {
+    document.getAnimations().forEach((an) => {
+      if (an.playState !== 'running' || !an.effect || !an.effect.target) return;
+      const t = an.effect.target;
+      const nombre = an.animationName || an.transitionProperty || an.id || 'waapi';
+      if (an.effect.getComputedTiming().iterations === Infinity && !permitidos.includes(an.animationName)) bucles.add(nombre);
+      const clave = `${nombre}@${t.tagName}.${String(t.className && t.className.baseVal !== undefined ? t.className.baseVal : t.className).slice(0, 40)}`;
+      if (!vistos.has(clave)) vistos.set(clave, new Set());
+      vistos.get(clave).add(getComputedStyle(t).transform);
+    });
+    await new Promise((r) => requestAnimationFrame(r));
+  }
+  return { motion: document.documentElement.dataset.motion, movidas: [...vistos].filter(([, v]) => v.size > 1).map(([k, v]) => `${k}: ${[...v].slice(0, 3).join(' | ')}`), bucles: [...bucles] };
+}, { a: accion, permitidos: bucles_ms19 });
+const reducido_ms19 = [];
+for (const [que, accion] of [['Inicio', null], ['Vida', { nav: 'Vida' }], ['Productividad', { texto: 'Productividad' }], ['volver', { selector: '.pantalla-segura .back-bar' }], ['Gestión', { nav: 'Gestión' }], ['Inicio otra vez', { nav: 'Inicio' }], ['el ＋', { etiqueta: 'Añadir' }]]) {
+  const r = await vigilar_ms19(accion);
+  reducido_ms19.push({ que, ...r });
+  await page.waitForTimeout(350);
+}
+await page.keyboard.press('Escape');
+await page.waitForTimeout(500);
+const malReducido_ms19 = reducido_ms19.filter((r) => r.sinBoton || r.motion !== 'reducido' || r.movidas.length || r.bucles.length);
+ok(malReducido_ms19.length === 0,
+  `🚨 MS F19, apartado 26 — la aplicación entera en Reducido (${reducido_ms19.map((r) => r.que).join(' → ')}): mientras algo se anima no se desplaza ni escala nada, y lo único que repite sin fin son los bucles declarados (${JSON.stringify(malReducido_ms19).slice(0, 600)})`);
+
+ok(errores.length === erroresAntes_ms19, `MS F19 — …sin un error en la consola en toda la sección${errores.length > erroresAntes_ms19 ? `: ${errores.slice(erroresAntes_ms19).join(' | ').slice(0, 200)}` : ''}`);
+await page.evaluate(() => { try { localStorage.removeItem('josstyle:motion-debug'); } catch { /* sin almacenamiento */ } });
+almacen.ajustes = ajustesDeAntes_ms19;
+almacen.productividad = productividadDeAntes_ms19;
 
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });

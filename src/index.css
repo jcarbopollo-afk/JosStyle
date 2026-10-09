@@ -1306,13 +1306,16 @@ html[data-motion='reducido'] .esqueleto {
 /* 🔓 MS F18 (apartado 20) — UN ICONO QUE CAMBIA DE SENTIDO NO SALTA: play ↔ pausa, ⋯ ↔ ✕, ＋ ↔ ✓. Lo pone
    `IconoQueCambia` (src/components/motion.jsx) en el envoltorio del icono NUEVO, solo cuando cambia después
    de pintarse (al abrir la pantalla no se mueve nada): aparece en el sitio del de antes, con un pellizco de
-   escala de marca (F1, `TOPES_ESCALA.marca`). En Reducido la escala vale 1 y solo se funde. */
-@keyframes iconoCambia {
+   escala de marca (F1, `TOPES_ESCALA.marca`). En Reducido la escala vale 1 y solo se funde.
+   🐛 MS F19 (apartado 8) — la F18 le escribió su propio `@keyframes`, idéntico fotograma a fotograma al
+   del ✓ de una serie de Fitness: los dos son UNA marca que aparece en su sitio, y comparten
+   `marcaAparece` (lo caza `auditarKeyframes`, que compara los cuerpos). */
+@keyframes marcaAparece {
   from { opacity: var(--motion-opac-subtle); transform: scale(var(--motion-escala-hero)); }
   to { opacity: 1; transform: none; }
 }
 .icono-cambia {
-  animation: iconoCambia var(--motion-dur-fast) var(--motion-curva-entrance) backwards;
+  animation: marcaAparece var(--motion-dur-fast) var(--motion-curva-entrance) backwards;
 }
 
 /* Entrega 3 · F24 (PR F2) — Hábitos.
@@ -1448,13 +1451,10 @@ html[data-motion='reducido'] .esqueleto {
   transition: width var(--motion-dur-medium) var(--ease-premium);
 }
 
-/* Apartado 8 — la marca de una serie hecha aparece, sin confeti. */
-@keyframes fitSerieHecha {
-  from { opacity: var(--motion-opac-subtle); transform: scale(var(--motion-escala-hero)); }
-  to { opacity: 1; transform: none; }
-}
+/* Apartado 8 — la marca de una serie hecha aparece, sin confeti. Con `marcaAparece`, los mismos
+   fotogramas que un icono que cambia (MS F19: eran dos `@keyframes` iguales). */
 .fit-serie-hecha {
-  animation: fitSerieHecha var(--motion-dur-fast) var(--ease-premium) backwards;
+  animation: marcaAparece var(--motion-dur-fast) var(--ease-premium) backwards;
 }
 
 /* Apartado 10 — la miniatura del ejercicio actual crece y la anterior se

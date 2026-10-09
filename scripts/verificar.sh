@@ -1047,6 +1047,15 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f18.mjs >/tmp/j
 else
   fallo "Falla el pulido y el lenguaje del Motion System (F18)"; grep '✗' /tmp/jc_motion_f18.log
 fi
+# Motion System F19 — el QA: la matriz (cada fila buscada en su archivo), la regresión de las diecinueve
+# fases, las primitivas por sus propiedades, los tokens, los @keyframes, el mapa contra el CSS, las
+# máquinas de estado enteras, los muelles con valores imposibles, las capas contra los imports de verdad y
+# la cámara lenta. Lo que necesita fotogramas está en la sección «MS F19» del recorrido.
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f19.mjs >/tmp/jc_motion_f19.log 2>&1; then
+  ok "El Motion System, F19: el QA del sistema entero —la matriz con su prueba, la regresión de cada fase, las primitivas por sus propiedades, los tokens y los @keyframes sin un fallo, el mapa contra el CSS, las máquinas de estado recorridas, los muelles imposibles, las capas y la cámara lenta— — $(grep -c '✓' /tmp/jc_motion_f19.log) comprobaciones"
+else
+  fallo "Falla el QA del Motion System (F19)"; grep '✗' /tmp/jc_motion_f19.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

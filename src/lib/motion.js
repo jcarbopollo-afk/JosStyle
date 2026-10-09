@@ -115,13 +115,28 @@ export const SPRINGS_MOTION = {
 /** La amortiguación relativa ζ de un muelle: < 1 rebota, ≥ 1 no. */
 export const amortiguacionRelativa = (s) => s.amortiguacion / (2 * Math.sqrt(s.rigidez * s.masa));
 
+/* 🐛 MS F19 (apartado 16) — un muelle no puede devolver un fotograma que no sea un número. Con una
+   velocidad, un origen o un destino `NaN`, o una masa a 0, salían 73 fotogramas `NaN` (un `translateY(NaNpx)`
+   en la Web Animations API); con `fps` a 0, una duración `Infinity`; y con una amortiguación negativa, una
+   oscilación que crecía hasta 16 veces su recorrido. Ningún camino de la aplicación lo pide hoy —las
+   velocidades del dedo ya llegan limpias (`velocidadDeMuestras`)—, pero el motor es de todos: lo que no es
+   un muelle (rigidez, amortiguación o masa que no sean positivas) es el `normal`, y lo que no es un número
+   no entra. */
+const muelleValido = (s) => !!s && [s.rigidez, s.amortiguacion, s.masa].every((n) => Number.isFinite(n) && n > 0);
+
 /**
  * Simula un muelle de `desde` a `hasta` y devuelve sus valores a 60 fps hasta
  * que se queda quieto, con su duración. Es lo que la Web Animations API recibe
  * como fotogramas: un spring de verdad sin una librería.
  */
-export function muestrearSpring(spring, { desde = 0, hasta = 1, velocidad = 0, fps = 60, maxMs = 1200, reposo = null } = {}) {
-  const s = SPRINGS_MOTION[spring] || spring || SPRINGS_MOTION.normal;
+export function muestrearSpring(spring, { desde: desdePedido = 0, hasta: hastaPedido = 1, velocidad: velocidadPedida = 0, fps: fpsPedidos = 60, maxMs: maxPedido = 1200, reposo = null } = {}) {
+  const pedido = SPRINGS_MOTION[spring] || spring;
+  const s = muelleValido(pedido) ? pedido : SPRINGS_MOTION.normal;
+  const hasta = Number.isFinite(hastaPedido) ? hastaPedido : (Number.isFinite(desdePedido) ? desdePedido : 0);
+  const desde = Number.isFinite(desdePedido) ? desdePedido : hasta;
+  const velocidad = Number.isFinite(velocidadPedida) ? velocidadPedida : 0;
+  const fps = Number.isFinite(fpsPedidos) && fpsPedidos > 0 ? fpsPedidos : 60;
+  const maxMs = Number.isFinite(maxPedido) && maxPedido > 0 ? maxPedido : 1200;
   const dt = 1 / fps;
   let x = desde - hasta;
   let v = velocidad;

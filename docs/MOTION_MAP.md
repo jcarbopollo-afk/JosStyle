@@ -52,14 +52,14 @@
 | El velo de una hoja se aclara mientras se arrastra | H | 2 · Suave | 220 ms | ✅ Existe | F8 |
 | Todas las capas: ventanas, hojas, pantallas por encima y visores (unas 40) | G | 2 · Suave | 220 ms | ✅ Existe | F6 |
 | El aviso de «añadido» (y los de Fitness) | Q | 2 · Suave | 280 ms | ✅ Existe | F9 |
-| Menús «⋯» y desplegables | I | 1 · Micro | 220 ms | ✅ Existe | F6 |
+| Menús «⋯» y desplegables | I | 1 · Micro | 160 ms | ✅ Existe | F6 |
 | Un panel que nace de su botón (las sugerencias) | I | 2 · Suave | 160 ms | ✅ Existe | F6 |
 | Completar una tarea | J | 2 · Suave | 280 ms | ✅ Existe | F9 |
 | Completar un hábito | J | 2 · Suave | 280 ms | ✅ Existe | F9 |
 | Terminar una rutina | Q | 3 · Protagonista | 420 ms | ✅ Existe | F9 |
 | Marcar una serie | J | 1 · Micro | 160 ms | ✅ Existe | F9 |
 | Borrar, añadir, completar o filtrar en una lista | J | 2 · Suave | 220 ms | ✅ Existe | F10 |
-| Lo que se abre y se cierra en su sitio (Plegable) | C | 2 · Suave | 220 ms | ✅ Existe | F10 |
+| Lo que se abre y se cierra en su sitio (Plegable) | C | 2 · Suave | 280 ms | ✅ Existe | F10 |
 | Gráficas de Recharts (Salud, Nutrición, Sueño) | K | 3 · Protagonista | 420 ms | ✅ Existe | F4 |
 | Una cifra que sube | K | 1 · Micro | 220 ms | ✅ Existe | F4 |
 | Una cifra que baja | K | 1 · Micro | 220 ms | ✅ Existe | F4 |
@@ -573,14 +573,14 @@
 | Salida | Se encoge y después se desmonta |
 | Interacción | — |
 | Transición | grid-template-rows |
-| Duración | 220 ms |
+| Duración | 280 ms |
 | Curva | --motion-curva-smooth |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
 | Intensidad | 2 · Suave |
 | Prioridad | media |
-| Relación | La técnica de los acordeones de Inicio (SC F1), con `min-height: 0` para Safari. |
+| Relación | La técnica de los acordeones de Inicio (SC F1), con `min-height: 0` para Safari. Abre en `medium` y cierra en `fast` (F14): la duración de aquí es la de abrir. 🐛 MS F19 — decía 220, la de antes de la F14 (lo caza `auditarPropiedad`). |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Cambia de altura sin animarse. |
@@ -898,7 +898,7 @@
 | Ubicación | src/components/motion.jsx (IconoQueCambia) · src/index.css |
 | Componente | IconoQueCambia |
 | Clase CSS | `.icono-cambia` |
-| @keyframes | `iconoCambia` |
+| @keyframes | `marcaAparece` |
 | En ANIMACIONES_HC | — |
 | Función | Que el icono nuevo aparezca en el sitio del de antes en vez de sustituirse de golpe (apartado 20 de la F18). |
 | Estado inicial | El icono nuevo medio visible y al 0,82 |
@@ -1215,14 +1215,14 @@
 | Salida | Se pliegan |
 | Interacción | — |
 | Transición | — |
-| Duración | 220 ms |
+| Duración | 160 ms |
 | Curva | --motion-curva-entrance |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | media |
-| Relación | — |
+| Relación | 🐛 MS F19 — decía 220, y la clase que lo mueve (`despliegue-entra`) va en `fast` desde la F3: el mapa contaba otra duración que la del CSS (lo caza `auditarPropiedad`). |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
@@ -1388,7 +1388,7 @@
 | Ubicación | src/index.css |
 | Componente | — |
 | Clase CSS | `.fit-serie-hecha` |
-| @keyframes | `fitSerieHecha` |
+| @keyframes | `marcaAparece` |
 | En ANIMACIONES_HC | `fit_serie` |
 | Función | Una serie del entrenamiento en vivo hecha. |
 | Estado inicial | — |
@@ -1732,7 +1732,7 @@
 | Interacción | — |
 | Transición | Cuenta por fotogramas (`requestAnimationFrame`) o relevo (`cifra-sube` / `cifra-baja`) |
 | Duración | 220 ms |
-| Curva | --motion-curva-standard |
+| Curva | --ease-premium |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |

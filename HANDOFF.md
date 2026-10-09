@@ -2,6 +2,15 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.149.0 — Motion System F19/20: pruebas extremas del movimiento):**
+> El movimiento se ha forzado entero donde se rompen las aplicaciones de verdad: dos pantallas pulsadas seguidas,
+> volver mientras se entra, un interruptor tocado cuatro veces, una cifra que cambia cuatro veces sin esperar (acaba
+> en su número), una lista que hace de todo a la vez, girar el teléfono con una hoja abierta y la aplicación entera
+> con «Reducir movimiento». Encontró cuatro cosas, ninguna grave, y quedan arregladas: una animación escrita dos
+> veces, el mapa del movimiento que decía otras duraciones que las de verdad, el estado «Sin conexión» al que no se
+> llegaba nunca y un muelle que con datos imposibles daba fotogramas rotos. **La siguiente es la F20**, la última:
+> los contratos y el sellado del sistema.
+
 > **📅 ACTUALIZACIÓN (v3.148.0 — Motion System F18/20: el movimiento revisado como un todo):**
 > Nada nuevo de adorno: se ha revisado todo lo que se mueve. El ✓ de una tarea o de un hábito ya no late al abrir la
 > pantalla —latían todas las hechas a la vez— y sí al marcarlo; play ↔ pausa y el menú ⋯ ↔ ✕ ya no saltan; la barra

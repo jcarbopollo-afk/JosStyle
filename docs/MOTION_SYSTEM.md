@@ -869,6 +869,38 @@ La F18 **no añade animaciones**: revisa lo que construyeron la F0 a la F17 y lo
 - 🐛 **De paso:** los dos botones del temporizador de concentración (Bienestar digital) eran de solo icono **sin
   `aria-label`**, y la casilla de un paso de progresión decía siempre «Marcar hecho» sin decir si lo estaba.
 
+## 8.18 · El QA: el sistema forzado y vigilado (F19)
+
+> *"Sí, sabemos cómo se mueve la aplicación, por qué se mueve, quién controla ese movimiento y cómo sabemos que
+> sigue funcionando."* (resultado esperado de la F19)
+
+Dieciocho fases dejaron cada una su suite y su sección del recorrido. La F19 mira **el sistema entero** —lo que
+ninguna fase podía ver desde la suya— y lo fuerza donde se rompen los sistemas de verdad. Vive en
+`src/lib/qaMotion.js` (que la aplicación no importa: lo comprueba la propia prueba recorriendo los imports).
+
+- **Lo que encontró, y se arregló en la fase** (`HALLAZGOS_F19`, clasificados P0-P3; ninguno P0 ni P1):
+  - 🐛 **Dos `@keyframes` iguales** (P3): el `iconoCambia` de la F18 era fotograma a fotograma el `fitSerieHecha`
+    del ✓ de una serie. Ahora los dos son `marcaAparece`.
+  - 🐛 **El mapa contaba otra duración que el CSS** (P2): los menús «⋯» decían 220 ms y su clase va en 160 desde la
+    F3; `Plegable` decía 220 y desde la F14 abre en 280. Y las cifras nombraban una curva que **no existe** en el
+    CSS (`--motion-curva-standard`: la estándar se llama `--ease-premium`).
+  - 🐛 **«Sin conexión» era inalcanzable** (P2): estaba declarado en la máquina asíncrona de la F16 y ningún evento
+    llevaba a él. `sinConexion` lleva ahí desde el reposo, lo cargado, lo guardado, lo cancelado y lo pendiente.
+  - 🐛 **Un muelle podía devolver `NaN`** (P3): con una velocidad, un origen o un destino que no son números, o una
+    masa a 0, `muestrearSpring` daba 73 fotogramas `NaN`; con `fps` 0, una duración infinita; con una amortiguación
+    negativa, una oscilación que crecía. Ningún camino lo pedía hoy; el motor es de todos y ya no entra.
+- **Lo que mira en Node** (`auditoriaQA`, trece cuentas a cero): referencias a tokens que nadie define, tokens
+  repetidos, literales sueltos (clasificados uno a uno), `@keyframes` repetidos, sin uso, complejos o que no
+  reposan, el mapa contra el CSS, las máquinas de estado recorridas enteras, los muelles con valores imposibles, las
+  capas contra los imports, la matriz de QA con su prueba y la regresión de las diecinueve fases.
+- **Lo que fuerza en Chromium** (la sección «MS F19»): dos navegaciones antes de que acabe la primera, volver
+  mientras se entra, un interruptor tocado cuatro veces, una cifra 1 → 20 → 5 → 80 → 40 (acaba en 40), una lista que
+  inserta, borra, reordena y filtra a la vez, una pieza desmontada a media animación, el ancho cambiado seis veces,
+  una hoja abierta mientras se gira, la cabecera fija con el scroll a tope, una sesión entera y la aplicación en
+  Reducido. El **laboratorio** monta las piezas de verdad con la React de la aplicación.
+- **Las herramientas nuevas, solo de desarrollo**: `window.__motion.camaraLenta(4)` (todo a un cuarto) e
+  `inspeccionarTodo()` (lo que se mueve en la página, con su dueño).
+
 ## Jos Style Motion Language
 
 Lo que hace que el movimiento sea reconociblemente de JosStyle, dicho una vez. Cada afirmación tiene detrás una
@@ -958,6 +990,76 @@ inventado, ni un segundo sistema de movimiento. Cada uno lo caza una auditoría,
 
 Si no aporta valor, no se implementa. Cada pregunta tiene quién la contesta en `REGLA_PERMANENTE_MOTION`.
 
+## Motion QA
+
+La estrategia de pruebas del movimiento, y lo que hay que hacer con una pieza nueva (F19, apartados 58 y 69).
+
+### La estrategia
+
+Tres niveles, y cada uno mira lo que los otros no pueden:
+
+1. **Node** (`scripts/test-motion-f0.mjs` … `test-motion-f19.mjs`): las reglas, las tablas, las auditorías que
+   leen el código y las primitivas **por sus propiedades** (una curva nunca se pasa de 1, una cifra acaba exactamente
+   en su valor, una cascada nunca pasa de seis escalones, una escala nunca pasa de sus techos). Cada auditoría trae
+   su **ejemplo malo** y la suite comprueba que lo caza: una prueba que no puede ponerse roja no prueba nada.
+2. **El banco de renderizado** (`scripts/smoke.mjs`): cada vista se pinta.
+3. **El recorrido de Chromium** (`scripts/test-app-real.mjs`), una sección por fase: lo que solo se ve con
+   fotogramas de verdad. **`verificar.sh` en verde es la puerta de `main`.**
+
+`auditoriaQA({ css, archivos, verificar, recorrido })` junta en un informe las trece cosas que se miran en Node, y
+tiene que salir a cero.
+
+### La matriz
+
+`MATRIZ_QA_MOTION` (`src/lib/qaMotion.js`): interacción × estado × dispositivo × entrada × preferencia × resultado
+esperado, con su prioridad (de la interacción crítica a lo decorativo, apartado 54) y **dónde se prueba**. La suite
+busca cada comprobación en su archivo: una fila que dice estar probada y no lo está pone la suite roja. Y
+`REGRESION_POR_FASE` dice la suite y la sección de cada una de las diecinueve fases.
+
+### Las pruebas en Reducido
+
+`page.emulateMedia({ reducedMotion: 'reduce' })` en el recorrido. La sección «MS F19» recorre la aplicación en
+Reducido mirando cada animación viva: **mientras algo se anima, nada cambia de `transform`** (ni desplazamiento ni
+escala), y lo único que repite sin fin son los bucles declarados (`BUCLES_INFINITOS`, F12). Una regla nueva de
+`index.css` que se desplace tiene que quedarse quieta en Reducido.
+
+### La matriz de tamaños
+
+`CONTEXTOS_FISICOS` (F15): del iPhone de 320 al escritorio, en vertical y en horizontal. La F19 añade el estrés:
+seis cambios de ancho seguidos y tres giros con una hoja abierta.
+
+### El rendimiento
+
+Lo caro se declara (`COSTES_DECLARADOS`, F13); `window.__motion.fotogramas` mide; ninguna animación sin limpiar
+(`auditarOrquestacion`, F11). El presupuesto de un fotograma es la referencia (16,7 ms a 60 Hz, 8,3 a 120), no una
+obsesión.
+
+### Las herramientas de depuración
+
+Solo en desarrollo, con `localStorage["josstyle:motion-debug"] = "1"`:
+
+- `window.__motion.estado()` y `diario()` — qué se mueve y qué ha pasado (F11).
+- `window.__motion.inspeccionar(el)` — qué mueve un elemento, con sus tokens (F18).
+- `window.__motion.inspeccionarTodo()` — lo mismo para toda la página (F19).
+- `window.__motion.camaraLenta(4)` — todo a un cuarto (hasta ×10); `camaraLenta(1)` lo devuelve (F19). Revela
+  saltos, curvas malas y carreras: lo que espera con un reloj en vez de con `finished` se adelanta.
+
+### Las limitaciones conocidas
+
+- **Todo corre en Chromium y la aplicación se usa en un iPhone** (SF F1): lo que Safari resuelve distinto sale verde
+  aquí. La pasada a mano —tocar, deslizar, girar— es de Josué (R1).
+- **No hay capturas de pantalla**: no hay infraestructura y no se instala (apartado 1). Lo visual se mide con estilos
+  calculados y rectángulos.
+- **Ni lint ni tipos** (FIT F35 y F44), y **ni integración continua**: la puerta es `verificar.sh`.
+- **Un aparato de gama baja de verdad** no se puede probar aquí: la calidad se rebaja por lo que se mide (F13).
+
+### La regla permanente (apartado 69)
+
+Toda función nueva que se mueva pasa, como mínimo, por: **una prueba funcional** (su suite), **una de tamaños**
+(`CONTEXTOS_FISICOS`), **una con «Reducir movimiento»** (su regla quieta en Reducido), **una de rendimiento** (si
+repinta o recoloca, `COSTES_DECLARADOS`) y **una mirada visual** (su entrada en `MOTION_MAP` coincidiendo con el CSS,
+que vigila `auditarPropiedad`, y una fila en `MATRIZ_QA_MOTION` si es una interacción).
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en
@@ -976,6 +1078,12 @@ Si no aporta valor, no se implementa. Cada pregunta tiene quién la contesta en 
 - **Los gestos (F5)** tienen el mismo reparto: los números en `src/lib/umbralesGesto.js` (no importa nada,
   así que también lo lee Fitness), las decisiones en `src/lib/gestosMotion.js` (Node) y lo que toca el DOM
   —seguir al dedo con `transform` y soltar con la Web Animations API— en `src/components/gestosMotion.jsx`.
+- **Las capas, comprobadas contra los imports** (F19, apartado 68, C-68): hojas (el orquestador y las tablas
+  compartidas, que no importan nada del movimiento) → el motor → los sistemas → las piezas; nadie importa hacia
+  arriba, y las auditorías (el mapa, el lenguaje, el pulido y el QA) no las importa la aplicación. Una animación
+  va por el camino del enunciado —pieza → motor (con los tokens) → orquestador—, y los imports van al revés,
+  que es lo correcto: el orquestador recibe valores ya resueltos. Un archivo `*Motion*` nuevo sin capa (un
+  sistema paralelo) pone la suite roja (`CAPAS_MOTION`, `auditarCapas`).
 - **Tailwind**: las clases `transition-*` usan por defecto el token `fast` y `--ease-premium`
   (`tailwind.config.js`), así que también respetan los modos.
 
@@ -1001,6 +1109,9 @@ Si no aporta valor, no se implementa. Cada pregunta tiene quién la contesta en 
   gasto, el vacío que entra, la línea de Sueño que se mueve ~420 ms (antes 1,5 s) y, en Reducido, una
   línea quieta y una cifra que se releva.
 - `docs/MOTION_MAP.md` se genera del mapa y la prueba lo compara con el archivo.
+- La sección «MS F19» del recorrido fuerza el sistema entero: interrumpir, repetir, desmontar, girar, cambiar el
+  ancho, Reducido y una sesión entera, con el laboratorio que monta las piezas de verdad. `auditoriaQA` (F19) junta
+  en Node lo demás: tokens, `@keyframes`, el mapa contra el CSS, las máquinas de estado, los muelles y las capas.
 - La sección «MS F15» del recorrido mide las áreas seguras de los lados y del pie con las variables que pondría un
   iPhone, los once contextos de `CONTEXTOS_FISICOS`, «Reducir movimiento» en tres tamaños, girar a mitad de la
   entrada de una capa (lo que viaja se asienta y la capa sale con su forma nueva), redimensionar a golpes, el

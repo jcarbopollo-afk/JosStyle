@@ -1521,3 +1521,18 @@ que rebota—, que es lo que demuestra que `muelleSinRebote` sabe ponerse rojo.
 (`src/lib/pulidoMotion.js`), y la suite de la F18 exige que los tokens sin uso sean **exactamente** esos. Lo que el
 apartado 53 protege —que no se acumulen tokens muertos— queda como un trinquete: el día que otro token deje de usarse
 sin declararlo, la verificación se pone roja.
+
+
+### C-68 — ✅ RESUELTA AL CONSTRUIR (Motion System F19, v3.149.0) · La flecha de la arquitectura del apartado 68 contra la dirección de los imports
+
+La F19 (apartado 68) pide comprobar una arquitectura *"Motion Tokens → Motion Engine → Motion Orchestrator → Component
+/ Interaction → Layout / Data / Navigation"*, y la F11 dejó escrito —con su prueba— que **el orquestador no importa
+nada**: es una hoja del árbol de imports, y el motor (`motion.js`, con los tokens dentro) lo importa a él. Leída como
+«quién importa a quién», la flecha diría lo contrario: que el orquestador importe el motor.
+
+**La lectura que respeta las dos:** la flecha es **por dónde pasa una animación**, y en JosStyle se cumple tal cual
+—una pieza pide al motor un preset con sus tokens resueltos y el motor anima a través del orquestador—. Los imports
+van **al revés que ese camino**, y es lo que hace que no haya ciclos: el orquestador recibe valores ya resueltos, así
+que no necesita conocer los tokens. `CAPAS_MOTION` (`src/lib/qaMotion.js`) lo deja comprobado contra los imports de
+verdad: hojas → motor → sistemas → piezas, nadie importa hacia arriba, las auditorías no las importa la aplicación y
+un archivo de movimiento nuevo sin capa pone la suite roja (*"sin sistemas paralelos innecesarios"*).

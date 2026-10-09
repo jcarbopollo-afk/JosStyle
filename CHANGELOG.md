@@ -1,5 +1,83 @@
 # CHANGELOG.md
 
+## v3.149.0 — Motion System F19/20: testing extremo, validación, regresión y motion QA automatizado
+
+La F19 del Motion System (*"Testing extremo, validación, regresión y motion QA automatizado"*, líneas 2242–3117 de
+`especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). Dieciocho fases dejaron cada una su suite y su sección del recorrido;
+lo que faltaba era mirar **el sistema entero** —lo que ninguna podía ver desde la suya— y forzarlo donde se rompen los
+sistemas de verdad: interrumpido, repetido, a medias, girando y con valores imposibles. Vive en `src/lib/qaMotion.js`
+(que la aplicación no importa) y en la sección «MS F19» del recorrido. **No se instala ninguna herramienta**
+(apartado 1): ni un framework de pruebas, ni lint, ni capturas.
+
+### Lo que encontró, y se arregló en la fase (apartados 66 y 67)
+
+Clasificado de P0 (bloquea) a P3 (pulido). **Ninguno P0 ni P1.**
+
+- 🐛 **Dos `@keyframes` iguales** (P3, `auditarKeyframes`): el `iconoCambia` que escribió la F18 era, fotograma a
+  fotograma, el `fitSerieHecha` del ✓ de una serie de Fitness. Son los dos **una marca que aparece en su sitio**, y
+  ahora comparten `marcaAparece`.
+- 🐛 **El mapa contaba otras duraciones que el CSS** (P2, `auditarPropiedad`): los menús «⋯» decían 220 ms y su clase
+  (`despliegue-entra`) va en `fast` (160) desde la F3; `Plegable` decía 220, la de antes de la F14, que abre en
+  `medium` (280). Y las cifras nombraban la curva `--motion-curva-standard`, que **no existe** en el CSS (la estándar
+  se llama `--ease-premium`; `standard` es su nombre en `motion.js`). `docs/MOTION_MAP.md`, regenerado.
+- 🐛 **«Sin conexión» era inalcanzable** (P2, `recorrerMaquina`): la máquina asíncrona de la F16 lo declaraba y
+  ningún evento llevaba a él, y la operación de la conexión decía pasar por «Reintentando», que es de una carga.
+  `sinConexion` lleva ahí desde el reposo, lo cargado, lo guardado, lo cancelado y lo pendiente; la conexión pasa
+  por «Guardando».
+- 🐛 **Un muelle podía devolver fotogramas `NaN`** (P3, `barridoDeMuelles`): con una velocidad, un origen o un
+  destino que no son números, o una masa a 0, `muestrearSpring` daba 73 fotogramas `NaN`; con `fps` 0, una duración
+  infinita; con una amortiguación negativa, una oscilación que crecía hasta 16 veces su recorrido. Ningún camino de
+  la aplicación lo pedía (las velocidades del dedo ya llegan limpias); el motor es de todos y ahora no entra. Con
+  valores de verdad, **ni un fotograma cambia**.
+
+### Lo que mira en Node (`auditoriaQA`, trece cuentas a cero)
+
+- **La infraestructura** (apartado 1) dicha por su nombre, con lo que no hay (lint, tipos, CI, capturas) y por qué.
+- **La matriz de QA** (apartados 2 y 54): 25 filas —interacción, estado, dispositivo, entrada, preferencia y
+  resultado— con su prioridad y **dónde se prueba**; la suite busca cada comprobación en su archivo.
+- **La regresión** (apartado 57): la suite, su línea en `verificar.sh` y la sección del recorrido de cada una de las
+  diecinueve fases.
+- **Las primitivas por sus propiedades** (apartado 3): ninguna curva se pasa de 1 ni retrocede, una cifra acaba
+  exactamente en su valor, una cascada no pasa de seis escalones, una escala no pasa de sus techos, el FLIP devuelve
+  la fila a donde estaba.
+- **Los tokens** (apartados 4-7): ni una `var(--…)` que no defina nadie, ni dos tokens de una familia con el mismo
+  valor, y los literales que hay (los de «Sin movimiento» y un retraso a cero) clasificados uno a uno. `transition:
+  all`, cero.
+- **Los `@keyframes`** (apartado 8): repetidos, sin uso, de más de cuatro paradas o entradas que no reposan.
+- **De quién es cada animación** (apartado 9): el mapa contra el CSS que la mueve.
+- **Las máquinas de estado** (apartado 10): la presencia, el gesto y la asíncrona, recorridas enteras.
+- **Los muelles** (apartado 16): cada uno, en los dos sentidos, a tope y con entradas imposibles.
+- **La carrera** (apartados 36 y 38): tres peticiones que contestan desordenadas; gana la última.
+- **Las capas** (apartado 68, **C-68**): hojas → motor → sistemas → piezas contra los imports de verdad; las
+  auditorías no las importa la aplicación, y un archivo de movimiento nuevo sin capa pone la suite roja.
+
+### Lo que fuerza en Chromium (la sección «MS F19»)
+
+Un **laboratorio** monta las piezas de verdad (`CifraQueCambia`, `ListaAnimada`, `Switch`) con la React de la
+aplicación —las URL que Vite le dio a `main.jsx`—, así que el turno de cuenta y el registro del orquestador son los
+suyos. Dos navegaciones antes de que acabe la primera (apartado 13), volver mientras se entra (14), un interruptor
+tocado cuatro veces (12), la cifra 1 → 20 → 5 → 80 → 40 (33: acaba en 40), una lista que inserta, borra, reordena y
+filtra a la vez (34), desmontar a media animación (31), el ancho cambiado seis veces (18), tres giros con una hoja
+abierta (19), la cabecera fija con el scroll a tope (50), una sesión entera (56), la cámara lenta (41-42) y la
+aplicación en Reducido mirando cada animación viva (26).
+
+### Las herramientas de depuración (apartados 41-43)
+
+Solo en desarrollo, con la marca: `window.__motion.camaraLenta(4)` pone **todo** a un cuarto —lo del CSS al empezar
+y lo que pasa por el orquestador— y `camaraLenta(1)` lo devuelve y quita sus escuchadores; `inspeccionarTodo()` es
+`inspeccionar` para la página entera. Un overlay pintado encima no se hizo: *"si ya existe, mejorarlo"*, y existe la
+consola.
+
+### Documentación
+
+«Motion QA» y §8.18 en `docs/MOTION_SYSTEM.md` (la estrategia, la matriz, Reducido, los tamaños, el rendimiento, las
+herramientas, las limitaciones y la regla permanente del apartado 69); la deuda técnica y los problemas conocidos en
+`docs/13_MOTION_SYSTEM_ORDEN.md`; **C-68** en `docs/03`.
+
+### Verificación
+
+{{VERIFICACION_F19}}
+
 ## v3.148.0 — Motion System F18/20: pulido visual, lenguaje de marca, transiciones premium y coherencia sensorial
 
 La F18 del Motion System (*"Motion visual polish, brand language, transiciones premium y coherencia sensorial"*,
