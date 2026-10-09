@@ -413,13 +413,13 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **23 943 pruebas unitarias** con Node repartidas en **224 suites** (5 de ellas de auditoría),
-**3964 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **3358
-comprobaciones sobre la aplicación de verdad en Chromium** — **31 276 comprobaciones**.
+Vite, **24 022 pruebas unitarias** con Node repartidas en **225 suites** (5 de ellas de auditoría),
+**3964 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **3371
+comprobaciones sobre la aplicación de verdad en Chromium** — **31 368 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.146.0, una a una**, con la suma del
-propio log (`═══ TODO CORRECTO ═══`, 0 fallos): es la que llevó la F16 del Motion System a `main`. El salto desde
-la v3.145.0 es la suite de la F16, sus casos de renderizado y su sección del recorrido. ⚠️ Las fases de la F17 en
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.147.0, una a una**, con la suma del
+propio log (`═══ TODO CORRECTO ═══`, 0 fallos): es la que llevó la F17 del Motion System a `main`. El salto desde
+la v3.146.0 es la suite de la F17 y su sección del recorrido. ⚠️ Las fases de la F18 en
 adelante cuentan las suyas en su commit de cifras, cuando su pasada sale verde. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.

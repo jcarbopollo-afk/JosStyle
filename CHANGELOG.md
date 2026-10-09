@@ -91,7 +91,10 @@ con su ritmo escrito, una cifra de reloj animada, una gráfica con `key`, más d
 
 ### Verificación
 
-{{VERIFICACION_F17}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.147.0: **24 022 pruebas**
+con Node en **225 suites**, **3964 casos** de renderizado real, **11 reglas invariantes** y **3371 comprobaciones** en
+Chromium — **31 368 comprobaciones**. El salto desde la v3.146.0 son 79 pruebas más en Node —78 de ellas, la suite de la
+F17— y la sección «MS F17» del recorrido (13 más en Chromium).
 
 ## v3.146.0 — Motion System F16/20: estados de sistema, carga, error, sin conexión, guardado y transiciones asíncronas
 
