@@ -105,7 +105,10 @@ diciendo SU fallo en su pantalla, y los botones no se llaman igual.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.146.0: **23 943 pruebas**
+con Node en **224 suites**, **3964 casos** de renderizado real, **11 reglas invariantes** y **3358 comprobaciones** en
+Chromium — **31 276 comprobaciones**. El salto desde la v3.145.0 es la suite de la F16 (138), sus casos del banco de
+renderizado (28 más) y la sección «MS F16» del recorrido (41 más en Chromium).
 
 ## v3.145.0 — Motion System F15/20: motion responsive, orientación, safe areas y adaptación multidispositivo
 
