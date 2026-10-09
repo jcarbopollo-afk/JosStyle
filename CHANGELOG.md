@@ -52,7 +52,10 @@ testigo sin girar), redimensiona a golpes y simula el teclado.
 
 ### Verificación
 
-{{VERIFICACION}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.145.0: **23 805 pruebas**
+con Node en **223 suites**, **3936 casos** de renderizado real, **11 reglas invariantes** y **3317 comprobaciones** en
+Chromium — **31 069 comprobaciones**. El salto desde la v3.144.0 es la suite de la F15 (97) y la sección «MS F15» del
+recorrido (20 más en Chromium).
 
 ## v3.144.0 — Motion System F14/20: easings, curvas, ritmo, aceleración y lenguaje visual del movimiento
 

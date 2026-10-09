@@ -386,14 +386,14 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **23 708 pruebas unitarias** con Node repartidas en **222 suites** (5 de ellas de auditoría),
-**3936 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **3297
-comprobaciones sobre la aplicación de verdad en Chromium** — **30 952 comprobaciones**.
+Vite, **23 805 pruebas unitarias** con Node repartidas en **223 suites** (5 de ellas de auditoría),
+**3936 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **3317
+comprobaciones sobre la aplicación de verdad en Chromium** — **31 069 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.144.0, una a una**, con la suma del
-propio log (`═══ TODO CORRECTO ═══`, 0 fallos): es la que llevó la F6 a la F14 del Motion System a `main` de una
-vez. El salto desde la v3.134.0 son las suites de la F5 a la F14 y sus secciones del recorrido. ⚠️ Las fases de
-la F15 en adelante cuentan las suyas en su commit de cifras, cuando su pasada sale verde. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.145.0, una a una**, con la suma del
+propio log (`═══ TODO CORRECTO ═══`, 0 fallos): es la que llevó la F15 del Motion System a `main`. El salto desde
+la v3.144.0 es la suite de la F15 y su sección del recorrido. ⚠️ Las fases de la F16 en adelante cuentan las suyas
+en su commit de cifras, cuando su pasada sale verde. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
