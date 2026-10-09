@@ -14724,8 +14724,14 @@ const cuenta_ms17 = await page.evaluate(async (f) => {
   const primero = botones().find((b) => /Libro/.test(fila(b)));
   if (!primero) return null;
   primero.click();
-  await new Promise((r) => setTimeout(r, 70));
-  const aMitad = leer();
+  /* 🐛 F19: se esperaban 70 ms fijos, y con la máquina cargada React no había pintado todavía: se leía
+     el 100 de antes y la comprobación salía roja con la cuenta bien. Se espera, fotograma a fotograma,
+     al primero que cambia, y ése es el que tiene que estar a mitad (ni 100 ni el 400 de un salto). */
+  let aMitad = leer();
+  for (let t0 = performance.now(); aMitad === 100 && performance.now() - t0 < 3000;) {
+    await new Promise((r) => requestAnimationFrame(r));
+    aMitad = leer();
+  }
   const cifra = document.querySelector('.cifra[data-cifra="cuenta"]');
   const final = cifra && cifra.nextElementSibling && cifra.nextElementSibling.classList.contains('sr-only') ? cifra.nextElementSibling.textContent.trim() : null;
   const oculta = cifra ? cifra.getAttribute('aria-hidden') : null;
