@@ -345,7 +345,7 @@ ok(LIMPIEZA_DECLARADA.every((d) => d.archivo && d.que && d.porque && PIEZAS_DE_M
   ok(c.observadores >= 1 && c.requestAnimationFrame >= 1 && c.gestos >= 1, `…${c.requestAnimationFrame} fotogramas, ${c.observadores} observadores, ${c.gestos} zonas de gesto y ${c.scroll} escuchadores de scroll`);
 }
 const M = sinComentarios(leer('src/lib/motion.js'));
-ok(/import \{ animarOrquestado \} from '\.\/orquestadorMotion';/.test(M) && /animarOrquestado\(el, frames, \{ \.\.\.opciones, delay: retraso \}, \{ sistema: 'motor' \}\)/.test(M), 'el motor de la F1 anima por el orquestador (`animar`, `flip`, `compartirElemento`)');
+ok(/import \{ animarOrquestado(?:, [\w, ]+)? \} from '\.\/orquestadorMotion';/.test(M) && /animarOrquestado\(el, frames, \{ \.\.\.opciones, delay: retraso \}, \{ sistema: 'motor' \}\)/.test(M), 'el motor de la F1 anima por el orquestador (`animar`, `flip`, `compartirElemento`)');
 ok(/animarOrquestado\(el, plan\.keyframes, plan\.opciones, \{ sistema: 'continuidad', grupo: 'navegacion', id \}\)/.test(sinComentarios(leer('src/components/continuidad.jsx'))), '🚨 la continuidad (F7) es del grupo `navegacion`: la pantalla que crece y el nombre que viaja son UNA operación (apartado 22)');
 {
   const CAP = sinComentarios(leer('src/components/capasMotion.js'));

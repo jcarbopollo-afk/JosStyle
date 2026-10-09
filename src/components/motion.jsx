@@ -4,7 +4,7 @@ import {
   contextoDelDocumento, EVENTO_MOTION, animar, siguientePresencia, estaMontado,
   deltaFlip, duracionMs, CURVAS_MOTION,
 } from '../lib/motion';
-import { giroDeChevron, siguienteLatido } from '../lib/microinteraccionesMotion';
+import { giroDeChevron, siguienteLatido, claseDeLatido, siguienteIcono } from '../lib/microinteraccionesMotion';
 import { animarOrquestado } from '../lib/orquestadorMotion';
 import { animacionDeGrafica, animacionDeTooltip, planDeCifra, interpolarCifra, curvaDeCuenta, reservarCuenta, liberarCuenta } from '../lib/datosMotion';
 
@@ -138,12 +138,29 @@ export function ChevronDespliegue({ abierto, cerrado = 'abajo', alAbrir = 'arrib
  * tampoco: una lista de favoritos que latiera entera al abrirse no diría nada. En Reducido el
  * pulso es 1 (el token), así que solo cambia el color.
  */
-export function LatidoAlMarcar({ activo, children, className = '' }) {
+export function LatidoAlMarcar({ activo, children, className = '', latido = 'favorito' }) {
   const estado = useRef(null);
   estado.current = siguienteLatido(estado.current, activo);
   const { veces, late } = estado.current;
   return (
-    <span key={veces} className={`inline-flex ${late ? 'favorito-guardado ' : ''}${className}`.trim()} data-latido={veces}>
+    <span key={veces} className={`inline-flex ${late ? `${claseDeLatido(latido)} ` : ''}${className}`.trim()} data-latido={veces}>
+      {children}
+    </span>
+  );
+}
+
+/**
+ * MS F18, apartado 20 — UN ICONO QUE CAMBIA DE SENTIDO NO SALTA: play ↔ pausa, ⋯ ↔ ✕, ＋ ↔ ✓. Envuelve el
+ * icono y le da su `clave` (lo que significa ahora); cuando cambia después de pintarse, el nuevo aparece en
+ * el sitio del de antes (`icono-cambia`). Al abrir la pantalla no se mueve nada. No es un morfismo de
+ * trazos —Lucide dibuja cada icono aparte—: es la transición contextual que el apartado acepta en su lugar.
+ */
+export function IconoQueCambia({ clave, children, className = '' }) {
+  const estado = useRef(null);
+  estado.current = siguienteIcono(estado.current, clave);
+  const { veces, cambia } = estado.current;
+  return (
+    <span key={veces} className={`inline-flex ${cambia ? 'icono-cambia ' : ''}${className}`.trim()} data-icono={clave}>
       {children}
     </span>
   );

@@ -38,6 +38,7 @@ import {
 import { textoDeSeries, textoDeCarga, musculosResumidos } from '../lib/constructor';
 import { PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
 import { Plegable } from '../components/layoutMotion';
+import { IconoQueCambia } from '../components/motion';
 
 /* 🔓 FIT F42 (apartados 42 y 64) — aquí había una `Pastilla` propia, una de las
    siete copias de la pastilla de un filtro: es `PastillaFiltro` (piezasFitness). */
@@ -94,7 +95,7 @@ export function TarjetaPlantilla({
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 toque-44 active:scale-90"
           style={{ background: hexToRgba(COLORS.border, 0.45), color: COLORS.textMuted }}
         >
-          {abierto ? <X size={16} /> : <MoreHorizontal size={16} />}
+          <IconoQueCambia clave={abierto ? 'cerrar' : 'acciones'}>{abierto ? <X size={16} /> : <MoreHorizontal size={16} />}</IconoQueCambia>
         </button>
       </div>
 

@@ -284,7 +284,7 @@ html[data-teclado='abierto'] .nav-segura {
 }
 .fuego-sube {
   display: inline-flex;
-  animation: fuegoSube var(--motion-dur-momento) var(--motion-curva-emphasized) both;
+  animation: fuegoSube var(--motion-dur-momento) var(--motion-curva-emphasized) backwards;
 }
 
 @keyframes masUnoSube {
@@ -926,7 +926,7 @@ html[data-motion='reducido'] .plegable {
   to { opacity: 1; transform: translateY(0); }
 }
 .hub-header {
-  animation: hubHeaderIn var(--motion-dur-medium) var(--ease-premium) both;
+  animation: hubHeaderIn var(--motion-dur-medium) var(--ease-premium) backwards;
 }
 
 /* SC F1 — LA CABECERA DEL ÁREA SE QUEDA QUIETA MIENTRAS LAS TARJETAS SE DESPLAZAN.
@@ -1038,7 +1038,7 @@ html[data-motion='reducido'] .plegable {
   to { opacity: 1; transform: translateX(0); }
 }
 .back-bar {
-  animation: backBarIn var(--motion-dur-normal) var(--ease-premium) both;
+  animation: backBarIn var(--motion-dur-normal) var(--ease-premium) backwards;
 }
 
 /* Fase N3 — microinteracción al pulsar una tarjeta de hub (HubView.jsx), en dos tiempos:
@@ -1183,7 +1183,7 @@ html[data-motion='reducido'] .nav-indicador {
   to { opacity: 1; transform: translateY(0); }
 }
 .calendar-month-grid {
-  animation: calendarMonthIn var(--motion-dur-normal) var(--ease-premium) both;
+  animation: calendarMonthIn var(--motion-dur-normal) var(--ease-premium) backwards;
 }
 @keyframes calendarSheetIn {
   from { opacity: 0; transform: translateY(var(--motion-dist-medium)) scale(var(--motion-escala-micro)); }
@@ -1251,7 +1251,7 @@ html[data-motion='reducido'] .esqueleto {
 
 .tarea-hecha {
   display: inline-flex;
-  animation: tareaHecha var(--motion-dur-medium) var(--ease-premium) both;
+  animation: tareaHecha var(--motion-dur-medium) var(--ease-premium) backwards;
 }
 
 @keyframes avisoEntra {
@@ -1282,7 +1282,7 @@ html[data-motion='reducido'] .esqueleto {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .celebracion-libro {
-  animation: celebracionLibro var(--motion-dur-slow) var(--ease-premium) both;
+  animation: celebracionLibro var(--motion-dur-slow) var(--ease-premium) backwards;
 }
 
 /* Entrega 3 · F18 (BL F4) — Guardados.
@@ -1303,6 +1303,18 @@ html[data-motion='reducido'] .esqueleto {
   animation: favoritoPulso var(--motion-dur-normal) var(--ease-premium) backwards;
 }
 
+/* 🔓 MS F18 (apartado 20) — UN ICONO QUE CAMBIA DE SENTIDO NO SALTA: play ↔ pausa, ⋯ ↔ ✕, ＋ ↔ ✓. Lo pone
+   `IconoQueCambia` (src/components/motion.jsx) en el envoltorio del icono NUEVO, solo cuando cambia después
+   de pintarse (al abrir la pantalla no se mueve nada): aparece en el sitio del de antes, con un pellizco de
+   escala de marca (F1, `TOPES_ESCALA.marca`). En Reducido la escala vale 1 y solo se funde. */
+@keyframes iconoCambia {
+  from { opacity: var(--motion-opac-subtle); transform: scale(var(--motion-escala-hero)); }
+  to { opacity: 1; transform: none; }
+}
+.icono-cambia {
+  animation: iconoCambia var(--motion-dur-fast) var(--motion-curva-entrance) backwards;
+}
+
 /* Entrega 3 · F24 (PR F2) — Hábitos.
    *"Al completar: ✓ aparece mediante una animación… la barra de progreso puede
    animarse. Todo debe ser rápido. Nada exagerado."*
@@ -1316,7 +1328,7 @@ html[data-motion='reducido'] .esqueleto {
 }
 
 .habito-hecho {
-  animation: habitoHecho var(--motion-dur-medium) var(--ease-premium) both;
+  animation: habitoHecho var(--motion-dur-medium) var(--ease-premium) backwards;
 }
 
 /* La barra del progreso del día se anima al cambiar de ancho, para que marcar un
@@ -1355,7 +1367,7 @@ html[data-motion='reducido'] .esqueleto {
    que haya que esperar a que acabe. Y vive aquí, con el resto, así que respeta
    "Reducir movimiento" sola (E3 F14). */
 .rutina-fin {
-  animation: rutinaFin var(--motion-dur-cinematic) var(--ease-premium) both;
+  animation: rutinaFin var(--motion-dur-cinematic) var(--ease-premium) backwards;
 }
 @keyframes rutinaFin {
   from { opacity: 0; transform: scale(var(--motion-escala-normal)); }

@@ -3,7 +3,7 @@ import { Smartphone, Plus, Trash2, Play, Pause, RotateCcw, Sparkles } from 'luci
 import { COLORS, CATEGORIAS_TIEMPO_USO, DURACIONES_CONCENTRACION } from '../tokens';
 import { uid, todayISO, addDays, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, ToggleTab, EmptyHint } from '../components/ui';
-import { CambioDeContenido, ChevronDespliegue } from '../components/motion';
+import { CambioDeContenido, ChevronDespliegue, IconoQueCambia } from '../components/motion';
 import { Plegable } from '../components/layoutMotion';
 
 /* ---------- Resumen: tres índices puramente descriptivos sobre el propio registro ----------
@@ -195,13 +195,17 @@ function ConcentracionTab({ sesiones, onCompletar, accent }) {
         <div className="flex items-center gap-3 mt-6">
           <button
             onClick={() => { if (segundos === 0) reiniciar(); setCorriendo((c) => !c); }}
+            aria-label={corriendo ? 'Pausar la concentración' : 'Empezar la concentración'}
             className="w-14 h-14 rounded-full flex items-center justify-center"
             style={{ background: accent, color: COLORS.textOnAccent }}
           >
-            {corriendo ? <Pause size={22} /> : <Play size={22} />}
+            <IconoQueCambia clave={corriendo ? 'pausa' : 'play'}>
+              {corriendo ? <Pause size={22} /> : <Play size={22} />}
+            </IconoQueCambia>
           </button>
           <button
             onClick={reiniciar}
+            aria-label="Reiniciar la concentración"
             className="w-11 h-11 rounded-full flex items-center justify-center"
             style={{ background: COLORS.surface2, color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}
           >

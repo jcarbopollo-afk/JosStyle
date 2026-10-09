@@ -68,6 +68,7 @@ export const ROL_POR_CLASE = Object.freeze({
   'despliegue-entra': { rol: 'aparece', porque: 'El contenido que aparece al abrir un desplegable: no viene de otro sitio.' },
   'vacio-entra': { rol: 'aparece', porque: 'Un estado vacío aparece en su sitio (está en «Gráficas» por dónde vive, no por lo que hace).' },
   'aviso-entra': { rol: 'aparece', porque: 'Un aviso aparece abajo y se va (F9): está en «Éxito» por lo que dice, no por cómo se mueve.' },
+  'icono-cambia': { rol: 'aparece', porque: 'El icono nuevo aparece en el sitio del de antes (F18): no viene de ningún lado, y está en «Botones» por dónde vive.' },
   'fondo-entra': { rol: 'llega', porque: 'El velo de detrás de una hoja: lo del fondo responde más suave que lo de delante (apartado 28), así que no se apresura como la hoja.' },
 });
 

@@ -6,7 +6,7 @@ import {
   BookMarked, Bookmark, Lightbulb, FolderOpen,
   GraduationCap, Code, Briefcase, Heart, Rocket, Dumbbell, Paperclip, Check, Minus, X,
 } from 'lucide-react';
-import { ChevronDespliegue, LatidoAlMarcar } from '../components/motion';
+import { ChevronDespliegue, LatidoAlMarcar, IconoQueCambia } from '../components/motion';
 import { COLORS, TIPOS_ARCHIVO_BIBLIOTECA, PERIODOS_META, PLAZOS_OBJETIVO } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { getSignedBibliotecaUrl } from '../lib/supabase';
@@ -2724,7 +2724,9 @@ export function AnadirAColeccion({ colecciones, tipo, id, accent, onAlternar }) 
                 {c.archivada ? (
                   <span className="text-[10px]" style={{ color: COLORS.textMuted }}>Archivada</span>
                 ) : null}
-                {marcada ? <Check size={14} style={{ color: colorDeAcento(c.acento, accent) }} /> : <Plus size={14} style={{ color: COLORS.textMuted }} />}
+                <IconoQueCambia clave={marcada ? 'puesta' : 'anadir'}>
+                  {marcada ? <Check size={14} style={{ color: colorDeAcento(c.acento, accent) }} /> : <Plus size={14} style={{ color: COLORS.textMuted }} />}
+                </IconoQueCambia>
               </button>
             );
           })}

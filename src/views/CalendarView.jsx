@@ -20,7 +20,7 @@ import {
   resumenDeDia, cargaDelDia, marcaDeHoy, VACIO_MES, mesVacio, accesosDelDia,
 } from '../lib/calendarioMes';
 import { Card, SectionTitle, Field, TextInput, Select, Textarea, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, PistaInterruptor } from '../components/ui';
-import { CambioDeContenido } from '../components/motion';
+import { CambioDeContenido, LatidoAlMarcar } from '../components/motion';
 // Entrega 3 · F9 (HC F4) — el ＋ y sus formularios, compartidos con Hoy y la Agenda.
 import { QuickAdd, FormularioTarea, FormularioEvento, MenuElemento, CambiarFecha, CambiarHora, BotonAnadir, AvisoAccion } from '../components/quickAdd';
 import { tareaEnFecha, tareaEnHora } from '../lib/accionesHoyAgenda';
@@ -160,9 +160,11 @@ function FilaTarea({ tarea, accent, onCompletar, onAbrir }) {
         className="p-1.5 -m-1.5 flex-shrink-0"
         aria-label={tarea.hecha ? `Desmarcar ${tarea.titulo}` : `Completar ${tarea.titulo}`}
       >
-        {tarea.hecha
-          ? <CheckSquare size={16} style={{ color: accent }} />
-          : <Square size={16} style={{ color: COLORS.textMuted }} />}
+        <LatidoAlMarcar activo={!!tarea.hecha} latido="tarea">
+          {tarea.hecha
+            ? <CheckSquare size={16} style={{ color: accent }} />
+            : <Square size={16} style={{ color: COLORS.textMuted }} />}
+        </LatidoAlMarcar>
       </button>
       <button onClick={onAbrir} className="min-w-0 flex-1 text-left">
         <p
@@ -783,9 +785,11 @@ function VistaSemana({ semana, accent, onDia, onEstaSemana, onSemana, onAnadir, 
               {e.tipoElemento === 'tarea' ? (
                 <button onClick={() => onCompletar(e)} className="p-1.5 -m-1.5 flex-shrink-0"
                   aria-label={e.hecha ? `Desmarcar ${e.texto || e.titulo}` : `Completar ${e.texto || e.titulo}`}>
-                  {e.hecha
-                    ? <CheckSquare size={15} style={{ color: accent }} />
-                    : <Square size={15} style={{ color: COLORS.textMuted }} />}
+                  <LatidoAlMarcar activo={!!e.hecha} latido="tarea">
+                    {e.hecha
+                      ? <CheckSquare size={15} style={{ color: accent }} />
+                      : <Square size={15} style={{ color: COLORS.textMuted }} />}
+                  </LatidoAlMarcar>
                 </button>
               ) : (
                 <TipoIcono tipoId={e.tipo} accent={accent} size={11} />
@@ -912,9 +916,11 @@ function AgendaDeUnDia({ dia, titulo, tira, accent, onDia, onHoy, onCompletar, o
                     {e.completable && (
                       <button onClick={() => onCompletar && onCompletar(e.refId)}
                         className="p-1.5 -m-1.5 flex-shrink-0" aria-label={e.hecha ? `Desmarcar ${e.titulo}` : `Completar ${e.titulo}`}>
-                        {e.hecha
-                          ? <CheckSquare size={15} style={{ color: accent }} />
-                          : <Square size={15} style={{ color: COLORS.textMuted }} />}
+                        <LatidoAlMarcar activo={!!e.hecha} latido="tarea">
+                          {e.hecha
+                            ? <CheckSquare size={15} style={{ color: accent }} />
+                            : <Square size={15} style={{ color: COLORS.textMuted }} />}
+                        </LatidoAlMarcar>
                       </button>
                     )}
                     <span className="text-sm flex-1 min-w-0" style={{ color: COLORS.text, textDecoration: e.hecha ? 'line-through' : 'none' }}>
@@ -952,9 +958,11 @@ function AgendaDeUnDia({ dia, titulo, tira, accent, onDia, onHoy, onCompletar, o
                       {/* E3 F14 (HC F9, apartado 16) — *"animación breve"* al completar.
                           La clase vive en `index.css`, así que respeta "Reducir
                           movimiento" sola; y son 300 ms, no confeti. */}
-                      {e.hecha
-                        ? <CheckSquare size={15} className="tarea-hecha" style={{ color: accent }} />
-                        : <Square size={15} style={{ color: COLORS.textMuted }} />}
+                      <LatidoAlMarcar activo={!!e.hecha} latido="tarea">
+                        {e.hecha
+                          ? <CheckSquare size={15} style={{ color: accent }} />
+                          : <Square size={15} style={{ color: COLORS.textMuted }} />}
+                      </LatidoAlMarcar>
                     </button>
                   ) : (
                     <span className="text-sm leading-none flex-shrink-0" aria-hidden="true">

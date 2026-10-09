@@ -38,7 +38,7 @@ se ordena es **el trabajo**.
 | **F15** ✅ **v3.145.0** | Motion responsive, orientación, safe areas y multidispositivo | 17155–17913 | 759 |
 | **F16** ✅ **v3.146.0** | Estados de sistema, loading, error, offline, sync y transiciones asíncronas | 1–759 | 759 |
 | **F17** ✅ **v3.147.0** | Motion de datos, dashboard, métricas, gráficas y visualización | 760–1458 | 699 |
-| **F18** | Motion visual polish, brand language y coherencia sensorial | 1459–2241 | 783 |
+| **F18** ✅ **v3.148.0** | Motion visual polish, brand language y coherencia sensorial | 1459–2241 | 783 |
 | **F19** | Testing extremo, validación, regresión y motion QA automatizado | 2242–3117 | 876 |
 | **F20** | Finalización, consolidación, contratos y sellado | 3118–4045 | 928 |
 
@@ -97,3 +97,5 @@ lenguaje). Cómo se reparten está en `SOLAPES_ROADMAP` (`src/lib/motionMapa.js`
 | La prueba de la F16 | `scripts/test-motion-f16.mjs`, y la sección «MS F16» del recorrido de Chromium (un guardado que falla y se reintenta, sin conexión, una carga que falla sin pisar la cuenta, ninguna carga, el arranque lento, el vacío que espera y la sesión que caduca) |
 | El motor de datos mejorado y llevado a todas las cifras: la clase de cada cifra, la cuenta según cuánto cambia, interrumpida desde lo que se ve, los relevos agrupados, el valor final para el lector, las barras al mismo ritmo, el eje estable de las gráficas y el ranking que se filtra | `src/lib/datosMotion.js` (F4 + F17: `CLASES_DE_CIFRA`, `tallaDeCuenta`, `dominioEstable`, `MAPA_DATOS`, `auditarDatos`), `CifraQueCambia` (`src/components/motion.jsx`), `barra-progreso` (`index.css`) |
 | La prueba de la F17 | `scripts/test-motion-f17.mjs`, y la sección «MS F17» del recorrido de Chromium (la cuenta interrumpida, el valor final, el ritmo de las barras y el eje de Sueño) |
+| El sistema revisado como un todo y su lenguaje: la auditoría total, el inventario, los atípicos (el ✓ que latía al abrir, el icono que saltaba, las entradas que se quedaban puestas), la personalidad y la temperatura, el lenguaje familia por familia, la jerarquía, los tokens de reserva, los guardarraíles y la inspección | `src/lib/pulidoMotion.js` (F18), `IconoQueCambia` y `LatidoAlMarcar latido` (`src/components/motion.jsx`), `inspeccionar` (orquestador) y «Jos Style Motion Language» en `docs/MOTION_SYSTEM.md` |
+| La prueba de la F18 | `scripts/test-motion-f18.mjs`, y la sección «MS F18» del recorrido de Chromium (el ✓ que no late al abrir y sí al marcar, play ↔ pausa, la barra de volver sin `transform` puesto y la inspección) |

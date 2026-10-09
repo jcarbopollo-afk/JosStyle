@@ -3,7 +3,7 @@ import { Church, Trash2, CheckCircle2, Circle, Plus } from 'lucide-react';
 import { COLORS, TIPOS_SERVICIO_FE, TIPOS_EVENTO_FE, PLAZOS_OBJETIVO } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
-import { CambioDeContenido, ChevronDespliegue } from '../components/motion';
+import { CambioDeContenido, ChevronDespliegue, LatidoAlMarcar } from '../components/motion';
 import { Plegable } from '../components/layoutMotion';
 
 // Instrucción de seguridad para cualquier AIPanel de este módulo: AIPanel usa el mismo
@@ -250,7 +250,9 @@ function ObjetivosFeTab({ objetivos, onAdd, onUpdate, onDelete, accent }) {
             {delPlazo.map((o) => (
               <Card key={o.id} className="flex items-center justify-between" style={{ padding: '1rem' }}>
                 <button onClick={() => onUpdate({ ...o, cumplido: !o.cumplido })} className="flex items-center gap-3 flex-1 text-left">
-                  {o.cumplido ? <CheckCircle2 size={19} style={{ color: accent }} /> : <Circle size={19} style={{ color: COLORS.textMuted }} />}
+                  <LatidoAlMarcar activo={!!o.cumplido} latido="tarea">
+                    {o.cumplido ? <CheckCircle2 size={19} style={{ color: accent }} /> : <Circle size={19} style={{ color: COLORS.textMuted }} />}
+                  </LatidoAlMarcar>
                   <p className="text-sm" style={{ color: o.cumplido ? COLORS.textMuted : COLORS.text, textDecoration: o.cumplido ? 'line-through' : 'none' }}>
                     {o.texto}
                   </p>

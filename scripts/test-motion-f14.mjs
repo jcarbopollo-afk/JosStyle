@@ -121,7 +121,7 @@ console.log('\n── 4. La auditoría lee el CSS de verdad: hoy limpia, y roja 
   ok(medidas.length >= 50, `…y no es porque no mire: mide ${medidas.length} líneas del mapa contra sus reglas`);
 }
 const casos = [
-  ['un momento con la curva estándar', '.fuego-sube {\n  display: inline-flex;\n  animation: fuegoSube var(--motion-dur-momento) var(--motion-curva-emphasized) both;', '.fuego-sube {\n  display: inline-flex;\n  animation: fuegoSube var(--motion-dur-momento) var(--ease-premium) both;', ['curva_fuera_de_su_papel', 'mapa_dice_otra_curva']],
+  ['un momento con la curva estándar', '.fuego-sube {\n  display: inline-flex;\n  animation: fuegoSube var(--motion-dur-momento) var(--motion-curva-emphasized) backwards;', '.fuego-sube {\n  display: inline-flex;\n  animation: fuegoSube var(--motion-dur-momento) var(--ease-premium) backwards;', ['curva_fuera_de_su_papel', 'mapa_dice_otra_curva']],
   ['una hoja que entra con la curva de salida', '.hoja-entra {\n  animation: calendarSheetIn var(--motion-dur-normal) var(--motion-curva-entrance) backwards;', '.hoja-entra {\n  animation: calendarSheetIn var(--motion-dur-normal) var(--motion-curva-exit) backwards;', ['curva_fuera_de_su_papel']],
   ['una cifra (talla XS) que dura como una cinemática', '.cifra-sube {\n  animation: cifraSube var(--motion-dur-normal)', '.cifra-sube {\n  animation: cifraSube var(--motion-dur-cinematic)', ['duracion_fuera_de_su_talla']],
   ['una pantalla que entra más despacio de lo que dice su preset', '.module-enter {\n  animation: moduleSlideIn var(--motion-dur-slow)', '.module-enter {\n  animation: moduleSlideIn var(--motion-dur-medium)', ['preset_y_css_distintos']],

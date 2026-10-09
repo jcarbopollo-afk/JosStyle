@@ -1,5 +1,57 @@
 # CHANGELOG.md
 
+## v3.148.0 — Motion System F18/20: pulido visual, lenguaje de marca, transiciones premium y coherencia sensorial
+
+La F18 del Motion System (*"Motion visual polish, brand language, transiciones premium y coherencia sensorial"*,
+líneas 1459–2241 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). *"Premium no significa más animaciones. Premium
+significa: mejor decisión de movimiento."* **No se añade ninguna animación nueva de adorno**: se revisa lo que
+construyeron la F0 a la F17 como un todo, se arregla lo que no encajaba y se deja escrito el lenguaje
+(`src/lib/pulidoMotion.js`, «Jos Style Motion Language» en `docs/MOTION_SYSTEM.md`).
+
+### La auditoría total (apartado 1) y lo que encontró
+
+Las quince auditorías del movimiento, **a la vez sobre todo el código que pinta** (`auditoriaTotalMotion`). Cada fase
+había probado la suya con los archivos de su fase, y así se escondía:
+
+- 🐛 **El botón de Face ID del bloqueo por inactividad** escribía a mano su «Verificando…» y se apagaba mientras
+  esperaba: la F9 nunca le dio `App.jsx` a su auditoría. Ahora es `TextoDeBoton` con `aria-busy`, y un segundo toque
+  no repite la verificación.
+
+### Los atípicos, uno a uno (apartados 3, 20, 23 y 52)
+
+- 🐛 **El ✓ de una tarea latía al ABRIR la pantalla**, todas las hechas a la vez (Calendario, Productividad): su clase
+  iba escrita en el icono. Ahora `LatidoAlMarcar latido="tarea"` lo hace latir **solo al marcarlo**, como un favorito
+  desde la F3 — también el de los hábitos (`latido="habito"`), las metas, los objetivos de Fe y los pasos de progresión.
+- **Un icono que cambia de sentido ya no salta**: `IconoQueCambia` (play ↔ pausa en la concentración y en el descanso,
+  ⋯ ↔ ✕ en el menú de una plantilla, ＋ ↔ ✓ al añadir a una colección) hace aparecer el nuevo en el sitio del de antes.
+- **Siete entradas terminaban con `both`** sin necesitarlo —la barra de volver, la cabecera de un área, el cambio de
+  mes, los dos ✓, el libro y la rutina terminados y la llama de una racha—, dejando puesto su último fotograma (un
+  `transform` que gana a `:active`, un `filter` que la llama arrastraba para siempre). Pasan a `backwards`.
+- 🐛 **Los dos botones del temporizador de concentración** eran de solo icono y sin `aria-label`, y la casilla de un
+  paso de progresión decía siempre «Marcar hecho» sin decir si lo estaba (`aria-pressed`).
+
+### El lenguaje, la jerarquía y los tokens
+
+- **La personalidad y la temperatura** (`PERSONALIDAD_MOTION`, `TEMPERATURA_JOSSTYLE`): preciso + responsive +
+  controlado, cada rasgo con la auditoría que lo garantiza.
+- **El lenguaje, familia por familia** (`LENGUAJE_JOSSTYLE`, apartados 9-30): veinte familias, cada una con la pieza
+  que la cumple, y la prueba busca cada pieza en el código. No hay tooltips (en el iPhone no hay puntero que se pose).
+- **La jerarquía** (`JERARQUIA_F18`): los cuatro niveles del enunciado son las siete prioridades de la F11 agrupadas.
+- **Los tokens** (`tokensSinUso`): `instant`, `full` y `bouncy` no los usa nadie y se quedan porque los exige la F1
+  (C-67), declarados en `TOKENS_DE_RESERVA`. Un token sin uso que no esté ahí pone la suite roja.
+- **Los guardarraíles** (`GUARDARRAILES_MOTION`), **la API para quien empieza** (`API_MOTION`) y **la regla
+  permanente** (las nueve preguntas del apartado 64, cada una con quién la contesta).
+
+### La inspección (apartados 56 y 57)
+
+`window.__motion.inspeccionar(el)` (en desarrollo, con `localStorage["josstyle:motion-debug"] = "1"`): qué mueve un
+elemento, con su duración y su curva **nombradas como token**, si sale de `index.css` o del orquestador, su sistema,
+su prioridad y el elemento. El orquestador sigue sin importar nada: los tokens se los cuenta `motion.js`.
+
+### Verificación
+
+{{VERIFICACION_F18}}
+
 ## v3.147.0 — Motion System F17/20: motion de datos, paneles, métricas, gráficas y visualización
 
 La F17 del Motion System (*"Motion de datos, dashboard, métricas, gráficas y visualización de información"*, líneas

@@ -36,7 +36,7 @@
    Web Animations API del navegador (`element.animate`), que se interrumpe desde
    el estado visual de AHORA (apartado 12) y existe en Safari desde la 13.1.
    =========================================================================== */
-import { animarOrquestado } from './orquestadorMotion';
+import { animarOrquestado, describirInspeccionCon } from './orquestadorMotion';
 
 const lista = (x) => (Array.isArray(x) ? x : []);
 const redondear = (n, d = 0) => { const f = 10 ** d; return Math.round(n * f) / f; };
@@ -232,6 +232,20 @@ export function duracionesDeVelocidad(id = 'normal') {
   const out = {};
   Object.entries(DURACIONES_MOTION).forEach(([k, ms]) => { out[k] = Math.round(ms * factor); });
   return out;
+}
+
+/* MS F18, apartado 57 — *"¿qué token?"*. Una duración medida en el navegador es el token cuyo valor, a la
+   velocidad de ahora, coincide; una curva, la de `CURVAS_MOTION` con el mismo trazo. Sin coincidencia,
+   `null`: un número suelto es justo lo que la inspección tiene que destapar. */
+const sinEspacios = (x) => String(x || '').replace(/\s+/g, '');
+export function tokenDeDuracion(ms, velocidad = 'normal') {
+  const t = duracionesDeVelocidad(velocidad);
+  return Object.keys(t).find((id) => Math.abs(t[id] - Number(ms)) < 0.5) || null;
+}
+export function tokenDeCurva(easing) {
+  const e = sinEspacios(easing);
+  if (e === 'ease' || e === 'ease-in-out' || e === 'ease-in' || e === 'ease-out') return null;
+  return Object.keys(CURVAS_MOTION).find((id) => sinEspacios(CURVAS_MOTION[id]) === e) || null;
 }
 
 /** Los retrasos de cada escalón con una velocidad (los que escribe `index.css`). */
@@ -453,6 +467,14 @@ export function sistemaPideReducir() {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
+
+/* La inspección del orquestador nombra los tokens con esto (MS F18): el orquestador no puede importar
+   `motion.js` —es una hoja del árbol—, así que se lo cuenta este archivo al cargarse. */
+describirInspeccionCon((linea) => {
+  const velocidad = typeof document !== 'undefined' && document.documentElement && document.documentElement.dataset
+    ? document.documentElement.dataset.velocidad || 'normal' : 'normal';
+  return { tokenDuracion: tokenDeDuracion(linea.duracion, velocidad), tokenCurva: tokenDeCurva(linea.curva) };
+});
 
 /** El contexto de la página de ahora (para las animaciones de JavaScript). */
 export function contextoDelDocumento() {

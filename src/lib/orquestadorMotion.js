@@ -515,10 +515,68 @@ export function crearLinea(pasos = [], { grupo = null, sistema = 'motor', priori
   };
 }
 
-/* La consola de depuración (apartado 35): `window.__motion`, solo en desarrollo y con la marca puesta. */
+/* ───────────────────────────────────────────────────────────────────────────
+   7 bis · INSPECCIONAR UN ELEMENTO (MS F18, apartados 56 y 57)
+
+   *"¿De quién es esta animación? ¿Qué token? ¿Qué sistema? ¿Por qué se está ejecutando?"* Para lo que pasa
+   por aquí, el registro ya lo sabe (sistema, prioridad, grupo, id). Para lo que mueve `index.css`, el
+   navegador da el nombre del `@keyframes` o la propiedad, la duración y la curva. Qué TOKEN es cada
+   duración y cada curva lo sabe `motion.js`, que este archivo no puede importar (es una hoja del árbol):
+   se lo cuenta con `describirInspeccionCon`. Solo en desarrollo, como el resto de la consola.
+   ─────────────────────────────────────────────────────────────────────────── */
+let describirInspeccion = null;
+/** `motion.js` enseña aquí a nombrar duraciones y curvas como tokens. */
+export function describirInspeccionCon(fn) { describirInspeccion = typeof fn === 'function' ? fn : null; }
+
+/* Una animación de CSS lleva su curva en los fotogramas, no en el efecto (que dice `linear`). */
+const tiempoDe = (anim) => {
+  try {
+    const t = anim.effect && anim.effect.getTiming ? anim.effect.getTiming() : {};
+    let curva = t.easing || 'linear';
+    if (curva === 'linear' && anim.effect && typeof anim.effect.getKeyframes === 'function') {
+      const k = anim.effect.getKeyframes();
+      if (k && k[0] && k[0].easing) curva = k[0].easing;
+    }
+    return { duracion: Number(t.duration) || 0, retraso: Number(t.delay) || 0, curva };
+  } catch { return { duracion: 0, retraso: 0, curva: 'linear' }; }
+};
+
+/**
+ * Lo que mueve AHORA un elemento: una línea por animación, con su nombre, su duración y su curva (y el
+ * token de cada una, si `motion.js` lo ha contado), de dónde sale (`orquestador` con su sistema, o
+ * `index.css` con su clase), su prioridad y el elemento que la lleva. Un elemento quieto devuelve `[]`.
+ */
+export function inspeccionar(el) {
+  if (!el || typeof el.getAnimations !== 'function') return [];
+  const propias = animacionesDe(el);
+  const porAnim = new Map(propias.map((r) => [r.anim, r]));
+  const clases = el.classList ? [...el.classList] : [];
+  let todas = [];
+  try { todas = el.getAnimations(); } catch { todas = []; }
+  return todas.filter((a) => a.playState !== 'finished' && a.playState !== 'idle').map((a) => {
+    const r = porAnim.get(a);
+    const t = tiempoDe(a);
+    const css = !r;
+    const linea = {
+      nombre: css ? (a.animationName || a.transitionProperty || 'css') : (r.id || r.sistema),
+      fuente: css ? 'index.css' : 'orquestador',
+      sistema: css ? 'css' : r.sistema,
+      prioridad: css ? null : r.prioridad,
+      grupo: css ? null : r.grupo || null,
+      propiedades: css ? (a.transitionProperty ? [a.transitionProperty] : []) : r.propiedades,
+      duracion: t.duracion, retraso: t.retraso, curva: t.curva, estado: a.playState,
+      elemento: `${(el.tagName || '').toLowerCase()}${clases.length ? `.${clases.join('.')}` : ''}`,
+    };
+    if (describirInspeccion) { try { Object.assign(linea, describirInspeccion(linea) || {}); } catch { /* depurar nunca rompe nada */ } }
+    return linea;
+  });
+}
+
+/* La consola de depuración (apartado 35): `window.__motion`, solo en desarrollo y con la marca puesta.
+   🔓 MS F18 — y `inspeccionar(el)` para preguntarle a un elemento quién lo mueve. */
 export const apiDeDepuracion = () => ({
   estado: estadoGlobalMotion, diario: diarioMotion, vaciar: vaciarDiario, grupo: estadoDeGrupo,
-  prioridades: PRIORIDADES_MOTION, sistemas: SISTEMAS_MOTION,
+  prioridades: PRIORIDADES_MOTION, sistemas: SISTEMAS_MOTION, inspeccionar,
 });
 export function exponerDepuracion() {
   if (typeof window === 'undefined' || !depurando()) return false;

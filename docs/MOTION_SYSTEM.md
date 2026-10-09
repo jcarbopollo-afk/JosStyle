@@ -837,6 +837,127 @@ dos cuentas en un archivo.
 de 7 a 30 días (sería decorar), un cursor propio sobre la gráfica (el tooltip de Recharts ya responde al toque) y
 datos en vivo (solo los relojes cambian solos, y no se animan).
 
+## 8.17 · Pulido: el sistema revisado como un todo (F18)
+
+> *"Premium no significa más animaciones. Premium significa: mejor decisión de movimiento."* (apartado 49)
+
+La F18 **no añade animaciones**: revisa lo que construyeron la F0 a la F17 y lo deja dicho en un sitio
+(`src/lib/pulidoMotion.js`, que la aplicación no importa: es de las pruebas y de quien vaya a añadir movimiento).
+
+- **La auditoría total** (`auditoriaTotalMotion`, apartado 1). Cada fase probó su auditoría con los archivos de su
+  fase; pasadas **las quince a la vez** sobre todo el código que pinta (vistas, componentes y `App.jsx`), salió lo que
+  ninguna veía: 🐛 **el botón de Face ID del bloqueo por inactividad escribía a mano su «Verificando…» y se apagaba
+  mientras esperaba** (la F9 nunca le dio `App.jsx`). Ahora es `TextoDeBoton` con `aria-busy`, como todos.
+- **Los atípicos** (`auditarPulido`, apartado 3), uno a uno, convertidos en reglas:
+  - 🐛 **El ✓ de una tarea latía al ABRIR la pantalla**, todas las hechas a la vez: la clase `tarea-hecha` (y
+    `habito-hecho`) iba escrita en el icono, así que se animaba al montarse. Ahora la pone
+    `LatidoAlMarcar latido="tarea"` (o `"habito"`) **solo al marcarla**, como un favorito desde la F3 — en el
+    Calendario, Productividad, Fe y los pasos de progresión de Entrenamiento.
+  - **Un icono que cambia de sentido saltaba** (play ↔ pausa, ⋯ ↔ ✕, ＋ ↔ ✓): ahora es `IconoQueCambia`, y el nuevo
+    aparece en el sitio del de antes (`icono-cambia`, `fast`, la curva de lo que aparece). Al abrir la pantalla no se
+    mueve nada.
+  - **Siete entradas terminaban con `both`** sin necesitarlo (la barra de volver, la cabecera de un área, el cambio de
+    mes, los dos ✓, el libro terminado, la rutina terminada y la llama de una racha): su último fotograma se quedaba
+    puesto —un `transform` que gana a `:active`, un `filter` que la llama arrastraba para siempre—. Pasan a
+    `backwards`. Solo el «+1» se queda con `both`, porque termina invisible (`FINALES_QUE_SE_QUEDAN`).
+- **Los tokens** (`tokensSinUso`, apartado 53): `duracion.instant`, `opacidad.full` y `muelle.bouncy` no los usa
+  nadie, y **se quedan** porque los exige la F1 (o los mide la F8): están en `TOKENS_DE_RESERVA` con su motivo (C-67).
+  Un token sin uso que no esté ahí pone la suite roja.
+- **La inspección** (apartados 56 y 57): `window.__motion.inspeccionar(el)` (con
+  `localStorage["josstyle:motion-debug"] = "1"`, en desarrollo) dice qué mueve un elemento: el nombre, la duración y
+  la curva **con su token**, si sale de `index.css` o del orquestador, su sistema, su prioridad y el elemento.
+- 🐛 **De paso:** los dos botones del temporizador de concentración (Bienestar digital) eran de solo icono **sin
+  `aria-label`**, y la casilla de un paso de progresión decía siempre «Marcar hecho» sin decir si lo estaba.
+
+## Jos Style Motion Language
+
+Lo que hace que el movimiento sea reconociblemente de JosStyle, dicho una vez. Cada afirmación tiene detrás una
+pieza del código y una prueba que la busca (`LENGUAJE_JOSSTYLE`, `PERSONALIDAD_MOTION`).
+
+**Personalidad.** Precisión, control, calma, tecnología, premium, claridad y energía contenida. Nada de rebotes
+infantiles, exageración, gelatina, marketing ni efectos gratuitos. Cada rasgo con su garantía:
+
+| Rasgo | Cómo se ve | Quién lo garantiza |
+|---|---|---|
+| Precisión | Lo que llega decelera largo y se posa sin rebote | `auditarLenguaje` (F14) |
+| Control | Ningún muelle en uso se pasa; el dedo manda | `muelleSinRebote` (F8), `tomarControl` (F11) |
+| Calma | Distancias de 4 a 24 px y escalas contenidas | `DISTANCIAS_MOTION`, `TOPES_ESCALA` (F1) |
+| Tecnología | Un motor, sin librería | `auditarOrquestacion` (F11), `package.json` (F0) |
+| Premium | Un solo momento de firma (el «+1» de una racha) | `NIVELES_MOTION` (F0) |
+| Claridad | El movimiento nunca es lo único que dice algo | `auditarAccesibilidadMotion` (F12) |
+| Energía contenida | Responder en `ultraFast`; lo que se va, más corto | Las parejas de la F14 |
+
+**Temperatura.** *Preciso + responsive + controlado*: dos rasgos fríos (la curva estándar y la duración de su talla;
+muelles críticos y presupuestos) y uno cálido (pulsar empieza al instante y el dedo manda). Nunca «humano» en el
+sentido de juguetón.
+
+**Principios.**
+
+1. **Una entrada** combina la opacidad con UNA cosa más: un desplazamiento corto o una escala de superficie.
+2. **Una salida** dura menos que su entrada y acelera hacia fuera: nadie espera a que algo se vaya.
+3. **Volver no es entrar al revés**: desde la izquierda, más corto, sin escala, con el scroll de antes.
+4. **Lo que el dedo empieza no espera** a nada decorativo: pulsar es CSS y lo que sigue al dedo toma el control.
+5. **Una marca late al ponerla, nunca al abrir** la pantalla; un icono que cambia aparece en su sitio.
+6. **Un error se dice con palabras**, donde pasó; nunca tiembla.
+7. **Esqueleto, giro, botón que espera y pantalla que tarda** son una sola familia de carga, con el texto al lado.
+8. **Una cifra cambia según su clase**: la principal cuenta, las demás se relevan, un reloj nunca se anima.
+9. **Premium ≠ más**: lo que no informa, no se anima.
+
+**Jerarquía** (apartado 45; `JERARQUIA_F18`, las siete prioridades de la F11 agrupadas):
+
+| Nivel | Prioridades | Qué |
+|---|---|---|
+| 1 · Crítico | `critica`, `navegacion` | Una confirmación, cambiar de pantalla, abrir una capa |
+| 2 · Interacción | `gesto`, `micro` | Lo que sigue al dedo y la respuesta de un control |
+| 3 · Contextual | `estado`, `layout` | Guardando, hecho, un dato que cambia, una lista que se recoloca |
+| 4 · Decorativo | `decorativa` | La cascada de una portada, la llama de una racha |
+
+Con demasiadas animaciones a la vez (48), lo micro y lo decorativo no empiezan (`PRESUPUESTO_ORQUESTADOR`); una
+pantalla densa escalona como mucho seis y tiene UNA cifra principal.
+
+**Curvas** (F14): lo que **llega**, `--ease-premium`; lo que **aparece** en su sitio, `entrance`; lo que **sale**,
+`exit`; lo que **abre y cierra**, `smooth`; los **momentos**, `emphasized`; un **reloj**, `linear`. Ni `ease`, ni
+`ease-in-out`, ni un `cubic-bezier` inventado.
+
+**Duraciones** (F1 y F14): una familia, no un número universal — `ultraFast` 120 · `fast` 160 · `normal` 220 ·
+`medium` 280 · `slow` 340 · `cinematic` 420 · `momento` 620 · `firma` 900 ms, multiplicadas por la velocidad de Ajustes
+(lenta ×1,3 · rápida ×0,75). Cada nivel del mapa tiene su talla: lo micro no pasa de 220 ms.
+
+**Muelles** (F8): solo cuando el movimiento lo suelta el dedo. `responsive` para lo que va pegado al dedo, `normal`
+para una tarjeta, `soft` para una pantalla, `heavy` para arrastrar; ninguno en uso se pasa de su sitio, y `bouncy` no
+lo usa nadie. Un muelle que mueve píxeles reposa a un cuarto de píxel.
+
+**Gestos** (F5 y F8): un dedo, una máquina de estados (`quieta · arrastrando · umbral · volviendo · cerrando ·
+cerrada`), los umbrales de `UMBRALES_GESTO` y la velocidad del gesto decidiendo: un deslizamiento rápido no es uno
+lento. Un dedo junto al borde no empieza un gesto (es «atrás» en Safari).
+
+**Profundidad** (F6): capas con nombre (`CAPAS_Z`), el velo de `CAPAS`, la sombra y el desenfoque de sus funciones.
+Lo que está más arriba entra después y se va antes; una sombra que aparece se funde.
+
+**Responsive** (F15): las duraciones no cambian con el ancho; solo `sm` es un corte de movimiento (la hoja pasa a
+ventana). Girar asienta lo que viaja.
+
+**Accesibilidad** (F12): **reducir no es apagar** — en Reducido todo se funde en su sitio, sin desplazarse ni
+escalar; solo «Sin movimiento» lo quita. Ningún estado se dice solo con movimiento; la navegación se anuncia.
+
+**Para quien empieza** (`API_MOTION`): `<Presencia>` para aparecer y desaparecer, `transicion('width', 'medium')` o una
+clase con `var(--motion-dur-*)`, `<ListaAnimada>` con `data-flip-id`, `<CifraQueCambia>`, `<LatidoAlMarcar>` e
+`<IconoQueCambia>`, y desde JavaScript `animarOrquestado(el, fotogramas, opciones, { sistema })`.
+
+**Guardarraíles** (`GUARDARRAILES_MOTION`): ni `transition: all`, ni una duración suelta, ni un `cubic-bezier`
+inventado, ni un segundo sistema de movimiento. Cada uno lo caza una auditoría, y la prueba le pasa un ejemplo malo.
+
+**¿Quién mueve esto?** En desarrollo, `localStorage["josstyle:motion-debug"] = "1"` y
+`window.__motion.inspeccionar(elemento)`.
+
+**La regla permanente** (apartado 64). Antes de añadir una animación:
+
+1. ¿Qué comunica? — 2. ¿Qué interacción mejora? — 3. ¿Qué sistema existente debería controlar esto? —
+4. ¿Existe ya un patrón equivalente? — 5. ¿Respeta la personalidad de Jos Style? — 6. ¿Funciona con reduced motion? —
+7. ¿Es suficientemente rápida? — 8. ¿Puede interrumpirse? — 9. ¿Tiene impacto de rendimiento aceptable?
+
+Si no aporta valor, no se implementa. Cada pregunta tiene quién la contesta en `REGLA_PERMANENTE_MOTION`.
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en

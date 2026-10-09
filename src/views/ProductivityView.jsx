@@ -5,7 +5,7 @@ import {
   ChevronDown, ChevronUp, ArrowLeft, Timer, Compass, Repeat, Pencil, ArrowUpRight,
   Droplet, BookOpen, Dumbbell, Moon, Apple, Brain, Heart, Archive,
 } from 'lucide-react';
-import { ChevronDespliegue, CifraQueCambia } from '../components/motion';
+import { ChevronDespliegue, CifraQueCambia, LatidoAlMarcar } from '../components/motion';
 import { COLORS, PERIODOS_META } from '../tokens';
 import { uid, todayISO, formatFecha } from '../lib/helpers';
 import { resumenHabito, alternarHabito } from '../lib/rachas';
@@ -238,9 +238,12 @@ export function TarjetaHabito({ habito, hoy, accent, indice = 0, onAlternar, onA
             aria-label={hecho ? `Desmarcar ${habito.nombre}` : `Completar ${habito.nombre}`}
             aria-pressed={hecho}
           >
-            {hecho
-              ? <CheckCircle2 size={24} style={{ color: accent }} className="habito-hecho" />
-              : <Circle size={24} style={{ color: COLORS.textMuted }} />}
+            {/* MS F18 — el ✓ late al marcarlo (`habito-hecho`), no al abrir la pantalla. */}
+            <LatidoAlMarcar activo={!!hecho} latido="habito">
+              {hecho
+                ? <CheckCircle2 size={24} style={{ color: accent }} />
+                : <Circle size={24} style={{ color: COLORS.textMuted }} />}
+            </LatidoAlMarcar>
           </button>
         ) : (
           <span className="text-[10px] flex-shrink-0" style={{ color: COLORS.textMuted }}>Hoy no</span>
@@ -1541,9 +1544,11 @@ function TarjetaTarea({ tarea, hoy, accent, onCompletar, onAbrir, onConcentrarse
         aria-label={tarea.hecha ? `Marcar ${tarea.texto} como pendiente` : `Completar ${tarea.texto}`}
         className="toque-44 p-1.5 -m-1.5 shrink-0"
       >
-        {tarea.hecha
-          ? <CheckCircle2 size={20} className="tarea-hecha" style={{ color: accent }} />
-          : <Circle size={20} style={{ color: COLORS.textMuted }} />}
+        <LatidoAlMarcar activo={!!tarea.hecha} latido="tarea">
+          {tarea.hecha
+            ? <CheckCircle2 size={20} style={{ color: accent }} />
+            : <Circle size={20} style={{ color: COLORS.textMuted }} />}
+        </LatidoAlMarcar>
       </button>
 
       <button onClick={() => onAbrir(tarea)} className="flex-1 text-left min-w-0">
@@ -2005,7 +2010,9 @@ function TarjetaMeta({ meta, objetivos, accent, onAbrir, onCompletar }) {
         aria-label={hecha ? `Marcar ${meta.nombre} como pendiente` : `Completar ${meta.nombre}`}
         className="toque-44 p-1.5 -m-1.5 shrink-0"
       >
-        {hecha ? <CheckCircle2 size={20} style={{ color: accent }} /> : <Circle size={20} style={{ color: COLORS.textMuted }} />}
+        <LatidoAlMarcar activo={!!hecha} latido="tarea">
+          {hecha ? <CheckCircle2 size={20} style={{ color: accent }} /> : <Circle size={20} style={{ color: COLORS.textMuted }} />}
+        </LatidoAlMarcar>
       </button>
       <button onClick={() => onAbrir(meta)} className="flex-1 text-left min-w-0">
         <p className="text-sm font-semibold truncate" style={{ color: COLORS.text, textDecoration: hecha ? 'line-through' : 'none' }}>

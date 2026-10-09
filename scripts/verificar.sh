@@ -1042,6 +1042,11 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f17.mjs >/tmp/j
 else
   fallo "Falla el motion de datos del Motion System (F17)"; grep '✗' /tmp/jc_motion_f17.log
 fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f18.mjs >/tmp/jc_motion_f18.log 2>&1; then
+  ok "El Motion System, F18: el sistema revisado como un todo —la auditoría total, el inventario, el ✓ que late al marcar y no al abrir, el icono que cambia sin saltar, las entradas que no se quedan puestas, el lenguaje familia por familia, los tokens de reserva, los guardarraíles y la inspección— — $(grep -c '✓' /tmp/jc_motion_f18.log) comprobaciones"
+else
+  fallo "Falla el pulido y el lenguaje del Motion System (F18)"; grep '✗' /tmp/jc_motion_f18.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

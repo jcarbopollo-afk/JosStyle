@@ -312,7 +312,9 @@ console.log('\n═══ 13. LAS ANIMACIONES EXISTEN DE VERDAD ═══\n');
    Ya pasó con `tarea-hecha` y `aviso-entra`. */
 for (const clase of ['habito-hecho', 'barra-progreso']) {
   ok(new RegExp(`\\.${clase}\\s*\\{`).test(CSS), `⚠️ \`.${clase}\` existe en el CSS`);
-  ok(VISTA.includes(clase), `⚠️ y la vista la usa`);
+  /* 🔓 MS F18 — el ✓ de un hábito ya no lleva la clase escrita (latía también al abrir la pantalla): la pone
+     `LatidoAlMarcar latido="habito"` solo al marcarlo. La vista la sigue usando, por su nombre de latido. */
+  ok(VISTA.includes(clase) || (clase === 'habito-hecho' && /latido="habito"/.test(VISTA)), `⚠️ y la vista la usa`);
 }
 ok(/@keyframes habitoHecho/.test(CSS), '⚠️ con su animación escrita');
 ok(!/@keyframes|animation:/.test(VISTA),

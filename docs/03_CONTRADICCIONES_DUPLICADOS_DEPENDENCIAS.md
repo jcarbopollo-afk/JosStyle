@@ -1507,3 +1507,17 @@ deshacer en pantalla un cambio que solo no ha llegado a la cuenta perdería lo q
 Lo pendiente vive en memoria —no en el dispositivo: lleva datos sensibles— y el aviso dice que se pierde si se cierra
 la aplicación. La comprobación de la F41 (que `estadosEstilo.js` no tenga una cola) sigue en pie.
 
+
+### C-67 — ✅ RESUELTA AL CONSTRUIR (Motion System F18, v3.148.0) · «Eliminar tokens sin uso» de la F18 contra los tokens que exige la F1
+
+La F18 (apartado 53) pide *"Eliminar tokens sin uso"*, y su apartado 63, *"No eliminar infraestructura que siga
+siendo utilizada"*. Medidos uno a uno (`tokensSinUso`: una `var()` del CSS, un valor de un preset o una llamada con su
+nombre; los muelles, en los que usa alguna masa), solo tres no los usa ninguna pieza: **`duracion.instant`,
+`opacidad.full` y `muelle.bouncy`**. Y los tres los **exige el enunciado de la F1** (apartado 2: las siete duraciones,
+las cinco opacidades y los cinco muelles, con su prueba), y `bouncy` es además el ejemplo **medido** de la F8 —el único
+que rebota—, que es lo que demuestra que `muelleSinRebote` sabe ponerse rojo.
+
+**La lectura que respeta las dos:** se quedan, **declarados uno a uno con su motivo** en `TOKENS_DE_RESERVA`
+(`src/lib/pulidoMotion.js`), y la suite de la F18 exige que los tokens sin uso sean **exactamente** esos. Lo que el
+apartado 53 protege —que no se acumulen tokens muertos— queda como un trinquete: el día que otro token deje de usarse
+sin declararlo, la verificación se pone roja.

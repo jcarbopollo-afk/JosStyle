@@ -41,6 +41,7 @@ import {
   StickyNote, Pause, Play, RotateCcw, Dumbbell, Undo2,
 } from 'lucide-react';
 import { useDeslizarParaCambiar } from '../components/gestosMotion';
+import { IconoQueCambia } from '../components/motion';
 import { COLORS } from '../tokens';
 import { OpcionSegmentada } from '../components/piezasFitness';
 import { acentoLegible } from '../lib/acabadoFitness';
@@ -572,7 +573,7 @@ export function BarraDescanso({ descanso, ahora, accent, onPausar, onReanudar, o
       <div className="flex items-center justify-center gap-1.5 flex-wrap">
         {!fin && boton(
           { onClick: pausado ? onReanudar : onPausar, 'aria-label': pausado ? 'Reanudar el descanso' : 'Pausar el descanso' },
-          pausado ? <Play size={16} /> : <Pause size={16} />,
+          <IconoQueCambia clave={pausado ? 'play' : 'pausa'}>{pausado ? <Play size={16} /> : <Pause size={16} />}</IconoQueCambia>,
         )}
         {SUMAS_DESCANSO.map((s) => (
           <React.Fragment key={s}>

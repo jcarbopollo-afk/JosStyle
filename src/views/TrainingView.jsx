@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Sparkles, Video, Trash2, AlertTriangle, CheckCircle2, Circle, Plus } from 'lucide-react';
-import { ChevronDespliegue } from '../components/motion';
+import { ChevronDespliegue, LatidoAlMarcar } from '../components/motion';
 import { COLORS, SKILLS } from '../tokens';
 import { uid, formatFecha, todayISO, fechaLocalISO } from '../lib/helpers';
 import { askAI, askAIWithImages, AI_SYSTEM } from '../lib/ai';
@@ -92,8 +92,10 @@ function ProgresionTab({ skill, data, onUpdate, accent }) {
           <div className="space-y-1.5">
             {progresion.map((p) => (
               <div key={p.id} className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: COLORS.surface2 }}>
-                <button onClick={() => toggle(p.id)} aria-label="Marcar hecho">
-                  {p.hecho ? <CheckCircle2 size={17} style={{ color: accent }} /> : <Circle size={17} style={{ color: COLORS.textMuted }} />}
+                <button onClick={() => toggle(p.id)} aria-label="Marcar hecho" aria-pressed={!!p.hecho}>
+                  <LatidoAlMarcar activo={!!p.hecho} latido="tarea">
+                    {p.hecho ? <CheckCircle2 size={17} style={{ color: accent }} /> : <Circle size={17} style={{ color: COLORS.textMuted }} />}
+                  </LatidoAlMarcar>
                 </button>
                 <span className="text-sm flex-1" style={{ color: p.hecho ? COLORS.textMuted : COLORS.text, textDecoration: p.hecho ? 'line-through' : 'none' }}>
                   {p.texto}

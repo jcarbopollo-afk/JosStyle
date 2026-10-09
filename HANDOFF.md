@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.148.0 — Motion System F18/20: el movimiento revisado como un todo):**
+> Nada nuevo de adorno: se ha revisado todo lo que se mueve. El ✓ de una tarea o de un hábito ya no late al abrir la
+> pantalla —latían todas las hechas a la vez— y sí al marcarlo; play ↔ pausa y el menú ⋯ ↔ ✕ ya no saltan; la barra
+> de volver y otras seis entradas ya no dejan nada puesto al terminar; el botón de Face ID del bloqueo espera como el
+> resto; y el temporizador de concentración ya dice qué hace cada botón al lector de pantalla. Queda escrito el
+> lenguaje del movimiento de JosStyle. **La siguiente es la F19** (pruebas extremas y QA del movimiento).
+
 > **📅 ACTUALIZACIÓN (v3.147.0 — Motion System F17/20: los datos que cambian):**
 > Los números que cambiaban de golpe junto a una barra que sí se movía —la racha, los porcentajes de Nutrición,
 > «2 / 3 completado», el texto de las metas y los objetivos— ya se mueven con ella. Una cifra que cuenta y cambia

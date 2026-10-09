@@ -193,7 +193,9 @@ ok(/\.favorito-guardado\s*\{[^}]*favoritoPulso var\(--motion-dur-normal\)[^;]*ba
 ok(/scale\(var\(--motion-pulso-fuerte\)\)/.test(CSS_LIMPIO.slice(CSS_LIMPIO.indexOf('@keyframes favoritoPulso'), CSS_LIMPIO.indexOf('@keyframes favoritoPulso') + 200)) && PRESETS_MOTION.selection.pulso === 'fuerte',
   '🐛 el preset `selection` late lo mismo que el CSS (`fuerte`): decía `suave`, y la misma marca latía distinto');
 ok(PULSOS_MOTION.fuerte <= 1.35, '…y se queda bajo el techo de una marca pequeña (C-52)');
-const usosLatido = Object.values(VISTAS).reduce((n, src) => n + (src.match(/<LatidoAlMarcar activo=/g) || []).length, 0);
+/* 🔓 MS F18 — `LatidoAlMarcar` también marca ahora las tareas y los hábitos (`latido="tarea"`/`"habito"`):
+   los favoritos son los que no dicen otro latido. */
+const usosLatido = Object.values(VISTAS).reduce((n, src) => n + (src.match(/<LatidoAlMarcar activo=\{[^}]*\}>/g) || []).length, 0);
 ok(usosLatido === 13, `🚨 las trece marcas de favorito de la aplicación laten (${usosLatido})`);
 ok(!Object.entries(VISTAS).some(([f, src]) => f !== 'src/components/motion.jsx' && /className="[^"]*favorito-guardado/.test(src)),
   '…y ninguna vista pone la clase a mano (la pone `LatidoAlMarcar`, que sabe cuándo)');

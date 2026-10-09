@@ -14785,6 +14785,94 @@ almacen.economia = economiaDeAntes_ms17;
 almacen.sueno = suenoDeAntes_ms17;
 almacen.productividad = productividadDeAntes_ms17;
 
+/* ── MS F18 · El lenguaje, pulido: la marca late al marcarla (nunca al abrir), el icono no salta, nada se queda
+   puesto y la consola dice quién mueve qué ──
+   Lo que solo se ve en un navegador: que el ✓ de una tarea hecha NO late al abrir la pantalla (antes latían todas
+   a la vez) y SÍ al marcarla, que play ↔ pausa aparece en su sitio, que la barra de volver no deja un
+   `transform` puesto al terminar de entrar (`both` → `backwards`) y que `window.__motion.inspeccionar` nombra
+   la animación con sus tokens. ⚠️ Sufijo `_ms18`. */
+console.log('\n── MS F18 · Pulido: latidos, iconos que cambian, entradas que no se quedan e inspección ──');
+const ajustesDeAntes_ms18 = almacen.ajustes;
+const productividadDeAntes_ms18 = almacen.productividad;
+const hoy_ms18 = new Date().toLocaleDateString('sv-SE');
+almacen.ajustes = { ...(ajustesDeAntes_ms18 || {}), apariencia: { ...((ajustesDeAntes_ms18 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+almacen.productividad = {
+  tareas: [
+    { id: 'th_ms18', texto: 'Ya hecha F18', fecha: hoy_ms18, hecha: true },
+    { id: 'tp_ms18', texto: 'Por hacer F18', fecha: hoy_ms18, hecha: false },
+  ],
+  habitos: [], rutinas: [], metas: [], pomodoros: {}, apuntes: [],
+};
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.evaluate(() => { try { localStorage.setItem('josstyle:motion-debug', '1'); } catch { /* sin almacenamiento */ } });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms18 = errores.length;
+
+/* 1 · El ✓ de una tarea: no late al abrir, late al marcar. */
+await pulsar('Gestión');
+await pulsar('Organización');
+ok(await pulsar('Calendario') && await pulsar('Día'), 'MS F18 — Calendario → Día');
+await esperarTexto(/Por hacer F18/);
+await page.waitForTimeout(450);
+const alAbrir_ms18 = await page.evaluate(() => document.querySelectorAll('.tarea-hecha').length);
+ok(alAbrir_ms18 === 0, `🐛 MS F18, apartado 23 — al abrir el día, la tarea que ya estaba hecha NO late (${alAbrir_ms18} latiendo): antes latían todas a la vez`);
+const marcar_ms18 = await page.evaluate(async () => {
+  const b = [...document.querySelectorAll('button[aria-label="Completar Por hacer F18"]')].find((x) => !x.closest('[data-lista-saliendo], [inert]'));
+  if (!b) return null;
+  b.click();
+  await new Promise((r) => setTimeout(r, 0));
+  await new Promise((r) => requestAnimationFrame(r));
+  const marcado = [...document.querySelectorAll('button[aria-label="Desmarcar Por hacer F18"]')].find((x) => !x.closest('[data-lista-saliendo], [inert]'));
+  const envoltorio = marcado && marcado.querySelector('[data-latido]');
+  const anims = envoltorio && envoltorio.getAnimations ? envoltorio.getAnimations().map((a) => a.animationName) : [];
+  return { clase: !!(envoltorio && envoltorio.classList.contains('tarea-hecha')), anims, otras: document.querySelectorAll('.tarea-hecha').length };
+});
+ok(marcar_ms18 && marcar_ms18.clase && marcar_ms18.anims.includes('tareaHecha'),
+  `MS F18 — al marcarla, su ✓ late (\`tarea-hecha\`, ${JSON.stringify(marcar_ms18 && marcar_ms18.anims)})`);
+ok(marcar_ms18 && marcar_ms18.otras === 1, `…y solo ella: la que ya estaba hecha sigue quieta (${marcar_ms18 && marcar_ms18.otras})`);
+
+/* 2 · La barra de volver no deja un `transform` puesto al terminar de entrar. */
+await pulsar('Vida');
+await pulsar('Mente');
+ok(await pulsar('Bienestar digital'), 'MS F18 — Bienestar digital');
+await esperarTexto(/Concentraci/i);
+await page.waitForTimeout(600);
+const barra_ms18 = await page.evaluate(() => {
+  const b = document.querySelector('.back-bar');
+  return b ? getComputedStyle(b).transform : null;
+});
+ok(barra_ms18 === 'none', `🐛 MS F18, apartado 52 — la barra de volver termina de entrar SIN dejar un transform puesto (${barra_ms18}): con \`both\` se quedaba su último fotograma`);
+
+/* 3 · Play ↔ pausa: el icono aparece en su sitio, no salta, y la consola sabe decir quién lo mueve. */
+ok(await pulsar('Concentración'), 'MS F18 — la pestaña Concentración');
+await esperarTexto(/Sesiones completadas/i);
+const icono_ms18 = await page.evaluate(async () => {
+  const antes = document.querySelectorAll('.icono-cambia').length;
+  const b = document.querySelector('button[aria-label="Empezar la concentración"]');
+  if (!b) return { antes, sinBoton: true };
+  b.click();
+  await new Promise((r) => setTimeout(r, 0));
+  await new Promise((r) => requestAnimationFrame(r));
+  const pausar = document.querySelector('button[aria-label="Pausar la concentración"]');
+  const env = pausar && pausar.querySelector('[data-icono]');
+  const linea = window.__motion && typeof window.__motion.inspeccionar === 'function' && env ? window.__motion.inspeccionar(env).find((l) => l.nombre === 'iconoCambia') : null;
+  return { antes, cambia: !!(env && env.classList.contains('icono-cambia')), clave: env && env.dataset.icono, linea };
+});
+ok(icono_ms18 && icono_ms18.antes === 0, `MS F18 — al abrir la pestaña ningún icono se mueve (${icono_ms18 && icono_ms18.antes})`);
+ok(icono_ms18 && icono_ms18.cambia && icono_ms18.clave === 'pausa', `🔓 MS F18, apartado 20 — play → pausa: el icono nuevo aparece en el sitio del de antes (\`icono-cambia\`, ${JSON.stringify(icono_ms18 && { cambia: icono_ms18.cambia, clave: icono_ms18.clave })})`);
+const l_ms18 = icono_ms18 && icono_ms18.linea;
+ok(l_ms18 && l_ms18.fuente === 'index.css' && l_ms18.tokenDuracion === 'fast' && l_ms18.tokenCurva === 'entrance' && /icono-cambia/.test(l_ms18.elemento),
+  `🔓 MS F18, apartados 56 y 57 — \`window.__motion.inspeccionar(el)\` dice qué es, de dónde sale y con qué tokens (${JSON.stringify(l_ms18 && { nombre: l_ms18.nombre, fuente: l_ms18.fuente, tokenDuracion: l_ms18.tokenDuracion, tokenCurva: l_ms18.tokenCurva })})`);
+await pulsar('Pausar la concentración');
+
+ok(errores.length === erroresAntes_ms18, `MS F18 — …sin un error en la consola${errores.length > erroresAntes_ms18 ? `: ${errores.slice(erroresAntes_ms18).join(' | ').slice(0, 200)}` : ''}`);
+await page.evaluate(() => { try { localStorage.removeItem('josstyle:motion-debug'); } catch { /* sin almacenamiento */ } });
+almacen.ajustes = ajustesDeAntes_ms18;
+almacen.productividad = productividadDeAntes_ms18;
+
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
 await salir(browser);

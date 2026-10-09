@@ -5,7 +5,7 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**84 elementos**: ✅ Existe 81 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 1 · 🚨 Fuera de control 0.
+**85 elementos**: ✅ Existe 82 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 1 · 🚨 Fuera de control 0.
 
 ## Resumen
 
@@ -38,6 +38,7 @@
 | Tarjeta destacada al llegar por un enlace (objetivo, tarea) | D | 2 · Suave | 280 ms | ✅ Existe | F7 |
 | Tarjetas de una lista que entran en cascada (Biblioteca, Productividad, Nutrición, Salud) | J | 3 · Protagonista | 420 ms | ✅ Existe | F10 |
 | Marcar un favorito | E | 1 · Micro | 220 ms | ✅ Existe | F3 |
+| Un icono que cambia de sentido (play ↔ pausa, ⋯ ↔ ✕, ＋ ↔ ✓) | E | 1 · Micro | 160 ms | ✅ Existe | F18 |
 | «Pensando…» y los botones que esperan | M | 1 · Micro | 1000 ms | ✅ Existe | F16 |
 | Campos de texto al enfocar | F | 1 · Micro | 160 ms | ✅ Existe | F9 |
 | Un error aparece debajo de su campo | P | 1 · Micro | 160 ms | ✅ Existe | F9 |
@@ -887,6 +888,36 @@
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | No late: el pulso vale 1, y el color ya lo dice. |
+
+#### Un icono que cambia de sentido (play ↔ pausa, ⋯ ↔ ✕, ＋ ↔ ✓)
+
+`icono_cambia` · ✅ Existe · lo trata la **F18**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/motion.jsx (IconoQueCambia) · src/index.css |
+| Componente | IconoQueCambia |
+| Clase CSS | `.icono-cambia` |
+| @keyframes | `iconoCambia` |
+| En ANIMACIONES_HC | — |
+| Función | Que el icono nuevo aparezca en el sitio del de antes en vez de sustituirse de golpe (apartado 20 de la F18). |
+| Estado inicial | El icono nuevo medio visible y al 0,82 |
+| Estado final | En su sitio |
+| Entrada | Aparece en su sitio |
+| Salida | — |
+| Interacción | Pausar o reanudar, abrir o cerrar un menú, añadir o quitar de una colección |
+| Transición | opacity, transform |
+| Duración | 160 ms |
+| Curva | --motion-curva-entrance |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 1 · Micro |
+| Prioridad | media |
+| Relación | Solo cuando cambia DESPUÉS de pintarse: al abrir la pantalla no se mueve (como `LatidoAlMarcar`, F3). |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Se funde en su sitio: el token de escala vale 1. |
 
 #### Un botón que espera: «Guardar» → «Guardando…» → ✓
 

@@ -90,7 +90,7 @@ import { emitir } from './lib/eventos';
 import { contadorDesdeSesiones, normalizarConfig as normalizarConfigPomodoro, iniciarSesion as iniciarSesionPomodoro } from './lib/pomodoro';
 import { ESTADO_INICIAL, normalizarEstado, panelRachas, crearRacha as crearRachaServicio, completarDia as completarDiaServicio, deshacerDia as deshacerDiaServicio, eliminarRacha as eliminarRachaServicio } from './lib/rachasServicio';
 import { GAMIFICACION_INICIAL, normalizarGamificacion, evaluar as evaluarRachas, olvidarRacha as olvidarRachaGamificacion } from './lib/rachasGamificacion';
-import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal, Esqueleto } from './components/ui';
+import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal, Esqueleto, TextoDeBoton } from './components/ui';
 import HubView from './views/HubView';
 import Auth from './components/Auth';
 import DashboardView from './views/DashboardView';
@@ -384,6 +384,7 @@ function BloqueoAutomaticoGate({ seguridad, accent, onUnlock, onOlvidoPin }) {
   /* 🐛 MS F16, apartado 40 — la espera vuelve a reposo pase lo que pase (`finally`): con el `await`
      fuera de un `try`, un fallo dejaba el bloqueo «verificando» y no se podía volver a intentar. */
   const intentarBiometria = async () => {
+    if (verificando) return;
     setVerificando(true);
     setError('');
     let ok = false;
@@ -402,13 +403,17 @@ function BloqueoAutomaticoGate({ seguridad, accent, onUnlock, onOlvidoPin }) {
       <Lock size={28} style={{ color: accent }} />
       <p className="text-sm text-center" style={{ color: COLORS.textMuted }}>App bloqueada por inactividad</p>
       {biometriaLista && (
+        /* 🐛 MS F18 — el último botón que escribía a mano su «Verificando…» (la auditoría de la F9 no
+           leía `App.jsx`): ahora es `TextoDeBoton`, como todos, y espera sin apagarse (`aria-busy`). */
         <button
           onClick={intentarBiometria}
-          disabled={verificando}
-          className="px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
+          aria-busy={verificando || undefined}
+          className="px-4 py-2.5 rounded-xl text-sm font-semibold"
           style={{ background: accent, color: COLORS.textOnAccent }}
         >
-          {verificando ? 'Verificando…' : 'Desbloquear con Face ID / Touch ID'}
+          <TextoDeBoton estado={verificando ? 'cargando' : 'reposo'} textoCargando="Verificando…">
+            Desbloquear con Face ID / Touch ID
+          </TextoDeBoton>
         </button>
       )}
       <EntradaPin accent={accent} onSubmit={intentarPin} cargando={verificando} error={error} />

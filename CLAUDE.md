@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.147.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.148.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -40,7 +40,7 @@ plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegac
 **F6 (v3.136.0)** —la profundidad y las capas—, la **F7 (v3.137.0)** —la continuidad espacial—, la **F8
 (v3.138.0)** —la física y la interacción directa—, la **F9 (v3.139.0)** —los estados y el feedback— y la
 **F10 (v3.140.0)** —el diseño que cambia: listas y desplegables— , la **F11 (v3.141.0)** —el orquestador—, la **F12 (v3.142.0)** —la accesibilidad del
-movimiento—, la **F13 (v3.143.0)** —el rendimiento—, la **F14 (v3.144.0)** —el lenguaje del movimiento: curvas, ritmo y firma— la **F15 (v3.145.0)** —el movimiento en cada contexto físico: áreas seguras, girar y el teclado— la **F16 (v3.146.0)** —los estados del sistema: carga, error, sin conexión y guardado— y la **F17 (v3.147.0)** —los datos que cambian: cifras, barras, gráficas y rankings—.
+movimiento—, la **F13 (v3.143.0)** —el rendimiento—, la **F14 (v3.144.0)** —el lenguaje del movimiento: curvas, ritmo y firma— la **F15 (v3.145.0)** —el movimiento en cada contexto físico: áreas seguras, girar y el teclado— la **F16 (v3.146.0)** —los estados del sistema: carga, error, sin conexión y guardado— la **F17 (v3.147.0)** —los datos que cambian: cifras, barras, gráficas y rankings— y la **F18 (v3.148.0)** —el sistema revisado como un todo: pulido y lenguaje de marca—.
 Lo que vale para cualquier cambio a partir de hoy:
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
@@ -220,6 +220,14 @@ Lo que vale para cualquier cambio a partir de hoy:
   `fit-barra`, `nu-progreso`), nunca su `transition` escrita en el `style`; el eje Y de una gráfica que cambia mientras
   se mira, **`dominioEstable`**; un ranking que se ordena o se filtra, `ListaAnimada`. `auditarDatos` y `MAPA_DATOS`
   (cada dato, buscado en su archivo) ponen la suite roja.
+- 🚨 **UNA MARCA LATE AL PONERLA, NUNCA AL ABRIR; UN ICONO QUE CAMBIA DE SENTIDO NO SALTA** (F18, `pulidoMotion.js`): el ✓ de
+  una tarea o de un hábito va en `<LatidoAlMarcar activo latido="tarea" | "habito">` (🐛 con la clase escrita en el icono
+  latían todas las hechas al abrir la pantalla) y play ↔ pausa, ⋯ ↔ ✕ o ＋ ↔ ✓ en `<IconoQueCambia clave={…}>`. Una
+  entrada de `index.css` termina con `backwards`; `both` solo si su final no es su estado natural
+  (`FINALES_QUE_SE_QUEDAN`). `auditarPulido` caza las tres cosas, y **`auditoriaTotalMotion` pasa las quince
+  auditorías a la vez sobre TODO lo que pinta** —🐛 así salió el «Verificando…» de `App.jsx`, que la F9 nunca leyó—.
+  Un token sin uso va a `TOKENS_DE_RESERVA` con su motivo (C-67) o la suite se pone roja. El lenguaje entero está en
+  «Jos Style Motion Language» (`docs/MOTION_SYSTEM.md`), y **`window.__motion.inspeccionar(el)`** dice quién mueve qué.
 - 🐛 **DOS HERMANOS CON LA MISMA `key` DEJAN EL VIEJO PUESTO** (F14): los indicadores de Nutrición y su
   `ListaAnimada` iban los dos por la fecha, y al cambiar de día se leían las cifras de hoy y las de ayer. **Un bloque
   con `key` por fecha lleva su prefijo.** Y 🐛 **una decisión de llegada se toma UNA vez por navegación**
@@ -2207,8 +2215,8 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F18 DEL MOTION SYSTEM** (*"Motion visual polish, brand language, transiciones premium
-   y coherencia sensorial"*, líneas 1459–2241 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F19 y la F20, en
+0. 🎬 **LA SIGUIENTE ES LA F19 DEL MOTION SYSTEM** (*"Testing extremo, validación, regresión y motion QA
+   automatizado"*, líneas 2242–3117 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F20, en
    el orden de
    `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
    `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**

@@ -57,6 +57,27 @@ export function siguienteLatido(estado, activo) {
   return { activo: !!activo, veces, late: !!activo && veces > 0 };
 }
 
+/**
+ * 🔓 MS F18 (apartado 23, el lenguaje del éxito) — LA MISMA REGLA PARA CADA MARCA QUE ÉL PONE. Un favorito
+ * late (`favorito-guardado`), una tarea que completa se marca (`tarea-hecha`) y un hábito de hoy también
+ * (`habito-hecho`): tres latidos, cada uno con su clase, y los tres solo al ponerlos. Hasta la F18 el ✓ de
+ * una tarea llevaba su clase escrita en el icono, así que latía también AL ABRIR la pantalla —todas las
+ * hechas a la vez—; ahora la pone `LatidoAlMarcar latido="tarea"`.
+ */
+export const CLASES_LATIDO = Object.freeze({ favorito: 'favorito-guardado', tarea: 'tarea-hecha', habito: 'habito-hecho' });
+export const claseDeLatido = (latido) => CLASES_LATIDO[latido] || CLASES_LATIDO.favorito;
+
+/**
+ * 🔓 MS F18 (apartado 20) — UN ICONO QUE CAMBIA DE SENTIDO. Cuenta los cambios de `clave` DESPUÉS del primer
+ * pintado: al abrir la pantalla no se mueve nada, y cada cambio de verdad hace entrar al icono nuevo. Con la
+ * misma clave no cuenta, así que llamarlo dos veces con lo mismo (el doble pintado de `StrictMode`) no anima.
+ */
+export function siguienteIcono(estado, clave) {
+  const previo = estado || { clave, veces: 0 };
+  const veces = clave !== previo.clave ? previo.veces + 1 : previo.veces;
+  return { clave, veces, cambia: veces > 0 };
+}
+
 /* ───────────────────────────────────────────────────────────────────────────
    3 · LA AUDITORÍA DE LOS COMPONENTES REALES (apartado 1)
 
