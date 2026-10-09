@@ -27,6 +27,7 @@ import { tareaEnFecha, tareaEnHora } from '../lib/accionesHoyAgenda';
 // Entrega 3 · F10 (HC F5) — la semana, y las tareas que se repiten.
 import { semanaDe, semanaAnterior, semanaSiguiente, TEXTO_DIA_LIBRE, marcarInstancia, seRepite } from '../lib/semana';
 import { ListaAnimada } from '../components/layoutMotion';
+import { VacioQueLlega } from '../components/estadosAsincronos';
 // Entrega 3 · F11 (HC F6) — el aviso de un evento: dos campos, no una entidad nueva.
 import { ANTICIPACIONES, estadoPermiso, avisoPorDefecto } from '../lib/avisosPlanificacion';
 // Entrega 3 · F13 (HC F8) — estadísticas de planificación, contadas en el momento.
@@ -860,17 +861,21 @@ function AgendaDeUnDia({ dia, titulo, tira, accent, onDia, onHoy, onCompletar, o
       </Card>
 
       {/* Apartado 19 — un día vacío no es una lista vacía. */}
-      {dia.vacio ? (
+      {/* MS F16, apartados 22 y 23 — la agenda se queda montada aunque el día se vacíe: lo último
+          que se borra sale con su copia (F10) y el vacío llega DESPUÉS (`VacioQueLlega`). */}
+      {dia.vacio && (
+        <VacioQueLlega>
         <Card className="text-center">
           <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{VACIO_AGENDA.titulo}</p>
           <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{VACIO_AGENDA.explica}</p>
           <PrimaryButton accent={accent} icon={Plus} onClick={onAnadir}>{VACIO_AGENDA.boton}</PrimaryButton>
         </Card>
-      ) : (
-        /* MS F10 — completar, borrar o añadir algo en este día no hace saltar la
+        </VacioQueLlega>
+      )}
+        {/* MS F10 — completar, borrar o añadir algo en este día no hace saltar la
            agenda: cada bloque y cada elemento se recolocan. Con `key` en la fecha,
            cambiar de día es otra agenda (apartado 14: una página nueva, no una
-           mutación), y no hay nada que viaje de un día a otro. */
+           mutación), y no hay nada que viaje de un día a otro. */}
         <ListaAnimada key={dia.fecha} className="space-y-4">
           {/* Apartado 17 — el siguiente pendiente, destacado LIGERAMENTE. */}
           {dia.proximo && (
@@ -980,7 +985,6 @@ function AgendaDeUnDia({ dia, titulo, tira, accent, onDia, onHoy, onCompletar, o
             </div>
           )}
         </ListaAnimada>
-      )}
     </>
   );
 }

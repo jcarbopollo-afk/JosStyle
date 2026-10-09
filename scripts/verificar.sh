@@ -1032,6 +1032,11 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f15.mjs >/tmp/j
 else
   fallo "Falla el movimiento responsive del Motion System (F15)"; grep '✗' /tmp/jc_motion_f15.log
 fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-motion-f16.mjs >/tmp/jc_motion_f16.log 2>&1; then
+  ok "El Motion System, F16: los estados del sistema —lo que no se pudo cargar no se guarda, lo que no llega queda pendiente y se vuelve a mandar, los guardados de una clave en orden, sin conexión, el arranque que tarda o no carga, la sesión que caduca y la última petición gana— — $(grep -c '✓' /tmp/jc_motion_f16.log) comprobaciones"
+else
+  fallo "Fallan los estados del sistema del Motion System (F16)"; grep '✗' /tmp/jc_motion_f16.log
+fi
 if node --import ./scripts/resolver-vite.mjs scripts/test-safari.mjs >/tmp/jc_safari.log 2>&1; then
   ok "El barrido de Safari (SF F1) — $(grep -c '✓' /tmp/jc_safari.log) comprobaciones"
 else

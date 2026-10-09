@@ -299,6 +299,7 @@ export const DEPENDENCIAS_PERMITIDAS = Object.freeze([
   { modulo: 'fisicaMotion', solo: ['punteroQueCuenta'], porque: 'La regla de un solo dedo del Motion System (MS F8, apartado 34): el divisor y el zoom del comparador son de quien empezó a arrastrar. Ningún motor de Fitness lo importa.' },
   { modulo: 'accesibilidadMotion', solo: ['desplazarHasta'], porque: 'El desplazamiento automático del Motion System (MS F12): llevar a la serie que toca o al foco que llega se desliza con movimiento completo y salta en Reducido. Capa visual: ningún motor de Fitness lo importa.' },
   { modulo: 'layoutMotion', solo: ['ListaAnimada', 'Plegable'], porque: 'El diseño que cambia del Motion System (MS F10): los ejercicios de una plantilla viajan al reordenarlos (`ListaAnimada`) y los desplegables cambian de altura al abrirse y cerrarse (`Plegable`). Capa visual: ningún motor de Fitness lo importa.' },
+  { modulo: 'estadosAsincronos', solo: ['VacioQueLlega'], porque: 'Los estados del sistema del Motion System (MS F16): el vacío del constructor llega DESPUÉS de que salga el último ejercicio. Capa visual: ningún motor de Fitness lo importa.' },
   { modulo: 'motion', porque: 'El Motion System de toda la aplicación (MS F1): `transicion()` para una transición en línea, y la auditoría de movimiento (F37) lee sus tokens para medir el CSS. Ningún motor de Fitness lo importa: es capa visual y de auditoría.' },
 ]);
 const baseDe = (spec) => spec.split('/').pop().replace(/\.(jsx?|mjs)$/, '');

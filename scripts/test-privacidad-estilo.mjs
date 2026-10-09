@@ -111,7 +111,9 @@ console.log('\n🔒 EH · Fase 43/65 — Seguridad, privacidad y control de dato
    --------------------------------------------------------------------------- */
 {
   console.log('\n3 · Cerrar sesión invalida el acceso');
-  ok(/if \(!session\) return <Auth \/>;/.test(APP),
+  /* MS F16 — la pantalla de entrar recibe ahora por qué se salió (la sesión que caduca se
+     explica), y sigue siendo lo ÚNICO que se pinta sin sesión. */
+  ok(/if \(!session\) return <Auth( salida=\{salida\})? \/>;/.test(APP),
     'sin sesión no se pinta nada de la aplicación');
   // 🚨 El fallo que encontró esta fase.
   ok(/setLoaded\(false\);/.test(APP),

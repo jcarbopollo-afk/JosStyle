@@ -4,6 +4,7 @@ import { BrowserMultiFormatReader } from '@zxing/library';
 import { X } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { GiroDeCarga } from './accesibilidadMotion';
+import { estadoDePermiso } from '../lib/estadosAsincronos';
 
 // Overlay de pantalla completa que abre la cámara trasera y decodifica códigos de barras
 // en directo. Al detectar uno, llama a onDetected(codigo) una sola vez y se detiene sola.
@@ -32,7 +33,10 @@ export default function BarcodeScanner({ onDetected, onClose, accent }) {
         }
       )
       .catch((e) => {
-        setError('No se pudo acceder a la cámara. Revisa que le has dado permiso a esta web en Ajustes → Safari.');
+        /* MS F16, apartado 46 — comprobando («Abriendo la cámara…»), denegado y no disponible son
+           tres cosas: «no has dado permiso» no se arregla igual que «aquí no hay cámara». */
+        if (stopped) return;
+        setError(estadoDePermiso(e).texto);
         console.error(e);
       });
 

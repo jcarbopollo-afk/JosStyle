@@ -344,29 +344,32 @@ export const CAIDAS = [
     avisa: true,
     estado: 'modo_sin_conexion',
   },
+  /* 🔓 MS F16 — las tres que no avisaban, avisan. Lo de antes se queda escrito en `antes`: era verdad
+     hasta entonces, y una de ellas (cargar con error = arrancar vacío) podía pisar la cuenta. */
   {
     id: 'error_servidor', que: 'Error de servidor',
-    hoy: 'La carga devuelve el valor por defecto y la aplicación arranca igual, con lo que hubiera en pantalla.',
+    hoy: 'Si una carga falla, esa parte arranca con su valor por defecto, NO se guarda (pisaría la cuenta) y el indicador de arriba lo dice con «Volver a cargar». Si fallan todas, «No se han podido cargar tus datos · Reintentar».',
+    antes: 'La carga devuelve el valor por defecto y la aplicación arranca igual, con lo que hubiera en pantalla.',
     puedeSeguir: true,
-    avisa: false,
+    avisa: true,
     estado: 'sin_conexion',
   },
   {
     id: 'bd_inaccesible', que: 'Base de datos temporalmente inaccesible',
-    hoy: 'Igual que el anterior: `loadData` devuelve el valor por defecto y lo apunta en la consola.',
+    hoy: 'Igual que el anterior (MS F16): lo que no se cargó no se guarda, y se dice.',
+    antes: 'Igual que el anterior: `loadData` devuelve el valor por defecto y lo apunta en la consola.',
     puedeSeguir: true,
-    avisa: false,
+    avisa: true,
     estado: 'sin_conexion',
   },
   {
     id: 'fallo_guardado', que: 'Fallo de sincronización al guardar',
-    /* 🚨 El hallazgo. Se deja escrito tal cual, con lo que se arregló y lo que
-       no, para que nadie lo lea como resuelto. */
-    hoy: '🚨 `saveData` se tragaba el error y no devolvía nada: la aplicación seguía como si se hubiera guardado. Desde esta fase DEVUELVE `{ ok, error }`… pero todavía nadie mira ese resultado.',
+    hoy: '🔓 MS F16 — lo que no llega queda pendiente con su último valor, el indicador de arriba lo dice («N cambios sin guardar · Guardar ahora») y se vuelve a mandar solo al volver la conexión.',
+    /* 🚨 El hallazgo de esta fase, tal cual: se arregló a medias aquí y se terminó en la MS F16. */
+    antes: '🚨 `saveData` se tragaba el error y no devolvía nada: la aplicación seguía como si se hubiera guardado. Desde esta fase DEVUELVE `{ ok, error }`… pero todavía nadie mira ese resultado.',
     puedeSeguir: true,
-    avisa: false,
+    avisa: true,
     estado: 'error_guardado',
-    arregladoAMedias: true,
   },
 ];
 

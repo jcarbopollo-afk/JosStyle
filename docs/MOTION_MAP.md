@@ -5,7 +5,7 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**83 elementos**: ✅ Existe 77 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 4 · 🚨 Fuera de control 0.
+**84 elementos**: ✅ Existe 80 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 2 · 🚨 Fuera de control 0.
 
 ## Resumen
 
@@ -70,8 +70,9 @@
 | El aro del temporizador | L | 2 · Suave | 280 ms | ✅ Existe | F17 |
 | Cifras que cambian (rachas, kcal, puntuación, saldo) | L | 0 · Estático | — | ⬜ Sin movimiento | F17 |
 | El latido del esqueleto | N | 1 · Micro | 1400 ms | ✅ Existe | F16 |
-| Estados vacíos | O | 0 · Estático | — | ⬜ Sin movimiento | F16 |
-| Avisos de error (guardado, archivo, conexión) | P | 0 · Estático | — | ⬜ Sin movimiento | F16 |
+| Estados vacíos: el que llega con su pantalla y el que llega después del contenido | O | 1 · Micro | 160 ms | ✅ Existe | F16 |
+| Avisos de error (guardado, archivo, conexión) | P | 2 · Suave | 280 ms | ✅ Existe | F16 |
+| El indicador de arriba: sin cargar, sin guardar, sin conexión, guardando, guardado | P | 2 · Suave | 280 ms | ✅ Existe | F16 |
 | El entrenamiento guardado | Q | 2 · Suave | 280 ms | ✅ Existe | F9 |
 | Terminar un libro | Q | 3 · Protagonista | 340 ms | ✅ Existe | F9 |
 | Termina el descanso | Q | 2 · Suave | 280 ms | ✅ Existe | F9 |
@@ -1738,7 +1739,7 @@
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | media |
-| Relación | Es de los pocos bucles infinitos permitidos (presupuesto). |
+| Relación | Es de los pocos bucles infinitos permitidos (presupuesto). MS F16 — un giro va SIEMPRE con su texto (`GiroDeCarga`, los botones de F9): `auditarAsincronia` caza el suelto, y uno que esperaba un `await` sin `finally` (el PIN) se quedaba girando para siempre. |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
@@ -1800,42 +1801,42 @@
 | Escalonado | — |
 | Intensidad | 1 · Micro |
 | Prioridad | media |
-| Relación | Bucle permitido: solo mientras carga. |
+| Relación | Bucle permitido: solo mientras carga. MS F16 — y no para siempre: a los 8 s dice que tarda y se queda quieto (`esqueleto-quieto`), a los 20 s ofrece volver a intentarlo; el contenido entra en su sitio con la entrada de sección (F2). |
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
 
 ### O · Estados vacíos
 
-#### Estados vacíos
+#### Estados vacíos: el que llega con su pantalla y el que llega después del contenido
 
-`vacios` · ⬜ Sin movimiento · lo trata la **F16**
+`vacios` · ✅ Existe · lo trata la **F16**
 
 | Campo | Valor |
 |---|---|
-| Ubicación | EmptyHint y cada vista |
-| Componente | — |
-| Clase CSS | — |
+| Ubicación | src/components/ui.jsx (EmptyHint) · src/components/estadosAsincronos.jsx (VacioQueLlega) · src/components/vacioMotion.js |
+| Componente | EmptyHint, VacioQueLlega |
+| Clase CSS | `.vacio-entra` |
 | @keyframes | — |
 | En ANIMACIONES_HC | — |
-| Función | Decir que aún no hay nada y qué hacer. |
+| Función | Decir que aún no hay nada y qué hacer, sin parecer roto (apartados 21-23). |
 | Estado inicial | — |
 | Estado final | — |
-| Entrada | Ninguna |
-| Salida | — |
+| Entrada | `vacio-entra`; si llega DESPUÉS del contenido (se ha borrado lo último), espera a que la fila salga (`vacio-tras-salida`) |
+| Salida | Lo primero que se crea entra en su sitio: la lista se queda montada aunque se vacíe |
 | Interacción | — |
 | Transición | — |
-| Duración | — |
-| Curva | --ease-premium |
+| Duración | 160 ms |
+| Curva | --motion-curva-entrance |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
-| Intensidad | 0 · Estático |
+| Intensidad | 1 · Micro |
 | Prioridad | media |
-| Relación | — |
+| Relación | MS F16 — antes, el último elemento y el vacío se cambiaban de golpe (el Constructor y la Agenda desmontaban la lista). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+| Movimiento reducido | Solo el fundido. |
 
 ### P · Errores
 
@@ -1871,33 +1872,63 @@
 
 #### Avisos de error (guardado, archivo, conexión)
 
-`errores` · ⬜ Sin movimiento · lo trata la **F16**
+`errores` · ✅ Existe · lo trata la **F16**
 
 | Campo | Valor |
 |---|---|
-| Ubicación | AvisoAccion y cada vista |
-| Componente | — |
+| Ubicación | AvisoAccion · src/components/estadosAsincronos.jsx (IndicadorDeSincronizacion, ErrorDeArranque) · cada vista |
+| Componente | AvisoAccion, IndicadorDeSincronizacion |
 | Clase CSS | — |
 | @keyframes | — |
 | En ANIMACIONES_HC | — |
-| Función | Decir qué ha fallado y qué hacer. |
+| Función | Decir qué ha fallado, qué hacer y qué ha pasado con sus datos. |
 | Estado inicial | — |
 | Estado final | — |
-| Entrada | La del aviso (aviso-entra) cuando es un aviso; ninguna cuando es una línea en la pantalla |
-| Salida | — |
+| Entrada | Como un aviso (`toastEnter`); una línea en la pantalla, con `campo-mensaje-entra` o `vacio-entra` |
+| Salida | `toastExit` |
 | Interacción | — |
 | Transición | — |
-| Duración | — |
-| Curva | --ease-premium |
+| Duración | 280 ms |
+| Curva | --motion-curva-entrance |
 | Spring | — |
 | Retraso | — |
 | Escalonado | — |
-| Intensidad | 0 · Estático |
+| Intensidad | 2 · Suave |
 | Prioridad | media |
-| Relación | — |
+| Relación | MS F16 — un fallo de guardado ya no solo suena: el indicador de arriba dice lo que no ha llegado y lo vuelve a mandar. Sin temblar (F9). |
 | Móvil | Igual |
 | Escritorio | Igual |
-| Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+| Movimiento reducido | Solo el fundido. |
+
+#### El indicador de arriba: sin cargar, sin guardar, sin conexión, guardando, guardado
+
+`estado_sistema` · ✅ Existe · lo trata la **F16**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/components/estadosAsincronos.jsx (IndicadorDeSincronizacion) · App.jsx |
+| Componente | IndicadorDeSincronizacion |
+| Clase CSS | — |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Decir cómo va lo guardado sin convertir la aplicación en una consola de servidor (apartados 26-33). |
+| Estado inicial | Nada (casi siempre) |
+| Estado final | Una tarjeta pequeña arriba, a la altura de la lupa |
+| Entrada | `toastEnter` por `Presencia`; cambiar de frase, `CambioDeContenido` |
+| Salida | `toastExit`, después de un mínimo visible (sin destellos) |
+| Interacción | — |
+| Transición | — |
+| Duración | 280 ms |
+| Curva | --motion-curva-entrance |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 2 · Suave |
+| Prioridad | media |
+| Relación | MS F16 — uno para toda la aplicación. «Guardando…» solo si tarda más de 1,2 s; «Guardado» un momento solo después de haber dicho algo. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | Solo el fundido. |
 
 ### Q · Éxito
 

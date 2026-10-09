@@ -2,6 +2,12 @@ import { createClient } from '@supabase/supabase-js';
 /* El bus de eventos (SO F1). Supabase no sabe que existe el audio: emite lo que
    pasa y quien quiera reacciona — el desacoplamiento del apartado 31. */
 import { emitir } from './eventos';
+/* MS F16 — la cuenta de lo que se carga, se guarda y no ha llegado: un solo
+   sitio para toda la aplicación (`sincronizacion.js`, una hoja del árbol). */
+import {
+  antesDeGuardar, despuesDeGuardar, esperarAnterior, apuntarCargaFallida, apuntarCargaBuena,
+  pendientesParaReintentar, marcarReintento, usuarioDeLaSesion, marcarSalidaPedida,
+} from './sincronizacion';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -22,6 +28,9 @@ export async function signIn(email, password) {
 }
 
 export async function signOut() {
+  /* MS F16, apartado 45 — salir porque él lo pide no es que la sesión caduque:
+     la pantalla de entrar solo explica la caducidad cuando nadie pidió salir. */
+  marcarSalidaPedida();
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
@@ -58,16 +67,27 @@ export async function sendPasswordReset(email, redirectTo) {
 
 /* ---------- Datos: una fila por usuario + "clave" (misma idea que las claves de window.storage) ---------- */
 export async function loadData(userId, key, fallback) {
-  const { data, error } = await supabase
-    .from('app_data')
-    .select('value')
-    .eq('user_id', userId)
-    .eq('key', key)
-    .maybeSingle();
+  let data = null;
+  let error = null;
+  try {
+    ({ data, error } = await supabase
+      .from('app_data')
+      .select('value')
+      .eq('user_id', userId)
+      .eq('key', key)
+      .maybeSingle());
+  } catch (e) { error = e; }
   if (error) {
     console.error('Error cargando', key, error);
+    /* 🚨 MS F16, apartado 20 — **no haber podido cargar no es no tener nada.**
+       Se sigue devolviendo el valor por defecto (la aplicación arranca y el
+       resto de apartados funciona), pero la clave queda apuntada: hasta que se
+       cargue de verdad, `saveData` no la escribe, porque pisaría con lo que se
+       ve en pantalla lo que hay en la cuenta. */
+    apuntarCargaFallida(key, error);
     return fallback;
   }
+  apuntarCargaBuena(key);
   return data ? data.value : fallback;
 }
 
@@ -87,9 +107,27 @@ export async function loadData(userId, key, fallback) {
  * enciende (regla 8).
  */
 export async function saveData(userId, key, value) {
-  const { error } = await supabase
-    .from('app_data')
-    .upsert({ user_id: userId, key, value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' });
+  /* 🚨 MS F16 — antes de salir: una clave que no se pudo cargar no se escribe
+     (pisaría lo que hay en la cuenta), un guardado de una sesión que ya se
+     cerró tampoco, y los de una misma clave salen EN ORDEN (apartado 41): este
+     espera a que termine el anterior, así que la cuenta no se queda con uno más
+     viejo que llegó tarde. */
+  const turno = antesDeGuardar(key, { usuario: userId });
+  if (!turno.sale) {
+    console.error('No se guarda', key, turno.error.message);
+    emitir('ACTION_ERROR', { de: 'guardar', clave: key, motivo: turno.error.code });
+    return { ok: false, error: turno.error, bloqueado: true };
+  }
+  await esperarAnterior(turno.anterior);
+  let error = null;
+  try {
+    ({ error } = await supabase
+      .from('app_data')
+      .upsert({ user_id: userId, key, value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' }));
+  } catch (e) { error = e; }
+  /* Y después: si no llegó, se queda pendiente con su último valor; si llegó,
+     lo pendiente de esa clave (más viejo) deja de estarlo. */
+  despuesDeGuardar(key, turno, { ok: !error, error, valor: value });
   if (error) {
     console.error('No se pudo guardar', key, error);
     /* 🚨 **Un guardado que falla tiene que oírse.** Es el caso que el proyecto
@@ -119,13 +157,37 @@ export async function saveData(userId, key, value) {
 export function vigilarLaConexion() {
   if (typeof window === 'undefined' || !window.addEventListener) return () => {};
   const perdida = () => emitir('CONNECTION_LOST', {});
-  const vuelta = () => emitir('CONNECTION_RESTORED', {});
+  /* MS F16, apartado 32 — al volver la conexión, lo que no llegó se vuelve a
+     mandar solo: *"reconnecting → synced"*. */
+  const vuelta = () => { emitir('CONNECTION_RESTORED', {}); reintentarGuardados(); };
   window.addEventListener('offline', perdida);
   window.addEventListener('online', vuelta);
   return () => {
     window.removeEventListener('offline', perdida);
     window.removeEventListener('online', vuelta);
   };
+}
+
+/**
+ * 🔓 **MS F16, apartados 18, 32 y 33 — volver a mandar lo que no llegó.**
+ *
+ * Lo pendiente de la sesión de ahora, cada clave con SU último valor, por la
+ * puerta de siempre (`saveData`): pasa otra vez por la cola y por el número de
+ * orden, así que un cambio que él haga mientras tanto no queda por debajo.
+ * Devuelve si todo llegó. Sin nada pendiente, no hace nada (ni un «Guardado»
+ * que nadie ha pedido).
+ */
+let reintentoEnMarcha = null;
+export function reintentarGuardados() {
+  if (reintentoEnMarcha) return reintentoEnMarcha;
+  const usuario = usuarioDeLaSesion();
+  const lista = pendientesParaReintentar();
+  if (!usuario || !lista.length) return Promise.resolve(true);
+  marcarReintento(true);
+  reintentoEnMarcha = Promise.all(lista.map(({ clave, valor }) => saveData(usuario, clave, valor)))
+    .then((r) => r.every((x) => x && x.ok), () => false)
+    .then((bien) => { marcarReintento(false, { salioBien: bien }); reintentoEnMarcha = null; return bien; });
+  return reintentoEnMarcha;
 }
 
 /* ---------- Storage: fotos de progreso (bucket privado "progreso", una carpeta por usuario) ----------

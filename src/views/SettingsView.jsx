@@ -1783,8 +1783,9 @@ export function AvatarCabecera({ perfil, accent, onCambiar, lado = 56 }) {
     if (!file) return;
     setError(null);
     setCargando(true);
-    const res = await prepararFotoPerfil(file);
-    setCargando(false);
+    /* MS F16, apartado 40 — la espera vuelve a reposo pase lo que pase. */
+    let res;
+    try { res = await prepararFotoPerfil(file); } catch { res = { ok: false, motivo: 'No se ha podido leer esa imagen. Prueba con otra.' }; } finally { setCargando(false); }
     if (!res.ok) { setError(res.motivo); return; }
     onCambiar(res.foto);
   };
@@ -1851,8 +1852,9 @@ export function AvatarPerfil({ perfil, accent, onCambiar, onQuitar }) {
     if (!file) return;
     setError(null);
     setCargando(true);
-    const res = await prepararFotoPerfil(file);
-    setCargando(false);
+    /* MS F16, apartado 40 — la espera vuelve a reposo pase lo que pase. */
+    let res;
+    try { res = await prepararFotoPerfil(file); } catch { res = { ok: false, motivo: 'No se ha podido leer esa imagen. Prueba con otra.' }; } finally { setCargando(false); }
     if (!res.ok) { setError(res.motivo); return; }
     onCambiar(res.foto);
   };

@@ -1,5 +1,71 @@
 # CHANGELOG.md
 
+## v3.146.0 — Motion System F16/20: estados de sistema, carga, error, sin conexión, guardado y transiciones asíncronas
+
+La F16 del Motion System (*"Estados de sistema, loading, error, offline, sync y transiciones asíncronas"*, líneas
+1–759 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`). *"El usuario nunca debe sentir que la aplicación se ha
+quedado congelada, ha perdido información o ha cambiado de estado arbitrariamente."* Vive en
+`src/lib/sincronizacion.js`, `src/lib/estadosAsincronos.js`, `src/components/estadosAsincronos.jsx` y
+`src/components/vacioMotion.js`.
+
+### El mapa (apartado 1)
+
+`MAPA_ASINCRONO`: once operaciones —el arranque, la sesión, guardar (91 sitios de App.jsx), la conexión, las subidas,
+la IA, Open Food Facts, el código de barras, el PIN, las fuentes y los sonidos—, cada una con su patrón, sus estados,
+el dueño de su movimiento, lo que había y lo que queda. **JosStyle ya era optimista sin saberlo**: `setX` +
+`saveData`, la pantalla primero y la cuenta después. Lo que faltaba era saber si había llegado.
+
+### 🚨 Lo que no se pudo cargar no se guarda (apartado 20)
+
+- **El fallo:** `loadData` devolvía el valor por defecto si fallaba, la aplicación arrancaba como una cuenta nueva y
+  **el siguiente guardado de esa clave pisaba la cuenta**. Con `ajustes` pasaba solo: la migración del arranque
+  guardaba los ajustes por defecto —acento, apariencia y **el PIN**— si esa carga fallaba.
+- **Ahora:** `sincronizacion.js` apunta la carga fallida y `saveData` no escribe esa clave (`{ ok: false,
+  bloqueado: true }`) hasta que se cargue. El indicador de arriba lo dice como alerta con «Volver a cargar». Si no
+  se carga **nada**, `ErrorDeArranque`: «No se han podido cargar tus datos», que no se ha borrado nada, y
+  «Reintentar» (también solo, al volver la conexión).
+
+### Lo que no llega queda pendiente, y se dice (apartados 14-16, 24, 26-33, 41)
+
+- Lo que no llega a la cuenta queda **pendiente con su último valor**; «Guardar ahora» o volver la conexión lo
+  manda otra vez (`reintentarGuardados`). Es idempotente —se manda la clave entera—, así que no choca con la EH F41
+  (**C-66**). **No se deshace en pantalla**: se perdería lo escrito por un fallo de red.
+- **Los guardados de una clave salen en orden** (con tope de 10 s), y una respuesta vieja que llega tarde no
+  reescribe lo pendiente. **Una sesión vieja no toca la nueva**, lo pendiente se vacía al salir y **nunca se escribe
+  en el dispositivo**.
+
+### El indicador de arriba (apartados 26-33, 47, 52, 53)
+
+`IndicadorDeSincronizacion`, uno para toda la aplicación y vacío casi siempre: sin cargar, «N cambios sin guardar ·
+Guardar ahora», «Sin conexión» (solo si dura más de 1,2 s), «Sin conexión · 1 cambio esperando», «Guardando…» (solo
+si pasa de 1,2 s) y «Guardado» un momento. Lo que aparece se queda al menos 900 ms. Entra y sale como un aviso
+(`Presencia`), cambia de frase en su sitio, y se anuncia desde dos regiones vivas siempre montadas. Fitness sigue
+diciendo SU fallo en su pantalla, y los botones no se llaman igual.
+
+### El arranque, la sesión, las carreras, el vacío y los permisos
+
+- **El esqueleto no late para siempre** (apartado 9): a los 8 s dice que tarda y se queda quieto; a los 20 s ofrece
+  volver a intentarlo.
+- **La sesión que caduca se explica** (apartado 45): «Tu sesión ha caducado», que lo guardado sigue en la cuenta y
+  cuántos cambios no llegaron. Salir a propósito, no.
+- **La última petición gana** (apartados 40-42, 49, 50): `crearTurnos` / `useTurnos`. 🐛 En Nutrición, los productos
+  con marca de una búsqueda vieja salían bajo el texto nuevo; ahora dicen de cuál son. Y la lectura de un código.
+- 🐛 **La entrada del PIN se quedaba «verificando» para siempre** si `crypto.subtle` lanzaba (`setVerificando(false)`
+  fuera de un `finally`): arreglado en el PIN, la biometría y la foto de perfil. `auditarAsincronia` caza el patrón.
+- **Vacío ↔ contenido** (apartados 21-23): el vacío que llega después del contenido espera a que salga lo último
+  (`vacio-tras-salida`); el Constructor y la agenda de un día dejan la lista montada aunque se vacíe.
+- **Permisos** (apartado 46): la cámara distingue comprobando, denegado y no disponible.
+
+### Lo que se da la vuelta
+
+- **EH F41:** `error_guardado` y `sincronizando` se detectan; solo el conflicto entre dispositivos sigue sin poder
+  saberse. **EH F52 / producción:** las tres caídas que no avisaban, avisan (la carga fallida, el servidor caído y el
+  guardado que no llega).
+
+### Verificación
+
+{{VERIFICACION}}
+
 ## v3.145.0 — Motion System F15/20: motion responsive, orientación, safe areas y adaptación multidispositivo
 
 La F15 del Motion System (*"Motion responsive, orientación, safe areas y adaptación multidispositivo"*, líneas

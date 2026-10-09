@@ -61,16 +61,23 @@ console.log('\n⚠️ EH · Fase 41/65 — Estados vacíos, carga, errores y rec
    2 · LO QUE NO SE PUEDE DETECTAR HOY, DICHO
    --------------------------------------------------------------------------- */
 {
-  console.log('\n2 · Tres estados que hoy no se pueden detectar');
-  eq(ESTADOS_SIN_MECANISMO.map((e) => e.id), ['error_guardado', 'sincronizando', 'conflicto'],
-    '⚠️ el error de guardado, la sincronización y el conflicto');
+  /* 🔓 MS F16 — eran tres; el error de guardado y la sincronización ya se detectan (el indicador
+     de arriba, `sincronizacion.js`). La comprobación se da la vuelta, no se borra: el conflicto
+     entre dispositivos sigue sin poder saberse, y se sigue diciendo. */
+  console.log('\n2 · Lo que hoy no se puede detectar: el conflicto');
+  eq(ESTADOS_SIN_MECANISMO.map((e) => e.id), ['conflicto'],
+    '⚠️ solo el conflicto entre dispositivos (el error de guardado y la sincronización se detectan desde la MS F16)');
+  ['error_guardado', 'sincronizando'].forEach((id) => {
+    ok(estadoEH(id).detectable === true && /MS F16/.test(estadoEH(id).resuelto || '') && typeof estadoEH(id).antes === 'string',
+      `🔓 ${id} se detecta desde la MS F16, y su motivo de antes se queda escrito`);
+  });
   ESTADOS_SIN_MECANISMO.forEach((e) => {
     ok(typeof e.porque === 'string' && e.porque.length > 30,
       `y ${e.id} dice POR QUÉ, con una frase entera`);
     ok(!!e.titulo && !!e.datos,
       `${e.id} tiene su texto escrito, para el día que exista el mecanismo`);
   });
-  eq(ESTADOS_DETECTABLES.length, ESTADOS_EH.length - 3, 'los demás sí se detectan');
+  eq(ESTADOS_DETECTABLES.length, ESTADOS_EH.length - 1, 'los demás sí se detectan');
 
   // ⚠️ Decisión 3 — y NO se monta una cola de escritura (RA F2).
   eq(auditarEstados().colasDeEscritura, 0, '⚠️ ni una cola de escritura');
@@ -271,7 +278,8 @@ console.log('\n⚠️ EH · Fase 41/65 — Estados vacíos, carga, errores y rec
   const p = panelEstados(e, { papelera: { elementos: [] } });
   ok(Array.isArray(p.vacios) && p.vacios.length > 0, 'el panel trae los vacíos');
   eq(p.problemas, [], 'y sin problemas, ninguno');
-  eq(p.sinMecanismo.length, 3, 'y los tres que hoy no se detectan, con su motivo');
+  /* 🔓 MS F16 — eran tres; queda el conflicto entre dispositivos. */
+  eq(p.sinMecanismo.map((x) => x.id), ['conflicto'], 'y el que hoy no se detecta (el conflicto), con su motivo');
   eq(p.papeleraDisponible, true, 'y si tiene papelera a mano');
 
   ok(/export function VacioEH/.test(VISTA), 'la pantalla del vacío existe');

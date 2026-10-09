@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { signIn, signUp } from '../lib/supabase';
 import { COLORS, ACCENTS } from '../tokens';
 import { TextoDeBoton } from './ui';
+import { TEXTOS_SALIDA } from '../lib/estadosAsincronos';
 /* ⚠️ La versión, ANTES de iniciar sesión. Existe por un problema real: durante
    semanas la web se veía igual después de cada entrega y no había manera de
    saber, sin entrar y navegar hasta Ajustes, si lo que estaba cargado era lo
@@ -10,7 +11,7 @@ import { TextoDeBoton } from './ui';
    escrito a mano, que se quedaría desfasado a la primera. */
 import pkg from '../../package.json';
 
-export default function Auth() {
+export default function Auth({ salida = null }) {
   const [mode, setMode] = useState('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -53,6 +54,18 @@ export default function Auth() {
           {mode === 'signin' ? 'Inicia sesión para continuar' : 'Crea tu cuenta'}
         </p>
         <p className="text-[11px] mb-6" style={{ color: COLORS.textMuted }}>v{pkg.version}</p>
+
+        {/* MS F16, apartado 45 — si la sesión se ha ido sola (no la ha cerrado él), se dice: la
+            pantalla de la aplicación no desaparece sin explicación. Entra en su sitio (`vacio-entra`). */}
+        {salida && TEXTOS_SALIDA[salida.motivo] && (
+          <div role="status" data-salida={salida.motivo} className="vacio-entra rounded-xl px-3 py-2.5 mb-4" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+            <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_SALIDA[salida.motivo].titulo}</p>
+            <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{TEXTOS_SALIDA[salida.motivo].texto}</p>
+            {TEXTOS_SALIDA[salida.motivo].sinGuardar(salida.sinGuardar || 0) && (
+              <p className="text-xs mt-1" style={{ color: COLORS.warning }}>{TEXTOS_SALIDA[salida.motivo].sinGuardar(salida.sinGuardar || 0)}</p>
+            )}
+          </div>
+        )}
 
         <input
           className="w-full rounded-xl px-3 py-2.5 text-sm mb-3 outline-none"

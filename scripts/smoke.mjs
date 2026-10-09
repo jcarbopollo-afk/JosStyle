@@ -60,6 +60,8 @@ await build({
           /* ⚠️ Ésta devuelve la función para dejar de vigilar, no nada: quien la
              llama guarda lo que devuelve y lo ejecuta al desmontar. */
           export const vigilarLaConexion = () => () => {};
+          /* MS F16 — volver a mandar lo que no llegó. En un render sin red, «todo llegó». */
+          export const reintentarGuardados = async () => true;
           export const getSession = nada, onAuthChange = nada, onAuthEvent = nada, signUp = nada, signIn = nada;
           export const sendPasswordReset = nada, loadData = nada, saveData = nada, signOut = nada;
           export const uploadProgressPhoto = nada, deleteProgressPhoto = nada, getSignedPhotoUrl = nada;

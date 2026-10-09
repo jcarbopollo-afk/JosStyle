@@ -61,6 +61,7 @@ import BarcodeScanner from '../components/BarcodeScanner';
 import { CambioDeContenido, LatidoAlMarcar, useAnimacionDeGrafica, CifraQueCambia } from '../components/motion';
 import { escalonado } from '../lib/motion';
 import { ListaAnimada } from '../components/layoutMotion';
+import { useTurnos } from '../components/estadosAsincronos';
 
 const emptyForm = () => ({ nombre: '', calorias: '', proteinas: '', carbohidratos: '', grasas: '', fibra: '' });
 const round1 = (v) => Math.round((v || 0) * 10) / 10;
@@ -85,12 +86,16 @@ function MealForm({ onSave, onSaveFavorite, accent, fecha, momentoId }) {
   const [gramos, setGramos] = useState('100');
   const [analizandoFoto, setAnalizandoFoto] = useState(false);
   const [aviso, setAviso] = useState('');
+  /* MS F16, apartado 41 — dos lecturas seguidas: solo pinta la última. */
+  const turnosCodigo = useTurnos();
 
   const handleBarcodeDetected = async (codigo) => {
     setScanning(false);
     setAviso('Buscando el producto…');
+    const turno = turnosCodigo.nuevo();
     try {
       const producto = await buscarProductoPorCodigoBarras(codigo);
+      if (!turno.vigente()) return;
       if (!producto) {
         setAviso('No he encontrado ese código en Open Food Facts — rellena los datos a mano.');
         return;
@@ -107,7 +112,7 @@ function MealForm({ onSave, onSaveFavorite, accent, fecha, momentoId }) {
       });
       setAviso('');
     } catch (e) {
-      setAviso('No se pudo consultar la base de datos de productos. Prueba otra vez o rellena a mano.');
+      if (turno.vigente()) setAviso('No se pudo consultar la base de datos de productos. Prueba otra vez o rellena a mano.');
     }
   };
 
@@ -632,6 +637,12 @@ function AnadirAlimento({ momentoId, fecha, accent, onAdd, onAddFavorito, onCerr
   const [resultadosOFF, setResultadosOFF] = useState([]);
   const [buscandoOFF, setBuscandoOFF] = useState(false);
   const [avisoOFF, setAvisoOFF] = useState('');
+  /* 🐛 MS F16, apartados 41 y 42 — de QUÉ búsqueda son los productos con marca. Si cambiaba el texto
+     mientras se buscaba (o después), los de la búsqueda vieja salían debajo del texto nuevo como si
+     fueran suyos. Ahora la búsqueda vigente es la única que pinta, y unos resultados de otro texto
+     dicen de cuál son en vez de desaparecer (lo de antes se queda mientras llega lo nuevo). */
+  const [consultaOFF, setConsultaOFF] = useState('');
+  const turnosOFF = useTurnos();
   const [aMano, setAMano] = useState(false);
 
   /* 🚨 E3 F37 (NU F5) — el buscador es **el mismo de la F4**, que ya recibía la
@@ -648,17 +659,21 @@ function AnadirAlimento({ momentoId, fecha, accent, onAdd, onAddFavorito, onCerr
   /* Apartado 3 — la segunda fuente, la misma de siempre y sin clave. ⚠️ **A
      petición**, no en cada tecla: cada búsqueda es una llamada de red. */
   const buscarEnOFF = async () => {
+    const consulta = texto.trim();
+    const turno = turnosOFF.nuevo();
     setBuscandoOFF(true);
     setAvisoOFF('');
     try {
-      const productos = await buscarAlimentosPorNombre(texto);
+      const productos = await buscarAlimentosPorNombre(consulta);
+      if (!turno.vigente()) return;
       const comoAlimentos = productos.map(alimentoDesdeOFF).filter(Boolean);
       setResultadosOFF(comoAlimentos);
+      setConsultaOFF(consulta);
       if (comoAlimentos.length === 0) setAvisoOFF('No he encontrado ningún producto con ese nombre. Puedes escribirlo a mano.');
     } catch (e) {
-      setAvisoOFF('No he podido consultar la base de productos ahora mismo. Puedes escribirlo a mano.');
+      if (turno.vigente()) setAvisoOFF('No he podido consultar la base de productos ahora mismo. Puedes escribirlo a mano.');
     } finally {
-      setBuscandoOFF(false);
+      if (turno.vigente()) setBuscandoOFF(false);
     }
   };
 
@@ -836,7 +851,9 @@ function AnadirAlimento({ momentoId, fecha, accent, onAdd, onAddFavorito, onCerr
 
       {resultadosOFF.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-xs font-bold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>Productos con marca</p>
+          <p className="text-xs font-bold uppercase" style={{ color: COLORS.textMuted, letterSpacing: '0.06em' }}>
+            {consultaOFF && consultaOFF !== texto.trim() ? `Productos con marca para «${consultaOFF}»` : 'Productos con marca'}
+          </p>
           {resultadosOFF.map((a) => (
             <button
               key={a.id} onClick={() => elegir(a)}

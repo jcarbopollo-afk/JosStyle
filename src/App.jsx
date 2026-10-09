@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Search, Lock, ArrowLeft, Calendar, Shirt, UserRound, Sigma, Brain, FolderKanban } from 'lucide-react';
 import { normalizarEconomiaHucha } from './lib/hucha';
 import { anadirApunte, resumenDelDia, progresoDelDia, apuntesDe } from './lib/centroDelDia';
@@ -144,6 +144,11 @@ import { useContenedorDesdeOrigen } from './components/continuidad';
 import { useNavegacionEnLaPagina } from './components/navegacionMotion';
 import { useCapasMotion } from './components/capasMotion';
 import { useContextoFisico } from './components/responsiveMotion';
+/* MS F16 — los estados del sistema: lo que no se pudo cargar, lo que no ha llegado a la cuenta, la
+   conexión, la espera del arranque y la sesión que caduca. */
+import { IndicadorDeSincronizacion, ErrorDeArranque, useEspera, AvisoDeEspera } from './components/estadosAsincronos';
+import { empezarSesionDeDatos, usuarioDeLaSesion, clavesSinCargar, consumirSalidaPedida, resumenSincronizacion } from './lib/sincronizacion';
+import { arranqueSinDatos, motivoDeSalida } from './lib/estadosAsincronos';
 import { useFuentesListas } from './components/layoutMotion';
 import { AnuncioDeNavegacion } from './components/accesibilidadMotion';
 import { AreaSegura } from './components/areaSegura';
@@ -349,13 +354,17 @@ const AREAS_PROTEGIBLES = [{ id: 'hoy', label: 'Hoy', icon: Home }, ...MORE_NAV]
 
    ⚠️ El latido vive en `index.css`, así que respeta "Reducir movimiento" solo. */
 function LoadingScreen() {
+  /* MS F16, apartado 9 — y no late en silencio para siempre: a los 8 s dice que tarda (y deja de
+     latir), a los 20 s ofrece volver a intentarlo. */
+  const espera = useEspera();
   return (
     /* 🐛 `pantalla-segura`, NO un `pt-16` a ojo: la Safe Area del iPhone vive en
        `index.css` desde la E3 F1, y su propia comprobación cazó esto. Un número
        fijo mete el esqueleto debajo de la hora del teléfono. */
     <div className="min-h-screen px-4 pantalla-segura" style={{ background: COLORS.bg }}>
       <div className="max-w-md mx-auto">
-        <Esqueleto alturas={esqueleto('hoy').alturas} etiqueta="Cargando tus datos" />
+        <Esqueleto alturas={esqueleto('hoy').alturas} etiqueta="Cargando tus datos" quieto={espera.id !== 'cargando'} />
+        <AvisoDeEspera estado={espera} />
       </div>
     </div>
   );
@@ -372,17 +381,19 @@ function BloqueoAutomaticoGate({ seguridad, accent, onUnlock, onOlvidoPin }) {
   const [verificando, setVerificando] = useState(false);
   const biometriaLista = seguridad.biometriaActiva && !!seguridad.biometriaCredencialId;
 
+  /* 🐛 MS F16, apartado 40 — la espera vuelve a reposo pase lo que pase (`finally`): con el `await`
+     fuera de un `try`, un fallo dejaba el bloqueo «verificando» y no se podía volver a intentar. */
   const intentarBiometria = async () => {
     setVerificando(true);
     setError('');
-    const ok = await verificarBiometria(seguridad.biometriaCredencialId);
-    setVerificando(false);
+    let ok = false;
+    try { ok = await verificarBiometria(seguridad.biometriaCredencialId); } catch { ok = false; } finally { setVerificando(false); }
     if (ok) onUnlock(); else setError('No se ha podido verificar. Prueba de nuevo o usa el PIN.');
   };
   const intentarPin = async (valor) => {
     setVerificando(true);
-    const ok = await verificarPin(valor, seguridad.pinHash, seguridad.pinSalt);
-    setVerificando(false);
+    let ok = false;
+    try { ok = await verificarPin(valor, seguridad.pinHash, seguridad.pinSalt); } catch { ok = false; } finally { setVerificando(false); }
     if (ok) onUnlock(); else setError('PIN incorrecto');
   };
 
@@ -473,6 +484,10 @@ export default function App() {
      el scroll arriba: el rectángulo de la pantalla se mide ya en su sitio. Regla 4: aquí arriba. */
   useContenedorDesdeOrigen(pantallaRef, { id: tipoNav === 'entrar' ? `pantalla:${tab}` : null, clave: claveDeScroll(pilaNav) });
   const [loaded, setLoaded] = useState(false);
+  /* MS F16 — el arranque que no pudo cargar nada, y cuántas veces se ha vuelto a intentar. */
+  const [arranque, setArranque] = useState(null);
+  const [intentoCarga, setIntentoCarga] = useState(0);
+  const reintentarArranque = useCallback(() => { setArranque(null); setIntentoCarga((n) => n + 1); }, []);
   const [accent, setAccent] = useState(ACCENTS[0].value);
   // Fase A3 — Apariencia avanzada: tema (claro/oscuro/automático), tamaño de texto, densidad,
   // radios de borde y animaciones. `temaSistemaOscuro` solo se usa para resolver "automático".
@@ -594,14 +609,28 @@ export default function App() {
      ⚠️ Va por el **id del usuario**, no por el objeto `session`: Supabase lo
      renueva solo cada hora, y con `[session]` la pantalla de carga aparecería
      sola en mitad del día. */
+  /* MS F16, apartados 44 y 45 — de qué usuario era la sesión de antes: si se va sin que nadie haya
+     pedido salir, ha caducado, y la pantalla de entrar lo explica. */
+  const usuarioAnterior = useRef(null);
+  const [salida, setSalida] = useState(null);
   useEffect(() => {
     setLoaded(false);
+    const id = session?.user?.id || null;
     if (!session) {
       // Y de paso, fuera de memoria lo más privado.
       setEstiloHombre(DEFAULT_ESTILO_HOMBRE);
       setRelacion(DEFAULT_RELACION);
       setDiario(DEFAULT_DIARIO);
+      /* MS F16 — y lo que no llegó a guardarse: lleva datos de esta cuenta y no puede reintentarse
+         con la de nadie más. Se cuenta antes, para decirlo. */
+      const r = resumenSincronizacion();
+      const motivo = motivoDeSalida({ habia: !!usuarioAnterior.current, hay: false, pedida: consumirSalidaPedida() });
+      setSalida(motivo ? { motivo, sinGuardar: r.pendientes.length } : null);
+      empezarSesionDeDatos(null);
+    } else {
+      setSalida(null);
     }
+    if (session !== undefined) usuarioAnterior.current = id;
   }, [session?.user?.id]);
 
   useEffect(() => {
@@ -609,7 +638,10 @@ export default function App() {
     let cancelled = false;
     (async () => {
       const uidUser = session.user.id;
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud, hor, eh, fit] = await Promise.all([
+      /* 🚨 MS F16 — la cuenta de lo que se carga y se guarda es de ESTE usuario. Al reintentar el
+         arranque con el mismo, no se vacía (lo pendiente sigue siendo suyo). */
+      if (usuarioDeLaSesion() !== uidUser) empezarSesionDeDatos(uidUser);
+      const cargas = [
         loadData(uidUser, 'ajustes', { accent: ACCENTS[0].value, pin: null, apariencia: DEFAULT_APARIENCIA, seguridad: DEFAULT_SEGURIDAD }),
         loadData(uidUser, 'perfil', DEFAULT_PERFIL),
         loadData(uidUser, 'sueno', []),
@@ -648,8 +680,13 @@ export default function App() {
         loadData(uidUser, 'horarioTop', DEFAULT_HORARIO_TOP),
         loadData(uidUser, 'estiloHombre', DEFAULT_ESTILO_HOMBRE),
         loadData(uidUser, 'fitness', DEFAULT_FITNESS),
-      ]);
+      ];
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud, hor, eh, fit] = await Promise.all(cargas);
       if (cancelled) return;
+      /* 🚨 MS F16, apartados 5 y 20 — si no se pudo cargar NADA, no se enseña una cuenta vacía que
+         no es la suya: se dice, y se vuelve a intentar. Si solo falla una parte, la aplicación
+         arranca, esa parte no se guarda (`sincronizacion.js`) y el indicador de arriba lo dice. */
+      if (arranqueSinDatos(clavesSinCargar(), cargas.length)) { setArranque('sin_datos'); return; }
       setAccent(a.accent || ACCENTS[0].value);
       // Fase de Seguridad Centralizada — migración desde el sistema antiguo (apartado 11 de la
       // especificación, obligatorio y en este orden): (1) partimos de lo que ya hubiera en
@@ -859,7 +896,7 @@ export default function App() {
       if (enPeligro.length) emitir('STREAK_AT_RISK', { cuantas: enPeligro.length });
     })();
     return () => { cancelled = true; };
-  }, [session]);
+  }, [session, intentoCarga]);
 
   // Fase A3: tema realmente aplicado (resuelve "automático" contra el sistema operativo) y
   // aplicado de forma síncrona aquí mismo, antes de generar el JSX de esta misma pasada de
@@ -1101,7 +1138,8 @@ export default function App() {
   const fuentesListas = useFuentesListas();
 
   if (session === undefined) return <LoadingScreen />;
-  if (!session) return <Auth />;
+  if (!session) return <Auth salida={salida} />;
+  if (arranque === 'sin_datos') return <ErrorDeArranque onReintentar={reintentarArranque} accent={accent} />;
   if (!loaded || !fuentesListas) return <LoadingScreen />;
 
   const uidUser = session.user.id;
@@ -3729,6 +3767,8 @@ export default function App() {
         <Search size={16} style={{ color: accent }} />
       </button>
       <SuggestionsButton accent={accent} buildPrompt={buildSuggestionsPrompt} lado="derecha" />
+      {/* MS F16 — cómo va lo guardado, arriba y en medio; vacío casi siempre. */}
+      <IndicadorDeSincronizacion />
       {showSearch && (
         <UniversalSearchModal
           accent={accent} onClose={() => setShowSearch(false)} buildContext={() => currentState}

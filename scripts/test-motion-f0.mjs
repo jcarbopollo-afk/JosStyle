@@ -60,7 +60,7 @@ ok(ROADMAP_MOTION.every((f) => f.lineas[1] > f.lineas[0]), 'cada fase acaba desp
 const DOC13 = leer('docs/13_MOTION_SYSTEM_ORDEN.md');
 ok(ROADMAP_MOTION.every((f) => DOC13.includes(`| ${f.lineas[0]}–${f.lineas[1]} |`)),
   '🚨 docs/13 dice las mismas líneas que el plan, fase a fase');
-ok(/F16\*\* \| Estados de sistema/.test(DOC13) && /F0\*\*/.test(DOC13), '…con la F0 primero y la F16 donde le toca');
+ok(/F16\*\*( ✅ \*\*v[\d.]+\*\*)? \| Estados de sistema/.test(DOC13) && /F0\*\*/.test(DOC13), '…con la F0 primero y la F16 donde le toca');
 
 console.log('\n── 2. Lo que el documento trae repetido (C-51) ──');
 const trozo = (a, b) => ESPEC.slice(a - 1, b).join('\n');

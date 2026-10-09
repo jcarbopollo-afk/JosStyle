@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.145.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.146.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -40,7 +40,7 @@ plan—, la **F1 (v3.131.0)** —el motor—, la **F2 (v3.132.0)** —la navegac
 **F6 (v3.136.0)** —la profundidad y las capas—, la **F7 (v3.137.0)** —la continuidad espacial—, la **F8
 (v3.138.0)** —la física y la interacción directa—, la **F9 (v3.139.0)** —los estados y el feedback— y la
 **F10 (v3.140.0)** —el diseño que cambia: listas y desplegables— , la **F11 (v3.141.0)** —el orquestador—, la **F12 (v3.142.0)** —la accesibilidad del
-movimiento—, la **F13 (v3.143.0)** —el rendimiento—, la **F14 (v3.144.0)** —el lenguaje del movimiento: curvas, ritmo y firma— y la **F15 (v3.145.0)** —el movimiento en cada contexto físico: áreas seguras, girar y el teclado—.
+movimiento—, la **F13 (v3.143.0)** —el rendimiento—, la **F14 (v3.144.0)** —el lenguaje del movimiento: curvas, ritmo y firma— la **F15 (v3.145.0)** —el movimiento en cada contexto físico: áreas seguras, girar y el teclado— y la **F16 (v3.146.0)** —los estados del sistema: carga, error, sin conexión y guardado—.
 Lo que vale para cualquier cambio a partir de hoy:
 - 🚨 **EL MOVIMIENTO SALE DE `src/lib/motion.js`, Y NINGÚN COMPONENTE NUEVO ESCRIBE EL SUYO** (F1,
   apartado 24): una clase de `index.css`, `transicion('width', 'slow')`, `escalonado(i)` o un preset de
@@ -201,6 +201,18 @@ Lo que vale para cualquier cambio a partir de hoy:
   `data-teclado` y la barra de abajo se aparta; **un dedo a menos de `UMBRALES_GESTO.bordeSistema` de un lado no
   empieza un gesto** (es «atrás» en Safari). La matriz de contextos (`CONTEXTOS_FISICOS`) **amplía** la de Fitness
   (`DISPOSITIVOS_DE_PRUEBA`): un tamaño nuevo de prueba va allí, no a una tercera lista.
+- 🚨 **LO QUE NO SE PUDO CARGAR NO SE GUARDA, Y LO QUE NO LLEGA SE DICE** (F16, `sincronizacion.js`, una hoja del árbol que
+  llama `supabase.js`). 🐛 Una carga fallida arrancaba vacía y **el siguiente guardado pisaba la cuenta** —la migración de
+  `ajustes` lo hacía sola, con el PIN—: ahora `saveData` no escribe esa clave hasta que se cargue (`{ ok: false, bloqueado:
+  true }`). Lo que no llega queda **pendiente con su último valor** (en memoria, nunca en el dispositivo), los guardados de
+  una clave salen **en orden**, y `IndicadorDeSincronizacion` (App.jsx) lo dice arriba —vacío casi siempre—. **Una pantalla
+  nueva no hace nada para esto: `saveData` lo trae.** Si tiene algo que decir de SU guardado, lee `{ ok }` (Fitness, FIT F37).
+- 🚨 **TODA OPERACIÓN ASÍNCRONA NUEVA ENTRA EN `MAPA_ASINCRONO` CON SUS ESTADOS** (F16, `estadosAsincronos.js`, apartado 60):
+  una bandera de espera vuelve a reposo en un **`finally`** (🐛 el PIN se quedaba «verificando» para siempre), una petición
+  que se puede lanzar otra vez antes de contestar usa **`useTurnos()`** (la última gana), un giro va con su texto y un vacío
+  que llega después del contenido espera a que salga (`EmptyHint` / `VacioQueLlega`; la lista se queda montada aunque se
+  vacíe). `auditarAsincronia` caza los tres primeros. ⚠️ **El recorrido simula sin conexión con los eventos del navegador
+  y una petición abortada (`ABORTAR_ESCRITURA`)**, nunca con `setOffline`: cortaría también a Vite, que recargaría la página.
 - 🐛 **DOS HERMANOS CON LA MISMA `key` DEJAN EL VIEJO PUESTO** (F14): los indicadores de Nutrición y su
   `ListaAnimada` iban los dos por la fecha, y al cambiar de día se leían las cifras de hoy y las de ayer. **Un bloque
   con `key` por fecha lleva su prefijo.** Y 🐛 **una decisión de llegada se toma UNA vez por navegación**
@@ -2188,8 +2200,8 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-0. 🎬 **LA SIGUIENTE ES LA F16 DEL MOTION SYSTEM** (*"Estados de sistema, loading, error, offline, sync y
-   transiciones asíncronas"*, líneas 1–759 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F17… hasta la F20, en
+0. 🎬 **LA SIGUIENTE ES LA F17 DEL MOTION SYSTEM** (*"Motion de datos, dashboard, métricas, gráficas y
+   visualización de información"*, líneas 760–1458 de `especificaciones/ORIGINAL_MOTION_SYSTEM.txt`), y después la F18… hasta la F20, en
    el orden de
    `docs/13_MOTION_SYSTEM_ORDEN.md`. Antes de cada una, **leerla entera** y mirar el `MOTION_MAP`, los
    `HALLAZGOS_F0` que le tocan y `SOLAPES_ROADMAP`. Y **construirla con el motor de la F1**

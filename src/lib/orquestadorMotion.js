@@ -622,6 +622,7 @@ export const PIEZAS_DE_MOVIMIENTO = Object.freeze([
   'src/components/motion.jsx', 'src/components/gestosMotion.jsx', 'src/components/capasMotion.js',
   'src/components/continuidad.jsx', 'src/components/layoutMotion.jsx', 'src/components/navegacionMotion.js',
   'src/lib/motion.js', 'src/lib/orquestadorMotion.js', 'src/components/responsiveMotion.js',
+  'src/components/estadosAsincronos.jsx', 'src/components/vacioMotion.js',
 ]);
 
 /** Lo que no se limpia a propósito, y por qué no hace falta. */

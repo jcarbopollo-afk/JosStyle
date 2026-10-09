@@ -256,6 +256,7 @@ export const PIEZAS_MOTION = Object.freeze([
   'src/components/continuidad.jsx', 'src/components/gestosMotion.jsx', 'src/components/capasMotion.js',
   'src/components/navegacionMotion.js', 'src/components/fundidoBajoCabecera.js', 'src/components/accesibilidadMotion.jsx',
   'src/lib/responsiveMotion.js', 'src/components/responsiveMotion.js',
+  'src/lib/estadosAsincronos.js', 'src/lib/sincronizacion.js', 'src/components/estadosAsincronos.jsx', 'src/components/vacioMotion.js',
 ]);
 
 export const REGLAS_COSTE = Object.freeze([

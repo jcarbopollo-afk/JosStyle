@@ -150,6 +150,16 @@ const LLENO_ESCRITURA = new Set();
 /* MS F9 — cuánto tarda en contestar una SUBIDA de archivo (0: al momento). Con un retraso, un botón que
    espera se queda en «cargando» el rato justo para medirlo, como con una cobertura floja. */
 const RETRASO_SUBIDA = { ms: 0 };
+/* MS F16 — las claves cuya CARGA falla (500), o todas con `'*'`, como un servidor caído al abrir la
+   aplicación; cuánto tarda en contestar cada carga (un arranque lento); y cuánto tarda cada ESCRITURA de
+   una clave, una a una (`[400, 0, 0]`: la primera llega la última si nadie las pone en orden). */
+const FALLAR_LECTURA = new Set();
+const RETRASO_LECTURA = { ms: 0 };
+const RETRASO_ESCRITURA = {};
+/* …y las escrituras que se quedan SIN RED (la petición ni llega: `Failed to fetch`), como un iPhone sin
+   cobertura. Se usa en vez de `setOffline` porque eso cortaría también la conexión de Vite con la página,
+   y al volver Vite la recargaría entera. */
+const ABORTAR_ESCRITURA = new Set();
 
 /* 🐛 ⚠️ La ruta del navegador estaba **escrita a mano** (`/opt/pw-browsers/
    chromium`), que es donde lo tenía el entorno de aquellas sesiones. En Windows
@@ -214,6 +224,12 @@ await page.route(`${SUPA}/**`, async (route) => {
     if (route.request().method() !== 'GET') {
       try {
         const cuerpo = JSON.parse(route.request().postData() || '{}');
+        if (cuerpo && ABORTAR_ESCRITURA.has(cuerpo.key)) return route.abort('internetdisconnected');
+        const retrasos = cuerpo && RETRASO_ESCRITURA[cuerpo.key];
+        if (Array.isArray(retrasos) && retrasos.length) {
+          const ms = retrasos.shift();
+          if (ms > 0) await new Promise((r) => setTimeout(r, ms));
+        }
         if (cuerpo && FALLAR_ESCRITURA.has(cuerpo.key)) {
           return route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'fallo de prueba' }) });
         }
@@ -230,6 +246,10 @@ await page.route(`${SUPA}/**`, async (route) => {
       return route.fulfill({ status: 201, contentType: 'application/json', body: '[]' });
     }
     const clave = decodeURIComponent(url).match(/key=eq\.([^&]+)/)?.[1];
+    if (RETRASO_LECTURA.ms > 0) await new Promise((r) => setTimeout(r, RETRASO_LECTURA.ms));
+    if (FALLAR_LECTURA.has('*') || FALLAR_LECTURA.has(clave)) {
+      return route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ message: 'fallo de prueba al cargar' }) });
+    }
     const valor = almacen[clave] ?? null;
     return route.fulfill({
       status: 200, contentType: 'application/json',
@@ -14425,6 +14445,234 @@ ok(zoom_ms15 && zoom_ms15.maximo === '370px' && zoom_ms15.scroll === 'auto' && z
 
 ok(errores.length === erroresAntes_ms15, `MS F15 — …sin un error en la consola${errores.length > erroresAntes_ms15 ? `: ${errores.slice(erroresAntes_ms15).join(' | ').slice(0, 200)}` : ''}`);
 almacen.ajustes = ajustesDeAntes_ms15;
+
+/* ── MS F16 · Estados de sistema, carga, error, sin conexión y guardado ──
+   Lo que solo se ve con la aplicación de verdad y su doble de Supabase: con todo bien no se ve nada arriba;
+   tres guardados seguidos de una clave llegan en orden aunque el primero tarde; un guardado que falla se
+   queda pendiente, se dice y se vuelve a mandar («Guardar ahora»); sin conexión se dice, y al volver se
+   manda solo; una carga que falla NO deja que el arranque pise la cuenta (la migración de `ajustes`
+   guardaba los de por defecto, PIN incluido); si no carga nada, no se enseña una cuenta vacía; un arranque
+   lento dice que tarda; lo último que se borra se va ANTES de que llegue el vacío; y la sesión que caduca
+   se explica. ⚠️ Lo provocado a propósito lo retira esta sección. Sufijo `_ms16`. */
+console.log('\n── MS F16 · Estados de sistema, carga, error, sin conexión y guardado ──');
+const ajustesDeAntes_ms16 = almacen.ajustes;
+almacen.ajustes = { ...(ajustesDeAntes_ms16 || {}), apariencia: { ...((ajustesDeAntes_ms16 || {}).apariencia || {}), animaciones: 'completa', reducirMovimiento: false, velocidadMovimiento: 'normal' } };
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const erroresAntes_ms16 = errores.length;
+const PROVOCADO_ms16 = /Error cargando|No se pudo guardar|No se guarda|status of 500|fallo de prueba/;
+const indicador_ms16 = () => page.evaluate(() => {
+  const el = document.querySelector('[data-estado-sistema]');
+  const caja = el && el.closest('[data-presencia]');
+  return {
+    id: el ? el.getAttribute('data-estado-sistema') : null,
+    presencia: caja ? caja.getAttribute('data-presencia') : null,
+    texto: el ? el.innerText.replace(/\s+/g, ' ').trim() : '',
+    estado: (document.querySelector('[data-anuncio-estado]') || {}).textContent || '',
+    alerta: (document.querySelector('[data-anuncio-alerta]') || {}).textContent || '',
+    regiones: document.querySelectorAll('[data-anuncio-estado], [data-anuncio-alerta]').length,
+  };
+});
+const esperarIndicador_ms16 = async (id, tope = 8000) => {
+  const hasta = Date.now() + tope;
+  let v;
+  do {
+    v = await indicador_ms16();
+    if (id === null ? !v.id : (v.id === id && v.presencia !== 'saliendo')) return v;
+    await page.waitForTimeout(120);
+  } while (Date.now() < hasta);
+  return v;
+};
+
+/* 1 · Con todo bien, nada arriba. */
+const quieto_ms16 = await indicador_ms16();
+ok(!quieto_ms16.id && quieto_ms16.regiones === 2,
+  `🚨 MS F16 — con todo bien no se ve nada arriba (apartado 28), y las dos regiones vivas están montadas desde el principio (${JSON.stringify(quieto_ms16)})`);
+const mismo_ms16 = await page.evaluate(async () => (await import('/src/lib/sincronizacion.js')).usuarioDeLaSesion());
+ok(mismo_ms16 === 'usuario-prueba', `MS F16 — la sesión de datos es la del usuario que ha entrado (${mismo_ms16})`);
+
+/* 2 · Tres guardados seguidos de la misma clave, con el primero lento: llegan en orden. */
+RETRASO_ESCRITURA.ms16Orden = [600, 0, 0];
+const respuestas_ms16 = await page.evaluate(async () => {
+  const m = await import('/src/lib/supabase.js');
+  const r = await Promise.all([1, 2, 3].map((n) => m.saveData('usuario-prueba', 'ms16Orden', { n })));
+  return r.map((x) => x.ok);
+});
+const llegadas_ms16 = guardado.filter((g) => g && g.key === 'ms16Orden').map((g) => g.value.n);
+ok(respuestas_ms16.every(Boolean) && JSON.stringify(llegadas_ms16) === '[1,2,3]' && almacen.ms16Orden && almacen.ms16Orden.n === 3,
+  `🚨 MS F16, apartado 41 — tres guardados seguidos de una clave llegan EN ORDEN aunque el primero tarde (${JSON.stringify(llegadas_ms16)}): la cuenta se queda con el último, no con el viejo que llegó tarde`);
+delete almacen.ms16Orden;
+delete RETRASO_ESCRITURA.ms16Orden;
+
+/* 3 · Un guardado que falla: pendiente, dicho, y «Guardar ahora». */
+ok(await pulsar('Ajustes') && await pulsar('Apariencia') && await pulsar('Texto y movimiento'), 'MS F16 — Ajustes → Apariencia → Texto y movimiento');
+await esperarTexto(/Ver cómo se mueve/);
+const elegirModo_ms16 = (texto) => page.evaluate((t) => {
+  const tarjeta = [...document.querySelectorAll('div')].find((d) => d.querySelector(':scope > p') && /^Movimiento$/.test(d.querySelector(':scope > p').innerText.trim()) && d.querySelector('[data-muestra-movimiento]'));
+  const fila = tarjeta ? tarjeta.querySelector('.flex.flex-wrap.gap-2') : null;
+  const b = fila ? [...fila.querySelectorAll('button')].find((x) => x.innerText.trim() === t) : null;
+  if (!b) return false;
+  b.click();
+  return true;
+}, texto);
+FALLAR_ESCRITURA.add('ajustes');
+ok(await elegirModo_ms16('Premium'), 'MS F16 — se elige «Premium» con la cuenta sin dejar guardar');
+const pendiente_ms16 = await esperarIndicador_ms16('pendiente');
+ok(pendiente_ms16.id === 'pendiente' && /1 cambio sin guardar/.test(pendiente_ms16.texto) && /Guardar ahora/.test(pendiente_ms16.texto),
+  `🚨 MS F16 — un guardado que falla se DICE arriba: «1 cambio sin guardar · Guardar ahora» (${JSON.stringify(pendiente_ms16)})`);
+ok(/sin guardar/.test(pendiente_ms16.estado), '♿ …y se anuncia (región `status`)');
+ok(await page.evaluate(() => document.documentElement.getAttribute('data-motion')) === 'premium' && almacen.ajustes.apariencia.animaciones === 'completa',
+  'MS F16 — el cambio sigue en pantalla (Premium) y la cuenta todavía no lo tiene: pendiente, no deshecho (apartados 16 y 33)');
+FALLAR_ESCRITURA.delete('ajustes');
+ok(await pulsar('Guardar ahora'), 'MS F16 — «Guardar ahora», ya con la cuenta bien');
+const guardado_ms16 = await esperarIndicador_ms16('guardado', 4000);
+ok(guardado_ms16.id === 'guardado' && /Guardado/.test(guardado_ms16.texto), `MS F16 — «Guardado», un momento (apartado 32: feedback corto) (${JSON.stringify(guardado_ms16)})`);
+ok(almacen.ajustes.apariencia.animaciones === 'premium', '🚨 MS F16 — y ahora SÍ está en la cuenta');
+const fuera_ms16 = await esperarIndicador_ms16(null, 5000);
+ok(!fuera_ms16.id, 'MS F16 — y se va solo');
+
+/* 4 · Sin conexión: se dice; lo que se cambia espera; al volver, se manda solo. */
+const conexion_ms16 = (enLinea) => page.evaluate((v) => {
+  Object.defineProperty(window.navigator, 'onLine', { configurable: true, get: () => v });
+  window.dispatchEvent(new Event(v ? 'online' : 'offline'));
+}, enLinea);
+ABORTAR_ESCRITURA.add('ajustes');
+await conexion_ms16(false);
+await page.waitForTimeout(400);
+ok(!(await indicador_ms16()).id, 'MS F16 — una caída de medio segundo todavía no se dice (apartado 30: nada exagerado)');
+const sinRed_ms16 = await esperarIndicador_ms16('sin_conexion', 4000);
+ok(sinRed_ms16.id === 'sin_conexion' && /^Sin conexión/.test(sinRed_ms16.texto), `MS F16 — una que dura, «Sin conexión» (${JSON.stringify(sinRed_ms16)})`);
+ok(await elegirModo_ms16('Normal'), 'MS F16 — se cambia algo sin conexión');
+const esperando_ms16 = await esperarIndicador_ms16('pendiente_sin_conexion', 4000);
+ok(/Sin conexión · 1 cambio esperando/.test(esperando_ms16.texto) && !/Guardar ahora/.test(esperando_ms16.texto),
+  `MS F16, apartado 33 — «Sin conexión · 1 cambio esperando», sin fingir que se ha guardado (${JSON.stringify(esperando_ms16)})`);
+ok(almacen.ajustes.apariencia.animaciones === 'premium', '…y la cuenta sigue con lo de antes');
+ABORTAR_ESCRITURA.delete('ajustes');
+await conexion_ms16(true);
+let llegado_ms16 = false;
+for (let i = 0; i < 40 && !llegado_ms16; i += 1) { await page.waitForTimeout(150); llegado_ms16 = almacen.ajustes.apariencia.animaciones === 'completa'; }
+ok(llegado_ms16, '🚨 MS F16, apartado 32 — al volver la conexión, lo pendiente se manda SOLO');
+ok(!(await esperarIndicador_ms16(null, 6000)).id, 'MS F16 — …y el indicador se va');
+
+/* 5 · Una carga que falla: esa parte NO se guarda (la migración del arranque pisaba los ajustes). */
+const escriturasAjustes_ms16 = () => guardado.filter((g) => g && g.key === 'ajustes').length;
+const antesCarga_ms16 = escriturasAjustes_ms16();
+const ajustesGuardados_ms16 = JSON.stringify(almacen.ajustes);
+FALLAR_LECTURA.add('ajustes');
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+const sinCargar_ms16 = await esperarIndicador_ms16('sin_cargar', 5000);
+ok(sinCargar_ms16.id === 'sin_cargar' && /No se ha podido cargar Ajustes/.test(sinCargar_ms16.texto) && /Volver a cargar/.test(sinCargar_ms16.texto),
+  `🚨 MS F16, apartado 20 — una carga que falla se dice arriba, con «Volver a cargar» (${JSON.stringify(sinCargar_ms16)})`);
+ok(/No se ha podido cargar Ajustes/.test(sinCargar_ms16.alerta), '♿ …como alerta');
+await page.waitForTimeout(1500);
+ok(escriturasAjustes_ms16() === antesCarga_ms16 && JSON.stringify(almacen.ajustes) === ajustesGuardados_ms16,
+  `🚨🚨 MS F16 — y el arranque NO pisa los ajustes de la cuenta con los de por defecto (antes la migración lo hacía sola, PIN incluido): ${escriturasAjustes_ms16() - antesCarga_ms16} escrituras`);
+const bloqueado_ms16 = await page.evaluate(async () => (await import('/src/lib/supabase.js')).saveData('usuario-prueba', 'ajustes', { pisado: true }));
+ok(bloqueado_ms16 && bloqueado_ms16.ok === false && bloqueado_ms16.bloqueado === true && escriturasAjustes_ms16() === antesCarga_ms16,
+  '🚨 MS F16 — y ningún guardado de esa clave sale mientras no se cargue');
+FALLAR_LECTURA.clear();
+ok(await pulsar('Volver a cargar'), 'MS F16 — «Volver a cargar», ya con el servidor bien');
+await page.waitForLoadState('networkidle');
+await esperarTexto(/Hoy|Buenos|Buenas/);
+ok(!(await esperarIndicador_ms16(null, 4000)).id && await page.evaluate(() => document.documentElement.getAttribute('data-motion')) === 'normal',
+  'MS F16 — y vuelve a cargar con lo de la cuenta, sin aviso');
+
+/* 6 · Si no carga NADA, no se enseña una cuenta vacía. */
+FALLAR_LECTURA.add('*');
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+const sinNada_ms16 = await esperarTexto(/No se han podido cargar tus datos/);
+ok(/No se han podido cargar tus datos/.test(sinNada_ms16) && /no se ha borrado nada/.test(sinNada_ms16),
+  '🚨 MS F16, apartado 5 — si no se carga nada: «No se han podido cargar tus datos», y que no se ha borrado nada');
+ok(!/Buenos días|Buenas tardes|Buenas noches/.test(sinNada_ms16) && await page.evaluate(() => !document.querySelector('nav')),
+  '…sin enseñar una aplicación vacía que no es la suya');
+FALLAR_LECTURA.clear();
+ok(await pulsar('Reintentar'), 'MS F16 — «Reintentar»');
+const vuelve_ms16 = await esperarTexto(/Hoy|Buenos|Buenas/);
+ok(/Hoy|Buenos|Buenas/.test(vuelve_ms16) && !/No se han podido cargar tus datos/.test(vuelve_ms16), 'MS F16 — y entra, con sus datos');
+
+/* 7 · Un arranque lento dice que tarda (y el esqueleto deja de latir). */
+RETRASO_LECTURA.ms = 9500;
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(3000);
+const pronto_ms16 = await page.evaluate(() => ({ texto: document.body.innerText, quieto: document.querySelectorAll('.esqueleto-quieto').length, latiendo: document.querySelectorAll('.esqueleto').length }));
+ok(pronto_ms16.latiendo > 0 && pronto_ms16.quieto === 0 && !/tardando/.test(pronto_ms16.texto), `MS F16 — a los 3 s, solo el esqueleto (${JSON.stringify({ ...pronto_ms16, texto: undefined })})`);
+await page.waitForTimeout(5600);
+const tarde_ms16 = await page.evaluate(() => ({ texto: document.body.innerText, quieto: document.querySelectorAll('.esqueleto-quieto').length }));
+ok(/Está tardando más de lo normal/.test(tarde_ms16.texto) && tarde_ms16.quieto > 0,
+  `🚨 MS F16, apartado 9 — a los 8 s dice que tarda, y el esqueleto deja de latir (${tarde_ms16.quieto} quietos)`);
+RETRASO_LECTURA.ms = 0;
+const tras_ms16 = await esperarTexto(/Buenos|Buenas|Hoy/, 12000);
+ok(/Buenos|Buenas|Hoy/.test(tras_ms16), 'MS F16 — …y cuando llega, la aplicación entra');
+
+/* 8 · Lo último que se borra se va ANTES de que llegue el vacío (apartados 22 y 23). */
+const hoy_ms16 = new Date().toLocaleDateString('sv-SE');
+almacen.productividad = {
+  tareas: [{ id: 'ms16-1', texto: 'Tarea que se va', fecha: hoy_ms16, hecha: false, prioridad: 'media' }],
+  habitos: [], rutinas: [], rutinaEjecuciones: [], metas: [], pomodoros: {}, pomodoroSesiones: [], apuntes: [],
+};
+almacen.calendario = { eventos: [] };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+await pulsar('Gestión');
+await pulsar('Organización');
+ok(await pulsar('Calendario') && await pulsar('Día'), 'MS F16 — Calendario → Día');
+await esperarTexto(/Tarea que se va/);
+ok(await pulsar('Acciones de Tarea que se va'), 'MS F16 — el menú de la tarea');
+await esperarTexto(/Eliminar/);
+const borrado_ms16 = await page.evaluate(() => new Promise((resolver) => {
+  const dialogo = [...document.querySelectorAll('[role="dialog"]')].filter((x) => !x.closest('[data-capa-saliendo]')).pop();
+  const b = [...(dialogo || document).querySelectorAll('button')].filter((x) => !x.closest('[inert], [data-capa-saliendo], [data-lista-saliendo]'))
+    .find((x) => x.innerText.includes('Eliminar'));
+  if (!b) { resolver(null); return; }
+  b.click();
+  setTimeout(() => {
+    const vacio = [...document.querySelectorAll('.vacio-entra')].find((x) => /Agenda libre/.test(x.innerText));
+    const a = vacio && vacio.getAnimations ? vacio.getAnimations()[0] : null;
+    resolver({
+      copia: document.querySelectorAll('[data-lista-saliendo]').length,
+      vacio: !!vacio,
+      trasSalida: !!(vacio && vacio.classList.contains('vacio-tras-salida')),
+      retraso: a ? Math.round(a.effect.getTiming().delay) : null,
+    });
+  }, 60);
+}));
+ok(borrado_ms16 && borrado_ms16.vacio && borrado_ms16.trasSalida && borrado_ms16.retraso >= 120,
+  `🚨 MS F16, apartado 23 — al borrar lo último, el vacío ESPERA a que salga (${JSON.stringify(borrado_ms16)})`);
+ok(borrado_ms16 && borrado_ms16.copia > 0, '…porque la lista sigue montada y lo que se va sale con su copia (F10), en vez de cambiarse de golpe por el vacío');
+await pulsar('Gestión');
+await pulsar('Organización');
+ok(await pulsar('Calendario') && await pulsar('Día'), 'MS F16 — y al volver a entrar en el día vacío…');
+const entrada_ms16 = await page.evaluate(() => {
+  const vacio = [...document.querySelectorAll('.vacio-entra')].find((x) => /Agenda libre/.test(x.innerText));
+  return vacio ? { trasSalida: vacio.classList.contains('vacio-tras-salida') } : null;
+});
+ok(entrada_ms16 && entrada_ms16.trasSalida === false, `…el vacío entra CON la pantalla, sin esperar a nada (${JSON.stringify(entrada_ms16)})`);
+
+/* 9 · La sesión que caduca se explica; salir a propósito, no. */
+await page.evaluate(async () => { const m = await import('/src/lib/supabase.js'); await m.supabase.auth.signOut(); });
+const caducada_ms16 = await esperarTexto(/Tu sesión ha caducado/);
+ok(/Tu sesión ha caducado/.test(caducada_ms16) && /sigue en tu cuenta/.test(caducada_ms16),
+  '🚨 MS F16, apartado 45 — si la sesión se va sola, la pantalla de entrar dice que ha caducado y que lo guardado sigue en su cuenta');
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+await page.evaluate(async () => { const m = await import('/src/lib/supabase.js'); await m.signOut(); });
+const salida_ms16 = await esperarTexto(/Inicia sesión para continuar/);
+ok(/Inicia sesión para continuar/.test(salida_ms16) && !/caducado/.test(salida_ms16), 'MS F16 — y salir a propósito no dice que haya caducado');
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+
+/* Lo provocado a propósito se retira; lo que quede es un fallo. */
+const ajenos_ms16 = errores.slice(erroresAntes_ms16).filter((e) => !PROVOCADO_ms16.test(e));
+errores.splice(erroresAntes_ms16, errores.length - erroresAntes_ms16, ...ajenos_ms16);
+ok(ajenos_ms16.length === 0, `MS F16 — …sin un error en la consola que no se provocara a propósito${ajenos_ms16.length ? `: ${ajenos_ms16.join(' | ').slice(0, 300)}` : ''}`);
+FALLAR_ESCRITURA.clear();
+ABORTAR_ESCRITURA.clear();
+FALLAR_LECTURA.clear();
+RETRASO_LECTURA.ms = 0;
+almacen.ajustes = ajustesDeAntes_ms16;
 
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });

@@ -11,6 +11,7 @@ import { transicion } from '../lib/motion';
 import { desenfoque, sombra } from '../lib/profundidad';
 import { estadoDeBoton, TEXTOS_ESTADO_BOTON } from '../lib/estadosInteraccion';
 import { ListaAnimada } from './layoutMotion';
+import { useVacioQueLlega } from './vacioMotion';
 
 export function Card({ children, style, className = '', id }) {
   return (
@@ -522,9 +523,13 @@ export function ToggleTab({ children, active, onClick, accent }) {
 }
 
 // MS F4, apartado 14 — un vacío entra con un fundido corto (`vacio-entra`), sin ser protagonista.
+// MS F16, apartado 23 — y si llega DESPUÉS del contenido (se ha borrado lo último), espera a que la
+// fila que se va termine de salir (`useVacioQueLlega`).
 export function EmptyHint({ text }) {
+  const ref = useRef(null);
+  useVacioQueLlega(ref);
   return (
-    <div className="vacio-entra text-center py-6 rounded-2xl" style={{ border: `1px dashed ${COLORS.border}` }}>
+    <div ref={ref} className="vacio-entra text-center py-6 rounded-2xl" style={{ border: `1px dashed ${COLORS.border}` }}>
       <p className="text-sm" style={{ color: COLORS.textMuted }}>{text}</p>
     </div>
   );
@@ -581,10 +586,12 @@ export function PinGate({ pinHash, pinSalt, accent, desbloqueado, onDesbloquear,
     );
   }
 
+  /* 🐛 MS F16, apartado 40 — en un `finally`: si `crypto.subtle` lanza (Safari fuera de una conexión
+     segura), la entrada se quedaba «verificando» para siempre y no se podía volver a intentar. */
   const intentar = async (valor) => {
     setVerificando(true);
-    const ok = await verificarPin(valor, pinHash, pinSalt);
-    setVerificando(false);
+    let ok = false;
+    try { ok = await verificarPin(valor, pinHash, pinSalt); } catch { ok = false; } finally { setVerificando(false); }
     if (ok) { setError(''); onDesbloquear(); } else setError('PIN incorrecto');
   };
 
@@ -612,8 +619,8 @@ export function VerificacionPinModal({ seguridad, accent, motivo, onSuccess, onC
 
   const intentar = async (valor) => {
     setVerificando(true);
-    const ok = await verificarPin(valor, seguridad.pinHash, seguridad.pinSalt);
-    setVerificando(false);
+    let ok = false;
+    try { ok = await verificarPin(valor, seguridad.pinHash, seguridad.pinSalt); } catch { ok = false; } finally { setVerificando(false); }
     if (ok) onSuccess(); else setError('PIN incorrecto');
   };
 
@@ -1251,13 +1258,14 @@ export function ScoreGauge({ value, accent, size = 118 }) {
 
    🚨 `aria-hidden` + `role="status"` en el contenedor: quien usa un lector de
    pantalla oye *"Cargando"* una vez, no cinco cajas vacías. */
-export function Esqueleto({ alturas = [72, 96, 72], etiqueta = 'Cargando' }) {
+export function Esqueleto({ alturas = [72, 96, 72], etiqueta = 'Cargando', quieto = false }) {
+  /* MS F16, apartado 9 — `quieto`: ya ha dicho que tarda, y deja de latir (`esqueleto-quieto`). */
   return (
     <div className="space-y-3" role="status" aria-label={etiqueta}>
       {alturas.map((alto, i) => (
         <div
           key={i}
-          className="esqueleto"
+          className={quieto ? 'esqueleto esqueleto-quieto' : 'esqueleto'}
           aria-hidden="true"
           style={{ height: alto, background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}
         />

@@ -2,6 +2,15 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.146.0 — Motion System F16/20: estados del sistema, carga, error, sin conexión y guardado):**
+> 🚨 **Un fallo grave arreglado:** si una parte de los datos no se podía cargar al abrir la app, arrancaba vacía y el
+> siguiente guardado **pisaba lo que había en la cuenta** —y en el caso de Ajustes lo hacía sola al arrancar, con el
+> PIN—. Ahora lo que no se carga no se guarda, y se dice arriba con «Volver a cargar»; si no carga nada, «No se han
+> podido cargar tus datos». Un guardado que no llega ya no solo suena: arriba sale «1 cambio sin guardar · Guardar
+> ahora», y sin conexión se dice y se manda solo al volver. Los guardados de una misma cosa llegan en orden. El
+> esqueleto de carga dice cuándo tarda, la sesión que caduca se explica y lo último que se borra se va antes de que
+> aparezca el vacío. **La siguiente es la F17** (datos, dashboard, métricas y gráficas).
+
 > **📅 ACTUALIZACIÓN (v3.145.0 — Motion System F15/20: responsive, orientación y áreas seguras):**
 > Con el iPhone en horizontal, la lupa y las sugerencias ya no quedan debajo de la isla; el escáner de códigos ya no
 > pone su cerrar debajo de la batería; y las confirmaciones y las fichas del Armario dejan la barra de inicio. Girar el

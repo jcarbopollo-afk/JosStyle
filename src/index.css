@@ -164,6 +164,34 @@ html[data-teclado='abierto'] .nav-segura {
   visibility: hidden;
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM · F16 — LOS ESTADOS DEL SISTEMA
+
+   El indicador de arriba (lo que no se ha cargado, lo que no ha llegado a la
+   cuenta, sin conexión) va a la altura de la lupa y deja sitio a los dos lados
+   para ella y para lo que flote a la derecha: nunca debajo de la isla ni de un
+   botón. Entra y sale con `Presencia` (toastEnter / toastExit): aquí no se
+   anima nada.
+   ════════════════════════════════════════════════════════════════════════════ */
+.indicador-estado {
+  top: calc(var(--safe-top) + 14px);
+  padding-left: calc(var(--safe-left) + 60px);
+  padding-right: calc(var(--safe-right) + 60px);
+}
+
+/* Un estado vacío que llega DESPUÉS del contenido (se ha ido lo último) espera a que lo de antes
+   salga (apartado 23): su entrada (`vacio-entra`) empieza al acabar la salida de la fila (`fast`). */
+.vacio-entra.vacio-tras-salida {
+  animation-delay: var(--motion-dur-fast);
+}
+
+/* El esqueleto del arranque deja de latir cuando ya ha dicho que tarda: un bucle que no informa
+   solo gasta (apartados 9 y 51). */
+.esqueleto.esqueleto-quieto {
+  animation-name: none;
+  opacity: var(--motion-opac-secondary);
+}
+
 /* 🚨 SF F1 — EL ALTO DE LA RAÍZ, Y POR QUÉ ESTÁ AQUÍ Y NO EN UN `style={{}}`.
 
    `100vh` **no es la altura visible en Safari de iOS**: incluye la franja que

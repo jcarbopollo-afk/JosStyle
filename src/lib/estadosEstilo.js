@@ -113,21 +113,26 @@ export const ESTADOS_EH = [
     opciones: [{ id: 'reintentar', etiqueta: 'Reintentar', accion: 'reintentar' }],
   },
   {
-    apartado: 6, id: 'error_guardado', icono: '⚠️', detectable: false,
+    apartado: 6, id: 'error_guardado', icono: '⚠️', detectable: true,
     titulo: 'No hemos podido guardar este cambio',
     datos: 'Lo que habías escrito sigue en la pantalla.',
     opciones: [
       { id: 'reintentar', etiqueta: 'Reintentar', accion: 'reintentar' },
       { id: 'cancelar', etiqueta: 'Cancelar', accion: 'cerrar' },
     ],
-    porque: 'El guardado de JosStyle todavía no avisa de si algo ha fallado, así que desde aquí no hay forma de saberlo.',
+    /* 🔓 MS F16 — se detecta: `sincronizacion.js` lleva la cuenta de lo que no llega a la cuenta y el
+       indicador de arriba lo dice para toda la aplicación, con «Guardar ahora». Su motivo de antes se
+       queda escrito: era verdad hasta entonces. */
+    resuelto: 'MS F16 — el indicador de arriba (`IndicadorDeSincronizacion`) dice lo que no ha llegado y lo vuelve a mandar.',
+    antes: 'El guardado de JosStyle todavía no avisa de si algo ha fallado, así que desde aquí no hay forma de saberlo.',
   },
   {
-    apartado: 8, id: 'sincronizando', icono: '☁️', detectable: false,
+    apartado: 8, id: 'sincronizando', icono: '☁️', detectable: true,
     titulo: 'Sincronizando…',
     datos: 'Tus cambios están subiendo.',
     opciones: [],
-    porque: 'JosStyle todavía no lleva la cuenta de lo que está subiendo, así que no hay nada que enseñar.',
+    resuelto: 'MS F16 — `sincronizacion.js` lleva la cuenta de lo que está saliendo, y el indicador dice «Guardando…» si tarda.',
+    antes: 'JosStyle todavía no lleva la cuenta de lo que está subiendo, así que no hay nada que enseñar.',
   },
   {
     apartado: 9, id: 'conflicto', icono: '⚠️', detectable: false,

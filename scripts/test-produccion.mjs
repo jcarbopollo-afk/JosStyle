@@ -173,17 +173,23 @@ console.log('\n🚀 EH · Fase 52/65 — Preparación para producción\n');
   ok(CAIDAS.every((c) => !!estadoEH(c.estado)), '⚠️ y cada una apunta a un estado que EXISTE (F41)');
 
   /* 🚨 El fallo de esta fase, con lo que se arregló y lo que no. */
-  ok(/no devolvía nada|se tragaba/.test(caida('fallo_guardado').hoy),
-    '🚨 guardar podía fallar y no se enteraba nadie');
+  ok(/no devolvía nada|se tragaba/.test(caida('fallo_guardado').antes),
+    '🚨 guardar podía fallar y no se enteraba nadie (se queda escrito en `antes`)');
   ok(/\{ ok, error \}/.test(SUPA),
     '🚨 ⚠️ ARREGLADO A MEDIAS: `saveData` ya DEVUELVE el resultado…');
   ok(/return \{ ok: !error/.test(SUPA), 'con `{ ok, error }`, sin lanzar, sin romper a quien la llama');
-  eq(caida('fallo_guardado').avisa, false,
-    '⚠️ …pero el aviso todavía no se enciende, y por eso NO se marca como resuelto');
-  eq(estadoEH('error_guardado').detectable, false,
-    '⚠️ y `error_guardado` sigue con `detectable: false`: fingirlo sería la regla 8');
-  ok(caidasSinAviso().length === 3,
-    `⚠️ ${caidasSinAviso().length} caídas siguen sin aviso en pantalla, y se dicen en vez de disimularse`);
+  /* 🔓 MS F16 — el aviso se enciende: las tres comprobaciones que guardaban la promesa se dan la
+     vuelta (no se borran). Lo que no llega queda pendiente y se dice; lo que no carga no se guarda. */
+  eq(caida('fallo_guardado').avisa, true,
+    '🔓 MS F16 — el aviso se enciende: lo que no llega a la cuenta se dice arriba y se vuelve a mandar');
+  ok(/MS F16/.test(caida('fallo_guardado').hoy) && !caida('fallo_guardado').arregladoAMedias,
+    '…y ya no está arreglado a medias');
+  eq(estadoEH('error_guardado').detectable, true,
+    '🔓 y `error_guardado` se detecta (MS F16)');
+  ok(caidasSinAviso().length === 0,
+    `🔓 ninguna caída sin aviso (${caidasSinAviso().length}): la de cargar con error tampoco, que arrancaba vacía y podía pisar la cuenta`);
+  ok(['error_servidor', 'bd_inaccesible'].every((id) => typeof caida(id).antes === 'string' && /no se guarda/i.test(caida(id).hoy)),
+    '🚨 MS F16 — una carga fallida ya no arranca vacía y en silencio: esa parte no se guarda, y se dice');
   ok(!caida('inventada'), 'se buscan por id');
 }
 

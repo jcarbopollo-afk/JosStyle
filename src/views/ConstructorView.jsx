@@ -47,6 +47,7 @@ import {
 import { ExerciseReplacementModal } from '../components/sustitucion';
 import { PROPS_CAMPO_NUMERICO } from '../lib/movilFitness';
 import { ListaAnimada } from '../components/layoutMotion';
+import { VacioQueLlega } from '../components/estadosAsincronos';
 
 /* ── Un botón redondo de icono ─────────────────────────────────────────────
    ⚠️ Siempre con `aria-label` y con `toque-44`: un botón de solo icono sin
@@ -592,7 +593,11 @@ export default function ConstructorView({
 
       <div>
         <SectionTitle sub="En el orden en el que los vas a hacer">Ejercicios</SectionTitle>
-        {rutina.lineas.length === 0 ? (
+        {/* MS F16, apartados 22 y 23 — la lista se queda montada aunque se vacíe: el último
+            ejercicio que se quita sale con su copia (F10) y el vacío llega DESPUÉS; el primero que
+            se añade entra en su sitio. Antes se cambiaban el uno por el otro de golpe. */}
+        {rutina.lineas.length === 0 && (
+          <VacioQueLlega>
           <Card>
             <div className="py-5 text-center">
               <p className="text-sm font-bold" style={{ color: COLORS.text }}>Todavía no hay ningún ejercicio</p>
@@ -601,9 +606,10 @@ export default function ConstructorView({
               </p>
             </div>
           </Card>
-        ) : (
-          /* MS F10 — subir, bajar, duplicar o quitar un ejercicio lo recoloca en vez
-             de hacer saltar la plantilla (apartados 10-12). */
+          </VacioQueLlega>
+        )}
+          {/* MS F10 — subir, bajar, duplicar o quitar un ejercicio lo recoloca en vez
+             de hacer saltar la plantilla (apartados 10-12). */}
           <ListaAnimada className="space-y-2">
             {rutina.lineas.map((l, i) => (
               <div key={l.id} data-flip-id={`l-${l.id}`}>
@@ -622,7 +628,6 @@ export default function ConstructorView({
               </div>
             ))}
           </ListaAnimada>
-        )}
       </div>
 
       <PrimaryButton accent={accent} icon={Plus} onClick={() => setEligiendo(true)}>

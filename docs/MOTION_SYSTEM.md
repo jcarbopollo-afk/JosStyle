@@ -686,6 +686,94 @@ su entrada y la forma que tiene ahí una hoja. La sección «MS F15» del recorr
 movimiento» en el móvil, la tablet y el escritorio, girar a mitad de una entrada (con su testigo sin girar),
 redimensionar a golpes y el teclado.
 
+## 8.15 · Estados del sistema: carga, error, sin conexión y guardado (F16)
+
+> **La regla permanente (apartado 60):** toda nueva operación asíncrona de JosStyle define sus estados —`idle`,
+> `loading`, `success`, `error` y, cuando corresponda, `saving`, `pending` (sin guardar), `offline`, `retrying` y
+> `cancelled`— y entra en `MAPA_ASINCRONO` con su dueño. El movimiento es parte del flujo de estado, no una capa
+> añadida después.
+
+**JosStyle ya era optimista sin saberlo.** Cada cambio es `setX(nuevo)` + `saveData(clave, nuevo)`: la pantalla
+cambia primero y la cuenta después (apartado 14). Lo que faltaba no era la UI optimista: era **saber si había
+llegado**, decirlo cuando no y no pisar lo que no se ha cargado. Eso lo lleva **`src/lib/sincronizacion.js`**, una
+hoja del árbol de imports que llama `supabase.js`, para toda la aplicación:
+
+- 🚨 **Una clave que no se pudo CARGAR no se GUARDA** (apartado 20). `loadData` seguía devolviendo el valor por
+  defecto si fallaba, y la aplicación arrancaba como una cuenta nueva: el siguiente guardado de esa clave **pisaba
+  lo que había en la cuenta**. Y el primero llegaba solo: la migración de `ajustes` del arranque guardaba los de por
+  defecto —acento, apariencia y **el PIN**— si esa carga fallaba. Ahora la clave queda apuntada, `saveData` devuelve
+  `{ ok: false, bloqueado: true }` sin tocar la red, y el indicador lo dice con «Volver a cargar». Si no se carga
+  **nada**, no se enseña una cuenta vacía: `ErrorDeArranque` («No se han podido cargar tus datos», que no se ha
+  borrado nada, y «Reintentar», también al volver la conexión).
+- **Lo que no llega queda PENDIENTE con su último valor** (apartados 26 y 33) y se vuelve a mandar con «Guardar
+  ahora» o solo al volver la conexión (`reintentarGuardados`). Mandar otra vez el valor ENTERO de una clave es
+  idempotente (`saveData` sobrescribe), así que reintentar no duplica nada — al revés que repetir una acción, que
+  es lo que la EH F41 prohibió (**C-66**). **No se deshace en pantalla** (apartado 16): perder lo escrito por un
+  fallo de red sería peor; la vuelta atrás visible es «Deshacer», que ya existe.
+- **Los guardados de una clave salen EN ORDEN** (apartado 41): uno espera a que termine el anterior (con tope de
+  10 s), y una respuesta vieja que llega después de otra más nueva no reescribe lo pendiente.
+- **Una sesión vieja no toca la nueva**: lo pendiente lleva el usuario y la generación de su sesión, se vacía al
+  salir y **nunca se escribe en el dispositivo** (lleva datos de Relación, del diario o de la piel). Por eso el
+  aviso dice que si se cierra la app antes, se pierde.
+
+**El indicador de arriba** (`IndicadorDeSincronizacion`, `src/components/estadosAsincronos.jsx`). Uno para toda la
+aplicación, a la altura de la lupa y con las áreas seguras (`.indicador-estado`), y **vacío casi siempre** (apartado
+28: no una consola de servidor). La decisión es `estadoDeSincronizacion` (sin memoria, por importancia) y
+`siguienteIndicador` (con memoria):
+
+| Estado | Cuándo | Qué dice |
+|---|---|---|
+| `sin_cargar` | Una carga falló | «No se ha podido cargar Ajustes» · **Volver a cargar** (alerta) |
+| `pendiente` | Algo no llegó | «2 cambios sin guardar» · **Guardar ahora** |
+| `pendiente_sin_conexion` | Sin red y algo esperando | «Sin conexión · 1 cambio esperando» (se manda solo al volver) |
+| `sin_conexion` | Sin red **más de 1,2 s** | «Sin conexión» (una caída corta no se dice) |
+| `guardando` | Un guardado **pasa de 1,2 s**, o reintentando | «Guardando…» con su giro y su texto |
+| `guardado` | Después de haber dicho algo | «Guardado», 1,8 s |
+
+Lo que aparece se queda **al menos 900 ms** (apartado 12: sin destellos) y «Guardando…» pasa por «Guardado» antes
+de irse (apartado 27). Entra y sale como un aviso (`toastEnter` / `toastExit` por `Presencia`) y cambia de frase en
+su sitio (`CambioDeContenido`). ♿ Lo que dice se anuncia desde **dos regiones vivas siempre montadas** (`status` y,
+para lo que no se cargó, `alert`): una región que nace con su texto no se lee. Sus botones **no** se llaman
+«Reintentar»: el aviso de Fitness (FIT F37) ya tiene uno, y Fitness sigue diciendo SU fallo en su pantalla.
+
+**El arranque** (apartados 4, 5 y 9). El esqueleto tiene la forma de Hoy (E3 F14) y Hoy entra con la transición de
+sección (F2): del esqueleto al contenido, en su sitio. Lo nuevo es que **no late para siempre**: a los 8 s dice
+«Está tardando más de lo normal…» y se queda quieto (`esqueleto-quieto`), y a los 20 s ofrece volver a intentarlo
+(`estadoDeEspera`, `useEspera`).
+
+**La sesión** (apartados 44 y 45). Supabase dice lo mismo al salir y al caducar; `signOut` apunta que se pidió
+(`marcarSalidaPedida`), y sin esa marca la pantalla de entrar dice **«Tu sesión ha caducado»**, que lo guardado sigue
+en la cuenta y cuántos cambios no llegaron (`motivoDeSalida`, `TEXTOS_SALIDA`). Mientras se comprueba la sesión,
+esqueleto: nunca entrar → app → entrar.
+
+**Las carreras y lo que se cancela** (apartados 40, 41, 49 y 50). **`crearTurnos()` / `useTurnos()`**: cada petición
+saca un turno y solo pinta si sigue siendo el suyo; cancelar o desmontar los deja sin vigencia. Lo usan la búsqueda
+de productos con marca de Nutrición (🐛 los resultados de una búsqueda vieja salían bajo el texto nuevo; ahora dicen
+de cuál son: *«Productos con marca para «avena»»*, apartado 42) y la lectura de un código de barras. Y toda bandera
+de espera alrededor de un `await` vuelve a reposo en un **`finally`**: 🐛 la entrada del PIN se quedaba «verificando»
+para siempre si `crypto.subtle` lanzaba.
+
+**Vacío ↔ contenido** (apartados 21-23). Un vacío que se monta con su pantalla entra con ella (`vacio-entra`); uno que
+llega **después** del contenido —se ha borrado lo último— espera a que la fila salga (`vacio-tras-salida`, un
+retraso de `fast`). Lo decide `useVacioQueLlega` antes de pintar, mirando si lo que lo contiene sigue entrando.
+`EmptyHint` lo lleva, y `VacioQueLlega` envuelve un vacío hecho a mano. La lista **se queda montada aunque se
+vacíe** —el Constructor y la agenda de un día la desmontaban—, así que lo último sale con su copia (F10) y lo
+primero que se crea entra en el sitio del vacío.
+
+**Los permisos** (apartado 46). La cámara: comprobando («Abriendo la cámara…»), denegado («no has dado permiso») y
+no disponible, cada uno con su frase (`estadoDePermiso`).
+
+**El mapa y la auditoría** (`MAPA_ASINCRONO`, `auditarAsincronia`). Once operaciones —el arranque, la sesión,
+guardar, la conexión, las subidas, la IA, Open Food Facts, el código de barras, el PIN, las fuentes y los sonidos—
+con su patrón, sus estados, su dueño, lo que había y lo que queda. La auditoría caza una bandera de espera sin
+`finally`, un giro sin su texto fuera de las piezas que lo llevan (`GIROS_PERMITIDOS`) y una pantalla que llama a la
+red sin estar en el mapa.
+
+**Lo que no se hace, y por qué** (`NO_EN_F16`): datos en tiempo real y conflictos entre dispositivos (no hay
+Realtime; el último en escribir gana, declarado desde la EH F41), refrescar y «tirar para actualizar» (no existen),
+una barra de progreso de las subidas (`supabase-js` no informa del avance: sería fingido) y deshacer en pantalla lo
+que no llegó (se queda pendiente).
+
 ## 9 · La arquitectura
 
 - **Sin librería de animación.** Ni framer-motion ni ninguna otra: el movimiento ya vivía en
@@ -733,3 +821,8 @@ redimensionar a golpes y el teclado.
   iPhone, los once contextos de `CONTEXTOS_FISICOS`, «Reducir movimiento» en tres tamaños, girar a mitad de la
   entrada de una capa (lo que viaja se asienta y la capa sale con su forma nueva), redimensionar a golpes, el
   teclado (`data-teclado`) y el panel de sugerencias al 200 %. `auditarResponsive` (F15) lee las vistas.
+- La sección «MS F16» del recorrido mide los estados del sistema con el doble de Supabase: nada arriba con todo
+  bien, tres guardados de una clave que llegan en orden aunque el primero tarde, un guardado que falla («1 cambio
+  sin guardar · Guardar ahora» → «Guardado»), sin conexión (y al volver se manda solo), una carga que falla sin que
+  el arranque pise los ajustes, ninguna carga («No se han podido cargar tus datos»), el arranque lento, el vacío
+  que espera a que salga lo último y la sesión que caduca. `auditarAsincronia` (F16) lee las vistas.

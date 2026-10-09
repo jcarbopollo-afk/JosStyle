@@ -452,6 +452,8 @@ import {
   DEFAULT_NOTIFICACIONES, DEFAULT_CALENDARIO, DEFAULT_APARIENCIA, DEFAULT_TEMA_PERSONALIZADO, ACCENTS, COLORS,
 } from '../src/tokens.js';
 import { DEFAULT_PAPELERA } from '../src/lib/papelera.js';
+import { IndicadorDeSincronizacion, ErrorDeArranque, AvisoDeEspera, VacioQueLlega } from '../src/components/estadosAsincronos.jsx';
+import Auth from '../src/components/Auth.jsx';
 import { DEFAULT_ARMARIO, crearPrenda, crearOutfit, crearUso } from '../src/lib/armario.js';
 import { DEFAULT_FITNESS, crearWorkoutPlan, crearMuscleRank } from '../src/lib/fitness.js';
 import { calcularResumenModulo } from '../src/lib/resumenesHub.js';
@@ -4565,6 +4567,15 @@ const CASOS = [
     resumenes: { salud: calcularResumenModulo('salud', e), sueno: calcularResumenModulo('sueno', e) },
     accent, onOpenModulo: noop,
   })],
+  /* MS F16 — los estados del sistema. El indicador de arriba se pinta vacío casi siempre, pero
+     sus dos regiones vivas están siempre montadas (una región que nace con su texto no se lee). */
+  ['IndicadorDeSincronizacion', IndicadorDeSincronizacion, () => ({})],
+  ['ErrorDeArranque', ErrorDeArranque, () => ({ onReintentar: noop, accent })],
+  ['AvisoDeEspera (tarda)', AvisoDeEspera, () => ({ estado: { id: 'tarda', texto: 'Está tardando más de lo normal…' } })],
+  ['AvisoDeEspera (reintentar)', AvisoDeEspera, () => ({ estado: { id: 'reintentar', texto: 'Está tardando mucho.' } })],
+  ['VacioQueLlega', VacioQueLlega, () => ({ children: React.createElement('p', null, 'Todavía no hay nada') })],
+  ['Auth (sesión caducada)', Auth, () => ({ salida: { motivo: 'caducada', sinGuardar: 2 } })],
+  ['Auth (sin motivo)', Auth, () => ({ salida: null })],
 ];
 
 // Tercer escenario: datos guardados a los que les faltan campos, tal y como
