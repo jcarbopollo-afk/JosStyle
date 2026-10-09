@@ -1,5 +1,15 @@
 # CHANGELOG.md
 
+## Sin versión — `CLAUDE.md`: la sección «Cambio mínimo y robustez»
+
+Solo documentación: ni código, ni pruebas, ni versión. Siete reglas nuevas en `CLAUDE.md`, entre «Las 12 reglas
+que más se rompen» y «Contexto operativo de Josué»: lo suficiente y entero, lo del proyecto antes que lo nativo,
+los casos límite, nada se recorta para escribir menos, el alcance incluye todo lo que el cambio obliga a tocar, lo
+guardado no cambia y terminado es `verificar.sh` en verde. **Complementan las reglas que ya había y no sustituyen
+ninguna: si chocan, manda la otra.** Salen de auditar Ponytail (`DietrichGebert/ponytail`, v4.13.0 y v5.1.0): se
+aprovechan solo sus principios, **sin instalar nada** —ni el plugin, ni sus hooks, ni sus skills—, porque en la
+nube no se puede instalar y sus hooks añadían contexto en cada sesión y en cada subagente.
+
 ## v3.150.0 — Motion System F20/20: consolidación, contratos y sellado · 🏁 FINALIZADO · MOTION SYSTEM — SEALED
 
 La F20 del Motion System (*"Motion System Finalization, consolidación, contratos y sellado definitivo"*, líneas

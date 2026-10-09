@@ -389,6 +389,30 @@ una dependencia (DEP-29, DEP-30). No aplica a las contradicciones ya listadas co
 
 La lista completa (49 reglas) está en `docs/01_ESPECIFICACION_MAESTRA.md` §11.
 
+## Cambio mínimo y robustez
+
+Complementa las reglas de este archivo y de `docs/01` §11: no sustituye ninguna ni autoriza a saltarse
+una prueba, un documento o un procedimiento obligatorio. **Si choca con otra regla, manda la otra.**
+
+1. **Lo suficiente, y entero.** Se construye lo que pide la tarea o su especificación, completo, y nada
+   más: ni abstracciones, opciones, dependencias ni código «para más adelante» que nadie haya pedido.
+   Las piezas que el proyecto ya exige —`motion.js`, `MODULOS_EH`, `tokens.js`, los motores— no son
+   abstracciones nuevas: se usan.
+2. **Lo del proyecto antes que lo nativo, y lo nativo antes que una dependencia.** Lo que ya existe se
+   reutiliza después de comprobar su firma y lo que devuelve; no se añade una dependencia para lo que
+   resuelven unas líneas o el navegador.
+3. **Entre dos soluciones del mismo tamaño, la que aguanta los casos límite**: `null` no es cero, fechas
+   en local, datos corruptos, sin conexión.
+4. **Nunca se recorta para escribir menos**: validación, seguridad, privacidad, accesibilidad, manejo de
+   errores y lo que evita perder datos.
+5. **El alcance mínimo incluye todo lo que el cambio obliga a tocar**: quien lo llama, su normalizador
+   (regla 5), los mapas y auditorías, las comprobaciones del recorrido y la documentación de cierre. Se
+   arregla la causa, no el síntoma, y nunca se afloja una comprobación para que pase.
+6. **Lo que la tarea no pide cambiar no cambia**, y lo guardado conserva sus ids, claves y campos. Una
+   comprobación que el cambio deja vieja se da la vuelta, no se borra.
+7. **Terminado es `bash scripts/verificar.sh` en verde.** Un fallo se cuenta con su causa, pero explicarlo
+   no autoriza a subir a `main`.
+
 ## Contexto operativo de Josué
 
 - **No tiene ordenador**: todo desde el iPhone. Comandos simples, uno a la vez.
