@@ -85,7 +85,11 @@ typecheck (C-48), el iPhone de verdad (R1) y los repintados de React, que no se 
 
 ### Verificación
 
-{{VERIFICACION_F20}}
+`bash scripts/verificar.sh` en verde (`═══ TODO CORRECTO ═══`, 0 fallos) sobre la v3.150.0: **24 340 pruebas**
+con Node en **228 suites**, **3964 casos** de renderizado real, **11 reglas invariantes** y **3442 comprobaciones** en
+Chromium — **31 757 comprobaciones**. El salto desde la v3.149.0 son las 100 pruebas de la suite de la F20 (una suite
+más) y las 34 comprobaciones de la sección «MS F20» del recorrido. Y la suite de la F20, que forma parte de esa
+pasada, es la que calcula el sello: **MOTION SYSTEM — SEALED**, con todas sus cuentas a cero.
 
 ## v3.149.0 — Motion System F19/20: testing extremo, validación, regresión y motion QA automatizado
 

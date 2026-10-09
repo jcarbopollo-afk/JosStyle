@@ -449,14 +449,14 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **24 240 pruebas unitarias** con Node repartidas en **227 suites** (5 de ellas de auditoría),
-**3964 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **3408
-comprobaciones sobre la aplicación de verdad en Chromium** — **31 623 comprobaciones**.
+Vite, **24 340 pruebas unitarias** con Node repartidas en **228 suites** (5 de ellas de auditoría),
+**3964 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **3442
+comprobaciones sobre la aplicación de verdad en Chromium** — **31 757 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.149.0, una a una**, con la suma del
-propio log (`═══ TODO CORRECTO ═══`, 0 fallos): es la que llevó la F18 y la F19 del Motion System a `main`, juntas. El
-salto desde la v3.147.0 son sus dos suites y sus dos secciones del recorrido. ⚠️ La F20 cuenta las suyas en su commit
-de cifras, cuando su pasada sale verde. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.150.0, una a una**, con la suma del
+propio log (`═══ TODO CORRECTO ═══`, 0 fallos): es la que llevó la F20 —y el sello del Motion System— a `main`. El
+salto desde la v3.149.0 es la suite de la F20 y su sección del recorrido. ⚠️ Un cambio futuro cuenta las suyas en su
+commit de cifras, cuando su pasada sale verde. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.
