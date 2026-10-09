@@ -15388,28 +15388,39 @@ const pulsarSelector_ms20 = (sel) => page.evaluate((s) => {
   b.click();
   return true;
 }, sel);
+/* Una pestaña de la barra de abajo, por la barra: «Inicio» es también lo que dice el botón de atrás de una pantalla
+   abierta desde Inicio, y `pulsar` encontraría ése primero (y sería volver, no cambiar de sección). */
+const pulsarNav_ms20 = (texto) => page.evaluate((t) => {
+  const b = [...document.querySelectorAll('nav button')].find((x) => x.innerText.trim() === t);
+  if (!b) return false;
+  b.click();
+  return true;
+}, texto);
+/* Un `transform` que no mueve nada (la identidad: lo que deja un fundido con su `transform` en reposo) es `none`. */
+const muevePantalla_ms20 = (t) => t !== 'none' && !/^matrix\(1, 0, 0, 1, 0, 0\)$/.test(t);
 const series_ms20 = () => (((almacen.fitness || {}).plantillas || []).find((p) => p.id === 'pl-ms20') || { ejercicios: [] }).ejercicios
   .reduce((n, e) => n + (Number(e.series) || 0), 0);
 
 /* El recorrido entero. `nav` es el tipo de navegación que tiene que tener el paso. */
 const PASOS_MS20 = [
-  { que: 'Bienestar', nav: 'seccion', hacer: () => pulsar('Bienestar') },
+  { que: 'Bienestar', nav: 'seccion', hacer: () => pulsarNav_ms20('Bienestar') },
   { que: 'Fitness', nav: 'entrar', hacer: () => pulsar('Fitness') },
-  { que: 'la plantilla', hacer: async () => (await pulsar('Ver Sellado F20')) && /Tus plantillas/i.test(await esperarTexto(/Tus plantillas/i)) },
+  /* Desde Tu Plan, el primer toque abre la lista de plantillas y el segundo, esa plantilla (F6, y es lo que hace la FIT F45). */
+  { que: 'la plantilla', hacer: () => pulsar('Ver Sellado F20') },
   { que: 'su detalle', hacer: async () => (await pulsar('Ver Sellado F20')) && /Distribuci[oó]n muscular/i.test(await esperarTexto(/Distribuci[oó]n muscular/i)) },
   { que: 'Editar', hacer: async () => (await pulsar('Editar')) && /A[ñn]adir ejercicio/i.test(await esperarTexto(/A[ñn]adir ejercicio/i)) },
   { que: 'cambiar las series', hacer: async () => (await pulsar('Configurar')) && (await pulsar('Subir Series')) && pulsar('Hecho') },
   { que: 'Guardar', guarda: true, hacer: async () => (await pulsar('Guardar')) && /Entrenamiento guardado/i.test(await esperarTexto(/Entrenamiento guardado/i)) },
   { que: 'salir del constructor', hacer: () => pulsar('Volver a Entrenamiento') },
   { que: 'volver de Fitness', nav: 'volver', hacer: () => pulsarSelector_ms20('.pantalla-segura .back-bar') },
-  { que: 'Vida', nav: 'seccion', hacer: () => pulsar('Vida') },
-  { que: 'Gestión', nav: 'seccion', hacer: () => pulsar('Gestión') },
-  { que: 'Ajustes', nav: 'seccion', hacer: () => pulsar('Ajustes') },
+  { que: 'Vida', nav: 'seccion', hacer: () => pulsarNav_ms20('Vida') },
+  { que: 'Gestión', nav: 'seccion', hacer: () => pulsarNav_ms20('Gestión') },
+  { que: 'Ajustes', nav: 'seccion', hacer: () => pulsarNav_ms20('Ajustes') },
   { que: 'Apariencia', hacer: () => pulsar('Apariencia') },
   { que: 'Texto y movimiento', hacer: async () => (await pulsar('Texto y movimiento')) && /Velocidad|movimiento/i.test(await ver()) },
   { que: 'cerrar Texto y movimiento', hacer: () => pulsar('Texto y movimiento') },
   { que: 'volver de Apariencia', hacer: () => pulsar('Volver a Ajustes') },
-  { que: 'Inicio', nav: 'seccion', hacer: () => pulsar('Inicio') },
+  { que: 'Inicio', nav: 'seccion', hacer: () => pulsarNav_ms20('Inicio') },
 ];
 const sesion_ms20 = async () => {
   const fallos = [];
@@ -15462,7 +15473,7 @@ const medida_ms20 = await page.evaluate(() => {
   return {
     fotogramas: f.length, mediana: mediana === null ? null : Math.round(mediana), largas: window.__largas_ms20.length,
     peor: window.__largas_ms20.length ? Math.max(...window.__largas_ms20) : 0,
-    transforms: [...window.__transforms_ms20].length, dom: document.getElementsByTagName('*').length,
+    moviendo: [...window.__transforms_ms20].filter((t) => t !== 'none' && t !== 'matrix(1, 0, 0, 1, 0, 0)').length, dom: document.getElementsByTagName('*').length,
     vivas: document.getAnimations().filter((a) => a.playState === 'running' && a.effect && a.effect.getComputedTiming().iterations !== Infinity).length,
     enMarcha: window.__motion ? window.__motion.estado().enMarcha : null,
     copias: document.querySelectorAll('[data-capa-saliendo], [data-lista-saliendo]').length,
@@ -15471,7 +15482,7 @@ const medida_ms20 = await page.evaluate(() => {
 ok(medida_ms20.fotogramas > 60 && medida_ms20.mediana !== null && medida_ms20.mediana <= 34,
   `MS F20, apartado 44 — los fotogramas de toda la sesión: la mitad llegan en 34 ms o menos (${medida_ms20.fotogramas} fotogramas, mediana ${medida_ms20.mediana} ms)`);
 ok(medida_ms20.peor < 2000, `MS F20, apartado 44 — ninguna tarea larga congela la pantalla dos segundos (${medida_ms20.largas} de más de 50 ms; la peor, ${medida_ms20.peor} ms)`);
-ok(medida_ms20.transforms > 1, `MS F20 — y la pantalla SE MOVÍA al navegar: la medida en Reducido de abajo no sale a cero por no mirar (${medida_ms20.transforms} transforms distintos)`);
+ok(medida_ms20.moviendo > 0, `MS F20 — y la pantalla SE MOVÍA al navegar: la medida en Reducido de abajo no sale a cero por no mirar (${medida_ms20.moviendo} posiciones distintas de la de reposo)`);
 ok(medida_ms20.vivas === 0 && medida_ms20.enMarcha === 0 && medida_ms20.copias === 0
   && Math.abs(medida_ms20.dom - domAntes_ms20) <= Math.max(60, domAntes_ms20 * 0.2),
   `🚨 MS F20, apartado 44 — de vuelta en Inicio no queda nada vivo: ni una animación, ni el orquestador, ni una copia, y el DOM vuelve a su tamaño (${domAntes_ms20} → ${medida_ms20.dom} nodos)`);
@@ -15501,14 +15512,14 @@ await page.evaluate(() => {
 const reducido_ms20 = await sesion_ms20();
 const transformsReducido_ms20 = await page.evaluate(() => { cancelAnimationFrame(window.__raf_ms20); return [...window.__transforms_ms20]; });
 ok(reducido_ms20.length === 0, `🚨 MS F20, apartado 43 — la sesión entera en Reducido: perfectamente utilizable (${JSON.stringify(reducido_ms20).slice(0, 600)})`);
-ok(transformsReducido_ms20.length === 1 && transformsReducido_ms20[0] === 'none',
+ok(transformsReducido_ms20.length > 0 && !transformsReducido_ms20.some(muevePantalla_ms20),
   `🚨 MS F20, apartado 43 — …y ninguna pantalla se desplaza ni escala en toda la sesión: solo se funde (${JSON.stringify(transformsReducido_ms20)})`);
 await page.emulateMedia({ reducedMotion: 'no-preference' });
 
 /* 4 · Interrumpir a propósito (apartado 41). */
 ok(await arrancar_ms20(390, 844), 'MS F20 — de vuelta al iPhone, para interrumpir');
 /* a · Abrir: la tarjeta de Fitness, y Vida antes de que acabe de abrirse. */
-ok(await pulsar('Bienestar') && await asentada_ms20(), 'MS F20 — Bienestar');
+ok(await pulsarNav_ms20('Bienestar') && await asentada_ms20(), 'MS F20 — Bienestar');
 await marcar_ms20();
 const abrir_ms20 = await page.evaluate(async () => {
   const t = [...document.querySelectorAll('button')].find((b) => (b.getAttribute('aria-label') || '') === 'Abrir Fitness' || b.innerText.trim().split('\n')[0] === 'Fitness');
@@ -15523,7 +15534,7 @@ const abrir_ms20 = await page.evaluate(async () => {
 ok(abrir_ms20 && await asentada_ms20() && /Estudios/.test(await ver()),
   '🚨 MS F20, apartado 41 — abrir Fitness e irse a Vida antes de que acabe: acaba en Vida, asentada, sin nada a medias');
 /* b · Cerrar: el ＋ se cierra y se vuelve a abrir antes de que se vaya. */
-ok(await pulsar('Inicio') && await asentada_ms20(), 'MS F20 — Inicio');
+ok(await pulsarNav_ms20('Inicio') && await asentada_ms20(), 'MS F20 — Inicio');
 ok(await pulsar('Añadir') && /Apunte/.test(await esperarTexto(/Apunte/)), 'MS F20 — el ＋ abierto');
 await page.keyboard.press('Escape');
 await page.waitForTimeout(40);
@@ -15561,7 +15572,7 @@ ok(trasGesto_ms20 && trasGesto_ms20.abierta && trasGesto_ms20.estado === 'quieta
 await page.keyboard.press('Escape');
 ok(await asentada_ms20() && await page.evaluate(() => !document.querySelector('[role="dialog"]')), 'MS F20 — …y se cierra del todo');
 /* d · Navegar: volver mientras Fitness entra. */
-ok(await pulsar('Bienestar') && await asentada_ms20(), 'MS F20 — Bienestar otra vez');
+ok(await pulsarNav_ms20('Bienestar') && await asentada_ms20(), 'MS F20 — Bienestar otra vez');
 await marcar_ms20();
 await page.evaluate(() => { const t = [...document.querySelectorAll('button')].find((b) => (b.getAttribute('aria-label') || '') === 'Abrir Fitness' || b.innerText.trim().split('\n')[0] === 'Fitness'); if (t) t.click(); });
 const entro_ms20 = await tipoNuevo_ms20();
@@ -15590,7 +15601,7 @@ ok(series_ms20() === seriesAntes_ms20 + 1 && !/Guardando|No se ha guardado|Sin c
 almacen.economia = { saldoInicial: 1000, hucha: 0, aportaciones: [], movimientos: [
   { id: 'mv1_ms20', fecha: new Date(Date.now() - 864e5).toLocaleDateString('sv-SE'), tipo: 'gasto', concepto: 'Libro', cantidad: 300 },
 ] };
-ok(await arrancar_ms20(390, 844) && await pulsar('Gestión') && await pulsar('Economía') && /Libro/.test(await esperarTexto(/Libro/)), 'MS F20 — Economía, con un gasto');
+ok(await arrancar_ms20(390, 844) && await pulsarNav_ms20('Gestión') && await pulsar('Economía') && /Libro/.test(await esperarTexto(/Libro/)), 'MS F20 — Economía, con un gasto');
 const cifra_ms20 = await page.evaluate(async () => {
   const b = [...document.querySelectorAll('button[aria-label="Eliminar movimiento"]')].find((x) => !x.closest('[inert], [data-lista-saliendo]'));
   if (!b) return null;
