@@ -455,7 +455,7 @@ una prueba, un documento o un procedimiento obligatorio. **Si choca con otra reg
   horas en esta sesión como red de seguridad —si no queda nada pendiente, se desactiva con
   `update_trigger`—. Lo que **no** se puede automatizar: el modo de la sesión (lo elige él en el
   selector; lo mejor es **Auto**), el límite de uso de su cuenta, y lo que solo puede hacer él (SQL,
-  cuentas, DEP-29, DEP-30, C-27, C-32 y la seguridad de `/api/ask-ai`). ⚠️ **El listón no cambia**: a
+  cuentas, DEP-29, C-27 y, al final y por decisión suya, DEP-30 y la seguridad de `/api/ask-ai`). ⚠️ **El listón no cambia**: a
   `main` solo con `bash scripts/verificar.sh` en verde.
 - **Al terminar, decirle siempre dos cosas:** qué se ha hecho y hasta dónde se ha llegado.
 - **Lo que más le importa es recibir la entrega actualizada cuanto antes.** Priorizarlo sobre
@@ -2312,13 +2312,19 @@ había que adivinarlo.**
    y, de paso, la instrucción que manda sobre todas las que vengan — **no se pregunta, se anota y se
    sigue**.
 
-⏸ **Y las cinco decisiones que siguen esperándole**, ninguna de ellas trabajo que yo pueda hacer
-solo: **DEP-29** (registrar JosStyle en Google y en Microsoft), **DEP-30** (el service worker),
-**C-27** (la fase de Notas que le falta al documento), la **autenticación de `/api/ask-ai`** y
-**C-32** (SF F1): *¿al tocar un campo de texto se te hace zoom?* — los campos usan 14 px y en iOS eso
-dispara el zoom al enfocar; el `maximum-scale=1` del `viewport` intenta evitarlo **y de paso bloquea
-el pellizco para ampliar**, que es un problema de accesibilidad. Las dos están enganchadas y el
-arreglo cambia el aspecto de todos los formularios, así que **lo decide él**.
+⏸ **Y lo que sigue esperándole (2026-10-17, contestado por él):**
+- 🔓 **C-32 está RESUELTA: en su iPhone no se hace zoom al tocar un campo.** Hizo la prueba y dijo
+  *"he hecho la prueba y va de locos"*, así que los campos se quedan a 14 px y el `viewport` como está.
+  No se reabre sin que él reporte un zoom.
+- 🕐 **DEP-30 (el service worker) y la autenticación de `/api/ask-ai` van AL FINAL, por decisión suya**:
+  *"primero quiero que esté toda la app hecha para luego meter esos dos"*. No se construyen antes ni
+  se le vuelven a proponer hasta que él dé la app por terminada.
+- ⏸ **DEP-29 (Google y Outlook)**: se le explicó para qué sirve (que su calendario de Outlook o Google
+  salga solo en JosStyle). Si no usa ninguno de los dos, no hace falta nunca; el archivo `.ics` ya
+  funciona.
+- ⏸ **C-27 (la fase de Notas que le falta al documento)**: si no encuentra el texto, la fase se puede
+  escribir aquí con lo que le falta a las notas (hoy no se pueden editar).
+- 📌 **Y quiere hablar de AXION y de la IA** cuando cierre esto.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
 **Bienestar** y **Nutrición** el documento trae **dos fases de Sueño** —*"Sueño 2"*, el mismo

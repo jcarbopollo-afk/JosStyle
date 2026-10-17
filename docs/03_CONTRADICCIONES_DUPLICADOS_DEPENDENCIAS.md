@@ -550,7 +550,12 @@ en Vida. La regla 49 hizo su trabajo.
 
 ---
 
-### C-32 — ⏸ PENDIENTE DE JOSUÉ (SF F1, v3.82.0) · El zoom al tocar un campo, y el pellizco bloqueado
+### C-32 — 🔓 RESUELTA POR JOSUÉ (2026-10-17) · El zoom al tocar un campo, y el pellizco bloqueado
+
+🔓 **Contestada por él, con la prueba hecha en su iPhone:** *"lo del zoom he hecho la prueba y va de
+locos"*. Es el caso **«si no»** de abajo: al tocar un campo **no se le acerca la pantalla**, así que
+**se deja como está** —campos a 14 px y el `viewport` sin tocar— y queda anotado que en su iPhone no
+ocurre. ⚠️ No se reabre sin que él reporte un zoom. Lo de abajo se queda escrito como historia.
 
 **Son dos cosas enganchadas, y por eso no se ha tocado ninguna: arreglar una sin la otra empeora
 algo.** Salió al barrer el código buscando lo que Safari hace distinto (SF F1).
@@ -1481,7 +1486,7 @@ séptima no falta: ya está contestada.
 | DEP-27 | El **permiso de cámara en Safari** es necesario para el escáner de códigos de barras (documentado en `SETUP.md`) |
 | DEP-28 | Un **icono de lucide-react nuevo** debe verificarse contra la versión `0.383.0` antes de importarlo. Caso real evitado: `Palmtree` → renombrado a `TreePalm` en versiones intermedias |
 | DEP-29 | ⏸ **Conectar Google Calendar y Outlook necesita a Josué** (E3 F12 / HC F7, regla 49). Hacen falta **tres** cosas que solo puede dar él: registrar JosStyle en Google Cloud Console, registrarla en el portal de Microsoft (las dos van atadas a su cuenta) y **un sitio seguro donde guardar el acceso** — el apartado 26 prohíbe expresamente el navegador y el código del frontend, y hoy hay una sola función de servidor y ninguna tabla para esto. **Mientras tanto NO se construye el botón "Conectar"**: sería un control decorativo (regla 8) y, peor, le haría creer que sus exámenes están sincronizados. Lo que sí quedó hecho y funcionando es el **archivo `.ics`**, que es la alternativa que pide el propio apartado 4 para Apple y sirve igual para los tres. Está declarado en `LO_QUE_NECESITA_JOSUE` (`src/lib/calendariosExternos.js`) y se ve en Ajustes → Integraciones. **Los apartados 19 y 20 (enviar un evento de JosStyle a Google) dependen de lo mismo.** |
-| DEP-30 | ⏸ **El service worker lo decide Josué** (E3 F15 / HC F10, apartado 11). Es la pieza que falta para **dos** cosas: abrir la aplicación sin conexión y los avisos con la app cerrada (E3 F11). 🚨 **Y no se añade a ciegas porque el riesgo es exactamente el fallo histórico de este proyecto:** un service worker mal configurado deja la aplicación **congelada en una versión vieja** —se abriría siempre la de antes por más código nuevo que se suba—, y JosStyle ya perdió meses con `main` sirviendo el `src/` del 11 de agosto mientras Josué decía *"la web sigue igual"*. El patrón seguro existe (red primero para el HTML, caché para los archivos con hash), pero es un cambio de arquitectura que hay que poder probar en su iPhone antes de dejarlo puesto. Declarado en `LO_QUE_DECIDE_JOSUE` (`src/lib/auditoriaPWA.js`) con su riesgo escrito. |
+| DEP-30 | ⏸ **El service worker lo decide Josué** (E3 F15 / HC F10, apartado 11). Es la pieza que falta para **dos** cosas: abrir la aplicación sin conexión y los avisos con la app cerrada (E3 F11). 🚨 **Y no se añade a ciegas porque el riesgo es exactamente el fallo histórico de este proyecto:** un service worker mal configurado deja la aplicación **congelada en una versión vieja** —se abriría siempre la de antes por más código nuevo que se suba—, y JosStyle ya perdió meses con `main` sirviendo el `src/` del 11 de agosto mientras Josué decía *"la web sigue igual"*. El patrón seguro existe (red primero para el HTML, caché para los archivos con hash), pero es un cambio de arquitectura que hay que poder probar en su iPhone antes de dejarlo puesto. Declarado en `LO_QUE_DECIDE_JOSUE` (`src/lib/auditoriaPWA.js`) con su riesgo escrito. 🕐 **Y Josué decidió el 2026-10-17 dejarlo para el final, junto con la autenticación de `/api/ask-ai`:** *"la conexión déjalo pendiente para luego como la IA, porque primero quiero que esté toda la app hecha para luego meter esos dos"*. No se construye ni se le vuelve a proponer hasta que él dé la app por terminada. |
 
 ### C.4 — Contradicciones del documento de la Entrega 3
 
