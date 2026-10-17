@@ -37,7 +37,9 @@ futuro ya lo desarrollaremos mejor"*. No había nada conectado —nunca hubo un 
 Integraciones le pedía registrar JosStyle en Google y en Microsoft. **Esa tarjeta se quita**; se queda lo que funciona,
 **añadir el archivo `.ics`** del calendario. Lo que haría falta sigue escrito en `LO_QUE_NECESITA_JOSUE` para cuando se
 retome. Y queda anotado que **el zoom al tocar un campo no ocurre en su iPhone** (C-32, *"va de locos"*) y que **el
-service worker y la seguridad de `/api/ask-ai` van al final**, cuando la app esté hecha.
+service worker y lo que queda de la IA van al final**, cuando la app esté hecha. ⚠️ *(Corregido el mismo día:
+esta entrada decía «la seguridad de `/api/ask-ai`», y esa autenticación ya existe desde el 2026-09-04
+—`HALLAZGO_ENDPOINT`—; lo abierto es solo el límite por usuario, que vive en memoria.)*
 
 ### Comprobaciones que se dieron la vuelta (no se borraron)
 

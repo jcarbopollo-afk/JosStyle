@@ -455,7 +455,8 @@ una prueba, un documento o un procedimiento obligatorio. **Si choca con otra reg
   horas en esta sesión como red de seguridad —si no queda nada pendiente, se desactiva con
   `update_trigger`—. Lo que **no** se puede automatizar: el modo de la sesión (lo elige él en el
   selector; lo mejor es **Auto**), el límite de uso de su cuenta, y lo que solo puede hacer él (SQL,
-  cuentas y, al final y por decisión suya, DEP-29, DEP-30 y la seguridad de `/api/ask-ai`). ⚠️ **El listón no cambia**: a
+  cuentas y, al final y por decisión suya, DEP-29, DEP-30 y lo que queda de la IA —el límite de uso guardado en el
+  servidor y AXION—). ⚠️ **El listón no cambia**: a
   `main` solo con `bash scripts/verificar.sh` en verde.
 - **Al terminar, decirle siempre dos cosas:** qué se ha hecho y hasta dónde se ha llegado.
 - **Lo que más le importa es recibir la entrega actualizada cuanto antes.** Priorizarlo sobre
@@ -2331,9 +2332,15 @@ había que adivinarlo.**
 - 🔓 **C-32 está RESUELTA: en su iPhone no se hace zoom al tocar un campo.** Hizo la prueba y dijo
   *"he hecho la prueba y va de locos"*, así que los campos se quedan a 14 px y el `viewport` como está.
   No se reabre sin que él reporte un zoom.
-- 🕐 **DEP-30 (el service worker) y la autenticación de `/api/ask-ai` van AL FINAL, por decisión suya**:
-  *"primero quiero que esté toda la app hecha para luego meter esos dos"*. No se construyen antes ni
-  se le vuelven a proponer hasta que él dé la app por terminada.
+- 🕐 **DEP-30 (el service worker) y lo que queda de la IA van AL FINAL, por decisión suya**: *"primero
+  quiero que esté toda la app hecha para luego meter esos dos"*. No se construyen antes ni se le vuelven a
+  proponer hasta que él dé la app por terminada.
+  🐛 **Y una nota vieja corregida el mismo día:** esta línea —y lo que se le dijo a Josué— hablaba de *"la
+  autenticación de `/api/ask-ai`"* como pendiente, y **ya existe desde el 2026-09-04**: lo decidió él y está en
+  `HALLAZGO_ENDPOINT` (`seguridadEH.js`, `resuelto: true`), con `test-endpoint-ia.mjs` detrás —sin sesión, 401 y no
+  se llama a Anthropic—. Lo único abierto de eso es que **el límite por usuario vive en memoria** (Vercel levanta y
+  tira instancias; uno de verdad necesita una tabla en Supabase y su SQL). **Antes de repetir que algo está
+  pendiente, mirar el código**: la lección de los sonidos, otra vez.
 - 🕐 **DEP-29 (Google y Outlook) TAMBIÉN VA PARA EL FUTURO, por decisión suya** (2026-10-17): *"lo de
   Microsoft queda profesional pero puede dar muchos problemas… en un futuro ya lo desarrollaremos mejor"*.
   Desde la v3.151.0 Ajustes → Integraciones **ya no le pide registrar JosStyle** en Google y Microsoft;
@@ -4364,9 +4371,10 @@ Seis cosas que conviene tener presentes al retomar:
   escribir gana) y el **móvil** (nadie ha abierto esto en un iPhone). Cualquier fase que las declare
   resueltas está mintiendo.
 
-- 🚨 **`/api/ask-ai` no pide autenticación y CUALQUIERA puede gastar dinero con él** (EH F63). Los
-  límites de tamaño ya están; **la autenticación no**, porque ese endpoint lo usan seis módulos más y
-  la decisión es de Josué. Está escrito en `HALLAZGO_ENDPOINT` con el arreglo exacto.
+- 🚨 **`/api/ask-ai` no pedía autenticación y CUALQUIERA podía gastar dinero con él** (EH F63). 🔓 **CERRADO el
+  2026-09-04** —lo decidió Josué—: la función le pregunta a Supabase de quién es el token y sin uno válido
+  contesta 401 sin llamar a Anthropic (`HALLAZGO_ENDPOINT`, `test-endpoint-ia.mjs`). Lo que sigue abierto es el
+  límite por usuario, que vive en memoria.
 - ⚠️ **El aislamiento entre usuarios es de RLS, nunca de la pantalla** (EH F43 y F63): esconder un
   botón no protege nada. Cualquier tabla nueva necesita sus cuatro políticas `auth.uid() = user_id`.
 

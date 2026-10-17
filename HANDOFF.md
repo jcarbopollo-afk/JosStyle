@@ -6,7 +6,9 @@
 > Las notas de la Biblioteca **ya se pueden editar**: «Editar» en cada nota abre el mismo formulario con lo que tenía,
 > y se guarda o se cancela. Es la misma nota (no una copia), sube a Recientes y Deshacer la devuelve. Por decisión de
 > Josué, Ajustes ya no le pide conectar Google ni Outlook (se queda añadir el archivo del calendario, que funciona); el
-> zoom al tocar un campo no le pasa en su iPhone, y la conexión sin internet y la seguridad de la IA van al final.
+> zoom al tocar un campo no le pasa en su iPhone, y la conexión sin internet y lo que queda de la IA van al final.
+> ⚠️ La IA **ya pide iniciar sesión** desde el 4 de septiembre (lo decidió él): lo único abierto es que su límite
+> de uso vive en memoria.
 > **Queda hablar con él de AXION y de la IA.**
 
 > **📅 ACTUALIZACIÓN (v3.150.0 — Motion System F20/20: 🏁 TERMINADO Y SELLADO):**
