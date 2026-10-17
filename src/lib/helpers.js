@@ -15,13 +15,20 @@ export function shade(hex, amt) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-export function calcularEdad(fechaNacimiento) {
-  const hoy = new Date();
-  const nac = new Date(fechaNacimiento);
-  let edad = hoy.getFullYear() - nac.getFullYear();
-  const m = hoy.getMonth() - nac.getMonth();
-  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
-  return edad;
+/* 🐛 A1 (auditoría de la fase 3) — una fecha de nacimiento que falta no es una edad.
+   `new Date('')` daba `NaN` y `new Date(null)` es 1970, así que el campo vaciado de
+   Ajustes pintaba «NaN años» y un perfil con `null` decía «56 años», y los dos
+   arrastraban el BMR y el TDEE. Sin fecha válida, `null` —el dato no está, no es
+   cero—, y quien la usa pinta «—». Una fecha futura tampoco es una edad.
+   ⚠️ Y se lee **por partes, en local**: `new Date('2010-10-11')` es medianoche UTC,
+   y en un huso negativo el cumpleaños de mañana ya contaba hoy (lección de UTC). */
+export function calcularEdad(fechaNacimiento, hoy = new Date()) {
+  if (!fechaValida(fechaNacimiento)) return null;
+  const [a, m, d] = fechaNacimiento.split('-').map(Number);
+  let edad = hoy.getFullYear() - a;
+  const mesHoy = hoy.getMonth() + 1;
+  if (mesHoy < m || (mesHoy === m && hoy.getDate() < d)) edad--;
+  return edad >= 0 ? edad : null;
 }
 
 // Devuelve las horas dormidas entre dos "HH:MM", cruzando medianoche cuando toca.

@@ -3,11 +3,12 @@ import { TrendingUp, TrendingDown, PiggyBank, Target } from 'lucide-react';
 import { CifraQueCambia } from '../components/motion';
 import { COLORS } from '../tokens';
 import { uid, formatFecha, todayISO } from '../lib/helpers';
-import { Card, ListCard, ListRow, BotonBorrar, SectionTitle, Field, TextInput, Select, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
+import { Card, ListCard, ListRow, BotonBorrar, SectionTitle, Field, TextInput, Select, PrimaryButton, EmptyHint, AIPanel, MensajeDeCampo } from '../components/ui';
 // Entrega 3 · F4 — los números de la hucha los calcula la librería, nunca la pantalla.
 import {
   FRECUENCIAS_HUCHA, panelHucha, normalizarObjetivoHucha,
   anadirAhorro, guardarObjetivoHucha, quitarObjetivoHucha,
+  motivoAportacion, motivoTotal, motivoObjetivo,
 } from '../lib/hucha';
 
 /* ===========================================================================
@@ -30,6 +31,15 @@ function BloqueHucha({ economia, accent, onUpdateHucha, onUpdateEconomia }) {
   const [meta, setMeta] = useState('');
   const [porPeriodo, setPorPeriodo] = useState('');
   const [frecuencia, setFrecuencia] = useState('semana');
+  // A3 — la hucha solo suma: lo que no vale se dice debajo de su campo, nunca se ignora en silencio.
+  const [errorAhorro, setErrorAhorro] = useState('');
+  const [errorTotal, setErrorTotal] = useState('');
+  const [errorObjetivo, setErrorObjetivo] = useState('');
+  /* A5 (auditoría final) — el total se escribe en un BORRADOR y se guarda una vez, al salir del campo o con Intro.
+     Guardando en cada tecla, corregir 100 → 150 pasaba la cuenta por 1, 0 y 15 €, y cerrando la app justo
+     después se quedaba ahí. `null` = no se está editando (el campo enseña lo guardado). */
+  const [totalEscrito, setTotalEscrito] = useState(null);
+  const [totalAMedias, setTotalAMedias] = useState(false);
 
   const panel = panelHucha(economia);
   const objetivo = normalizarObjetivoHucha(economia?.objetivoHucha);
@@ -44,10 +54,25 @@ function BloqueHucha({ economia, accent, onUpdateHucha, onUpdateEconomia }) {
   };
 
   const guardarAhorro = () => {
-    const c = Number(ahorro);
-    if (!Number.isFinite(c) || c === 0) return;
-    onUpdateEconomia(anadirAhorro(economia, c));
+    const motivo = motivoAportacion(economia, ahorro);
+    if (motivo) { setErrorAhorro(motivo); return; }
+    setErrorAhorro('');
+    onUpdateEconomia(anadirAhorro(economia, Number(ahorro)));
     setAhorro('');
+  };
+
+  // ⚠️ Un número a medio escribir («-», «1e») llega como '' con `badInput`: no es vaciar el campo, y dice lo suyo.
+  // 🚨 A5 — la hucha solo suma: el total no puede bajar de lo guardado (`motivoTotal` con el actual), y lo que no
+  // vale no se guarda: el campo vuelve a lo guardado y se dice por qué.
+  const confirmarTotal = () => {
+    if (totalEscrito === null) return;
+    const v = totalEscrito;
+    const motivo = motivoTotal(v, totalAMedias, economia.hucha);
+    setTotalEscrito(null);
+    setTotalAMedias(false);
+    if (motivo) { setErrorTotal(motivo); return; }
+    setErrorTotal('');
+    onUpdateHucha(v);
   };
 
   return (
@@ -66,10 +91,15 @@ function BloqueHucha({ economia, accent, onUpdateHucha, onUpdateEconomia }) {
         <div className="flex items-center gap-2 flex-shrink-0">
           <TextInput
             type="number"
-            value={economia.hucha}
-            onChange={(e) => onUpdateHucha(Number(e.target.value))}
+            min="0"
+            value={totalEscrito ?? economia.hucha}
+            onChange={(e) => { setTotalEscrito(e.target.value); setTotalAMedias(!!e.target.validity?.badInput); if (errorTotal) setErrorTotal(''); }}
+            onBlur={confirmarTotal}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
             style={{ width: 84, textAlign: 'right' }}
             aria-label="Total ahorrado"
+            aria-invalid={errorTotal ? true : undefined}
+            aria-describedby={errorTotal ? 'hucha-error-total' : undefined}
           />
           <button
             onClick={() => (abierto ? setAbierto(false) : abrir())}
@@ -81,6 +111,8 @@ function BloqueHucha({ economia, accent, onUpdateHucha, onUpdateEconomia }) {
           </button>
         </div>
       </div>
+
+      <MensajeDeCampo id="hucha-error-total">{errorTotal}</MensajeDeCampo>
 
       {/* Apartado 6 — la barra y la línea del objetivo, solo cuando hay objetivo. */}
       {panel.barra && (
@@ -107,24 +139,31 @@ function BloqueHucha({ economia, accent, onUpdateHucha, onUpdateEconomia }) {
       <div className="flex items-center gap-2 mt-2">
         <TextInput
           type="number"
+          min="0.01"
+          step="0.01"
           value={ahorro}
-          onChange={(e) => setAhorro(e.target.value)}
+          onChange={(e) => { setAhorro(e.target.value); if (errorAhorro) setErrorAhorro(''); }}
           placeholder="Añadir ahorro (€)"
           style={{ flex: 1 }}
           aria-label="Cantidad que añades a la hucha"
+          aria-invalid={errorAhorro ? true : undefined}
+          aria-describedby={errorAhorro ? 'hucha-error-ahorro' : undefined}
         />
         <div style={{ width: 96 }}>
           <PrimaryButton accent={accent} onClick={guardarAhorro}>Añadir</PrimaryButton>
         </div>
       </div>
+      <MensajeDeCampo id="hucha-error-ahorro">{errorAhorro}</MensajeDeCampo>
 
       {abierto && (
         <div className="mt-3 pt-3 space-y-2" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           <Field label="Cantidad objetivo (€)">
-            <TextInput type="number" value={meta} onChange={(e) => setMeta(e.target.value)} placeholder="Ej. 500" />
+            <TextInput type="number" min="0.01" step="0.01" value={meta} onChange={(e) => { setMeta(e.target.value); if (errorObjetivo) setErrorObjetivo(''); }} placeholder="Ej. 500"
+              aria-invalid={errorObjetivo ? true : undefined} aria-describedby={errorObjetivo ? 'hucha-error-objetivo' : undefined} />
           </Field>
           <Field label="Quiero ahorrar (€)">
-            <TextInput type="number" value={porPeriodo} onChange={(e) => setPorPeriodo(e.target.value)} placeholder="Ej. 50" />
+            <TextInput type="number" min="0.01" step="0.01" value={porPeriodo} onChange={(e) => { setPorPeriodo(e.target.value); if (errorObjetivo) setErrorObjetivo(''); }} placeholder="Ej. 50"
+              aria-invalid={errorObjetivo ? true : undefined} aria-describedby={errorObjetivo ? 'hucha-error-objetivo' : undefined} />
           </Field>
           <Field label="Cada">
             <Select value={frecuencia} onChange={(e) => setFrecuencia(e.target.value)}>
@@ -135,6 +174,10 @@ function BloqueHucha({ economia, accent, onUpdateHucha, onUpdateEconomia }) {
             <PrimaryButton
               accent={accent}
               onClick={() => {
+                // A5 — un objetivo que no vale no se guarda en silencio como «sin objetivo»: se dice por qué.
+                const motivo = motivoObjetivo({ cantidad: meta, porPeriodo });
+                if (motivo) { setErrorObjetivo(motivo); return; }
+                setErrorObjetivo('');
                 onUpdateEconomia(guardarObjetivoHucha(economia, { cantidad: meta, porPeriodo, frecuencia }));
                 setAbierto(false);
               }}
@@ -151,6 +194,7 @@ function BloqueHucha({ economia, accent, onUpdateHucha, onUpdateEconomia }) {
               </button>
             )}
           </div>
+          <MensajeDeCampo id="hucha-error-objetivo">{errorObjetivo}</MensajeDeCampo>
           <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
             El progreso de cada periodo cuenta lo que añades aquí a la hucha.
           </p>

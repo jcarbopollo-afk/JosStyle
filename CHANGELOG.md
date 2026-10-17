@@ -2,6 +2,10 @@
 
 ## v3.151.0 — Notas: editar una nota · y Microsoft, aplazado
 
+> 🔀 **Y la v3.151.0 lleva también las correcciones A1–A5 de la otra conversación**, que entraron en `main` sin
+> versión porque `test-motion-f20` fijaba la 3.150.0 (sus entradas, justo debajo). Esta versión es la que deja de
+> fijarla: la comprobación exige ahora la 3.150.0 **o después**.
+
 Lo pidió Josué el 2026-10-17, al repasar lo que le quedaba: *"tenemos que solucionar lo de editar las notas"*. Una
 nota de la Biblioteca se creaba, se leía y se borraba desde la Fase 11, y la BL F8 lo dejó escrito en rojo en su
 auditoría. Es también la fase de Notas que le faltaba al documento de la Entrega 3 (**C-27**): él no tiene ese texto,
@@ -57,6 +61,121 @@ intentar vaciarla, recargar y medir el ancho a 320 px.
 **`verificar.sh` en verde: 31 864 comprobaciones, 0 fallos** (24 401 de Node en 229 suites, 3976 de renderizado, 11
 invariantes y 3476 en Chromium). La primera pasada salió con 1 rojo —la comprobación del recorrido de arriba—, y la
 segunda, entera, en verde.
+
+## Sin versión — A5: sincronización segura y cierre de los hallazgos de la auditoría de A1–A4
+
+La auditoría de A1–A4 dio **NO APTO** por un bloqueador reproducido (A4-1). A5 lo cierra en la causa, junto con
+lo que la auditoría encontró alrededor. No hay versión nueva, porque `test-motion-f20` fija la v3.150.0. La suite
+nueva es `scripts/test-a5-sincronizacion.mjs` (en `verificar.sh`). Sale roja con la versión de antes de A4 (HEAD) y
+con dos copias de trabajo que no están en git: la de A1–A4 y la primera versión de A5. Una revisión adversarial
+de A5, con un explorador exhaustivo de calendarios, encontró un segundo bloqueador en esa primera versión, y está
+cerrado.
+
+- 🐛 **A4-1 / A4-2 — un reintento ya no pisa un cambio más nuevo.**
+  - **El fallo:** un reintento (al volver la conexión o con «Guardar ahora») o una reescritura de A4 se ponía en la
+    cola con el valor de ese momento. Si detrás ya esperaba un cambio más nuevo, salía después y lo pisaba
+    (`A,B,B,C,B`: la cuenta en B, la pantalla en C y el indicador en «Guardado»).
+  - **El arreglo:** ahora deciden qué mandan **cuando les toca salir** (`alSalir`, después de esperar su turno).
+    Solo salen si la clave sigue pendiente, y mandan el **último valor que pidió la aplicación** (`ultimoDeseado`).
+- 🐛 **Una escritura vieja tardía deja la clave pendiente aunque haya algo en cola** (la revisión de A5).
+  - **El fallo:** «otra escritura en cola» bastaba para no dejar nada pendiente. Si la que esperaba era un
+    reintento, la respuesta de una escritura que ya volaba borraba el pendiente, el reintento se omitía y la cuenta
+    se quedaba con el valor viejo, con el indicador en «Guardado».
+  - **El arreglo:** ahora el pendiente se ata a la primera escritura que sale después, y solo ella puede borrarlo.
+- 🐛 **A4-3 — 502, 503, 504 y «timed out» cuentan como «pudo aplicarse».** Esos errores los da una pasarela, no la
+  base de datos, así que una escritura vieja que se confirmó detrás de ellos se corrige. Y se lee el estado HTTP de
+  la respuesta: postgrest-js no lo pone en el error.
+- 🐛 **A4-4 — la sesión anterior.**
+  - Lo que esperaba en la cola de una sesión cerrada ya no sale.
+  - Si una escritura de la sesión anterior **del mismo usuario** pudo aplicarse cuando la sesión nueva ya había
+    enviado esa clave, la clave queda pendiente y se reescribe con el último valor de la sesión nueva.
+  - Con otro usuario no hace falta: la RLS ya lo para.
+- ⏱ **A4-5 — ninguna petición tiene a la cola esperando para siempre.**
+  - A los `TOPE_PETICION_MS` (30 s) una petición se da por fallida «sin saber si llegó» y su promesa, la cola y el
+    indicador se liberan.
+  - **No se aborta:** una subida grande con poca cobertura puede tardar más y seguir bien. Se la sigue escuchando:
+    si su respuesta llega tarde, se trata como una escritura vieja o retira su pendiente.
+  - Cada guardado es **una** petición: el constructor de postgrest-js lanza otra en cada `then`, y se envuelve una
+    sola vez.
+  - El reintento en marcha es de una sesión. Si se pide otro mientras tanto, se encadena uno detrás, para que lo que
+    quede pendiente no se quede sin reintentar.
+- 🐛 **Lo que encontró la auditoría final de A5**, cerrado y probado:
+  - **Un bucle de reescrituras con latencia sostenida de más de 10 s.** Cada respuesta tardía pedía otra reescritura,
+    todas con el mismo valor. Ahora una escritura vieja que llevaba el mismo valor que el último no provoca nada, y
+    converge con 3 peticiones.
+  - **«¿Pudo aplicarse?» va al revés.** Solo se da por no aplicada si contesta la base de datos con su código
+    (`PGRST…` o un SQLSTATE) o hay un 4xx. Un 520 o 524 de Cloudflare, o un 500 sin código, ya no dejan la cuenta
+    vieja en silencio.
+  - **Mientras viva una petición vencida de una clave, esa clave no se da por guardada.** Todavía puede aplicarse;
+    se limpia cuando contesta.
+  - **🚨 La hucha solo suma también al escribir el total a mano.** Bajarlo, o borrar el campo, era una retirada por
+    la puerta de atrás. Lo impiden la pantalla, `updateHucha` y `updateEconomia` (`economiaPermitida`).
+  - **El total se guarda una vez**, al salir del campo o con Intro. Antes guardaba en cada tecla: corregir de 100 a
+    150 pasaba la cuenta por 0 €.
+  - **Menores:** un total antiguo imposible no se reescribe al aportar, y un objetivo por encima del máximo dice el
+    mensaje del máximo.
+- 🐛 **Hucha en céntimos enteros (A5.3).**
+  - Lo que se escribe se lleva al céntimo una vez, la mitad hacia arriba y sin el error de la coma flotante:
+    1,005 → 1,01 (antes daba 1,00), 0,005 → 0,01 y 0,004 → 0, que no se apunta. El total y el historial guardan
+    exactamente esa misma cifra.
+  - Hay un máximo de 1.000.000.000,00 €: 1e307 ya no llega a `Infinity` ni se guarda como `null`.
+  - Lo guardado se lee al céntimo en el título, el porcentaje y «alcanzado»: 999,999 € de 1000 ya no sale
+    «1000.00 / 1000.00» al 99 %.
+  - Un objetivo que no vale no se guarda en silencio como «sin objetivo»: se dice por qué.
+  - Un número a medio escribir («1e», «-») pide cifras y no dice «negativo», y un total de menos de un céntimo
+    avisa en vez de guardarse como 0.
+  - Solo se aceptan números o cadenas decimales: ni «0x10», ni listas, ni espacios.
+  - Un total antiguo imposible (1e308) no da `Infinity` ni se reescribe.
+  - El sonido de «objetivo alcanzado» compara en céntimos, como el panel.
+- 🧪 **Pruebas (A5.4).**
+  - El `eq` de la suite de A1–A4 ya distingue `NaN` de `null`; los casos «NaN años» salían verdes con el código de
+    antes.
+  - La comprobación de Chromium de la edad lee el campo y cada casilla, en vez del texto fijo «con 16 años».
+  - «No se guardó» se comprueba con lo que se observa (la primera escritura tras el rechazo es la válida), no
+    esperando 400 ms.
+- ⚠️ **Lo que el cliente NO puede garantizar:** una petición que el servidor aplica y cuya respuesta **no llega
+  nunca** (ni bien ni con error) puede dejar la cuenta con un valor viejo si mientras tanto salió otra más nueva.
+  Tampoco si se cierra la aplicación con algo pendiente, porque lo pendiente vive en memoria. Cerrarlo necesita
+  control de concurrencia en el servidor (una versión o un `updated_at` monótono que rechace escrituras más
+  viejas), es decir, SQL que tiene que ejecutar Josué. Los conflictos entre dispositivos (gana el último que
+  escribe) también son del servidor.
+- 📌 **Deuda técnica aparte, sin tocar en A5:**
+  - el IMC con altura 0 en Ajustes («Infinity» o «NaN»);
+  - la comprobación «3149 kcal» del recorrido, que caduca el 29/07/2027;
+  - el redondeo de `metasObjetivos.progresoDeMeta` (199/200 → 100 %);
+  - el import sin uso de `calcularEdad` en `objetivosNutricion.js`;
+  - la carga entera de datos que se repite al renovar el token (el efecto de `App.jsx` depende de `session`);
+  - un objetivo solo «por periodo», sin cantidad, que se guarda y no se enseña.
+- 🔜 **Decidido por Josué, para las fases siguientes** (ver `CLAUDE.md` y C-71 en `docs/03`): guardar en el iPhone lo
+  pendiente hasta que llegue (autorizado), y la versión por clave en el servidor (con SQL que ejecutará él).
+
+## Sin versión — Correcciones A1–A4: edad sin fecha, la hucha y los guardados que llegan desordenados
+
+Cuatro defectos reales que destapó la auditoría de la fase 3. Sin versión nueva, porque `test-motion-f20` fija la
+v3.150.0 como la del sello. Cada arreglo va a la causa, y `scripts/test-correcciones-a1-a4.mjs` (en `verificar.sh`)
+**sale rojo con el código de antes**. Una revisión adversarial encontró cuatro huecos en los propios arreglos
+(coma flotante, el «-» a medias, el céntimo y una reescritura que pisaba un cambio en cola), y también están cerrados y probados.
+
+- 🐛 **A1 — una fecha de nacimiento que falta no es una edad.** `calcularEdad('')` daba `NaN` («NaN años» en
+  Ajustes) y `calcularEdad(null)` daba 56 años, porque `new Date(null)` es 1970. Las dos arrastraban el BMR, el
+  TDEE y el formulario de objetivos de Nutrición. Ahora devuelve `null` cuando la fecha no es válida o es futura,
+  y la pantalla pinta «—». Además la fecha se lee **en local**: con `new Date('AAAA-MM-DD')` el cumpleaños de mañana
+  ya contaba hoy en un huso negativo. El campo de fecha ya no recibe `value={null}`.
+- 🐛 **A2 — la hucha no dice 100 % sin haber llegado.** Con 996 € de 1000 redondeaba a 100 % y la barra salía
+  llena. Ahora el porcentaje se trunca y como mucho llega a 99 % hasta que se alcanza el objetivo; la barra hace lo mismo.
+  La cuenta va en céntimos enteros: en coma flotante, 0,57 € de 1 € daba «56 %».
+- 🐛 **A3 — la hucha solo suma** (decisión de Josué: *«No se permiten retiradas»*). Una aportación de 0, negativa, de
+  menos de un céntimo o que no es un número no se apunta (y se guarda redondeada, igual en el total y en el historial), y el total escrito a mano no puede ser negativo, ni quedarse en 0 por teclear un «-» (el número a medias llega vacío). La pantalla dice por qué con
+  `MensajeDeCampo` y `aria-invalid`. `App.jsx` también valida. Quitar una aportación que dejaría el total por debajo
+  de cero se rechaza. Lo guardado antes no se toca.
+- 🐛 **A4 — un guardado viejo que llega tarde ya no pisa uno nuevo.** La cola por clave se suelta a los 10 s. Si el
+  guardado viejo se aplicaba en el servidor después del nuevo, la cuenta se quedaba con el valor viejo y la pantalla
+  con el nuevo, sin aviso. Ahora `sincronizacion.js` apunta lo último que se envió por cada clave (`marcarEnviado`).
+  Cuando la respuesta de un guardado anterior llega después y pudo aplicarse (OK o sin conexión; un 500 no se
+  aplica), deja la clave pendiente con el último valor y la vuelve a escribir una vez.
+  Si detrás ya espera otra escritura de la clave sin salir, no se reescribe: esa sale después y deja el último cambio.
+  ⚠️ **Límite:** si el viejo se aplica todavía más tarde y su respuesta no llega nunca, el cliente no puede saberlo.
+  Cerrarlo del todo necesita una condición en el servidor (SQL de Josué).
 
 ## Sin versión — `CLAUDE.md`: la sección «Cambio mínimo y robustez»
 
