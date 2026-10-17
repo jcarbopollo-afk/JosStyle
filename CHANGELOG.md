@@ -54,6 +54,10 @@ editando, sin título y con datos corruptos) y la sección «NOTAS · EDITAR UNA
 editar y guardar —mirando lo que llega a la cuenta—, cancelar, guardar sin cambios, ponerle título a una «Sin título»,
 intentar vaciarla, recargar y medir el ancho a 320 px.
 
+**`verificar.sh` en verde: 31 864 comprobaciones, 0 fallos** (24 401 de Node en 229 suites, 3976 de renderizado, 11
+invariantes y 3476 en Chromium). La primera pasada salió con 1 rojo —la comprobación del recorrido de arriba—, y la
+segunda, entera, en verde.
+
 ## Sin versión — `CLAUDE.md`: la sección «Cambio mínimo y robustez»
 
 Solo documentación: ni código, ni pruebas, ni versión. Siete reglas nuevas en `CLAUDE.md`, entre «Las 12 reglas
