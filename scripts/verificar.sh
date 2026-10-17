@@ -1814,6 +1814,13 @@ else
   fallo "Falla la integración de la Biblioteca (E3 F22)"; grep '✗' /tmp/jc_blglobal.log
 fi
 
+# v3.151.0 — Biblioteca: editar una nota (Josué, 2026-10-17).
+if node --import ./scripts/resolver-vite.mjs scripts/test-notas.mjs >/tmp/jc_notas.log 2>&1; then
+  ok "Biblioteca: editar una nota (v3.151.0) — $(grep -c '✓' /tmp/jc_notas.log) comprobaciones"
+else
+  fallo "Falla editar una nota de la Biblioteca (v3.151.0)"; grep '✗' /tmp/jc_notas.log
+fi
+
 # Entrega 3 · F21 — Biblioteca: Colecciones.
 if node --import ./scripts/resolver-vite.mjs scripts/test-colecciones.mjs >/tmp/jc_cols.log 2>&1; then
   ok "Biblioteca: Colecciones (E3 F21) — $(grep -c '✓' /tmp/jc_cols.log) comprobaciones"

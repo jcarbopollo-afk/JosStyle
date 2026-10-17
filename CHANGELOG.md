@@ -1,5 +1,56 @@
 # CHANGELOG.md
 
+## v3.151.0 — Notas: editar una nota · y Microsoft, aplazado
+
+Lo pidió Josué el 2026-10-17, al repasar lo que le quedaba: *"tenemos que solucionar lo de editar las notas"*. Una
+nota de la Biblioteca se creaba, se leía y se borraba desde la Fase 11, y la BL F8 lo dejó escrito en rojo en su
+auditoría. Es también la fase de Notas que le faltaba al documento de la Entrega 3 (**C-27**): él no tiene ese texto,
+así que se construye lo que faltaba, que era esto.
+
+### Lo que hace
+
+- 📝 **«Editar» en la ficha de cada nota.** Abre el mismo formulario de la nota rápida con lo que tenía —el texto
+  primero, el título opcional— y se cierra con **«Guardar cambios»** o **«Cancelar»**. Es el patrón de Libros,
+  Guardados e Ideas: el formulario ocupa el sitio de la ficha. VoiceOver dice cuál es cada uno («Editar la nota
+  Examen de Biología»).
+- 🚨 **Una nota sigue siendo un apunte de la Fase 11** (`biblioteca.apuntes`): editar devuelve **la misma nota** —mismo
+  `id`, misma `fecha`, el resto de sus campos intactos— con `actualizado` a hoy en local, que es el campo que leen los
+  Recientes (BL F8): la nota editada sube arriba. `App.jsx` la sustituye en su sitio con `updateApunte`, por
+  `snapshotAndSave`, así que **Deshacer** la devuelve como estaba. Ni una lista nueva, ni un SQL.
+- ⚠️ **Crear y editar comparten UNA regla**, en `src/lib/notas.js` (`crearNota`, `editarNota`, `puedeGuardarNota`):
+  título o contenido, y sin título «Sin título». **Guardar sin cambios no escribe nada** (ni sube a Recientes ni deja
+  un Deshacer vacío), **vaciarla no se puede guardar** —para eso está «Eliminar», que la lleva a Eliminados— y una nota
+  «Sin título» empieza con el campo vacío, no con esas palabras escritas.
+- ⚠️ **En un iPhone de 320 px la fila de acciones baja de línea si hace falta** (`flex-wrap`): con «Editar» son tres y
+  no cabían. Medido en el recorrido.
+- 🔓 **La auditoría de la BL F8 pasa a verde construyéndolo, no marcándolo**: la casilla «Editar» de Notas nombra ahora
+  `editarNota`, y la prueba comprueba que existe en su archivo. «Editar una nota» sale de lo pendiente de Josué.
+
+### Microsoft y Google, aplazados (DEP-29)
+
+Josué: *"lo de Microsoft queda profesional pero puede dar muchos problemas… qué te parece si lo quitamos y en un
+futuro ya lo desarrollaremos mejor"*. No había nada conectado —nunca hubo un botón «Conectar»—, pero Ajustes →
+Integraciones le pedía registrar JosStyle en Google y en Microsoft. **Esa tarjeta se quita**; se queda lo que funciona,
+**añadir el archivo `.ics`** del calendario. Lo que haría falta sigue escrito en `LO_QUE_NECESITA_JOSUE` para cuando se
+retome. Y queda anotado que **el zoom al tocar un campo no ocurre en su iPhone** (C-32, *"va de locos"*) y que **el
+service worker y la seguridad de `/api/ask-ai` van al final**, cuando la app esté hecha.
+
+### Comprobaciones que se dieron la vuelta (no se borraron)
+
+- `test-biblioteca-global`: las cuatro que vigilaban la casilla roja de Notas ahora exigen que no quede ninguna roja,
+  que la casilla nombre `editarNota` y que esa función exista.
+- `test-calendarios-externos`: la que exigía la tarjeta de Microsoft en Ajustes ahora exige que no esté.
+- 🐛 `test-motion-f20`: dos comprobaciones del sellado miraban «la primera entrada del CHANGELOG» y «la versión de
+  ahora», así que saltaban con el primer cambio después de la F20. Ahora buscan **la entrada de la v3.150.0** y exigen
+  una versión **igual o posterior**: la garantía es la misma y no caduca.
+
+### Pruebas
+
+`scripts/test-notas.mjs` (60 comprobaciones, en `verificar.sh`), tres casos nuevos en el banco de renderizado (la nota
+editando, sin título y con datos corruptos) y la sección «NOTAS · EDITAR UNA NOTA» del recorrido en Chromium (33):
+editar y guardar —mirando lo que llega a la cuenta—, cancelar, guardar sin cambios, ponerle título a una «Sin título»,
+intentar vaciarla, recargar y medir el ancho a 320 px.
+
 ## Sin versión — `CLAUDE.md`: la sección «Cambio mínimo y robustez»
 
 Solo documentación: ni código, ni pruebas, ni versión. Siete reglas nuevas en `CLAUDE.md`, entre «Las 12 reglas

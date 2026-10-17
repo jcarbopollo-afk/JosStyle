@@ -838,6 +838,20 @@ const CASOS = [
   ['CabeceraMiniApp (cerrada)', CabeceraMiniApp, () => ({ app: miniApp('notas'), accent, abierto: false, onVolver: noop, onToggleCrear: noop })],
   ['CabeceraMiniApp (abierta)', CabeceraMiniApp, () => ({ app: miniApp('libros'), accent, abierto: true, onVolver: noop, onToggleCrear: noop })],
   ['AnadirNotaRapida', AnadirNotaRapida, () => ({ onAdd: noop, accent })],
+  /* v3.151.0 — la misma nota rápida, editando: con su contenido, sin título
+     (empieza vacío, no «Sin título») y con datos corruptos. */
+  ['AnadirNotaRapida (editando)', AnadirNotaRapida, () => ({
+    accent, onAdd: noop, onGuardar: noop, onCancelar: noop,
+    nota: { id: 'n1', fecha: '2026-01-10', titulo: 'Examen de Biología', contenido: 'Tema 3\nTema 4' },
+  })],
+  ['AnadirNotaRapida (editando, sin título)', AnadirNotaRapida, () => ({
+    accent, onAdd: noop, onGuardar: noop, onCancelar: noop,
+    nota: { id: 'n2', fecha: '2026-01-11', titulo: 'Sin título', contenido: 'Solo texto' },
+  })],
+  ['AnadirNotaRapida (editando, datos corruptos)', AnadirNotaRapida, () => ({
+    accent, onAdd: noop, onGuardar: noop, onCancelar: noop,
+    nota: { id: 'n3', titulo: 42, contenido: null },
+  })],
   /* E3 F17 (BL F2) — la mini-app Libros entera: el formulario (vacío y editando),
      la tarjeta en sus cuatro estados, "continuar leyendo", el detalle y la
      pantalla con datos y sin ellos. */

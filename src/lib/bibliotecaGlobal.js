@@ -437,9 +437,13 @@ export const NUEVOS_EN_ESTA_FASE = COMPONENTES_COMPARTIDOS.filter((c) => c.desde
    E3 F15 y `condicionFinal()` de EH F64.
 
    ⚠️ Y **una casilla en rojo se enseña en rojo**: *"Notas no se pueden editar"*
-   es verdad —la Fase 11 las hizo crear/leer/borrar— y esta fase no puede añadir
-   un editor (apartado 31). Ponerla en verde sería mentir en la propia
-   auditoría. */
+   era verdad —la Fase 11 las hizo crear/leer/borrar— y esta fase no podía
+   añadir un editor (apartado 31). Ponerla en verde habría sido mentir en la
+   propia auditoría.
+
+   🔓 **Y se puso verde construyéndolo, no marcándola** (v3.151.0): Josué pidió
+   *"tenemos que solucionar lo de editar las notas"*, y la casilla apunta ahora
+   a `editarNota`, de `notas.js`. */
 export const CAPACIDADES_MINI_APP = {
   libros: [
     { id: 'crear', nombre: 'Crear', fn: 'crearLibro', modulo: 'libros.js' },
@@ -453,9 +457,9 @@ export const CAPACIDADES_MINI_APP = {
     { id: 'crear', nombre: 'Crear', fn: 'addApunte', modulo: 'App.jsx' },
     { id: 'escribir', nombre: 'Escribir', fn: 'AnadirNotaRapida', modulo: 'LibraryView.jsx' },
     { id: 'guardar', nombre: 'Guardar', fn: 'addApunte', modulo: 'App.jsx' },
-    /* ⚠️ En rojo a propósito: la Fase 11 no le dio edición a una nota, y esta
-       fase no añade funciones (apartado 31). Se dice, no se disimula. */
-    { id: 'editar', nombre: 'Editar', fn: null, modulo: null, falta: 'Una nota se crea, se lee y se borra: la Fase 11 no le dio edición.' },
+    /* 🔓 Estuvo en rojo desde la BL F8 —la Fase 11 no le dio edición a una nota—
+       y la construyó la v3.151.0, a petición de Josué. */
+    { id: 'editar', nombre: 'Editar', fn: 'editarNota', modulo: 'notas.js' },
     { id: 'buscar', nombre: 'Buscar', fn: 'buscarEnBiblioteca', modulo: 'bibliotecaGlobal.js' },
     { id: 'eliminar', nombre: 'Eliminar', fn: 'deleteApunte', modulo: 'App.jsx' },
   ],
@@ -584,10 +588,11 @@ export function tipoDeMiniApp(idMiniApp) {
 
 export const bibliotecaTerminada = (datos) => condicionBiblioteca(datos).every((c) => c.ok);
 
-/** Lo que queda pendiente y depende de una decisión, no de trabajo. */
+/** Lo que queda pendiente y depende de una decisión, no de trabajo.
+ *  🔓 «Editar una nota» estuvo aquí hasta la v3.151.0: Josué lo decidió
+ *  (*"tenemos que solucionar lo de editar las notas"*) y se construyó. */
 export const PENDIENTE_DE_JOSUE = [
   { que: 'El botón atrás del móvil', porQue: BOTON_ATRAS_DEL_MOVIL.porQue, arreglo: BOTON_ATRAS_DEL_MOVIL.arreglo },
-  { que: 'Editar una nota', porQue: 'La Fase 11 le dio crear, leer y borrar. Añadir un editor es una función nueva, y esta fase no las añade.' },
   { que: 'Favoritos en Libros, Notas e Ideas', porQue: SIN_FAVORITOS_PORQUE },
 ];
 

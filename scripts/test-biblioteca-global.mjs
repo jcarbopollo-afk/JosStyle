@@ -310,14 +310,19 @@ console.log('\n═══ 14. LA AUDITORÍA DE LAS SEIS, CALCULADA ═══\n');
 const aud = auditoriaMiniApps();
 eq(aud.length, 6, 'se auditan las seis (apartado 32)');
 ok(aud.every((a) => a.total >= 5), '⚠️ con las capacidades que enumera el enunciado');
-eq(aud.filter((a) => !a.completa).map((a) => a.id), ['notas'],
-  '🚨 y hay UNA en rojo: **una nota no se puede editar**');
-eq(aud.find((a) => a.id === 'notas').faltan[0].id, 'editar',
-  '⚠️ dicho con el nombre de lo que falta, no escondido');
-ok(/Fase 11/.test(aud.find((a) => a.id === 'notas').faltan[0].porQue),
-  '🚨 y con el motivo: la Fase 11 le dio crear, leer y borrar. Ponerla en verde sería mentir en la propia auditoría');
-ok(PENDIENTE_DE_JOSUE.some((p) => /Editar una nota/.test(p.que)),
-  '⚠️ y está en lo que queda pendiente de una decisión suya');
+/* 🔓 v3.151.0 — estas cuatro vigilaban la casilla roja de Notas («una nota no se
+   puede editar»), y se dan la vuelta, no se borran: Josué pidió la edición y se
+   construyó. La casilla se puso verde porque ahora nombra una función que existe,
+   no porque alguien la marcara. */
+eq(aud.filter((a) => !a.completa).map((a) => a.id), [],
+  '🔓 y ya no queda ninguna en rojo: una nota SE PUEDE EDITAR (v3.151.0)');
+const editarNotas_bg = CAPACIDADES_MINI_APP.notas.find((c) => c.id === 'editar');
+eq(editarNotas_bg && editarNotas_bg.fn, 'editarNota',
+  '🔓 la casilla nombra la función real que edita…');
+ok(editarNotas_bg && /export function editarNota\b/.test(leer(`src/lib/${editarNotas_bg.modulo}`)),
+  '🚨 …y esa función EXISTE en su archivo: una casilla en verde que no apunta a nada sería mentir igual');
+ok(!PENDIENTE_DE_JOSUE.some((p) => /Editar una nota/.test(p.que)),
+  '🔓 y ya no está en lo que queda pendiente de una decisión suya: la tomó él');
 ok(Object.values(CAPACIDADES_MINI_APP).flat().filter((c) => c.fn).every((c) => !!c.modulo),
   '⚠️ cada capacidad nombra la función real y su archivo, no una casilla suelta');
 

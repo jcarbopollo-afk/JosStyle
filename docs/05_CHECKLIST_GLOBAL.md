@@ -1032,3 +1032,7 @@ la revisión periódica, la densidad de interfaz y Hábitos/Rutinas en el Calend
 🔓 **C-33 la contestó Josué el mismo 2026-09-13**: los diez rangos del apartado 22 contra D2-02.
 Construido como medida física, nunca como premio; anotado en `docs/03`, y de paso dio la instrucción
 que manda sobre todas las que vengan — **no se pregunta, se anota y se sigue**.
+
+**Después de los ciclos (lo que va pidiendo Josué):**
+
+- [x] **Notas: editar una nota** (v3.151.0, 2026-10-17): «Editar» en la ficha, el formulario de la nota rápida con lo que tenía, «Guardar cambios» y «Cancelar»; la misma nota (mismo id y fecha) con `actualizado`; guardar sin cambios no escribe y vaciarla no se guarda. Cierra la C-27. Y Ajustes → Integraciones ya no pide registrar JosStyle en Google y Microsoft: lo aplazó él (DEP-29).

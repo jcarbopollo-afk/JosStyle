@@ -25,7 +25,7 @@ import { CAPACIDADES } from '../lib/avisosPlanificacion';
 /* Entrega 3 · F12 (HC F7) — calendarios externos. ⏸ Google y Outlook necesitan
    que Josué registre JosStyle en sus portales; lo que SÍ funciona hoy es el
    archivo `.ics`, que es lo que el apartado 4 pide para Apple. */
-import { PROVEEDORES, LO_QUE_NECESITA_JOSUE, leerICS, planDeImportacion } from '../lib/calendariosExternos';
+import { PROVEEDORES, leerICS, planDeImportacion } from '../lib/calendariosExternos';
 import { biometriaSoportada, registrarBiometria } from '../lib/biometria';
 import { Card, Field, TextInput, Select, GhostBtn, SectionTitle, PrimaryButton, BotonBorrar, Switch, PistaInterruptor } from '../components/ui';
 /* SO Fase 5 — la pantalla de «Sonido y respuesta». Los interruptores son los de
@@ -3173,22 +3173,12 @@ export default function SettingsView({
               )}
             </Card>
 
-            {/* ⏸ Lo que hace falta para conectar Google y Outlook de verdad. No es
-                una tarea pendiente: son credenciales que solo puede crear él. */}
-            <Card>
-              <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Conectar la cuenta entera</p>
-              <p className="text-xs mb-2" style={{ color: COLORS.textMuted }}>
-                Para que Google u Outlook se actualicen solos, sin añadir un archivo cada vez, hacen
-                falta tres cosas que tienes que hacer tú:
-              </p>
-              <ul className="space-y-1.5">
-                {LO_QUE_NECESITA_JOSUE.map((x) => (
-                  <li key={x.id} className="text-xs" style={{ color: COLORS.textMuted }}>
-                    <span style={{ color: COLORS.text }}>· {x.que}.</span> {x.porque}
-                  </li>
-                ))}
-              </ul>
-            </Card>
+            {/* 🕐 La tarjeta «Conectar la cuenta entera» —registrar JosStyle en Google
+                y en Microsoft— se quitó el 2026-10-17 por decisión de Josué: *"queda
+                profesional pero puede dar muchos problemas… en un futuro ya lo
+                desarrollaremos mejor"* (DEP-29). Lo que hace falta sigue escrito en
+                `LO_QUE_NECESITA_JOSUE`, para cuando se retome; aquí se queda lo que
+                funciona hoy: añadir el archivo del calendario. */}
           </>
         )}
 

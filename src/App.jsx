@@ -2465,6 +2465,13 @@ export default function App() {
   // snapshotAndSave/deshacer, igual que el resto de módulos de datos de la app.
   const addApunte = (a) => snapshotAndSave({ biblioteca: { ...biblioteca, apuntes: [...biblioteca.apuntes, a] } });
   const deleteApunte = (id) => eliminarConPapelera('biblioteca', 'apuntes', id);
+  /* v3.151.0 — editar una nota (Josué: *"tenemos que solucionar lo de editar las
+     notas"*). La vista devuelve la nota ya calculada por `notas.js` —mismo id,
+     misma fecha— y aquí solo se sustituye, como `updateEnlace` y `updateIdea`.
+     Pasa por `snapshotAndSave`, así que Deshacer la devuelve como estaba. */
+  const updateApunte = (a) => a && snapshotAndSave({
+    biblioteca: { ...biblioteca, apuntes: biblioteca.apuntes.map((x) => (x.id === a.id ? a : x)) },
+  });
   const addEnlace = (e) => snapshotAndSave({ biblioteca: { ...biblioteca, enlaces: [...biblioteca.enlaces, e] } });
   const deleteEnlace = (id) => eliminarConPapelera('biblioteca', 'enlaces', id);
   /* E3 F18 (BL F4) — marcar favorito, archivar, sacar del archivo y editar son
@@ -3314,7 +3321,7 @@ export default function App() {
                entonces sin que nadie los llamara**: la firma del proyecto — *"una
                función que nadie llama no falla nunca"*. No lo vieron ni el build,
                ni el renderizado, ni las pruebas de Node. */
-            onAddApunte={addApunte} onDeleteApunte={deleteApunte}
+            onAddApunte={addApunte} onDeleteApunte={deleteApunte} onUpdateApunte={updateApunte}
             onAddEnlace={addEnlace} onDeleteEnlace={deleteEnlace} onUpdateEnlace={updateEnlace}
             /* E3 F16 (BL F1) — las tres listas nuevas del lanzador. Escriben en la
                misma clave `biblioteca` y se borran por la única puerta que hay,

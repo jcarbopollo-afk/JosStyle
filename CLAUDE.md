@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.150.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.151.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -455,7 +455,7 @@ una prueba, un documento o un procedimiento obligatorio. **Si choca con otra reg
   horas en esta sesión como red de seguridad —si no queda nada pendiente, se desactiva con
   `update_trigger`—. Lo que **no** se puede automatizar: el modo de la sesión (lo elige él en el
   selector; lo mejor es **Auto**), el límite de uso de su cuenta, y lo que solo puede hacer él (SQL,
-  cuentas, DEP-29, C-27 y, al final y por decisión suya, DEP-30 y la seguridad de `/api/ask-ai`). ⚠️ **El listón no cambia**: a
+  cuentas y, al final y por decisión suya, DEP-29, DEP-30 y la seguridad de `/api/ask-ai`). ⚠️ **El listón no cambia**: a
   `main` solo con `bash scripts/verificar.sh` en verde.
 - **Al terminar, decirle siempre dos cosas:** qué se ha hecho y hasta dónde se ha llegado.
 - **Lo que más le importa es recibir la entrega actualizada cuanto antes.** Priorizarlo sobre
@@ -2319,11 +2319,15 @@ había que adivinarlo.**
 - 🕐 **DEP-30 (el service worker) y la autenticación de `/api/ask-ai` van AL FINAL, por decisión suya**:
   *"primero quiero que esté toda la app hecha para luego meter esos dos"*. No se construyen antes ni
   se le vuelven a proponer hasta que él dé la app por terminada.
-- ⏸ **DEP-29 (Google y Outlook)**: se le explicó para qué sirve (que su calendario de Outlook o Google
-  salga solo en JosStyle). Si no usa ninguno de los dos, no hace falta nunca; el archivo `.ics` ya
-  funciona.
-- ⏸ **C-27 (la fase de Notas que le falta al documento)**: si no encuentra el texto, la fase se puede
-  escribir aquí con lo que le falta a las notas (hoy no se pueden editar).
+- 🕐 **DEP-29 (Google y Outlook) TAMBIÉN VA PARA EL FUTURO, por decisión suya** (2026-10-17): *"lo de
+  Microsoft queda profesional pero puede dar muchos problemas… en un futuro ya lo desarrollaremos mejor"*.
+  Desde la v3.151.0 Ajustes → Integraciones **ya no le pide registrar JosStyle** en Google y Microsoft;
+  se queda el archivo `.ics`, que funciona. No se le vuelve a proponer hasta que lo pida él.
+- 🔓 **C-27 está RESUELTA (v3.151.0)**: no tiene el texto de la fase de Notas, y dijo lo que faltaba —
+  *"tenemos que solucionar lo de editar las notas"*—. **Una nota ya se puede editar** (`src/lib/notas.js`,
+  `updateApunte` en `App.jsx`, «Editar» en su ficha), y sigue siendo un apunte de la Fase 11: mismo id,
+  misma fecha, ni una lista nueva. La auditoría de la BL F8 está en verde porque la casilla nombra una
+  función que existe.
 - 📌 **Y quiere hablar de AXION y de la IA** cuando cierre esto.
 
 🔢 **Y ojo, que hasta hoy este archivo decía 44 y son 46.** Al ir a por la fase 30 se vio que entre
@@ -2336,7 +2340,8 @@ fallo del índice**, así que se corrigió sin preguntarle: lo que iba de la 31 
 ⏸ **Y una contradicción del documento, C-27 en `docs/03`:** **falta la Fase 3 de Biblioteca** —el
 rótulo dice *"Biblioteca 8"* y el documento va **F1, F2, F4, F5, F6, F6, F7, F8**— y **la Fase 6
 está duplicada** palabra por palabra. Por el orden de las seis mini-apps, la que falta es **Notas**.
-🟢 No bloquea nada: la BL F1 ya las deja funcionando. **Preguntárselo a Josué.**
+🟢 No bloquea nada: la BL F1 ya las deja funcionando. 🔓 **Y está resuelta (v3.151.0)**: él no tiene ese
+texto y pidió lo que faltaba de verdad —editar una nota—, que ya está construido.
 
 ⏸ **Y hay algo que necesita a Josué, anotado como DEP-29 en `docs/03`:** conectar **Google Calendar
 y Outlook** exige que él registre JosStyle en Google y en Microsoft **y** que exista un sitio seguro
@@ -2344,6 +2349,8 @@ donde guardar el acceso (el apartado 26 prohíbe el navegador y el código). **H
 construye el botón "Conectar"** —sería un control decorativo, y le haría creer que sus exámenes
 están sincronizados—. Lo que sí funciona ya es el **archivo `.ics`**, que es la alternativa que pide
 el propio enunciado para Apple y sirve para los tres. **Los apartados 19 y 20 dependen de lo mismo.**
+🕐 **Y Josué lo aplazó el 2026-10-17** (*"en un futuro ya lo desarrollaremos mejor"*): desde la v3.151.0
+Ajustes ya no le pide registrar nada, y no se le vuelve a proponer hasta que lo pida él.
 
 ⏸ **Y hay una segunda cosa que necesita a Josué, DEP-30 en `docs/03`:** el **service worker**, que
 es la pieza que falta para abrir sin conexión **y** para los avisos con la app cerrada. 🚨 **No se

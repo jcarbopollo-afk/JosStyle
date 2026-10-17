@@ -309,12 +309,17 @@ const conCambio = (archivo, de, a) => ({ ...SRC, [archivo]: SRC[archivo].replace
   ok(REGRESION_POR_FASE.at(-1).fase === 20 && REGRESION_POR_FASE.at(-1).seccion === '/* ── MS F20 ', '…y la F20 entra en la regresión de todas las fases');
   ok(/test-motion-f20\.mjs/.test(VERIFICAR), 'verificar.sh ejecuta esta suite');
   ok(/\/\* ── MS F20 /.test(RECORRIDO), 'y el recorrido tiene la sección «MS F20»');
+  /* 🔓 v3.151.0 — estas dos miraban «la primera entrada» del CHANGELOG y «la versión de
+     ahora», así que saltaban con el primer cambio después del sellado (una cuenta exacta
+     es una bomba de relojería, EH F21). Se dan la vuelta, no se borran: siguen exigiendo
+     que la entrada de la F20 diga FINALIZADO y SEALED, y que la versión no baje de ella. */
   const log = leer('CHANGELOG.md');
-  const desde = log.indexOf('## v');
-  const primera = log.slice(desde, log.indexOf('\n## v', desde + 4));
-  ok(/v3\.150\.0/.test(primera) && /FINALIZADO/.test(primera) && /MOTION SYSTEM — SEALED/.test(primera),
+  const desde = log.indexOf('## v3.150.0');
+  const entradaF20 = desde < 0 ? '' : log.slice(desde, log.indexOf('\n## v', desde + 4));
+  ok(/FINALIZADO/.test(entradaF20) && /MOTION SYSTEM — SEALED/.test(entradaF20),
     'apartado 49 — el CHANGELOG dice FINALIZADO y SEALED en la entrada de la F20 (y esta suite solo pasa con el sellado a cero)');
-  ok(JSON.parse(leer('package.json')).version === '3.150.0', 'package.json en la 3.150.0');
+  const [ma, mi] = String(JSON.parse(leer('package.json')).version).split('.').map(Number);
+  ok(ma > 3 || (ma === 3 && mi >= 150), 'package.json en la 3.150.0 o después: el sellado no se deshace');
 }
 
 console.log(`\n${mal ? `\x1b[31m✗ ${mal} de ${ok_ + mal} comprobaciones han fallado\x1b[0m` : `\x1b[32m${ok_} de ${ok_} comprobaciones en verde\x1b[0m`}`);

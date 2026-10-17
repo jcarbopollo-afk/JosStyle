@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.151.0 — Notas: editar una nota · Microsoft aplazado):**
+> Las notas de la Biblioteca **ya se pueden editar**: «Editar» en cada nota abre el mismo formulario con lo que tenía,
+> y se guarda o se cancela. Es la misma nota (no una copia), sube a Recientes y Deshacer la devuelve. Por decisión de
+> Josué, Ajustes ya no le pide conectar Google ni Outlook (se queda añadir el archivo del calendario, que funciona); el
+> zoom al tocar un campo no le pasa en su iPhone, y la conexión sin internet y la seguridad de la IA van al final.
+> **Queda hablar con él de AXION y de la IA.**
+
 > **📅 ACTUALIZACIÓN (v3.150.0 — Motion System F20/20: 🏁 TERMINADO Y SELLADO):**
 > El sistema de movimiento está acabado: las veintiuna fases. La última no añade animaciones: comprueba que todo
 > habla el mismo idioma —cada regla con algo que la vigila de verdad, los diez errores típicos cazados, lo que

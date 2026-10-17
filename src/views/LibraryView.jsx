@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { ChevronDespliegue, LatidoAlMarcar, IconoQueCambia } from '../components/motion';
 import { COLORS, TIPOS_ARCHIVO_BIBLIOTECA, PERIODOS_META, PLAZOS_OBJETIVO } from '../tokens';
-import { uid, todayISO, formatFecha } from '../lib/helpers';
+import { formatFecha } from '../lib/helpers';
+import { crearNota, editarNota, puedeGuardarNota, formularioDeNota, SIN_TITULO } from '../lib/notas';
 import { getSignedBibliotecaUrl } from '../lib/supabase';
 import {
   MINI_APPS, miniApp, elementosDe, indicadorDe, diferenciaDe,
@@ -127,6 +128,9 @@ function ItemCard({
   /* BL F7 — las tres props del sistema único de colecciones. Son **opcionales**:
      sin `colecciones` la ficha se pinta exactamente igual que antes. */
   destacado = false, colecciones = null, tipoColeccion = null, onAlternarColeccion = null,
+  /* v3.151.0 — editar una nota. Solo existe si se le pasa: sin quien la
+     escuche, un «Editar» sería un botón que no hace nada (regla 8). */
+  onEditar = null,
 }) {
   const [abierto, setAbierto] = useState(destacado);
   const Icon = ICONOS[item._tipo];
@@ -162,7 +166,9 @@ function ItemCard({
             <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{item.contenido.slice(0, 60)}{item.contenido.length > 60 ? '…' : ''}</p>
           )}
 
-          <div className="flex items-center gap-3 mt-2">
+          {/* ⚠️ `flex-wrap` (v3.151.0): con «Editar» son tres acciones, y en un iPhone
+              de 320 px no caben en una fila. Solo actúa si hace falta (GE F1). */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2">
             {esArchivo && url && (
               <a href={url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs font-semibold" style={{ color: accent }}>
                 <ExternalLink size={12} /> Abrir
@@ -176,6 +182,16 @@ function ItemCard({
             {esApunte && (item.contenido?.length > 60) && (
               <button onClick={() => setAbierto(!abierto)} className="flex items-center gap-1 text-xs font-semibold" style={{ color: accent }}>
                 {abierto ? <>Ocultar <ChevronUp size={12} /></> : <>Ver completo <ChevronDown size={12} /></>}
+              </button>
+            )}
+            {esApunte && onEditar && (
+              <button
+                onClick={onEditar}
+                aria-label={`Editar la nota ${item.titulo || SIN_TITULO}`}
+                className="flex items-center gap-1 text-xs font-semibold"
+                style={{ color: accent }}
+              >
+                <Pencil size={12} /> Editar
               </button>
             )}
             {/* Entrega 3 · F1, apartado 3 — un apunte y un enlace van a Eliminados recientemente
@@ -271,13 +287,26 @@ function AnadirArchivo({ tipo, onAdd, accent }) {
    enunciado llama *"un formulario burocrático"*.
 
    ⚠️ Guarda en `biblioteca.apuntes`, la lista de la Fase 11. Una nota **es** un
-   apunte: crear una segunda lista habría dejado los suyos invisibles. */
-export function AnadirNotaRapida({ onAdd, accent }) {
-  const [form, setForm] = useState({ titulo: '', contenido: '' });
-  const puedeGuardar = Boolean(form.titulo.trim() || form.contenido.trim());
+   apunte: crear una segunda lista habría dejado los suyos invisibles.
+
+   🔓 **Y es también el formulario para EDITAR una nota** (v3.151.0, pedido por
+   Josué): con `nota`, empieza con lo que tiene, guarda con `editarNota` y se
+   puede cancelar. El mismo formulario para las dos cosas, como `FormularioIdea`,
+   y la regla de qué se puede guardar es una sola, la de `notas.js`. */
+export function AnadirNotaRapida({ onAdd, accent, nota = null, onGuardar = null, onCancelar = null }) {
+  const editando = Boolean(nota);
+  const [form, setForm] = useState(() => (editando ? formularioDeNota(nota) : { titulo: '', contenido: '' }));
+  const puedeGuardar = puedeGuardarNota(form);
   const guardar = () => {
     if (!puedeGuardar) return;
-    onAdd({ id: uid(), fecha: todayISO(), titulo: form.titulo.trim() || 'Sin título', contenido: form.contenido });
+    if (editando) {
+      const editada = editarNota(nota, form);
+      if (editada && onGuardar) onGuardar(editada);
+      return;
+    }
+    const nueva = crearNota(form);
+    if (!nueva) return;
+    onAdd(nueva);
     setForm({ titulo: '', contenido: '' });
   };
   return (
@@ -291,10 +320,11 @@ export function AnadirNotaRapida({ onAdd, accent }) {
       />
       <div className="mt-2">
         <Field label="Título (opcional)">
-          <TextInput value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder="Sin título" />
+          <TextInput value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder={SIN_TITULO} />
         </Field>
       </div>
-      <PrimaryButton accent={accent} disabled={!puedeGuardar} onClick={guardar}>Guardar nota</PrimaryButton>
+      <PrimaryButton accent={accent} disabled={!puedeGuardar} onClick={guardar}>{editando ? 'Guardar cambios' : 'Guardar nota'}</PrimaryButton>
+      {editando && onCancelar ? <div className="mt-2"><GhostBtn onClick={onCancelar}>Cancelar</GhostBtn></div> : null}
     </Card>
   );
 }
@@ -386,7 +416,7 @@ export function VacioMiniApp({ app, accent, onCrear }) {
 export default function LibraryView({
   biblioteca, archivos,
   onAddArchivo, onDeleteArchivo,
-  onAddApunte, onDeleteApunte,
+  onAddApunte, onDeleteApunte, onUpdateApunte,
   onAddEnlace, onDeleteEnlace, onUpdateEnlace,
   onAddLibro, onDeleteLibro, onUpdateLibro, onSubirPortada, onBorrarPortada,
   onAddIdea, onDeleteIdea, onUpdateIdea, onConvertirIdea,
@@ -408,6 +438,9 @@ export default function LibraryView({
      le dice cuál abrir. Cada pantalla ya sabía abrir un detalle por id; lo único
      nuevo es decirle desde fuera cuál. */
   const [foco, setFoco] = useState(null);
+  /* v3.151.0 — la nota que se está editando (su id). Es de la pantalla, nunca
+     de lo guardado: al salir de Notas se olvida (EH F40). */
+  const [notaEditando, setNotaEditando] = useState(null);
 
   const datos = { biblioteca, archivos };
   const conArchivo = archivos.filter((a) => a.tipo === 'foto' || a.tipo === 'pdf' || a.tipo === 'video');
@@ -425,8 +458,8 @@ export default function LibraryView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [archivos]);
 
-  const volver = () => { setAbierta(null); setCrear(false); setQuery(''); setFiltro('todos'); setFoco(null); };
-  const abrir = (id) => { setAbierta(id); setCrear(false); setQuery(''); setFiltro('todos'); setFoco(null); };
+  const volver = () => { setAbierta(null); setCrear(false); setQuery(''); setFiltro('todos'); setFoco(null); setNotaEditando(null); };
+  const abrir = (id) => { setAbierta(id); setCrear(false); setQuery(''); setFiltro('todos'); setFoco(null); setNotaEditando(null); };
 
   /** Llevar a la mini-app del elemento y abrir el original. `null` si el tipo no
    *  está en el catálogo — nunca una pantalla en blanco. */
@@ -438,6 +471,7 @@ export default function LibraryView({
     setQuery('');
     setFiltro('todos');
     setFoco({ tipo, id });
+    setNotaEditando(null);
   };
 
   // ── El lanzador ─────────────────────────────────────────────────────────
@@ -453,7 +487,7 @@ export default function LibraryView({
         accent={accent}
         onAbrirMiniApp={abrir}
         onAbrirOriginal={abrirOriginal}
-        onCrearEn={(id) => { setAbierta(id); setCrear(true); setQuery(''); setFiltro('todos'); setFoco(null); }}
+        onCrearEn={(id) => { setAbierta(id); setCrear(true); setQuery(''); setFiltro('todos'); setFoco(null); setNotaEditando(null); }}
       />
     );
   }
@@ -477,7 +511,7 @@ export default function LibraryView({
         accent={accent}
         abierto={crear}
         onVolver={volver}
-        onToggleCrear={() => setCrear(!crear)}
+        onToggleCrear={() => { setCrear(!crear); setNotaEditando(null); }}
       />
       {/* ⚠️ La diferencia con su vecina, dicha en la pantalla: el enunciado dedica
           tres apartados a que las seis sean *"claramente diferenciables"*. */}
@@ -519,13 +553,26 @@ export default function LibraryView({
         {crear && <AnadirNotaRapida onAdd={(n) => { onAddApunte(n); setCrear(false); }} accent={accent} />}
         {elementos.length === 0 ? vacio : lista.length === 0 ? nadaCoincide : (
           <div className="space-y-2">
-            {lista.map((a) => (
+            {lista.map((a) => (notaEditando === a.id ? (
+              /* 🔓 v3.151.0 — editar una nota: el formulario ocupa el sitio de su
+                 ficha, como en Libros, Guardados e Ideas (`editando ? formulario :
+                 detalle`). Guardar sin cambios no escribe nada: `editarNota`
+                 devuelve la misma nota. */
+              <AnadirNotaRapida
+                key={a.id}
+                nota={a}
+                accent={accent}
+                onCancelar={() => setNotaEditando(null)}
+                onGuardar={(editada) => { if (editada !== a) onUpdateApunte(editada); setNotaEditando(null); }}
+              />
+            ) : (
               <ItemCard
                 key={a.id}
                 item={{ ...a, _tipo: 'apunte' }}
                 query={q}
                 accent={accent}
                 onDelete={() => onDeleteApunte(a.id)}
+                onEditar={onUpdateApunte ? () => { setCrear(false); setNotaEditando(a.id); } : null}
                 /* ⚠️ Una nota no tiene pantalla de detalle propia: se despliega
                    en su ficha. Así que *"abrir el original"* es dejarla marcada
                    y abierta en la lista, no inventarle una pantalla. */
@@ -534,7 +581,7 @@ export default function LibraryView({
                 tipoColeccion="nota"
                 onAlternarColeccion={alternarColeccion}
               />
-            ))}
+            )))}
           </div>
         )}
       </div>

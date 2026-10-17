@@ -238,8 +238,14 @@ for (const copia of ['external_events', 'DEFAULT_EXTERNOS', 'normalizarExterno',
 }
 
 const AJUSTES = sinComentarios(leer('src/views/SettingsView.jsx'));
-ok(/PROVEEDORES\.map/.test(AJUSTES) && /LO_QUE_NECESITA_JOSUE\.map/.test(AJUSTES),
-  '🚨 Ajustes enseña los tres proveedores y lo que hace falta para conectarlos de verdad (apartado 1)');
+ok(/PROVEEDORES\.map/.test(AJUSTES),
+  '🚨 Ajustes enseña los tres proveedores y cómo traer cada calendario (apartado 1)');
+/* 🔓 Se da la vuelta el 2026-10-17 (DEP-29): Josué decidió quitar la tarjeta de
+   «Conectar la cuenta entera» —*"queda profesional pero puede dar muchos
+   problemas… en un futuro ya lo desarrollaremos mejor"*—. Lo que hace falta sigue
+   en `LO_QUE_NECESITA_JOSUE` (comprobado arriba), pero ya no se le pide en pantalla. */
+ok(!/LO_QUE_NECESITA_JOSUE/.test(AJUSTES) && !/Conectar la cuenta entera/.test(AJUSTES),
+  '🔓 y ya NO le pide registrar JosStyle en Google y Microsoft: lo aplazó él (DEP-29)');
 ok(!/Conectar Google Calendar|Conectar Outlook/.test(AJUSTES),
   '⏸ y NO hay un botón "Conectar Google Calendar": no podría conectar nada (regla 8)');
 ok(/leerICS\(/.test(AJUSTES) && /planDeImportacion\(/.test(AJUSTES),

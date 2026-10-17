@@ -2410,6 +2410,123 @@ ok(/Tu archivo personal/i.test(docs_bl1),
 ok(!/próximamente|en construcción/i.test(docs_bl1),
   '🚨 y no promete nada que no exista');
 
+/* ── NOTAS · EDITAR UNA NOTA (v3.151.0) ──────────────────────────────────
+   Josué, 2026-10-17: *"tenemos que solucionar lo de editar las notas"*. Se mide
+   lo que él haría: abrir una nota, cambiarla, guardar; arrepentirse y cancelar;
+   guardar sin tocar nada; quitarle el «Sin título» a otra; y recargar para ver
+   que sigue ahí. Lo guardado se mira en la cuenta, no solo en la pantalla. */
+const hoy_notas = new Date().toLocaleDateString('sv-SE');
+const segunda_notas = { id: 'ap2', fecha: '2026-09-02', titulo: 'Sin título', contenido: 'Llamar al entrenador' };
+almacen.biblioteca = {
+  apuntes: [
+    { id: 'ap1', fecha: '2026-09-01', titulo: 'Examen de Biología', contenido: 'Es el viernes' },
+    { ...segunda_notas },
+  ],
+  enlaces: [], libros: [], ideas: [], colecciones: [],
+};
+const erroresAntes_notas = errores.length;
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Vida');
+ok(await pulsar('Biblioteca'), 'NOTAS — la Biblioteca se abre');
+ok(await pulsar('Notas'), 'NOTAS — y Notas');
+await esperarTexto(/Examen de Biología/i);
+
+const editarBotones_notas = await page.evaluate(() => [...document.querySelectorAll('button')]
+  .filter((b) => /^Editar la nota /.test(b.getAttribute('aria-label') || '')).map((b) => b.getAttribute('aria-label')));
+eqReal(editarBotones_notas, ['Editar la nota Examen de Biología', 'Editar la nota Sin título'],
+  '🚨 NOTAS — cada nota tiene su «Editar», y VoiceOver dice cuál es cuál');
+
+/* Abrir para editar: el formulario trae lo que tenía. */
+ok(await pulsar('Editar la nota Examen de Biología'), 'NOTAS — se pulsa «Editar» en la nota del examen');
+await esperarTexto(/Guardar cambios/i);
+const formulario_notas = await page.evaluate(() => ({
+  contenido: document.querySelector('textarea[aria-label="Contenido de la nota"]')?.value ?? null,
+  titulo: document.querySelector('input[placeholder="Sin título"]')?.value ?? null,
+  cancelar: [...document.querySelectorAll('button')].some((b) => b.innerText.trim() === 'Cancelar'),
+  tarjeta: [...document.querySelectorAll('button')].some((b) => b.getAttribute('aria-label') === 'Editar la nota Examen de Biología'),
+}));
+eqReal(formulario_notas.contenido, 'Es el viernes', '🚨 NOTAS — el formulario empieza con su contenido…');
+eqReal(formulario_notas.titulo, 'Examen de Biología', '…y con su título');
+ok(formulario_notas.cancelar, '⚠️ NOTAS — y se puede cancelar');
+ok(!formulario_notas.tarjeta, '⚠️ NOTAS — el formulario ocupa el sitio de su ficha: la nota no está dos veces');
+
+/* Cambiar y guardar. */
+const escriturasAntes_notas = guardado.filter((g) => g && g.key === 'biblioteca').length;
+await page.fill('textarea[aria-label="Contenido de la nota"]', 'Es el viernes a las 9');
+ok(await pulsar('Guardar cambios'), 'NOTAS — se guarda el cambio');
+const trasEditar_notas = await esperarTexto(/a las 9/i);
+ok(/a las 9/i.test(trasEditar_notas), '🚨 NOTAS — LA NOTA EDITADA SE VE CON LO NUEVO');
+ok(!/Guardar cambios/i.test(trasEditar_notas), '⚠️ NOTAS — y el formulario se cierra');
+const escrituras_notas = guardado.filter((g) => g && g.key === 'biblioteca');
+eqReal(escrituras_notas.length, escriturasAntes_notas + 1, '🚨 NOTAS — guardar escribe UNA vez en la cuenta');
+const apuntes_notas = escrituras_notas.at(-1)?.value?.apuntes || [];
+const editada_notas = apuntes_notas.find((a) => a.id === 'ap1');
+eqReal(apuntes_notas.length, 2, '🚨 NOTAS — siguen siendo dos notas: editar no crea una copia');
+eqReal(editada_notas && { titulo: editada_notas.titulo, contenido: editada_notas.contenido, fecha: editada_notas.fecha },
+  { titulo: 'Examen de Biología', contenido: 'Es el viernes a las 9', fecha: '2026-09-01' },
+  '🚨 NOTAS — en `biblioteca.apuntes`, con el MISMO id y la misma fecha, y el contenido nuevo');
+eqReal(editada_notas?.actualizado, hoy_notas, '⚠️ NOTAS — y `actualizado` a hoy (en local): sube a Recientes');
+eqReal(apuntes_notas.find((a) => a.id === 'ap2'), segunda_notas, '⚠️ NOTAS — y la otra nota, intacta');
+
+/* Arrepentirse: cancelar no guarda nada. */
+ok(await pulsar('Editar la nota Examen de Biología'), 'NOTAS — se vuelve a abrir para editar');
+await esperarTexto(/Guardar cambios/i);
+await page.fill('textarea[aria-label="Contenido de la nota"]', 'BORRADOR QUE NO SE GUARDA');
+ok(await pulsar('Cancelar'), 'NOTAS — y se cancela');
+const trasCancelar_notas = await esperarTexto(/a las 9/i);
+ok(!/BORRADOR QUE NO SE GUARDA/.test(trasCancelar_notas) && /a las 9/i.test(trasCancelar_notas),
+  '🚨 NOTAS — CANCELAR NO GUARDA: sigue lo de antes');
+eqReal(guardado.filter((g) => g && g.key === 'biblioteca').length, escriturasAntes_notas + 1,
+  '⚠️ NOTAS — y no escribe nada en la cuenta');
+
+/* Guardar sin tocar nada: tampoco escribe. */
+ok(await pulsar('Editar la nota Examen de Biología'), 'NOTAS — se abre otra vez');
+await esperarTexto(/Guardar cambios/i);
+ok(await pulsar('Guardar cambios'), 'NOTAS — y se guarda sin cambiar nada');
+await page.waitForTimeout(400);
+eqReal(guardado.filter((g) => g && g.key === 'biblioteca').length, escriturasAntes_notas + 1,
+  '⚠️ NOTAS — guardar SIN CAMBIOS no escribe: ni un paso de Deshacer vacío');
+
+/* La nota «Sin título»: el campo empieza vacío, y se le puede poner uno. */
+ok(await pulsar('Editar la nota Sin título'), 'NOTAS — se edita la nota sin título');
+await esperarTexto(/Guardar cambios/i);
+eqReal(await page.evaluate(() => document.querySelector('input[placeholder="Sin título"]')?.value ?? null), '',
+  '⚠️ NOTAS — «Sin título» no se le escribe en el campo: empieza vacío');
+/* Vaciarla del todo no se puede guardar. */
+await page.fill('textarea[aria-label="Contenido de la nota"]', '');
+ok(await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.innerText.trim() === 'Guardar cambios')?.disabled === true),
+  '🚨 NOTAS — vaciarla no es editarla: sin título ni texto no se guarda (para eso está Eliminar)');
+await page.fill('textarea[aria-label="Contenido de la nota"]', 'Llamar al entrenador');
+await page.fill('input[placeholder="Sin título"]', 'Entrenador');
+ok(await pulsar('Guardar cambios'), 'NOTAS — se le pone título y se guarda');
+const trasTitulo_notas = await esperarTexto(/Entrenador/);
+ok(!!(await page.evaluate(() => [...document.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Editar la nota Entrenador'))),
+  '🚨 NOTAS — la nota se llama ya como él quiso');
+eqReal(guardado.filter((g) => g && g.key === 'biblioteca').at(-1)?.value?.apuntes?.find((a) => a.id === 'ap2')?.titulo, 'Entrenador',
+  '⚠️ NOTAS — y así está en la cuenta');
+ok(/Llamar al entrenador/i.test(trasTitulo_notas), '⚠️ NOTAS — con su texto de siempre');
+
+/* Recargar: lo editado sigue ahí. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+await pulsar('Vida');
+await pulsar('Biblioteca');
+ok(await pulsar('Notas'), 'NOTAS — tras recargar se vuelve a Notas');
+const trasRecargar_notas = await esperarTexto(/a las 9/i);
+ok(/a las 9/i.test(trasRecargar_notas) && /Entrenador/.test(trasRecargar_notas),
+  '🚨 NOTAS — Y AL RECARGAR SIGUEN EDITADAS: la puerta de carga no se lleva nada (regla 5)');
+
+/* En un iPhone pequeño, las tres acciones caben: bajan de línea si hace falta. */
+await page.setViewportSize({ width: 320, height: 640 });
+await page.waitForTimeout(500);
+const ancho_notas = await page.evaluate(() => ({ pagina: document.documentElement.scrollWidth, ventana: window.innerWidth }));
+ok(ancho_notas.pagina <= ancho_notas.ventana,
+  `⚠️ NOTAS — a 320 px no se sale de lado con «Editar» en la fila (${ancho_notas.pagina} ≤ ${ancho_notas.ventana})`);
+await page.setViewportSize({ width: 1280, height: 720 });
+await page.waitForTimeout(300);
+eqReal(errores.slice(erroresAntes_notas), [], '⚠️ NOTAS — y ni un error de JavaScript en todo esto');
+
 /* ── E3 F17 (BL F2) · LIBROS ─────────────────────────────────────────────
    Se prueba el recorrido entero de un libro: crearlo, verlo, abrirlo,
    actualizar la página, terminarlo y comprobar que lo que se guarda en Supabase
