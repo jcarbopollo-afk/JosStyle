@@ -40,6 +40,9 @@ service worker y la seguridad de `/api/ask-ai` van al final**, cuando la app est
 - `test-biblioteca-global`: las cuatro que vigilaban la casilla roja de Notas ahora exigen que no quede ninguna roja,
   que la casilla nombre `editarNota` y que esa función exista.
 - `test-calendarios-externos`: la que exigía la tarjeta de Microsoft en Ajustes ahora exige que no esté.
+- 🐛 **Y una del recorrido (E3 F12) que la primera pasada cazó**: leía en Ajustes «tienes que hacer tú», que era la
+  frase de esa tarjeta. Se buscó el nombre de la tarjeta y no la frase; **al quitar un texto de pantalla, se barren
+  TODAS sus palabras en el recorrido**, no solo su título (es la FIT F42 otra vez). Ahora exige que no esté.
 - 🐛 `test-motion-f20`: dos comprobaciones del sellado miraban «la primera entrada del CHANGELOG» y «la versión de
   ahora», así que saltaban con el primer cambio después de la F20. Ahora buscan **la entrada de la v3.150.0** y exigen
   una versión **igual o posterior**: la garantía es la misma y no caduca.

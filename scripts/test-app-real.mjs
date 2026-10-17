@@ -1957,8 +1957,11 @@ ok(/Añadir un calendario/i.test(integ_e3f12),
   '🍎 y lo que SÍ se puede hacer hoy: añadir el archivo (apartado 4)');
 ok(!/Conectar Google Calendar/i.test(integ_e3f12),
   '⏸ y NO hay un botón "Conectar Google Calendar": no podría conectar nada (regla 8)');
-ok(/tienes que hacer tú/i.test(integ_e3f12),
-  '🚨 se dice qué hace falta para conectar la cuenta entera, y que lo decide él (regla 49)');
+/* 🔓 v3.151.0 — se da la vuelta, no se borra: Josué aplazó conectar Google y Outlook
+   (*"en un futuro ya lo desarrollaremos mejor"*, DEP-29), así que Ajustes ya no le pide
+   registrar JosStyle en ningún sitio. Lo que haría falta sigue en `LO_QUE_NECESITA_JOSUE`. */
+ok(!/tienes que hacer tú|Conectar la cuenta entera/i.test(integ_e3f12),
+  '🔓 E3 F12 — y ya NO le pide registrar JosStyle en Google y Microsoft: lo aplazó él (DEP-29)');
 ok(!/OAuth|token|API/i.test(integ_e3f12.split('Calendarios')[1] || ''),
   '⚠️ sin una palabra técnica: lo lee Josué, no un programador (EH F62)');
 
