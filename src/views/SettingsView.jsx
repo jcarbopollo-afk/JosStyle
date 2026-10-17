@@ -1986,11 +1986,13 @@ export default function SettingsView({
 
   const categorias = useCategorias();
 
+  // A1 — sin fecha de nacimiento válida no hay edad (`null`), y sin edad no se
+  // inventan ni el BMR ni el TDEE: se pinta «—» en vez de «NaN» o de una edad de 1970.
   const edad = calcularEdad(local.fechaNacimiento);
   const alturaM = local.altura / 100;
   const imc = local.peso / (alturaM * alturaM);
-  const bmr = 10 * local.peso + 6.25 * local.altura - 5 * edad + 5;
-  const tdee = bmr * (ACTIVIDAD_FACTORES[local.actividad] || 1.55);
+  const bmr = edad === null ? null : 10 * local.peso + 6.25 * local.altura - 5 * edad + 5;
+  const tdee = bmr === null ? null : bmr * (ACTIVIDAD_FACTORES[local.actividad] || 1.55);
   const pesoMin = (18.5 * alturaM * alturaM).toFixed(0);
   const pesoMax = (24.9 * alturaM * alturaM).toFixed(0);
   const commit = (next) => { setLocal(next); onUpdatePerfil(next); };
@@ -2233,10 +2235,10 @@ export default function SettingsView({
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Fecha de nacimiento">
-                  <TextInput type="date" value={local.fechaNacimiento} onChange={(e) => commit({ ...local, fechaNacimiento: e.target.value })} />
+                  <TextInput type="date" value={local.fechaNacimiento ?? ''} onChange={(e) => commit({ ...local, fechaNacimiento: e.target.value })} />
                 </Field>
                 <Field label="Edad (calculada)">
-                  <TextInput value={`${edad} años`} disabled style={{ opacity: 0.6 }} />
+                  <TextInput value={edad === null ? '—' : `${edad} años`} disabled style={{ opacity: 0.6 }} />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -2372,10 +2374,10 @@ export default function SettingsView({
             <Card>
               <p className="text-sm font-semibold mb-3" style={{ color: COLORS.text }}>Cálculos corporales</p>
               <div className="grid grid-cols-2 gap-3 text-center">
-                <div><p className="text-xl font-bold" style={{ color: COLORS.text }}>{edad}</p><p className="text-xs" style={{ color: COLORS.textMuted }}>años</p></div>
+                <div><p className="text-xl font-bold" style={{ color: COLORS.text }}>{edad === null ? '—' : edad}</p><p className="text-xs" style={{ color: COLORS.textMuted }}>años</p></div>
                 <div><p className="text-xl font-bold" style={{ color: COLORS.text }}>{imc.toFixed(1)}</p><p className="text-xs" style={{ color: COLORS.textMuted }}>IMC</p></div>
-                <div><p className="text-xl font-bold" style={{ color: COLORS.text }}>{Math.round(bmr)}</p><p className="text-xs" style={{ color: COLORS.textMuted }}>BMR kcal</p></div>
-                <div><p className="text-xl font-bold" style={{ color: COLORS.text }}>{Math.round(tdee)}</p><p className="text-xs" style={{ color: COLORS.textMuted }}>TDEE kcal</p></div>
+                <div><p className="text-xl font-bold" style={{ color: COLORS.text }}>{bmr === null ? '—' : Math.round(bmr)}</p><p className="text-xs" style={{ color: COLORS.textMuted }}>BMR kcal</p></div>
+                <div><p className="text-xl font-bold" style={{ color: COLORS.text }}>{tdee === null ? '—' : Math.round(tdee)}</p><p className="text-xs" style={{ color: COLORS.textMuted }}>TDEE kcal</p></div>
               </div>
               <p className="text-xs mt-3 text-center leading-relaxed" style={{ color: COLORS.textMuted }}>
                 Peso saludable orientativo: {pesoMin}–{pesoMax} kg. Son datos orientativos, no un diagnóstico — con 16 años y en desarrollo, dicen poco por sí solos.

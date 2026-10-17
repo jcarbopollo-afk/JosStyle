@@ -15629,4 +15629,167 @@ almacen.economia = economiaDeAntes_ms20;
 
 await page.emulateMedia({ reducedMotion: null });
 await page.setViewportSize({ width: 1280, height: 900 });
+
+/* ===========================================================================
+   CORRECCIONES A1–A4 (auditoría de la fase 3) — EN LA PANTALLA DE VERDAD
+   ===========================================================================
+   Las pruebas de Node (`test-correcciones-a1-a4.mjs`) miran las funciones; esto
+   mira lo que se pinta: que una fecha de nacimiento vacía no enseñe «NaN», que la
+   hucha diga lo que no vale y no lo escriba, y que el 99 % no se lea como 100 %.
+   ⚠️ Sufijo `_a1a4` en todos los nombres: dos `const` iguales no compilan. */
+const erroresAntes_a1a4 = errores.length;
+const perfilDeAntes_a1a4 = almacen.perfil;
+const economiaDeAntes_a1a4 = almacen.economia;
+const valorCampo_a1a4 = (etiqueta) => page.evaluate((e) => {
+  const c = document.querySelector(`input[aria-label="${e}"]`);
+  return c ? c.value : null;
+}, etiqueta);
+
+/* A1 — la fecha de nacimiento vacía (el campo `date` vaciado) y la nula. */
+for (const [fecha_a1a4, nombre_a1a4] of [['', 'vacía'], [null, 'nula']]) {
+  almacen.perfil = { nombre: 'Josué', fechaNacimiento: fecha_a1a4, altura: 187, peso: 72, actividad: 'moderado' };
+  await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+  ok(await pulsar('Ajustes'), `A1 — se abre Ajustes (fecha ${nombre_a1a4})`);
+  await esperarTexto(/Apariencia/i);
+  ok(await pulsar('Perfil'), '…y la categoría Perfil');
+  const perfil_a1a4 = await esperarTexto(/C[aá]lculos corporales/i);
+  const edadCampo_a1a4 = await page.evaluate(() => {
+    const l = [...document.querySelectorAll('label, p, span')].find((x) => /Edad \(calculada\)/.test(x.textContent));
+    const caja = l && (l.closest('label') || l.parentElement);
+    const c = caja && caja.querySelector('input');
+    return c ? c.value : null;
+  });
+  ok(!/NaN|undefined|Infinity|\b56 años/.test(perfil_a1a4) && edadCampo_a1a4 !== null && !/NaN|56/.test(edadCampo_a1a4),
+    `🚨 A1 — con la fecha de nacimiento ${nombre_a1a4}, Ajustes no enseña «NaN» ni una edad de 1970 (campo: «${edadCampo_a1a4}»)`);
+  ok(edadCampo_a1a4 === '—', '…la edad se lee como no disponible («—»)');
+  const tarjeta_a1a4 = (perfil_a1a4.split(/C[aá]lculos corporales/i)[1] || '').slice(0, 120);
+  ok(/—[\s\S]*años[\s\S]*BMR[\s\S]*TDEE/i.test(tarjeta_a1a4) && (tarjeta_a1a4.match(/—/g) || []).length >= 3,
+    '…y en «Cálculos corporales» la edad, el BMR y el TDEE dicen «—» en vez de inventarse un número');
+}
+/* Y con una fecha válida, la edad sigue saliendo como siempre. */
+almacen.perfil = { nombre: 'Josué', fechaNacimiento: '2010-07-29', altura: 187, peso: 72, actividad: 'moderado' };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Ajustes');
+await esperarTexto(/Apariencia/i);
+await pulsar('Perfil');
+const perfilBueno_a1a4 = await esperarTexto(/C[aá]lculos corporales/i);
+const edadEsperada_a1a4 = await page.evaluate(() => {
+  const h = new Date(); let e = h.getFullYear() - 2010;
+  if (h.getMonth() + 1 < 7 || (h.getMonth() + 1 === 7 && h.getDate() < 29)) e -= 1;
+  return e;
+});
+/* A5 (P2) — se lee la cifra de CADA sitio, no un número suelto en la página: el aviso fijo de la tarjeta dice
+   «con 16 años» y la comprobación de antes encajaba con él aunque la edad, el BMR y el TDEE dijeran «—». */
+const cifras_a1a4 = await page.evaluate(() => {
+  const l = [...document.querySelectorAll('label, p, span')].find((x) => /Edad \(calculada\)/.test(x.textContent));
+  const caja = l && (l.closest('label') || l.parentElement);
+  const campo = caja && caja.querySelector('input');
+  const titulo = [...document.querySelectorAll('p')].find((x) => /C[aá]lculos corporales/i.test(x.textContent));
+  const rejilla = titulo && titulo.parentElement.querySelector('.grid');
+  const porEtiqueta = {};
+  if (rejilla) [...rejilla.children].forEach((d) => { const ps = d.querySelectorAll('p'); if (ps.length >= 2) porEtiqueta[ps[1].textContent.trim()] = ps[0].textContent.trim(); });
+  return { campo: campo ? campo.value : null, ...porEtiqueta };
+});
+const bmrEsperado_a1a4 = 10 * 72 + 6.25 * 187 - 5 * edadEsperada_a1a4 + 5;
+ok(cifras_a1a4.campo === `${edadEsperada_a1a4} años` && cifras_a1a4['años'] === String(edadEsperada_a1a4),
+  `🚨 A1 — con una fecha válida, el campo y la tarjeta dicen la edad calculada (${edadEsperada_a1a4}): campo «${cifras_a1a4.campo}», tarjeta «${cifras_a1a4['años']}»`);
+ok(cifras_a1a4['BMR kcal'] === String(Math.round(bmrEsperado_a1a4)) && cifras_a1a4['TDEE kcal'] === String(Math.round(bmrEsperado_a1a4 * 1.55)),
+  `…y el BMR y el TDEE salen de esa edad (${cifras_a1a4['BMR kcal']} / ${cifras_a1a4['TDEE kcal']}; esperado ${Math.round(bmrEsperado_a1a4)} / ${Math.round(bmrEsperado_a1a4 * 1.55)})`);
+ok(!/NaN/.test(perfilBueno_a1a4), '…sin un «NaN» en la pantalla');
+
+/* A2 — 996 de 1000 € no es el 100 %. */
+almacen.economia = { saldoInicial: 100, hucha: 996, movimientos: [], aportaciones: [], objetivoHucha: { cantidad: 1000, porPeriodo: null, frecuencia: 'semana' } };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Gestión');
+await pulsar('Economía');
+const eco996_a1a4 = await esperarTexto(/996\.00 € \/ 1000\.00 €/);
+ok(/99 %/.test(eco996_a1a4) && !/100 %/.test(eco996_a1a4) && !/Objetivo alcanzado/.test(eco996_a1a4),
+  '🚨 A2 — con 996 de 1000 € la hucha dice 99 %, no 100 %, y no «Objetivo alcanzado»');
+ok(/█+░/.test(eco996_a1a4), '…y la barra no está llena: le queda un bloque');
+
+/* A3 — la hucha solo suma. */
+almacen.economia = { saldoInicial: 100, hucha: 100, movimientos: [], aportaciones: [], objetivoHucha: { cantidad: 1000, porPeriodo: null, frecuencia: 'semana' } };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await pulsar('Gestión');
+await pulsar('Economía');
+await esperarTexto(/100\.00 € \/ 1000\.00 €/);
+const anadir_a1a4 = async (cantidad) => {
+  await page.fill('input[aria-label="Cantidad que añades a la hucha"]', cantidad);
+  return page.evaluate(() => {
+    const c = document.querySelector('input[aria-label="Cantidad que añades a la hucha"]');
+    const b = c && [...c.closest('div').parentElement.querySelectorAll('button')].find((x) => /Añadir/.test(x.textContent));
+    if (!b) return false;
+    b.click();
+    return true;
+  });
+};
+/* A5 (P3) — «no se guardó» se comprueba con lo que se OBSERVA, no esperando 400 ms: tras el rechazo se espera
+   su mensaje, después se hace una acción VÁLIDA y se espera SU escritura. Los guardados de una clave salen en
+   orden (MS F16), así que si el valor malo se hubiera guardado, habría llegado ANTES que el bueno: la primera
+   escritura nueva de `economia` tiene que ser la buena. */
+const escriturasEco_a1a4 = () => guardado.filter((g) => g && g.key === 'economia');
+const hasta_a1a4 = async (cond, ms = 8000) => { const t0 = Date.now(); while (!cond()) { if (Date.now() - t0 > ms) return false; await new Promise((r) => setTimeout(r, 25)); } return true; };
+const primeraNueva_a1a4 = async (antes, hucha) => {
+  await hasta_a1a4(() => escriturasEco_a1a4().slice(antes).some((g) => Number(g.value?.hucha) === hucha));
+  return escriturasEco_a1a4()[antes]?.value || null;
+};
+
+let antes_a1a4 = escriturasEco_a1a4().length;
+ok(await anadir_a1a4('-50'), 'A3 — se escribe −50 y se pulsa «Añadir»');
+const trasNegativo_a1a4 = await esperarTexto(/la hucha solo suma ahorro/i);
+ok(/la hucha solo suma ahorro/i.test(trasNegativo_a1a4) && /100\.00 € \/ 1000\.00 €/.test(trasNegativo_a1a4), '…se dice por qué, debajo del campo, y el total sigue en 100 €');
+ok(await page.evaluate(() => document.querySelector('input[aria-label="Cantidad que añades a la hucha"]')?.getAttribute('aria-invalid') === 'true'),
+  '…con el campo marcado como no válido (aria-invalid) para VoiceOver');
+ok(await anadir_a1a4('25'), 'A3 — una aportación positiva…');
+let primera_a1a4 = await primeraNueva_a1a4(antes_a1a4, 125);
+ok(primera_a1a4 && Number(primera_a1a4.hucha) === 125 && primera_a1a4.aportaciones.length === 1 && primera_a1a4.aportaciones[0].cantidad === 25,
+  `🚨 A3 — el −50 NO se escribió: la primera escritura tras él es la de +25 (hucha ${primera_a1a4?.hucha}, ${primera_a1a4?.aportaciones?.length} aportación)`);
+await esperarTexto(/125\.00 € \/ 1000\.00 €/);
+ok(!/la hucha solo suma ahorro/i.test(await ver()), '…y la aportación válida quita el aviso');
+
+antes_a1a4 = escriturasEco_a1a4().length;
+/* A5 (auditoría final) — el total se guarda al confirmar (Intro o salir del campo), nunca en cada tecla. */
+const escribirTotal_a1a4 = async (v) => { await page.fill('input[aria-label="Total ahorrado"]', v); await page.press('input[aria-label="Total ahorrado"]', 'Enter'); };
+await escribirTotal_a1a4('-5');
+const trasTotal_a1a4 = await esperarTexto(/no puede ser negativo/i);
+ok(/no puede ser negativo/i.test(trasTotal_a1a4) && await valorCampo_a1a4('Total ahorrado') === '125', `A3 — un total negativo se dice debajo, y el campo vuelve a lo guardado (125: «${await valorCampo_a1a4('Total ahorrado')}»)`);
+await escribirTotal_a1a4('130');
+primera_a1a4 = await primeraNueva_a1a4(antes_a1a4, 130);
+ok(primera_a1a4 && Number(primera_a1a4.hucha) === 130, `🚨 A3 — el total −5 NO se escribió: la primera escritura tras él es la de 130 (${primera_a1a4?.hucha})`);
+await esperarTexto(/130\.00 € \/ 1000\.00 €/);
+ok(!/no puede ser negativo/i.test(await ver()), '…y el total válido quita el aviso');
+
+/* Tecla a tecla, como en el iPhone: «-» detrás de un total con cifras es un número a medias, que el navegador
+   entrega vacío (badInput). Antes se guardaba como 0 sin avisar, y luego decía «negativo» sin serlo (A5, H6). */
+antes_a1a4 = escriturasEco_a1a4().length;
+await page.click('input[aria-label="Total ahorrado"]');
+await page.keyboard.press('End');
+await page.keyboard.type('-');
+await page.keyboard.press('Enter');
+const trasTecla_a1a4 = await esperarTexto(/Escribe el total con cifras/i);
+ok(/Escribe el total con cifras/i.test(trasTecla_a1a4) && !/no puede ser negativo/i.test(trasTecla_a1a4),
+  '🚨 A3/A5 — teclear «-» detrás de 130 pide cifras (no dice «negativo», que no lo es todavía)');
+await escribirTotal_a1a4('140');
+primera_a1a4 = await primeraNueva_a1a4(antes_a1a4, 140);
+ok(primera_a1a4 && Number(primera_a1a4.hucha) === 140, `🚨 A3 — el «-» a medias NO puso el total a 0: la primera escritura tras él es la de 140 (${primera_a1a4?.hucha})`);
+
+/* 🚨 A5 (auditoría final) — la hucha solo suma: BAJAR el total a mano (140 → 50) es una retirada y no se guarda. */
+antes_a1a4 = escriturasEco_a1a4().length;
+await escribirTotal_a1a4('50');
+const trasBajar_a1a4 = await esperarTexto(/no puede bajar/i);
+ok(/no puede bajar/i.test(trasBajar_a1a4) && await valorCampo_a1a4('Total ahorrado') === '140' && /140\.00 € \/ 1000\.00 €/.test(trasBajar_a1a4),
+  `🚨 A5 — bajar el total de 140 a 50 no se guarda: se dice por qué y el campo vuelve a 140 («${await valorCampo_a1a4('Total ahorrado')}»)`);
+
+/* A5 — la coma flotante, en la pantalla de verdad: 1,005 € se apunta como 1,01 €, igual en el total y en el historial. */
+/* Sin volver a contar: si el 50 se hubiera guardado, sería la primera escritura nueva y no la de 141,01. */
+ok(await anadir_a1a4('1.005'), 'A5 — se añaden 1,005 €');
+primera_a1a4 = await primeraNueva_a1a4(antes_a1a4, 141.01);
+ok(primera_a1a4 && Number(primera_a1a4.hucha) === 141.01 && primera_a1a4.aportaciones.at(-1).cantidad === 1.01,
+  `🚨 A5 — el 50 NO se escribió (la primera escritura tras él es la de la aportación), y 1,005 € se cuenta al céntimo, la mitad hacia arriba: total 141,01 y aportación 1,01 (${primera_a1a4?.hucha} / ${primera_a1a4?.aportaciones?.at(-1)?.cantidad})`);
+await esperarTexto(/141\.01 € \/ 1000\.00 €/);
+
+ok(errores.length === erroresAntes_a1a4, `A1–A4 — sin un error de JavaScript en toda la sección${errores.length > erroresAntes_a1a4 ? `: ${errores.slice(erroresAntes_a1a4).join(' | ').slice(0, 300)}` : ''}`);
+almacen.perfil = perfilDeAntes_a1a4;
+almacen.economia = economiaDeAntes_a1a4;
+
 await salir(browser);

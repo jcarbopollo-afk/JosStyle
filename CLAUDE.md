@@ -2275,6 +2275,20 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
+🔜 **PENDIENTE TRAS A1–A5 (decidido por Josué el 2026-10-17), en este orden:**
+- **Fase «guardar en el iPhone lo pendiente».** Josué lo AUTORIZA con sus palabras: *"yo sí que dejo que lo guarde
+  en el iPhone, más que nada porque si no no se guarda, y como después se elimina"*. Lo que no ha llegado a la
+  cuenta se apunta en el dispositivo, se reintenta al volver a abrir y se BORRA en cuanto llega. Deja sin efecto,
+  solo para esto, la regla de la MS F16 de *"lo pendiente no se guarda en el dispositivo"* (anotado en `docs/03`).
+  Entra aquí también: vaciar la cola al ocultarse la página y los textos del indicador sobre cerrar la app.
+- **Fase «el servidor no deja ganar a una escritura vieja».** Una versión por clave en `app_data` con una escritura
+  condicional, más el cambio en `saveData` que la use. Necesita SQL que ejecuta Josué: se le da el texto exacto para
+  pegar (Supabase → SQL Editor → Run) y una consulta de comprobación, y él dice lo que sale. ⚠️ **Nunca con la hora del
+  dispositivo**: con relojes distintos, Supabase ignoraría en silencio cambios buenos.
+- **Antes de junio de 2027: la prueba que caduca** (`test-app-real.mjs`, sección E3 F35: edad 16 y «3149 kcal» con
+  nacimiento `2010-07-29`; falla desde el 29/07/2027). Calcular lo esperado a partir de la fecha del día. Hay un
+  recordatorio programado en la sesión para el 3 de mayo de 2027.
+
 0. 🏁 **EL MOTION SYSTEM ESTÁ TERMINADO Y SELLADO (F0–F20, v3.150.0), Y NO HAY F21.** Lo siguiente lo abre Josué. Si
    un cambio toca movimiento: la regla permanente de arriba, `docs/MOTION_SYSTEM.md` §0 y `bash scripts/verificar.sh`
    en verde —con `test-motion-f20` diciendo SEALED—. El informe final está al pie de `docs/13_MOTION_SYSTEM_ORDEN.md`.

@@ -1566,3 +1566,13 @@ quién gana cuando dos animaciones quieren la misma propiedad.
 `resolverConflicto` que lo de un grupo inferior **cede** ante el superior y que el superior lo **interrumpe**, en
 todas las parejas. El gesto está en P0 aunque su peso (5) sea menor que el de la navegación (6), porque al dedo no lo
 gobierna el peso: lo gobierna `tomarControl` —*"sobre el dedo no manda ninguna prioridad"* (F11)—.
+
+### C-71 — 🔓 DECIDIDA POR JOSUÉ (2026-10-17) · «Lo pendiente no se guarda en el dispositivo» (MS F16) contra no perder un cambio al cerrar la app
+
+La MS F16 (apartado 50) decidió no escribir en el iPhone lo que no ha llegado a la cuenta, para no dejar datos
+sensibles (diario, Relación, la piel) en claro en el teléfono. La auditoría de A5 mostró el precio: si se cierra la
+PWA con algo pendiente o en vuelo, ese cambio se pierde. Josué lo decide: *"yo sí que dejo que lo guarde en el
+iPhone, más que nada porque si no no se guarda, y como después se elimina"*. **Se hará como fase propia**: lo
+pendiente se apunta en el dispositivo, se reintenta al volver a abrir y se borra en cuanto llega. Hasta esa fase,
+el comportamiento sigue siendo el de la F16.
+

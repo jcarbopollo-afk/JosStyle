@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Home, Moon, Dumbbell, Wallet, Settings, Loader2, HeartPulse, Apple, GraduationCap, Briefcase, ListTodo, Target, BookOpen, Library, Search, Lock, ArrowLeft, Calendar, Shirt, UserRound, Sigma, Brain, FolderKanban } from 'lucide-react';
-import { normalizarEconomiaHucha } from './lib/hucha';
+import { normalizarEconomiaHucha, eurosDelTotal, centimosGuardados, economiaPermitida } from './lib/hucha';
 import { anadirApunte, resumenDelDia, progresoDelDia, apuntesDe } from './lib/centroDelDia';
 /* 🚨 E3 F26 (PR F4) — Tareas. `normalizarTareasDe` es lo que MIGRA la fecha:
    la pantalla de Productividad guardaba `fechaLimite` y Hoy, la Agenda, el
@@ -2095,7 +2095,9 @@ export default function App() {
     emitir('TRAINING_COMPLETED', { de: 'futbol' });
   };
   const addMovimiento = (mov) => snapshotAndSave({ economia: { ...economia, movimientos: [...economia.movimientos, mov] } });
-  const updateHucha = (v) => snapshotAndSave({ economia: { ...economia, hucha: v } });
+  // A3/A5 — la hucha solo suma: un total negativo, que no es un número, fuera de rango o que BAJA del actual no se
+  // escribe (la pantalla ya lo dice), y el que vale se guarda en céntimos exactos.
+  const updateHucha = (v) => { const euros = eurosDelTotal(v, economia?.hucha); if (euros !== null) snapshotAndSave({ economia: { ...economia, hucha: euros } }); };
   /* Entrega 3 · F4 — añadir ahorro y el objetivo tocan DOS campos a la vez (el total y
      el historial), así que la librería devuelve la `economia` entera y aquí solo se
      guarda. 🚨 Y no toca `objetivos`, `rachas` ni `productividad`: el apartado 8 dice
@@ -2108,17 +2110,21 @@ export default function App() {
        ⚠️ El comentario va DENTRO de la función a propósito, donde se lee. Que
        eso rompiera el limpiador de comentarios de test-hucha.mjs era un fallo
        del limpiador, y está arreglado allí. */
-    const meta = Number(siguiente?.objetivoHucha?.cantidad);
-    const antes = Number(economia?.hucha) || 0;
-    const ahora = Number(siguiente?.hucha) || 0;
+    /* A5 — la última barrera: sin retiradas, sin totales imposibles y sin aportaciones que no lo sean. */
+    if (!economiaPermitida(economia, siguiente)) return;
+    /* A5 — en céntimos, como el panel: con euros sueltos, un total de 999,999 € ya salía «alcanzado» en
+       pantalla y aquí todavía no, y el sonido llegaba tarde. */
+    const meta = centimosGuardados(siguiente?.objetivoHucha?.cantidad);
+    const antes = centimosGuardados(economia?.hucha);
+    const ahora = centimosGuardados(siguiente?.hucha);
     snapshotAndSave({ economia: siguiente });
     if (Number.isFinite(meta) && meta > 0 && antes < meta) {
       /* Llegar a la meta y acercarse a ella son dos cosas distintas, y la
          biblioteca las declara aparte. La hucha es el único sitio de la
          aplicación con progreso medible: un objetivo normal está cumplido o no,
          sin puntos intermedios que anunciar. */
-      if (ahora >= meta) emitir('SAVING_COMPLETED', { meta });
-      else if (ahora > antes) emitir('GOAL_PROGRESS', { meta, actual: ahora });
+      if (ahora >= meta) emitir('SAVING_COMPLETED', { meta: meta / 100 });
+      else if (ahora > antes) emitir('GOAL_PROGRESS', { meta: meta / 100, actual: ahora / 100 });
     }
   };
   const addMedida = (entry) => snapshotAndSave({ salud: { ...salud, medidas: [...salud.medidas, entry] } });

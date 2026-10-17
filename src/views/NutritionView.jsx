@@ -1078,7 +1078,8 @@ function ConfiguracionNutricion({ nutricion, perfil, accent, onGuardar, onCerrar
   const [paso, setPaso] = useState(0);
   const [datos, setDatos] = useState(() => ({
     sexo: sexoDesdePerfil(perfil),
-    edad: perfil?.fechaNacimiento ? String(calcularEdad(perfil.fechaNacimiento)) : '',
+    // A1 — una fecha no válida da `null`, nunca la cadena 'NaN' en el campo.
+    edad: calcularEdad(perfil?.fechaNacimiento) === null ? '' : String(calcularEdad(perfil.fechaNacimiento)),
     altura: perfil?.altura != null ? String(perfil.altura) : '',
     peso: perfil?.peso != null ? String(perfil.peso) : '',
     actividad: guardados.actividad || perfil?.actividad || null,

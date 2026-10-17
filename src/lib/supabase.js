@@ -5,8 +5,8 @@ import { emitir } from './eventos';
 /* MS F16 — la cuenta de lo que se carga, se guarda y no ha llegado: un solo
    sitio para toda la aplicación (`sincronizacion.js`, una hoja del árbol). */
 import {
-  antesDeGuardar, despuesDeGuardar, esperarAnterior, apuntarCargaFallida, apuntarCargaBuena,
-  pendientesParaReintentar, marcarReintento, usuarioDeLaSesion, marcarSalidaPedida,
+  antesDeGuardar, despuesDeGuardar, esperarAnterior, marcarEnviado, alSalir, respuestaTardia, marcarVencida, apuntarCargaFallida, apuntarCargaBuena,
+  pendientesParaReintentar, marcarReintento, usuarioDeLaSesion, generacionActual, marcarSalidaPedida, TOPE_PETICION_MS,
 } from './sincronizacion';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
@@ -106,28 +106,65 @@ export async function loadData(userId, key, fallback) {
  * `detectable: false`: decir lo contrario sería fingir un aviso que nadie
  * enciende (regla 8).
  */
-export async function saveData(userId, key, value) {
+export async function saveData(userId, key, value, { reintento = false } = {}) {
   /* 🚨 MS F16 — antes de salir: una clave que no se pudo cargar no se escribe
      (pisaría lo que hay en la cuenta), un guardado de una sesión que ya se
      cerró tampoco, y los de una misma clave salen EN ORDEN (apartado 41): este
      espera a que termine el anterior, así que la cuenta no se queda con uno más
      viejo que llegó tarde. */
-  const turno = antesDeGuardar(key, { usuario: userId });
+  const turno = antesDeGuardar(key, { usuario: userId, valor: value, reintento });
   if (!turno.sale) {
     console.error('No se guarda', key, turno.error.message);
     emitir('ACTION_ERROR', { de: 'guardar', clave: key, motivo: turno.error.code });
     return { ok: false, error: turno.error, bloqueado: true };
   }
   await esperarAnterior(turno.anterior);
+  /* 🐛 A5 — qué sale se decide AHORA, no al pedirlo: si la sesión cambió mientras esperaba, no sale; un
+     reintento o una reescritura solo salen si la clave sigue pendiente, y con el último valor pedido. */
+  const salida = alSalir(key, turno, value);
+  const tardia = (r) => { const d = respuestaTardia(key, turno, { ...r, valor: value }); if (d && d.reescribir) saveData(userId, key, d.valor, { reintento: true }); };
+  if (!salida.sale) return salida.omitido ? { ok: true, error: null, omitido: true } : { ok: false, error: salida.error, bloqueado: true };
+  value = salida.valor;
+  /* A4 — sale ahora: es lo último enviado de su clave. Si una escritura más vieja termina después, se
+     reescribe el último valor (abajo). */
+  marcarEnviado(key, turno, value);
   let error = null;
+  /* ⏱ A5 — ninguna petición tiene a la cola esperando para siempre: a los `TOPE_PETICION_MS` se da por
+     fallida «sin saber si llegó» (cuenta como sin conexión), y la cola, el indicador y el reintento se
+     liberan. ⚠️ NO se aborta: una subida grande con poca cobertura puede tardar más y seguir bien, y
+     abortarla haría que no llegara nunca (cada reintento se cortaría igual). Se la sigue ESCUCHANDO: si su
+     respuesta llega tarde, `respuestaTardia` la trata como una escritura vieja (y reescribe si pudo pisar
+     algo) o retira su pendiente si ya está en la cuenta. Lo único que el cliente no puede saber es una
+     petición que se aplica y cuya respuesta no llega nunca: eso solo lo cierra el servidor. */
+  let reloj = null;
+  let vencida = false;
   try {
-    ({ error } = await supabase
+    /* Se envuelve UNA vez: el constructor de postgrest-js lanza la petición cada vez que se llama a su `then`,
+       y aquí se escucha dos veces (la carrera con el tope y la respuesta tardía). */
+    const peticion = Promise.resolve(supabase
       .from('app_data')
       .upsert({ user_id: userId, key, value, updated_at: new Date().toISOString() }, { onConflict: 'user_id,key' }));
-  } catch (e) { error = e; }
+    const tiempo = new Promise((r) => {
+      reloj = setTimeout(() => { vencida = true; marcarVencida(key, turno); r({ error: { name: 'TimeoutError', message: 'timeout: la petición no contestó a tiempo' } }); }, TOPE_PETICION_MS);
+    });
+    peticion.then(
+      (r) => { if (vencida) tardia({ ok: !(r && r.error), error: r && r.error ? (r.status && r.error.status === undefined ? { ...r.error, message: r.error.message, status: r.status } : r.error) : null }); },
+      (e) => { if (vencida) tardia({ ok: false, error: e }); },
+    );
+    let status;
+    ({ error, status } = await Promise.race([peticion, tiempo]));
+    /* 🐛 A5 — postgrest-js deja el estado HTTP en la respuesta, no en el error (con un cuerpo que no es JSON, el
+       error es solo `{ message: cuerpo }`): sin pegarlo, un 502/503 de una pasarela no se reconocía. */
+    if (error && status && typeof error === 'object' && error.status === undefined) error = { ...error, message: error.message, status };
+  } catch (e) { error = e; } finally { if (reloj) clearTimeout(reloj); }
   /* Y después: si no llegó, se queda pendiente con su último valor; si llegó,
      lo pendiente de esa clave (más viejo) deja de estarlo. */
-  despuesDeGuardar(key, turno, { ok: !error, error, valor: value });
+  const decision = despuesDeGuardar(key, turno, { ok: !error, error, valor: value });
+  /* 🐛 A4 — esta escritura era vieja y pudo llegar a la cuenta DESPUÉS de una más nueva (la cola tiene tope):
+     el último valor enviado ya está pendiente, y se reescribe una vez por la puerta de siempre, con su cola
+     y su número. No se espera aquí: lo que devuelve este guardado es lo de esta escritura. Si la
+     reescritura falla, queda pendiente con su motivo y el indicador lo dice. */
+  if (decision && decision.reescribir) saveData(userId, key, decision.valor, { reintento: true });
   if (error) {
     console.error('No se pudo guardar', key, error);
     /* 🚨 **Un guardado que falla tiene que oírse.** Es el caso que el proyecto
@@ -177,17 +214,33 @@ export function vigilarLaConexion() {
  * Devuelve si todo llegó. Sin nada pendiente, no hace nada (ni un «Guardado»
  * que nadie ha pedido).
  */
+/* 🐛 A5 — cada reintento sale en modo `reintento`: espera su turno en la cola y, cuando le toca, solo sale si
+   la clave sigue pendiente y con el ÚLTIMO valor pedido (antes mandaba el de cuando se pulsó, detrás de un
+   cambio más nuevo, y lo pisaba). El reintento en marcha es de UNA sesión: otra sesión no hereda una promesa
+   suya, y como cada petición tiene tope (`TOPE_PETICION_MS`), siempre termina. */
 let reintentoEnMarcha = null;
 export function reintentarGuardados() {
-  if (reintentoEnMarcha) return reintentoEnMarcha;
+  const generacion = generacionActual();
+  /* Si ya hay uno en marcha en esta sesión, el nuevo se encadena DETRÁS (uno solo, por mucho que se pida):
+     lo que haya quedado pendiente mientras tanto no se queda sin reintentar. */
+  if (reintentoEnMarcha && reintentoEnMarcha.generacion === generacion) {
+    if (!reintentoEnMarcha.siguiente) reintentoEnMarcha.siguiente = reintentoEnMarcha.promesa.then(() => reintentarGuardados());
+    return reintentoEnMarcha.siguiente;
+  }
   const usuario = usuarioDeLaSesion();
   const lista = pendientesParaReintentar();
   if (!usuario || !lista.length) return Promise.resolve(true);
   marcarReintento(true);
-  reintentoEnMarcha = Promise.all(lista.map(({ clave, valor }) => saveData(usuario, clave, valor)))
+  const este = { generacion, promesa: null, siguiente: null };
+  este.promesa = Promise.all(lista.map(({ clave, valor }) => saveData(usuario, clave, valor, { reintento: true })))
     .then((r) => r.every((x) => x && x.ok), () => false)
-    .then((bien) => { marcarReintento(false, { salioBien: bien }); reintentoEnMarcha = null; return bien; });
-  return reintentoEnMarcha;
+    .then((bien) => {
+      if (reintentoEnMarcha === este) reintentoEnMarcha = null;
+      if (generacionActual() === generacion) marcarReintento(false, { salioBien: bien });
+      return bien;
+    });
+  reintentoEnMarcha = este;
+  return este.promesa;
 }
 
 /* ---------- Storage: fotos de progreso (bucket privado "progreso", una carpeta por usuario) ----------

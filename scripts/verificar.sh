@@ -1940,6 +1940,19 @@ else
   fallo "Falla la hucha de Economía (E3 F4)"; grep '✗' /tmp/jc_hucha.log
 fi
 
+# Correcciones A1–A4 (auditoría de la fase 3): edad sin fecha, el 100 % de la hucha,
+# la hucha solo suma y las escrituras fuera de orden (con el saveData real).
+if node --import ./scripts/resolver-vite.mjs scripts/test-correcciones-a1-a4.mjs >/tmp/jc_a1a4.log 2>&1; then
+  ok "Correcciones A1–A4 — $(grep -c '✓' /tmp/jc_a1a4.log) comprobaciones"
+else
+  fallo "Fallan las correcciones A1–A4"; grep '✗' /tmp/jc_a1a4.log
+fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-a5-sincronizacion.mjs >/tmp/jc_a5.log 2>&1; then
+  ok "A5 — guardados que no pierden el último cambio — $(grep -c '✓' /tmp/jc_a5.log) comprobaciones"
+else
+  fallo "Falla A5 (sincronización segura)"; grep '✗' /tmp/jc_a5.log
+fi
+
 # Entrega 3 · F3 — la iconografía del armario y la categoría de ropa interior.
 if node scripts/smoke.mjs test-iconos-armario.jsx >/tmp/jc_icon.log 2>&1; then
   ok "Iconografía del armario (E3 F3) — $(grep -c '✓' /tmp/jc_icon.log) comprobaciones"
