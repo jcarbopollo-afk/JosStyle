@@ -60,7 +60,9 @@ intentar vaciarla, recargar y medir el ancho a 320 px.
 
 **`verificar.sh` en verde: 31 864 comprobaciones, 0 fallos** (24 401 de Node en 229 suites, 3976 de renderizado, 11
 invariantes y 3476 en Chromium). La primera pasada salió con 1 rojo —la comprobación del recorrido de arriba—, y la
-segunda, entera, en verde.
+segunda, entera, en verde. 🔀 **Y juntas con las correcciones A1–A5** (merge de `main`, sin reescribir nada), una
+tercera pasada entera: **32 083 comprobaciones, 0 fallos** (24 590 de Node en 231 suites, 3976 de renderizado, 11
+invariantes y 3506 en Chromium). Es la que sube a `main`.
 
 ## Sin versión — A5: sincronización segura y cierre de los hallazgos de la auditoría de A1–A4
 
