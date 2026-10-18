@@ -5546,8 +5546,11 @@ const tarjeta_p4 = () => page.evaluate(() => {
   if (!b) return null;
   const card = b.parentElement;
   const d = document.querySelector('[data-puntuacion-desglose]');
+  /* ⚠️ Cuántas áreas cuentan lo dice la propia tarjeta («X de N hoy»): en la pasada entera la cuenta
+     ya trae datos de otras secciones, así que no son solo las que se siembran aquí. */
+  const total = Number((b.innerText.match(/de (\d+) hoy/) || [])[1] || -1);
   return { alto: Math.round(card.getBoundingClientRect().height), boton: Math.round(b.getBoundingClientRect().height), expandido: b.getAttribute('aria-expanded'),
-    desglose: !!d, dentroDelBoton: !!b.querySelector('[data-puntuacion-desglose]'), filas: d ? d.querySelectorAll('li').length : 0 };
+    desglose: !!d, dentroDelBoton: !!b.querySelector('[data-puntuacion-desglose]'), filas: d ? d.querySelectorAll('li').length : 0, total };
 });
 for (const [nombre, ancho, alto] of [['iPhone', 390, 844], ['iPad', 820, 1180], ['ordenador', 1280, 720]]) {
   for (const n of [3, 2]) {
@@ -5562,8 +5565,8 @@ for (const [nombre, ancho, alto] of [['iPhone', 390, 844], ['iPad', 820, 1180], 
     await page.click('[data-puntuacion-cabecera]');
     await page.waitForTimeout(500);
     const c1 = await tarjeta_p4();
-    ok(c1 && c1.expandido === 'true' && c1.desglose && !c1.dentroDelBoton && c1.filas === n && c1.alto > c0.alto + 20,
-      `🚨 P4 · ${nombre} (${n} áreas) — al tocar se expande: crece, enseña sus ${n} áreas y el desglose va FUERA del botón (${JSON.stringify(c1)})`);
+    ok(c1 && c1.expandido === 'true' && c1.desglose && !c1.dentroDelBoton && c1.total >= n && c1.filas === c1.total && c1.alto > c0.alto + 20,
+      `🚨 P4 · ${nombre} (al menos ${n} áreas) — al tocar se expande: crece, enseña TODAS sus áreas (las que dice «de N hoy») y el desglose va FUERA del botón (${JSON.stringify(c1)})`);
     await page.click('[data-puntuacion-cabecera]');
     await page.waitForTimeout(500);
     const c2 = await tarjeta_p4();
