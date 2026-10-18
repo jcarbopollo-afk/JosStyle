@@ -5468,6 +5468,65 @@ almacen.perfil = perfilAntes_p2;
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 
+/* ── ✨ P3 · IA: «Estamos preparando algo nuevo» (2026-10-18) ──────────────
+   `/api/ask-ai` se dobla aquí con las tres respuestas que importan: la IA sin
+   habilitar (el servidor sin su clave), un fallo de verdad (el modelo mal
+   configurado) y una respuesta buena. ⚠️ El navegador apunta en la consola el 503
+   y el 404 que se provocan a propósito: se retiran al final, y solo esos. */
+console.log('\n── P3 · IA no disponible ──');
+const erroresAntes_p3 = errores.length;
+const respuestaIA_p3 = { status: 503, cuerpo: { codigo: 'ia_no_habilitada', error: 'La inteligencia artificial todavía no está disponible.', tecnico: 'IA no configurada todavía. Añade ANTHROPIC_API_KEY en las variables de entorno del proyecto en Vercel.' } };
+const rutaIA_p3 = async (route) => route.fulfill({ status: respuestaIA_p3.status, contentType: 'application/json', body: JSON.stringify(respuestaIA_p3.cuerpo) });
+await page.route('**/api/ask-ai', rutaIA_p3);
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Nutrición'), 'P3 — Bienestar → Nutrición');
+await esperarTexto(/Analizar mi semana/i);
+ok(await pulsar('Analizar mi semana'), 'P3 — se pulsa «Analizar mi semana» con la IA sin habilitar');
+const pendiente_p3 = await esperarTexto(/Estamos preparando algo nuevo/);
+ok(/Estamos preparando algo nuevo\./.test(pendiente_p3) && /Estará disponible próximamente\./.test(pendiente_p3), '🚨 P3 — sale «Estamos preparando algo nuevo.», con su texto');
+ok(!/ANTHROPIC|API[ _]?KEY|variables de entorno|Vercel/i.test(pendiente_p3), '🚨 P3 — y ni la clave, ni las variables, ni Vercel en la pantalla');
+const pieza_p3 = await page.evaluate(() => { const d = document.querySelector('[data-ia-proximamente]'); return d ? { rol: d.getAttribute('role'), entra: d.classList.contains('vacio-entra'), ancho: d.getBoundingClientRect().width, vista: window.innerWidth } : null; });
+ok(pieza_p3 && pieza_p3.rol === 'status' && pieza_p3.entra, `P3 — aparece en su sitio con el Motion System (\`vacio-entra\`) y se anuncia (${JSON.stringify(pieza_p3)})`);
+ok(await pulsar('Entendido'), 'P3 — «Entendido»');
+await page.waitForTimeout(400);
+ok(await page.evaluate(() => !document.querySelector('[data-ia-proximamente]')) && /Analizar mi semana/i.test(await ver()), '🚨 P3 — se cierra y la pantalla queda como estaba');
+
+/* Un fallo de verdad NO se esconde tras un «próximamente». */
+respuestaIA_p3.status = 404;
+respuestaIA_p3.cuerpo = { codigo: 'modelo_no_disponible', error: 'La inteligencia artificial no está disponible ahora mismo.', tecnico: 'El modelo de IA configurado ("x") no está disponible. Cámbialo en la variable de entorno ANTHROPIC_MODEL del proyecto en Vercel.' };
+ok(await pulsar('Analizar mi semana'), 'P3 — otra vez, ahora con el modelo mal configurado');
+const fallo_p3 = await esperarTexto(/no está disponible ahora mismo/);
+ok(/La inteligencia artificial no está disponible ahora mismo\. Inténtalo más tarde\./.test(fallo_p3) && !/Estamos preparando algo nuevo/.test(fallo_p3),
+  '🚨 P3 — un fallo de configuración se dice como fallo, no como «próximamente»');
+ok(!/ANTHROPIC|variable de entorno|Vercel/i.test(fallo_p3), '…y tampoco enseña nada técnico');
+
+/* Lo que funciona sigue funcionando. */
+respuestaIA_p3.status = 200;
+respuestaIA_p3.cuerpo = { text: 'Tu semana va constante: registras casi todos los días.' };
+ok(await pulsar('Analizar mi semana'), 'P3 — y con la IA funcionando');
+const bien_p3 = await esperarTexto(/registras casi todos los días/);
+ok(/Tu semana va constante: registras casi todos los días\./.test(bien_p3) && !/no está disponible/.test(bien_p3), '🚨 P3 — la respuesta de la IA sale como siempre');
+
+/* En un iPhone pequeño, sin salirse de lado. */
+respuestaIA_p3.status = 503;
+respuestaIA_p3.cuerpo = { codigo: 'ia_no_habilitada', error: 'La inteligencia artificial todavía no está disponible.' };
+await page.setViewportSize({ width: 320, height: 640 });
+await page.waitForTimeout(300);
+ok(await pulsar('Analizar mi semana'), 'P3 — a 320 px');
+await esperarTexto(/Estamos preparando algo nuevo/);
+const ancho_p3 = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth, vista: window.innerWidth }));
+ok(ancho_p3.doc <= ancho_p3.vista, `P3 — a 320 px cabe sin salirse de lado (${ancho_p3.doc} ≤ ${ancho_p3.vista})`);
+await page.setViewportSize({ width: 1280, height: 720 });
+await page.unroute('**/api/ask-ai', rutaIA_p3);
+
+const provocados_p3 = (e) => /Failed to load resource: the server responded with a status of (503|404)/.test(e);
+const nuevos_p3 = errores.slice(erroresAntes_p3).filter((e) => !provocados_p3(e));
+errores.splice(erroresAntes_p3);
+ok(nuevos_p3.length === 0, `P3 — ni un error de JavaScript${nuevos_p3.length ? `: ${nuevos_p3.join(' | ').slice(0, 300)}` : ''}`);
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
 /* ── DIST F1 · GESTIÓN: Organización y Progreso ───────────────────────────── */
 ok(await pulsar('Gestión'), '🚨 se entra en GESTIÓN');
 const ges_n1 = await esperarTexto(/Econom[ií]a/i);

@@ -5,6 +5,7 @@ import { COLORS, CAPAS } from '../tokens';
 import { hexToRgba, shade, fileToBase64 } from '../lib/helpers';
 import { resolverConsulta, sugerenciasIniciales } from '../lib/indiceBusqueda';
 import { askAI, askAIWithImage, AI_SYSTEM } from '../lib/ai';
+import { TEXTOS_PROXIMAMENTE, estadoDeErrorIA, registrarErrorIA } from '../lib/disponibilidadIA';
 import { extractPdfText } from '../lib/pdfText';
 import { verificarPin } from '../lib/pin';
 import { transicion } from '../lib/motion';
@@ -13,7 +14,7 @@ import { estadoDeBoton, TEXTOS_ESTADO_BOTON } from '../lib/estadosInteraccion';
 import { ListaAnimada } from './layoutMotion';
 import { useVacioQueLlega } from './vacioMotion';
 import { SelectorDeArchivos } from './selectorArchivos';
-import { eventoDeArchivos } from '../lib/seleccionArchivos';
+import { eventoDeArchivos, ACEPTA_IMAGEN_O_PDF } from '../lib/seleccionArchivos';
 
 export function Card({ children, style, className = '', id }) {
   return (
@@ -782,11 +783,46 @@ export function RecuperarPinModal({ accent, emailCuenta, onEnviar, onCancel }) {
 // askAIWithImage (mismo mecanismo que el escaneo de comida de Nutrición); un PDF extrae su texto
 // en el navegador con extractPdfText (mismo lector que Biblioteca) y se añade como contexto extra
 // al prompt de texto normal — no hace falta mandar el PDF entero a la IA.
+/**
+ * ✨ P3 — «Estamos preparando algo nuevo.»: lo que ve quien toca una función de
+ * IA que todavía no está habilitada. Una sola pieza para toda la aplicación (el
+ * panel de la IA, «Explícame un concepto», el plan de repaso, la revisión de
+ * objetivos, la progresión y el análisis de un vídeo de calistenia, la foto de un
+ * plato): aparece en su sitio (`vacio-entra`), se lee entera con VoiceOver y se
+ * cierra con «Entendido», que deja la pantalla como estaba. Ni una clave, ni una
+ * variable, ni una fecha inventada.
+ */
+export function IAProximamente({ accent, onCerrar = null, titulo = TEXTOS_PROXIMAMENTE.titulo, texto = TEXTOS_PROXIMAMENTE.texto, className = '' }) {
+  return (
+    <div
+      role="status" data-ia-proximamente
+      className={`vacio-entra rounded-2xl p-4 ${className}`.trim()}
+      style={{ background: hexToRgba(accent || COLORS.info, 0.08), border: `1px solid ${hexToRgba(accent || COLORS.info, 0.22)}` }}
+    >
+      <div className="flex items-start gap-3">
+        <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 34, height: 34, background: hexToRgba(accent || COLORS.info, 0.16) }} aria-hidden="true">
+          <Sparkles size={17} style={{ color: accent || COLORS.info }} />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{titulo}</p>
+          <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.textMuted }}>{texto}</p>
+          {onCerrar && (
+            <button onClick={onCerrar} className="mt-3 text-xs font-semibold rounded-full px-3 py-1.5 toque-44 active:scale-95" style={{ color: COLORS.text, background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              {TEXTOS_PROXIMAMENTE.volver}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AIPanel({ label, accent, buildPrompt }) {
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [adjunto, setAdjunto] = useState(null); // { tipo: 'imagen' | 'pdf', file, nombre }
+  const [iaPendiente, setIaPendiente] = useState(false);
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
@@ -799,6 +835,7 @@ export function AIPanel({ label, accent, buildPrompt }) {
   const handleAsk = async () => {
     setLoading(true);
     setErrorMsg('');
+    setIaPendiente(false);
     try {
       const promptBase = buildPrompt();
       let text;
@@ -816,7 +853,12 @@ export function AIPanel({ label, accent, buildPrompt }) {
       }
       setResponse(text || 'No he podido generar una respuesta con estos datos todavía.');
     } catch (e) {
-      setErrorMsg(e.message || 'No he podido conectar con la IA ahora mismo.');
+      // 🔓 P3 — antes se pintaba `e.message` tal cual, y con la IA sin habilitar
+      // decía «Añade ANTHROPIC_API_KEY en las variables de entorno…».
+      registrarErrorIA(e, 'AIPanel');
+      const estado = estadoDeErrorIA(e, 'No he podido conectar con la IA ahora mismo.');
+      setIaPendiente(estado.pendiente);
+      setErrorMsg(estado.pendiente ? '' : estado.texto);
     } finally {
       setLoading(false);
       setAdjunto(null);
@@ -830,7 +872,7 @@ export function AIPanel({ label, accent, buildPrompt }) {
           <TextoDeBoton estado={loading ? 'cargando' : 'reposo'} icono={<Sparkles size={16} />} textoCargando="Pensando…">{label}</TextoDeBoton>
         </button>
         <SelectorDeArchivos
-          clase="imagen" accept="image/*,application/pdf" titulo="Adjuntar foto o PDF" accent={accent}
+          clase="imagen" accept={ACEPTA_IMAGEN_O_PDF} titulo="Adjuntar foto o PDF" accent={accent}
           disabled={loading} onElegir={(f) => handleFile(eventoDeArchivos(f))}
         >
           {({ abrir }) => (
@@ -847,7 +889,8 @@ export function AIPanel({ label, accent, buildPrompt }) {
           <button onClick={() => setAdjunto(null)} aria-label="Quitar adjunto"><X size={12} /></button>
         </div>
       )}
-      {errorMsg && <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>{errorMsg}</p>}
+      {iaPendiente && <IAProximamente accent={accent} onCerrar={() => setIaPendiente(false)} className="mt-3" />}
+      {errorMsg && <p role="alert" className="text-xs mt-2" style={{ color: COLORS.textMuted }}>{errorMsg}</p>}
       {response && !errorMsg && <p className="text-sm mt-2 leading-relaxed" style={{ color: COLORS.text }}>{response}</p>}
     </div>
   );
@@ -865,16 +908,22 @@ export function SuggestionsButton({ accent, buildPrompt, lado = 'izquierda' }) {
   const [response, setResponse] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [asked, setAsked] = useState(false);
+  const [iaPendiente, setIaPendiente] = useState(false);
 
   const handleAsk = async () => {
     setLoading(true);
     setErrorMsg('');
+    setIaPendiente(false);
     try {
       const text = await askAI(AI_SYSTEM, buildPrompt());
       setResponse(text || 'No tengo suficientes datos todavía para sugerir algo concreto.');
       setAsked(true);
     } catch (e) {
-      setErrorMsg(e.message || 'No he podido conectar con la IA ahora mismo.');
+      // 🔓 P3 — igual que el panel de la IA: ni la frase técnica del servidor.
+      registrarErrorIA(e, 'Sugerencias');
+      const estado = estadoDeErrorIA(e, 'No he podido conectar con la IA ahora mismo.');
+      setIaPendiente(estado.pendiente);
+      setErrorMsg(estado.pendiente ? '' : estado.texto);
     } finally {
       setLoading(false);
     }
@@ -915,7 +964,8 @@ export function SuggestionsButton({ accent, buildPrompt, lado = 'izquierda' }) {
               <Loader2 size={12} className="animate-spin" /> Pensando…
             </p>
           )}
-          {errorMsg && <p className="text-xs" style={{ color: COLORS.textMuted }}>{errorMsg}</p>}
+          {iaPendiente && <IAProximamente accent={accent} onCerrar={() => setIaPendiente(false)} />}
+          {errorMsg && <p role="alert" className="text-xs" style={{ color: COLORS.textMuted }}>{errorMsg}</p>}
           {response && !errorMsg && (
             <>
               <p className="text-xs leading-relaxed" style={{ color: COLORS.text }}>{response}</p>

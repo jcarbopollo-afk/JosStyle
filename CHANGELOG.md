@@ -1,5 +1,30 @@
 # CHANGELOG.md
 
+## v3.155.0 — P3: la IA que todavía no está disponible, sin mensajes técnicos
+
+> El tercero de los cuatro prompts del 2026-10-18 (`docs/14_PROMPTS_2026-10-18.md`).
+
+- **Qué enseñaba mensajes técnicos:** el panel de la IA (los seis módulos que lo usan), las sugerencias de arriba y
+  «Explícame un concepto» pintaban la frase del servidor tal cual: *«IA no configurada todavía. Añade
+  ANTHROPIC_API_KEY en las variables de entorno del proyecto en Vercel.»* (y la del modelo con `ANTHROPIC_MODEL`).
+  El plan de repaso, la revisión de objetivos, la progresión y el análisis de un vídeo de calistenia y la foto de un
+  plato decían un «no he podido» genérico; el del vídeo **se guardaba como análisis** del vídeo.
+- **La regla, en un sitio** (`src/lib/disponibilidadIA.js`, C-76): el servidor añade un `codigo` a cada respuesta y
+  separa la frase para el usuario (`error`) de la técnica (`tecnico`, que va también a su registro). Sin clave (o sin
+  la función desplegada) → **«Estamos preparando algo nuevo.»** con el texto que pidió Josué, sin fecha. Un fallo de
+  verdad (el modelo mal configurado, el servicio, sin conexión, la sesión, el límite) → **una frase que se entiende**,
+  nunca un «próximamente». Lo técnico, a la consola (`console.warn`). **Lo que funciona, igual.**
+- **Una sola pieza:** `IAProximamente` (en `ui.jsx`, junto al panel de la IA), que aparece en su sitio con el Motion
+  System (`vacio-entra`), se anuncia con VoiceOver y se cierra con «Entendido» dejando la pantalla como estaba. En
+  las ocho funciones de IA. Con la IA sin habilitar, el análisis de un vídeo ya no guarda nada.
+- ⚠️ **Las claves, las variables y el modelo no se han tocado**: se leen igual.
+- 🐛 Y de paso, el comodín de imagen del adjunto de la IA va en una constante (`ACEPTA_IMAGEN_O_PDF`): escrito en
+  `ui.jsx` abría un comentario para los limpiadores de las pruebas, y un comentario dentro de un `catch` se comía el
+  botón de sugerencias en `test-pulido-global` (los comentarios de P3 dentro de un bloque van con `//`).
+- Pruebas: `test-disponibilidad-ia` (70, en `verificar.sh`; con `fetch` simulado: sin clave, modelo, sin red,
+  respuesta rota, sesión, límite y una buena), `test-endpoint-ia` amplía la suya (lo que falta sigue en `tecnico`),
+  dos casos del banco de renderizado y la sección «P3 · IA» del recorrido (18).
+
 ## v3.154.0 — P2: el objetivo diario de agua y su jarra
 
 > El segundo de los cuatro prompts del 2026-10-18 (`docs/14_PROMPTS_2026-10-18.md`). Solo Nutrición → Agua.

@@ -16,7 +16,10 @@
    ⚠️ Este endpoint lo usan seis módulos (Nutrición, Calistenia, Biblioteca,
    Estilo de hombre, Hoy y Estadísticas). Si esto falla, la IA se cae en todos a
    la vez — por eso lo que falla por configuración devuelve 503 **diciendo qué
-   falta**, y no un 401 mudo que parecería un problema de la cuenta. */
+   falta**, y no un 401 mudo que parecería un problema de la cuenta.
+   🔓 P3 (2026-10-18) — y cada respuesta lleva su `codigo`: lo que falta se dice en
+   `tecnico` (y en el registro del servidor), y `error` es una frase para el
+   usuario. La pantalla decide con el código (`src/lib/disponibilidadIA.js`). */
 const LIMITE_POR_USUARIO = 30; // peticiones
 const VENTANA_MS = 60 * 60 * 1000; // por hora
 
@@ -66,30 +69,39 @@ async function quienEs(req) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
+    return res.status(405).json({ codigo: 'peticion_no_valida', error: 'Método no permitido' });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
+    /* 🔓 P3 — sin su clave, la IA todavía no está habilitada: la pantalla enseña
+       «Estamos preparando algo nuevo.». Lo que falta va en `tecnico` (y al registro
+       del servidor), nunca en la frase que ve el usuario. */
+    console.warn('[ask-ai] ia_no_habilitada: falta ANTHROPIC_API_KEY');
     return res.status(503).json({
-      error: 'IA no configurada todavía. Añade ANTHROPIC_API_KEY en las variables de entorno del proyecto en Vercel.',
+      codigo: 'ia_no_habilitada',
+      error: 'La inteligencia artificial todavía no está disponible.',
+      tecnico: 'IA no configurada todavía. Añade ANTHROPIC_API_KEY en las variables de entorno del proyecto en Vercel.',
     });
   }
 
   const quien = await quienEs(req);
   if (quien.fallo === 'sin-config') {
+    console.warn('[ask-ai] ia_no_habilitada: faltan VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY');
     return res.status(503).json({
-      error: 'IA no configurada del todo: faltan VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en las variables de entorno del proyecto en Vercel.',
+      codigo: 'ia_no_habilitada',
+      error: 'La inteligencia artificial todavía no está disponible.',
+      tecnico: 'IA no configurada del todo: faltan VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en las variables de entorno del proyecto en Vercel.',
     });
   }
   if (quien.fallo === 'sin-verificar') {
-    return res.status(503).json({ error: 'No se ha podido comprobar tu sesión ahora mismo. Inténtalo en un minuto.' });
+    return res.status(503).json({ codigo: 'sesion_no_verificada', error: 'No se ha podido comprobar tu sesión ahora mismo. Inténtalo en un minuto.' });
   }
   if (quien.fallo) {
-    return res.status(401).json({ error: 'Inicia sesión para usar la IA.' });
+    return res.status(401).json({ codigo: 'sin_sesion', error: 'Inicia sesión para usar la IA.' });
   }
   if (!pasaElLimite(quien.id)) {
-    return res.status(429).json({ error: 'Has usado la IA muchas veces seguidas. Espera un rato y vuelve a intentarlo.' });
+    return res.status(429).json({ codigo: 'limite', error: 'Has usado la IA muchas veces seguidas. Espera un rato y vuelve a intentarlo.' });
   }
 
   // El modelo se lee de una variable de entorno para que cambiarlo no exija tocar código ni
@@ -100,7 +112,7 @@ export default async function handler(req, res) {
 
   const { system, prompt, image, images } = req.body || {};
   if (!prompt) {
-    return res.status(400).json({ error: 'Falta el prompt' });
+    return res.status(400).json({ codigo: 'peticion_no_valida', error: 'Falta el prompt' });
   }
 
   /* 🚨 ⚠️ **EH F63, apartados 14 y 15 — no confiar en lo que manda el cliente.**
@@ -114,13 +126,13 @@ export default async function handler(req, res) {
   const LIMITE_SYSTEM = 20000;
   const LIMITE_IMAGENES = 10;
   if (typeof prompt !== 'string' || prompt.length > LIMITE_PROMPT) {
-    return res.status(400).json({ error: 'La petición es demasiado larga.' });
+    return res.status(400).json({ codigo: 'peticion_no_valida', error: 'La petición es demasiado larga.' });
   }
   if (system && (typeof system !== 'string' || system.length > LIMITE_SYSTEM)) {
-    return res.status(400).json({ error: 'La petición es demasiado larga.' });
+    return res.status(400).json({ codigo: 'peticion_no_valida', error: 'La petición es demasiado larga.' });
   }
   if (Array.isArray(images) && images.length > LIMITE_IMAGENES) {
-    return res.status(400).json({ error: 'Demasiadas imágenes en una sola petición.' });
+    return res.status(400).json({ codigo: 'peticion_no_valida', error: 'Demasiadas imágenes en una sola petición.' });
   }
 
   // Content de la petición a Anthropic: puede llevar varias imágenes (Fase 5: fotogramas de
@@ -163,18 +175,25 @@ export default async function handler(req, res) {
       // vería "Error al llamar a la IA" y no tendría forma de saber que lo único que falla es el
       // nombre del modelo — que se arregla cambiando una variable de entorno, sin tocar código.
       if (anthropicRes.status === 404) {
+        /* 🔓 P3 — es un fallo de configuración DE VERDAD, no un «próximamente»: la
+           pantalla dice que no está disponible ahora y lo técnico va en `tecnico`. */
+        console.error(`[ask-ai] modelo_no_disponible: ${model}`);
         return res.status(404).json({
-          error: `El modelo de IA configurado ("${model}") no está disponible. Cámbialo en la variable de entorno ANTHROPIC_MODEL del proyecto en Vercel.`,
+          codigo: 'modelo_no_disponible',
+          error: 'La inteligencia artificial no está disponible ahora mismo.',
+          tecnico: `El modelo de IA configurado ("${model}") no está disponible. Cámbialo en la variable de entorno ANTHROPIC_MODEL del proyecto en Vercel.`,
           detail,
         });
       }
-      return res.status(anthropicRes.status).json({ error: 'Error al llamar a la IA', detail });
+      console.error(`[ask-ai] error_servicio: ${anthropicRes.status}`);
+      return res.status(anthropicRes.status).json({ codigo: 'error_servicio', error: 'Error al llamar a la IA', detail });
     }
 
     const data = await anthropicRes.json();
     const text = (data.content || []).map((b) => b.text || '').filter(Boolean).join('\n').trim();
     return res.status(200).json({ text });
   } catch (e) {
-    return res.status(500).json({ error: 'Fallo interno al llamar a la IA' });
+    console.error('[ask-ai] error_servicio: fallo interno', e && e.message);
+    return res.status(500).json({ codigo: 'error_servicio', error: 'Fallo interno al llamar a la IA' });
   }
 }

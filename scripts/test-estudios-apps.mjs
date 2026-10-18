@@ -312,7 +312,11 @@ ok(NO_EN_ES1.some((x) => /estad[íi]stica/i.test(x.que)), 'Las estadísticas tam
    **esa forma exacta, en mayúsculas** antes de barrer; todo lo demás —la palabra dentro de una
    frase, en minúsculas, o un «en construcción»— sigue poniendo esto rojo. */
 const PROMESA_VACIA = /próximamente|proximamente|en construcción/i;
-const VISTA_SIN_ROTULO = VISTA.replace(/PRÓXIMAMENTE/g, '');
+/* 🔓 P3 (C-76) — y el estado compartido de la IA sin habilitar (`<IAProximamente>`), que Josué pidió
+   con esas palabras: no promete una función inventada —la IA existe y está programada—, dice que su
+   servidor todavía no la tiene encendida. Su texto vive en `disponibilidadIA.js`, no en esta vista;
+   aquí solo se quita el NOMBRE del componente. */
+const VISTA_SIN_ROTULO = VISTA.replace(/PRÓXIMAMENTE/g, '').replace(/\bIAProximamente\b/g, '');
 ok(!PROMESA_VACIA.test(VISTA_SIN_ROTULO), 'Y no hay ni un "próximamente" en pantalla (regla 9)');
 // 🚨 Y que la regla siga pudiendo fallar: una que no caza su propio ejemplo malo da siempre cero.
 ok(PROMESA_VACIA.test('Estadísticas disponibles próximamente'),

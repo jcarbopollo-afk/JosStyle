@@ -45,7 +45,8 @@ import {
   panelDelHome, VACIO_PROXIMO, FILTROS_EVENTOS, todasLasFechas, resumenRapido,
   proximoDeAsignatura, proximoDeApp, rutaDeFecha,
 } from '../lib/cierreEstudios';
-import { Card, SectionTitle, Field, TextInput, SelectInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel, TextoDeBoton, MensajeDeCampo } from '../components/ui';
+import { Card, SectionTitle, Field, TextInput, SelectInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel, TextoDeBoton, MensajeDeCampo, IAProximamente } from '../components/ui';
+import { estadoDeErrorIA, registrarErrorIA } from '../lib/disponibilidadIA';
 import { useTurnos } from '../components/estadosAsincronos';
 import { resumenSincronizacion } from '../lib/sincronizacion';
 import { Plegable, ListaAnimada } from '../components/layoutMotion';
@@ -64,11 +65,13 @@ function ExplicarConcepto({ accent }) {
   const [respuesta, setRespuesta] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [iaPendiente, setIaPendiente] = useState(false);
 
   const preguntar = async () => {
     if (!pregunta.trim()) return;
     setLoading(true);
     setError('');
+    setIaPendiente(false);
     setRespuesta('');
     try {
       const texto = await askAI(
@@ -78,7 +81,11 @@ function ExplicarConcepto({ accent }) {
       );
       setRespuesta(texto || 'No he podido generar una explicación ahora mismo.');
     } catch (e) {
-      setError(e.message || 'No he podido conectar con la IA ahora mismo.');
+      // 🔓 P3 — antes pintaba `e.message` tal cual (la frase técnica del servidor).
+      registrarErrorIA(e, 'Explícame un concepto');
+      const estado = estadoDeErrorIA(e, 'No he podido conectar con la IA ahora mismo.');
+      setIaPendiente(estado.pendiente);
+      setError(estado.pendiente ? '' : estado.texto);
     } finally {
       setLoading(false);
     }
@@ -101,6 +108,7 @@ function ExplicarConcepto({ accent }) {
           </PrimaryButton>
         </div>
       </div>
+      {iaPendiente && <IAProximamente accent={accent} onCerrar={() => setIaPendiente(false)} className="mt-3" />}
       {error && <p className="text-xs mt-2" style={{ color: COLORS.negative }}>{error}</p>}
       {respuesta && <p className="text-sm mt-3 leading-relaxed" style={{ color: COLORS.text }}>{respuesta}</p>}
     </Card>
@@ -114,11 +122,13 @@ function ExplicarConcepto({ accent }) {
 function PlanRepaso({ examen, onUpdatePlan, accent }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [iaPendiente, setIaPendiente] = useState(false);
   const plan = examen.planRepaso || [];
 
   const generar = async () => {
     setLoading(true);
     setError('');
+    setIaPendiente(false);
     try {
       const dias = diasHasta(examen.fecha);
       const texto = await askAI(
@@ -134,7 +144,10 @@ function PlanRepaso({ examen, onUpdatePlan, accent }) {
       const pasos = (json.pasos || []).map((texto) => ({ id: uid(), texto, hecho: false }));
       onUpdatePlan([...plan, ...pasos]);
     } catch (e) {
-      setError('No he podido generar el plan ahora mismo. Puedes añadir pasos a mano abajo.');
+      registrarErrorIA(e, 'Plan de repaso');
+      const estado = estadoDeErrorIA(e, 'No he podido generar el plan ahora mismo. Puedes añadir pasos a mano abajo.');
+      setIaPendiente(estado.pendiente);
+      setError(estado.pendiente ? '' : estado.texto);
     } finally {
       setLoading(false);
     }
@@ -159,6 +172,7 @@ function PlanRepaso({ examen, onUpdatePlan, accent }) {
           </button>
         )}
       </div>
+      {iaPendiente && <IAProximamente accent={accent} onCerrar={() => setIaPendiente(false)} className="mb-3" />}
       {error && <p className="text-xs mb-2" style={{ color: COLORS.negative }}>{error}</p>}
       <div className="space-y-1.5">
         {plan.map((p) => (

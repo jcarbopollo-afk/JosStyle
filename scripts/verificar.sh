@@ -1849,6 +1849,13 @@ else
   fallo "Falla el objetivo de agua (P2)"; grep '✗' /tmp/jc_agua.log
 fi
 
+# 2026-10-18 · P3 — la IA que todavía no está disponible: «Estamos preparando algo nuevo».
+if node --import ./scripts/resolver-vite.mjs scripts/test-disponibilidad-ia.mjs >/tmp/jc_ia_disp.log 2>&1; then
+  ok "P3: IA no disponible, sin mensajes técnicos — $(grep -c '✓' /tmp/jc_ia_disp.log) comprobaciones"
+else
+  fallo "Falla la disponibilidad de la IA (P3)"; grep '✗' /tmp/jc_ia_disp.log
+fi
+
 # Entrega 3 · F21 — Biblioteca: Colecciones.
 if node --import ./scripts/resolver-vite.mjs scripts/test-colecciones.mjs >/tmp/jc_cols.log 2>&1; then
   ok "Biblioteca: Colecciones (E3 F21) — $(grep -c '✓' /tmp/jc_cols.log) comprobaciones"

@@ -6,7 +6,8 @@ import { uid, formatFecha, todayISO, fechaLocalISO } from '../lib/helpers';
 import { askAI, askAIWithImages, AI_SYSTEM } from '../lib/ai';
 import { extractFramesFromSrc } from '../lib/videoFrames';
 import { getSignedVideoUrl } from '../lib/supabase';
-import { BotonBorrar, BotonBorrarDefinitivo, Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, TextoDeBoton } from '../components/ui';
+import { BotonBorrar, BotonBorrarDefinitivo, Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, TextoDeBoton, IAProximamente } from '../components/ui';
+import { estadoDeErrorIA, registrarErrorIA } from '../lib/disponibilidadIA';
 import { Plegable } from '../components/layoutMotion';
 import { desplazarHasta } from '../lib/accesibilidadMotion';
 import { SelectorDeArchivos } from '../components/selectorArchivos';
@@ -38,6 +39,7 @@ function ProgresionTab({ skill, data, onUpdate, accent }) {
   const [nuevo, setNuevo] = useState('');
   const [generando, setGenerando] = useState(false);
   const [error, setError] = useState('');
+  const [iaPendiente, setIaPendiente] = useState(false);
   const progresion = data.progresion || [];
 
   const addManual = () => {
@@ -52,6 +54,7 @@ function ProgresionTab({ skill, data, onUpdate, accent }) {
   const generarConIA = async () => {
     setGenerando(true);
     setError('');
+    setIaPendiente(false);
     try {
       const prompt =
         `Josué (16 años) está en un ${data.nivel}% de progreso hacia el ${skill} en calistenia. ` +
@@ -64,7 +67,10 @@ function ProgresionTab({ skill, data, onUpdate, accent }) {
       const nuevos = pasos.map((texto) => ({ id: uid(), texto: String(texto), hecho: false, origen: 'ia' }));
       onUpdate({ ...data, progresion: [...progresion, ...nuevos] });
     } catch (e) {
-      setError('No he podido generar la progresión ahora mismo. Puedes añadir los pasos a mano.');
+      registrarErrorIA(e, 'Progresión de calistenia');
+      const estado = estadoDeErrorIA(e, 'No he podido generar la progresión ahora mismo. Puedes añadir los pasos a mano.');
+      setIaPendiente(estado.pendiente);
+      setError(estado.pendiente ? '' : estado.texto);
     } finally {
       setGenerando(false);
     }
@@ -86,6 +92,7 @@ function ProgresionTab({ skill, data, onUpdate, accent }) {
       <GhostBtn onClick={generarConIA} icon={Sparkles} estado={generando ? 'cargando' : 'reposo'} textoCargando="Generando…">
         Generar progresión con IA
       </GhostBtn>
+      {iaPendiente && <IAProximamente accent={accent} onCerrar={() => setIaPendiente(false)} />}
       {error && <p className="text-xs" style={{ color: COLORS.textMuted }}>{error}</p>}
 
       {progresion.length === 0
@@ -192,6 +199,7 @@ function VideosTab({ skill, videos, onAddVideo, onDeleteVideo, onSetVideoFeedbac
   const [subiendo, setSubiendo] = useState(false);
   const [nota, setNota] = useState('');
   const [analizando, setAnalizando] = useState(null); // id del vídeo que se está analizando
+  const [iaPendienteVideo, setIaPendienteVideo] = useState(null); // P3: el vídeo cuyo análisis todavía no está disponible
   const [comparar, setComparar] = useState([]); // hasta 2 ids seleccionados
 
   const propios = videos.filter((v) => v.skill === skill);
@@ -224,7 +232,12 @@ function VideosTab({ skill, videos, onAddVideo, onDeleteVideo, onSetVideoFeedbac
       const feedback = await askAIWithImages(AI_SYSTEM, prompt, frames);
       onSetVideoFeedback(video.id, feedback || 'No he podido generar un análisis con estos fotogramas.');
     } catch (err) {
-      onSetVideoFeedback(video.id, 'No se ha podido analizar este vídeo (puede que el navegador haya bloqueado leer los fotogramas). Inténtalo de nuevo.');
+      // 🔓 P3 — con la IA sin habilitar NO se guarda un «no se ha podido» como
+      // análisis del vídeo: se enseña el estado de próxima disponibilidad y el
+      // vídeo se queda como estaba. Un fallo de verdad sigue guardando su aviso.
+      registrarErrorIA(err, 'Análisis de vídeo');
+      if (estadoDeErrorIA(err).pendiente) setIaPendienteVideo(video.id);
+      else onSetVideoFeedback(video.id, err && err.codigo ? estadoDeErrorIA(err).texto : 'No se ha podido analizar este vídeo (puede que el navegador haya bloqueado leer los fotogramas). Inténtalo de nuevo.');
     } finally {
       setAnalizando(null);
     }
@@ -318,6 +331,7 @@ function VideosTab({ skill, videos, onAddVideo, onDeleteVideo, onSetVideoFeedbac
                 style={{ border: `1px solid ${COLORS.border}` }}
               />
             </div>
+            {iaPendienteVideo === v.id && <IAProximamente accent={accent} onCerrar={() => setIaPendienteVideo(null)} className="mt-2" />}
             {v.feedback && <p className="text-xs mt-2 leading-relaxed" style={{ color: COLORS.text }}>{v.feedback}</p>}
           </Card>
         ))}

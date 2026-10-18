@@ -56,7 +56,8 @@ import {
 } from '../lib/inteligenciaNutricion';
 import { buscarProductoPorCodigoBarras, buscarAlimentosPorNombre } from '../lib/openFoodFacts';
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
-import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, TextoDeBoton, MensajeDeCampo } from '../components/ui';
+import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, TextoDeBoton, MensajeDeCampo, IAProximamente } from '../components/ui';
+import { estadoDeErrorIA, registrarErrorIA } from '../lib/disponibilidadIA';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { CambioDeContenido, LatidoAlMarcar, useAnimacionDeGrafica, CifraQueCambia } from '../components/motion';
 import { escalonado } from '../lib/motion';
@@ -94,6 +95,7 @@ function MealForm({ onSave, onSaveFavorite, accent, fecha, momentoId }) {
   const [gramos, setGramos] = useState('100');
   const [analizandoFoto, setAnalizandoFoto] = useState(false);
   const [aviso, setAviso] = useState('');
+  const [iaPendienteFoto, setIaPendienteFoto] = useState(false);
   /* MS F16, apartado 41 — dos lecturas seguidas: solo pinta la última. */
   const turnosCodigo = useTurnos();
 
@@ -145,6 +147,7 @@ function MealForm({ onSave, onSaveFavorite, accent, fecha, momentoId }) {
     if (!file) return;
     setAnalizandoFoto(true);
     setAviso('');
+    setIaPendienteFoto(false);
     setProductoEscaneado(null);
     try {
       const base64 = await fileToBase64(file);
@@ -170,7 +173,12 @@ function MealForm({ onSave, onSaveFavorite, accent, fecha, momentoId }) {
         setAviso('Estimación de la IA a partir de la foto — revisa los números antes de guardar, no es una medición exacta.');
       }
     } catch (err) {
-      setAviso('No he podido analizar la foto ahora mismo. Prueba otra vez o rellena a mano.');
+      // 🔓 P3 — con la IA sin habilitar, el estado de próxima disponibilidad; un
+      // fallo de verdad (o una respuesta que no se entiende) sigue con su aviso.
+      registrarErrorIA(err, 'Foto del plato');
+      const estado = estadoDeErrorIA(err, 'No he podido analizar la foto ahora mismo. Prueba otra vez o rellena a mano.');
+      setIaPendienteFoto(estado.pendiente);
+      setAviso(estado.pendiente ? '' : (err && err.codigo ? `${estado.texto} Puedes rellenarlo a mano.` : estado.texto));
     } finally {
       setAnalizandoFoto(false);
     }
@@ -215,6 +223,7 @@ function MealForm({ onSave, onSaveFavorite, accent, fecha, momentoId }) {
         </SelectorDeArchivos>
       </div>
 
+      {iaPendienteFoto && <IAProximamente accent={accent} onCerrar={() => setIaPendienteFoto(false)} className="mb-3" />}
       {aviso && <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>{aviso}</p>}
 
       {productoEscaneado && (

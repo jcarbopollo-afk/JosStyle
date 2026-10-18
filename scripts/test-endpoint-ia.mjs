@@ -108,11 +108,19 @@ supabaseCae = false;
    cuenta del usuario cuando el problema está en Vercel. */
 r = await llamar(reqFalso(TOKEN_BUENO), { VITE_SUPABASE_URL: undefined });
 check('sin configurar → 503', r.code === 503, `devolvió ${r.code}`);
-check('sin configurar dice qué falta', /VITE_SUPABASE_URL/.test((r.body || {}).error || ''));
+/* 🔓 P3 — lo que falta se sigue diciendo, pero en `tecnico` (y en el registro del
+   servidor): la frase de `error` es la que puede llegar al usuario, y no nombra
+   ninguna variable. Y lleva su código, que es lo que decide la pantalla. */
+check('sin configurar dice qué falta (en `tecnico`)', /VITE_SUPABASE_URL/.test((r.body || {}).tecnico || ''));
+check('…y la frase para el usuario no nombra variables', !/VITE_|SUPABASE|Vercel|entorno/i.test((r.body || {}).error || ''));
+check('…con su código: todavía no habilitada', (r.body || {}).codigo === 'ia_no_habilitada');
 
 /* 7. Sin clave de Anthropic sigue avisando como antes (no se ha roto). */
 r = await llamar(reqFalso(TOKEN_BUENO), { ANTHROPIC_API_KEY: undefined });
 check('sin ANTHROPIC_API_KEY → 503', r.code === 503, `devolvió ${r.code}`);
+check('sin ANTHROPIC_API_KEY: código «todavía no habilitada»', (r.body || {}).codigo === 'ia_no_habilitada');
+check('…y la frase para el usuario no nombra la clave', !/ANTHROPIC|API[_ ]?KEY|Vercel|entorno/i.test((r.body || {}).error || ''));
+check('…que sigue en `tecnico` para quien despliega', /ANTHROPIC_API_KEY/.test((r.body || {}).tecnico || ''));
 
 /* 8. Los límites de tamaño siguen vivos, y ahora detrás de la sesión. */
 r = await llamar(reqFalso(TOKEN_BUENO, { prompt: 'x'.repeat(40001) }));

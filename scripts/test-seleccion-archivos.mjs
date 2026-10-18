@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   CLASES_DE_ARCHIVO, MB, detectarPlataforma, opcionesDeSeleccion, encajaConAccept,
-  textoDeTamano, validarArchivos, textoDeErrorDeCamara, eventoDeArchivos,
+  textoDeTamano, validarArchivos, textoDeErrorDeCamara, eventoDeArchivos, ACEPTA_IMAGEN_O_PDF,
 } from '../src/lib/seleccionArchivos.js';
 import { MEDIA_PENDIENTE, FOTO_DEL_ENTRENAMIENTO, PREPARADO_PARA_FIT8 } from '../src/lib/finalizacion.js';
 import { crearFotoProgreso, normalizarFotoProgreso } from '../src/lib/fotosProgreso.js';
@@ -183,7 +183,7 @@ ok((SET.match(/controlRef=\{(inputRef|fileRef)\}/g) || []).length === 3, 'los bo
 ok(/mostrarError=\{false\}/.test(SET) && /if \(!mostrarError\) \{ if \(lista\.length && onElegir\) onElegir/.test(COMP_C), '…y con su validación propia, el selector le entrega todo: nada se queda sin decir');
 // ⚠️ En bruto: un accept de «image/asterisco» abre un comentario para el limpiador.
 const UI = leer('src/components/ui.jsx');
-ok(/accept="image\/\*,application\/pdf"[\s\S]{0,200}onElegir=\{\(f\) => handleFile\(eventoDeArchivos\(f\)\)\}/.test(UI), 'el adjunto de la IA conserva lo que aceptaba y su manejador');
+ok(/accept=\{ACEPTA_IMAGEN_O_PDF\}[\s\S]{0,200}onElegir=\{\(f\) => handleFile\(eventoDeArchivos\(f\)\)\}/.test(UI) && ACEPTA_IMAGEN_O_PDF === 'image/*,application/pdf', 'el adjunto de la IA conserva lo que aceptaba (una foto o un PDF) y su manejador');
 ok(/aria-label="Adjuntar foto, captura o PDF"/.test(UI), '…y ahora el clip tiene nombre para VoiceOver');
 
 console.log(`\n${n - fallos}/${n} comprobaciones${fallos ? ` · ${fallos} FALLOS` : ''}`);

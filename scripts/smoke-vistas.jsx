@@ -445,7 +445,7 @@ import { Presencia, ChevronDespliegue, LatidoAlMarcar, CifraQueCambia } from '..
 import { ListaAnimada, Plegable } from '../src/components/layoutMotion.jsx';
 import { AnuncioDeNavegacion, GiroDeCarga } from '../src/components/accesibilidadMotion.jsx';
 import { AsaHoja } from '../src/components/gestosMotion.jsx';
-import { Switch, PistaInterruptor, ToggleTab, BotonBorrar, PrimaryButton, GhostBtn, TextoDeBoton, MensajeDeCampo, TextInput, Textarea } from '../src/components/ui.jsx';
+import { Switch, PistaInterruptor, ToggleTab, BotonBorrar, PrimaryButton, GhostBtn, TextoDeBoton, MensajeDeCampo, TextInput, Textarea, IAProximamente } from '../src/components/ui.jsx';
 import ArmarioView, { PanelOutfits, PanelCalendario, PanelIdeas } from '../src/views/ArmarioView.jsx';
 
 import {
@@ -2803,6 +2803,9 @@ const CASOS = [
     /* 💧 P2 — el agua: vacía, a medias, cumplida, pasada, con su objetivo y con datos rotos. */
     const propsAgua = (nutricion, perfil = { peso: 75 }) => ({ nutricion, perfil, onSetAgua: noop, onGuardarObjetivoAgua: () => Promise.resolve({ ok: true }), accent });
     return [
+      /* ✨ P3 — la IA que todavía no está habilitada (la pieza compartida). */
+      ['IAProximamente', IAProximamente, () => ({ accent, onCerrar: noop })],
+      ['IAProximamente · sin cerrar', IAProximamente, () => ({ accent })],
       ['AguaTab · vacía, sin peso', AguaTab, () => propsAgua({ agua: {} }, null)],
       ['AguaTab · a medias', AguaTab, () => propsAgua({ agua: { [HOY]: 1000 } })],
       ['AguaTab · cumplida', AguaTab, () => propsAgua({ agua: { [HOY]: 2250 } })],

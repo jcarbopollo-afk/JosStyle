@@ -33,6 +33,11 @@ export const CLASES_DE_ARCHIVO = Object.freeze({
 
 export const MB = 1024 * 1024;
 
+/** Una foto o un PDF (el adjunto de la IA). ⚠️ Vive aquí y no escrito en `ui.jsx`: el
+ *  comodín de imagen abre un comentario para los limpiadores de comentarios de las
+ *  pruebas, que se comían el código que venía detrás. */
+export const ACEPTA_IMAGEN_O_PDF = 'image/*,application/pdf';
+
 /* ── La plataforma, de lo que dice el navegador de verdad ───────────────────── */
 export function detectarPlataforma(entorno = (typeof window !== 'undefined' ? window : null)) {
   const nav = entorno && entorno.navigator ? entorno.navigator : {};

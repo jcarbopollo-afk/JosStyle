@@ -3,7 +3,8 @@ import { Target, Plus, Trash2, CheckCircle2, Circle, CalendarClock, Sparkles, St
 import { COLORS, PLAZOS_OBJETIVO, DIAS_ENTRE_REVISIONES } from '../tokens';
 import { uid, todayISO } from '../lib/helpers';
 import { askAI, AI_SYSTEM } from '../lib/ai';
-import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel } from '../components/ui';
+import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, IAProximamente } from '../components/ui';
+import { estadoDeErrorIA, registrarErrorIA } from '../lib/disponibilidadIA';
 /* E3 F27 (PR F5) — Objetivos pasa a ser una mini-app completa. 🚨 Ni un objetivo
    nuevo: se amplía el que vive en la clave `objetivos` desde la Fase 9, y **ni un
    campo se renombra** — `texto`, `plazo` y `cumplido` los leen otros
@@ -33,6 +34,7 @@ function RevisionBanner({ ultimaRevision, objetivos, accent, onRevisionHecha }) 
   const [cargando, setCargando] = useState(false);
   const [texto, setTexto] = useState('');
   const [error, setError] = useState('');
+  const [iaPendiente, setIaPendiente] = useState(false);
   const dias = diasDesde(ultimaRevision);
   const toca = dias >= DIAS_ENTRE_REVISIONES;
 
@@ -42,6 +44,7 @@ function RevisionBanner({ ultimaRevision, objetivos, accent, onRevisionHecha }) 
     setAbierta(true);
     setCargando(true);
     setError('');
+    setIaPendiente(false);
     try {
       const respuesta = await askAI(
         AI_SYSTEM,
@@ -52,7 +55,10 @@ function RevisionBanner({ ultimaRevision, objetivos, accent, onRevisionHecha }) 
       setTexto(respuesta || 'No he podido generar la revisión.');
       onRevisionHecha();
     } catch (e) {
-      setError('No he podido generar la revisión ahora mismo. Inténtalo de nuevo en un momento.');
+      registrarErrorIA(e, 'Revisión de objetivos');
+      const estado = estadoDeErrorIA(e, 'No he podido generar la revisión ahora mismo. Inténtalo de nuevo en un momento.');
+      setIaPendiente(estado.pendiente);
+      setError(estado.pendiente ? '' : estado.texto);
     } finally {
       setCargando(false);
     }
@@ -78,6 +84,7 @@ function RevisionBanner({ ultimaRevision, objetivos, accent, onRevisionHecha }) 
               <p className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: COLORS.text }}>
                 {cargando && <GiroDeCarga size={14} texto="Preparando la revisión…" />} Revisión
               </p>
+              {iaPendiente && <IAProximamente accent={accent} onCerrar={() => setIaPendiente(false)} />}
               {error && <p className="text-xs" style={{ color: COLORS.textMuted }}>{error}</p>}
               {texto && <p className="text-sm leading-relaxed" style={{ color: COLORS.text }}>{texto}</p>}
             </>

@@ -1621,3 +1621,14 @@ hipertrofia. Se resolvió así (`src/lib/aguaNutricion.js`):
 - **El suyo se guarda** (`objetivoAgua.ml`, entre 0,5 y 6 L) y manda siempre; «Usar la propuesta» vuelve a `null`.
 - Se dice que es **orientativo, no una indicación médica**, y que mide el agua **registrada**, no la hidratación total.
 - El registro no cambia: el total por fecha de la Fase 4, que no puede contar un vaso dos veces al recargar.
+
+### C-76 — ✅ RESUELTA AL CONSTRUIR (v3.155.0, P3) · «Estará disponible próximamente» contra la regla 8 («nada de próximamente»)
+
+La regla 8 prohíbe simular una función que no existe con un «próximamente». La P3 pide, con esas palabras, que la IA
+sin habilitar diga *«Estamos preparando algo nuevo… Estará disponible próximamente.»*. Encajan así: **la IA existe y
+está programada** (`/api/ask-ai`, seis módulos); lo que falta es que el servidor tenga su clave. Así que el mensaje
+**solo sale cuando el servidor contesta que no está habilitada** (`codigo: 'ia_no_habilitada'`, o la función sin
+desplegar), nunca como un botón decorativo ni de antemano, y sin fecha. **Un fallo de verdad** (el modelo mal
+configurado, el servicio, la red, la sesión, el límite) **no se esconde tras un «próximamente»**: se dice como fallo.
+La comprobación de la regla 9 de Estudios (ES F1) se amplió para no contar el nombre del componente
+(`IAProximamente`), no la frase: la frase vive en `disponibilidadIA.js`.
