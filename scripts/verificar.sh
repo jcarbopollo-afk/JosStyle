@@ -1856,6 +1856,13 @@ else
   fallo "Falla la disponibilidad de la IA (P3)"; grep '✗' /tmp/jc_ia_disp.log
 fi
 
+# 2026-10-18 · P4 — la tarjeta de progreso de Inicio y el rectángulo del foco (iPhone y iPad).
+if node --import ./scripts/resolver-vite.mjs scripts/test-bugs-movil-p4.mjs >/tmp/jc_p4.log 2>&1; then
+  ok "P4: tarjeta de progreso y rectángulo del foco — $(grep -c '✓' /tmp/jc_p4.log) comprobaciones"
+else
+  fallo "Falla la P4 (tarjeta de progreso o rectángulo del foco)"; grep '✗' /tmp/jc_p4.log
+fi
+
 # Entrega 3 · F21 — Biblioteca: Colecciones.
 if node --import ./scripts/resolver-vite.mjs scripts/test-colecciones.mjs >/tmp/jc_cols.log 2>&1; then
   ok "Biblioteca: Colecciones (E3 F21) — $(grep -c '✓' /tmp/jc_cols.log) comprobaciones"

@@ -5527,6 +5527,107 @@ ok(nuevos_p3.length === 0, `P3 — ni un error de JavaScript${nuevos_p3.length ?
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 
+/* ── 🐛 P4 · LA TARJETA DE PROGRESO Y EL RECTÁNGULO DEL FOCO (2026-10-18) ──
+   ⚠️ Chromium no reproduce el fallo de WebKit con la fila a `0fr` dentro de un
+   `<button>`: lo que se mide aquí es la ESTRUCTURA que lo hace imposible (cerrado,
+   el desglose no está en la página y nunca vive dentro del botón) y las alturas, en
+   un iPhone y en un ordenador. El rectángulo sí se reproduce: el contenedor de la
+   pantalla enfocado por código salía con un contorno de 2 px del acento. */
+console.log('\n── P4 · Tarjeta de progreso y rectángulo ──');
+const erroresAntes_p4 = errores.length;
+const antes_p4 = { productividad: almacen.productividad, nutricion: almacen.nutricion, diario: almacen.diario };
+const sembrar_p4 = (n) => {
+  almacen.productividad = { ...(almacen.productividad || {}), habitos: [{ id: 'h_p4', nombre: 'Leer', historial: {} }] };
+  almacen.nutricion = { ...(almacen.nutricion || {}), comidas: [{ id: 'c_p4', fecha: DN(4), nombre: 'Algo', calorias: 100, proteinas: 1, carbohidratos: 1, grasas: 1 }], agua: {} };
+  almacen.diario = n >= 3 ? { ...(almacen.diario || {}), entradas: [{ id: 'd_p4', fecha: DN(4), texto: 'x' }] } : { ...(almacen.diario || {}), entradas: [] };
+};
+const tarjeta_p4 = () => page.evaluate(() => {
+  const b = document.querySelector('[data-puntuacion-cabecera]');
+  if (!b) return null;
+  const card = b.parentElement;
+  const d = document.querySelector('[data-puntuacion-desglose]');
+  return { alto: Math.round(card.getBoundingClientRect().height), boton: Math.round(b.getBoundingClientRect().height), expandido: b.getAttribute('aria-expanded'),
+    desglose: !!d, dentroDelBoton: !!b.querySelector('[data-puntuacion-desglose]'), filas: d ? d.querySelectorAll('li').length : 0 };
+});
+for (const [nombre, ancho, alto] of [['iPhone', 390, 844], ['iPad', 820, 1180], ['ordenador', 1280, 720]]) {
+  for (const n of [3, 2]) {
+    sembrar_p4(n);
+    await page.setViewportSize({ width: ancho, height: alto });
+    await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(2200);
+    await page.waitForSelector('[data-puntuacion-cabecera]', { timeout: 5000 }).catch(() => {});
+    const c0 = await tarjeta_p4();
+    ok(c0 && c0.expandido === 'false' && !c0.desglose && Math.abs(c0.alto - c0.boton) <= 2,
+      `🚨 P4 · ${nombre} (${n} áreas) — empieza contraída: el alto de la tarjeta es el de su cabecera y el desglose no está (${JSON.stringify(c0)})`);
+    await page.click('[data-puntuacion-cabecera]');
+    await page.waitForTimeout(500);
+    const c1 = await tarjeta_p4();
+    ok(c1 && c1.expandido === 'true' && c1.desglose && !c1.dentroDelBoton && c1.filas === n && c1.alto > c0.alto + 20,
+      `🚨 P4 · ${nombre} (${n} áreas) — al tocar se expande: crece, enseña sus ${n} áreas y el desglose va FUERA del botón (${JSON.stringify(c1)})`);
+    await page.click('[data-puntuacion-cabecera]');
+    await page.waitForTimeout(500);
+    const c2 = await tarjeta_p4();
+    ok(c2 && c2.expandido === 'false' && !c2.desglose && Math.abs(c2.alto - c0.alto) <= 1,
+      `🚨 P4 · ${nombre} (${n} áreas) — al volver a tocar se contrae a su alto de antes, sin hueco (${JSON.stringify(c2)})`);
+  }
+}
+
+/* El rectángulo: el contenedor de la pantalla enfocado por código, sin contorno. */
+const contorno_p4 = () => page.evaluate(() => {
+  const a = document.activeElement;
+  if (!a || a === document.body) return { foco: 'body', visible: false };
+  const cs = getComputedStyle(a);
+  const transparente = /rgba\(\d+, \d+, \d+, 0\)/.test(cs.outlineColor) || cs.outlineColor === 'transparent';
+  return { foco: a.getAttribute('role') || a.tagName, tabindex: a.getAttribute('tabindex'), visible: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 && !transparente, color: cs.outlineColor };
+});
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar'), 'P4 — se navega a Bienestar');
+await page.waitForTimeout(600);
+const f1_p4 = await contorno_p4();
+ok(f1_p4.foco === 'region' && f1_p4.tabindex === '-1' && !f1_p4.visible,
+  `🚨 P4 — al navegar, el foco va al contenedor de la pantalla (para VoiceOver) SIN dibujar el rectángulo (${JSON.stringify(f1_p4)})`);
+ok(await pulsar('Inicio'), 'P4 — y de vuelta a Inicio');
+await page.waitForTimeout(600);
+const f2_p4 = await contorno_p4();
+ok(!f2_p4.visible, `P4 — de vuelta a Inicio, tampoco (${JSON.stringify(f2_p4)})`);
+await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
+await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true }); document.dispatchEvent(new Event('visibilitychange')); window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })); });
+await page.waitForTimeout(500);
+const f3_p4 = await contorno_p4();
+ok(!f3_p4.visible, `🚨 P4 — al volver a la pestaña (o reanudar la aplicación), ni un contorno residual (${JSON.stringify(f3_p4)})`);
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+const f4_p4 = await contorno_p4();
+ok(!f4_p4.visible, `P4 — al recargar, tampoco (${JSON.stringify(f4_p4)})`);
+const marcos_p4 = await page.evaluate(() => [...document.querySelectorAll('body *')].filter((el) => {
+  const r = el.getBoundingClientRect();
+  if (r.height < window.innerHeight * 0.5 || r.width < window.innerWidth * 0.5) return false;
+  const cs = getComputedStyle(el);
+  return cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 && !/rgba\(\d+, \d+, \d+, 0\)/.test(cs.outlineColor);
+}).length);
+ok(marcos_p4 === 0, `🚨 P4 — ningún elemento que ocupe media pantalla tiene un contorno visible (${marcos_p4})`);
+/* Y la accesibilidad se conserva: un botón enfocado con el teclado sigue con su anillo. */
+let anillo_p4 = null;
+for (let i = 0; i < 12 && !anillo_p4; i += 1) {
+  await page.keyboard.press('Tab');
+  anillo_p4 = await page.evaluate(() => {
+    const a = document.activeElement;
+    if (!a || a.tagName !== 'BUTTON') return null;
+    const cs = getComputedStyle(a);
+    return { visible: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2 && !/rgba\(\d+, \d+, \d+, 0\)/.test(cs.outlineColor), color: cs.outlineColor };
+  });
+}
+ok(anillo_p4 && anillo_p4.visible, `🚨 P4 — con el teclado, un botón sigue enseñando su anillo de foco (${JSON.stringify(anillo_p4)})`);
+await page.setViewportSize({ width: 1280, height: 720 });
+
+const nuevos_p4 = errores.slice(erroresAntes_p4);
+ok(nuevos_p4.length === 0, `P4 — ni un error de JavaScript${nuevos_p4.length ? `: ${nuevos_p4.join(' | ').slice(0, 300)}` : ''}`);
+Object.assign(almacen, antes_p4);
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
 /* ── DIST F1 · GESTIÓN: Organización y Progreso ───────────────────────────── */
 ok(await pulsar('Gestión'), '🚨 se entra en GESTIÓN');
 const ges_n1 = await esperarTexto(/Econom[ií]a/i);

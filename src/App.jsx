@@ -3788,7 +3788,16 @@ export default function App() {
         isolation: 'isolate',
       }}
     >
-      <style>{`*:focus-visible { outline: 2px solid ${accent}; outline-offset: 2px; }`}</style>
+      {/* 🐛 P4 (2026-10-18) — EL RECTÁNGULO DEL PERÍMETRO AL ABRIR LA APLICACIÓN. Al navegar (y al
+          arrancar), si el foco se ha perdido se lleva al contenedor de la pantalla (`tabIndex={-1}`,
+          MS F2/F12) para que el lector de pantalla no se quede en el vacío. Ese foco lo pone el
+          código, sin un toque, y Safari (y Chromium) lo cuentan como `:focus-visible`: esta regla le
+          dibujaba un contorno de 2 px con el acento alrededor de TODA la pantalla —el rectángulo
+          vertical—, y la clase `outline-none` del contenedor no ganaba (misma especificidad, y esta
+          regla va después). Desaparecía al tocar cualquier botón porque el foco se iba a él. Un
+          elemento con `tabIndex={-1}` no se alcanza con el tabulador: el anillo es para lo que sí.
+          Los controles siguen con su anillo con el teclado. */}
+      <style>{`*:focus-visible:not([tabindex='-1']) { outline: 2px solid ${accent}; outline-offset: 2px; }`}</style>
 
       {/* FO Fase 1 — el fondo, en DOS capas fijas detrás de todo (z-index 0; el contenido de la
           app vive por encima porque `position: relative` lo saca del flujo de apilamiento base).

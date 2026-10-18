@@ -233,7 +233,15 @@ export const ACORDEON = {
 /** Los dos acordeones de la aplicación. Si aparece un tercero, va a esta lista. */
 export const ACORDEONES = [
   { componente: 'IndicadorContexto', archivo: 'src/views/DashboardView.jsx', que: 'La situación actual y sus opciones' },
-  { componente: 'TarjetaPuntuacion', archivo: 'src/views/DashboardView.jsx', que: 'La puntuación del día y de dónde sale' },
+];
+
+/* 🐛 P4 (2026-10-18) — la tarjeta de la puntuación del día ya NO es un acordeón de rejilla escrito
+   a mano: su desglose vivía DENTRO de su `<button>`, y WebKit mide un botón por su contenido, así
+   que la fila a `0fr` seguía ocupando su alto en el iPhone y el iPad aunque llevara su
+   `minHeight: 0`. Ahora va fuera del botón, en `Plegable` (MS F10), que cerrado no está en la
+   página. Se declara aquí para que nadie lo vuelva a escribir como antes. */
+export const ACORDEONES_RETIRADOS = [
+  { componente: 'TarjetaPuntuacion', archivo: 'src/views/DashboardView.jsx', ahora: 'Plegable, fuera del botón', porque: 'Dentro de un <button>, WebKit contaba el alto de la fila a 0fr: la tarjeta salía con el alto de abierta y la lista invisible.' },
 ];
 
 /* ---------------------------------------------------------------------------

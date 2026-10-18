@@ -6,6 +6,7 @@ import {
   Plane, Sun, Home, ClipboardList,
 } from 'lucide-react';
 import { ChevronDespliegue, CifraQueCambia } from '../components/motion';
+import { Plegable } from '../components/layoutMotion';
 import { COLORS, MODOS_APP } from '../tokens';
 import { calcularDuracion, formatHoras, hexToRgba, diasHasta, formatFecha, todayISO, addDays } from '../lib/helpers';
 import { resumenHabito } from '../lib/rachas';
@@ -475,10 +476,23 @@ function TarjetaPuntuacion({ puntuacion, mensaje, accent }) {
     );
   }
 
+  /* 🐛 P4 (2026-10-18) — EN EL iPHONE Y EL iPAD LA TARJETA SE QUEDABA CON EL ALTO DE ABIERTA.
+     El desglose vivía DENTRO del `<button>` y se plegaba con `grid-template-rows: 0fr` + opacidad 0,
+     siempre montado. WebKit mide un `<button>` por el contenido de dentro, y ahí la fila a `0fr` seguía
+     aportando su alto: la tarjeta salía grande con la lista invisible, y al pulsar solo cambiaba la
+     opacidad (sin transición de tamaño). En Chromium la fila sí se quedaba en cero, por eso en el
+     ordenador iba bien. El `minHeight: 0` de la SC F1 no bastaba aquí: el problema era el botón.
+     Ahora el botón es solo la cabecera (con `aria-expanded`) y el desglose va FUERA, en `Plegable`
+     (MS F10): cerrado NO ESTÁ en la página —no puede dejar hueco en ningún navegador—, se abre
+     creciendo y se cierra encogiendo antes de desmontarse. Igual que `IndicadorContexto`, que ya
+     tenía el desplegable fuera de su botón y no fallaba. */
   return (
     <Card style={{ ...fondo, padding: 0, overflow: 'hidden' }}>
       <button
         onClick={() => setExpandido((s) => !s)}
+        aria-expanded={expandido}
+        aria-controls="puntuacion-desglose"
+        data-puntuacion-cabecera
         className="w-full text-left transition-transform active:scale-[0.99]"
         style={{ padding: '1.1rem 1.25rem' }}
       >
@@ -496,30 +510,24 @@ function TarjetaPuntuacion({ puntuacion, mensaje, accent }) {
             </p>
           </div>
         </div>
-        {/* Mismo acordeón de `grid-template-rows` 0fr↔1fr que IndicadorContexto y el resto de
-            tarjetas desplegables de la app — ni una técnica de animación nueva.
-            🚨 SC F1 — y por eso llevaba el MISMO fallo: sin `minHeight: 0` el elemento de rejilla
-            se niega a bajar de su contenido y deja el hueco vacío en Safari. Los dos acordeones de
-            Inicio son los dos únicos de la aplicación y los dos están arreglados; hay una regla
-            invariante en `test-imports.mjs` que caza al siguiente que se escriba sin él. */}
-        <div style={{ display: 'grid', gridTemplateRows: expandido ? '1fr' : '0fr', transition: transicion('grid-template-rows', 'medium') }}>
-          <div style={{ overflow: 'hidden', minHeight: 0 }}>
-            <div style={{ opacity: expandido ? 1 : 0, transition: expandido ? transicion('opacity', 'medium', 'standard', { retraso: 'ultraFast' }) : transicion('opacity', 'ultraFast'), paddingTop: '0.9rem' }}>
-              <ul className="space-y-1">
-                {puntuacion.detalle.map((d) => (
-                  <li key={d.id} className="text-xs flex items-center gap-2" style={{ color: d.hecho ? COLORS.text : COLORS.textMuted }}>
-                    <span style={{ color: d.hecho ? COLORS.positive : COLORS.textMuted, flexShrink: 0 }}>{d.hecho ? '✓' : '·'}</span>
-                    {d.etiqueta}
-                  </li>
-                ))}
-              </ul>
-              <p className="text-xs mt-2.5 leading-relaxed" style={{ color: COLORS.textMuted, opacity: 0.8 }}>
-                Solo cuentan las áreas en las que ya registras cosas. Se reinicia cada día.
-              </p>
-            </div>
-          </div>
-        </div>
       </button>
+      <Plegable abierto={expandido} id="puntuacion-desglose" data-puntuacion-desglose="" style={{ padding: '0 1.25rem 1.1rem' }}>
+        {() => (
+          <>
+            <ul className="space-y-1">
+              {puntuacion.detalle.map((d) => (
+                <li key={d.id} className="text-xs flex items-center gap-2" style={{ color: d.hecho ? COLORS.text : COLORS.textMuted }}>
+                  <span style={{ color: d.hecho ? COLORS.positive : COLORS.textMuted, flexShrink: 0 }}>{d.hecho ? '✓' : '·'}</span>
+                  {d.etiqueta}
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs mt-2.5 leading-relaxed" style={{ color: COLORS.textMuted, opacity: 0.8 }}>
+              Solo cuentan las áreas en las que ya registras cosas. Se reinicia cada día.
+            </p>
+          </>
+        )}
+      </Plegable>
     </Card>
   );
 }

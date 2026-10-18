@@ -1,5 +1,34 @@
 # CHANGELOG.md
 
+## v3.156.0 — P4: la tarjeta de progreso de Inicio y el rectángulo del foco (iPhone y iPad)
+
+> El último de los cuatro prompts del 2026-10-18 (`docs/14_PROMPTS_2026-10-18.md`).
+
+### 🐛 A · La tarjeta de progreso se quedaba con el alto de abierta
+- **La causa:** su desglose (Sueño, Nutrición, Hábitos…) vivía **dentro del `<button>`** de la tarjeta y se plegaba con
+  `grid-template-rows: 0fr` + opacidad 0, siempre montado. WebKit (Safari del iPhone y del iPad) mide un botón por
+  su contenido, y ahí la fila a `0fr` seguía aportando su alto: la tarjeta salía grande con la lista invisible, y al
+  tocarla solo cambiaba la opacidad. Chromium deja la fila en cero, por eso en el ordenador iba bien. El
+  `minHeight: 0` de la SC F1 era necesario pero no bastaba aquí. `IndicadorContexto`, con el desplegable FUERA de
+  su botón, no fallaba: ésa era la diferencia.
+- **El arreglo:** el botón es solo la cabecera (con `aria-expanded`) y el desglose va fuera, en `Plegable` (MS F10):
+  cerrado no está en la página —no puede dejar hueco en ningún navegador—, se abre creciendo y se cierra encogiendo.
+  Mismo diseño, mismos datos, sin alturas fijas ni `@media`.
+
+### 🐛 B · El rectángulo dibujado por su perímetro al abrir la aplicación
+- **La causa:** al navegar (y al arrancar), si el foco se ha perdido se lleva al contenedor de la pantalla
+  (`tabIndex={-1}`, MS F2/F12) para que VoiceOver no se quede en el vacío. Ese foco lo pone el código y el navegador
+  lo cuenta como `:focus-visible`; la regla global de `App.jsx` (`*:focus-visible { outline: 2px solid acento }`)
+  le dibujaba un contorno del color del acento alrededor de **toda la pantalla**, y su `outline-none` no ganaba
+  (misma especificidad, y la regla va después). Al tocar un botón el foco se iba a él y el rectángulo desaparecía.
+- **El arreglo:** esa regla ya no se aplica a lo que tiene `tabIndex={-1}` (que no se alcanza con el tabulador). El
+  foco sigue yendo al contenedor (accesibilidad intacta) y **los controles conservan su anillo con el teclado**.
+- Pruebas: `test-bugs-movil-p4` (20, en `verificar.sh`) y la sección «P4» del recorrido (30): la tarjeta contraída,
+  expandida y otra vez contraída —con 2 y 3 áreas— a 390, 820 y 1280 px, y el foco tras navegar, volver a Inicio,
+  ocultar y volver a la pestaña (`visibilitychange` y `pageshow`), recargar, ningún contorno de media pantalla y el
+  anillo del teclado en un botón. ⚠️ **Chromium no reproduce el fallo A de WebKit**: se mide la estructura que lo hace
+  imposible; **en un iPhone y un iPad de verdad lo tiene que ver Josué** (R1).
+
 ## v3.155.0 — P3: la IA que todavía no está disponible, sin mensajes técnicos
 
 > El tercero de los cuatro prompts del 2026-10-18 (`docs/14_PROMPTS_2026-10-18.md`).
