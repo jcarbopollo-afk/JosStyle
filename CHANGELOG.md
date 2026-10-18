@@ -1,5 +1,46 @@
 # CHANGELOG.md
 
+## v3.157.0 — Fotos sin menú intermedio, la foto de perfil en Inicio y «+ Añadir» como fila
+
+> Dos encargos de Josué del 2026-10-18, después de los cuatro prompts: *«Simplificar selección de fotos y añadir avatar
+> al inicio»* y *«Rediseño del botón Añadir en Inicio»*.
+
+### 📸 Elegir una foto: un toque, el selector del sistema
+- **Lo que había:** el selector común de la P1 ponía una hoja propia delante —«Hacer una foto» y «Fototeca o archivos»
+  en el iPhone; cámara, galería y archivos en Android; «Hacer una foto» (cámara del navegador) y «Elegir una imagen» en
+  el ordenador—. Josué: *redundante, porque el selector nativo ya ofrece la cámara*.
+- **Ahora:** `SelectorDeArchivos` abre **un** `<input type="file">` **sin `capture`**, dentro del mismo toque: el iPhone
+  y el iPad enseñan su hoja (Fototeca, Hacer foto, Elegir archivo), Android su selector con la cámara, la galería y los
+  archivos, y el ordenador su diálogo de archivos. Fuera la hoja de opciones y la cámara del navegador
+  (`HojaDeOpciones`, `CamaraWeb`, `textoDeErrorDeCamara`, `detectarPlataforma`): el permiso de la cámara lo pide el
+  sistema, que es quien la abre. Vale para **todos** los sitios que usan el selector (fotos de progreso de Fitness y de
+  Salud, plato, prendas y outfits, portadas, álbum, fondo, perfil, adjunto de la IA, foto y vídeos de entrenamiento).
+  Validación (formato, tamaño, vacío), mensajes y guardado: los de siempre.
+- **Fitness → Progreso → Fotos:** «+ Añadir progreso» y «Añadir primera foto» abren **directamente** el selector; lo
+  elegido abre el formulario ya con su previsualización (fecha, etiquetas, nota, «Añadir otra», «Guardar la foto»).
+  Cancelar el selector no abre nada. 🐛 Las previsualizaciones se crean y se sueltan en el mismo efecto: creadas al
+  montar, el doble montaje de `StrictMode` las soltaba antes de pintarse.
+- El `<input>` lleva el atributo `hidden` (no cuenta como hermano para `space-y-*`).
+
+### 👤 La foto de perfil en Inicio
+- A la derecha del saludo, alineada con él: **el mismo círculo que la cabecera de Ajustes** (`CirculoAvatar`, ahora en
+  `src/components/avatarPerfil.jsx` y reexportado por `SettingsView`), con la misma `perfil.foto`, los mismos 56 px, el
+  mismo recorte redondo y el mismo avatar por defecto (sus iniciales, o el icono de persona). Ni una segunda fuente de
+  datos. No se pulsa (en Inicio no tenía comportamiento). Un nombre largo baja de línea (`min-w-0`) sin empujarla.
+
+### ➕ «+ Añadir» de Inicio, una fila entera
+- El mismo `BotonAnadir`, con `fila`: todo el ancho, compacto (52 px), «+ Añadir» a la derecha, con la superficie, el
+  borde, el radio y el relleno de la fila de la situación actual. Misma acción (el ＋ de Hoy), mismo nombre, sin
+  animaciones nuevas. El Calendario lo sigue usando pequeño.
+
+- Pruebas: `test-seleccion-archivos` (73) y `test-inicio-cabecera` (18, nueva) en `verificar.sh`; en el recorrido, la
+  sección P1 rehecha (el selector se abre como `filechooser` sin hoja delante, un `.txt` se rechaza, la foto se
+  previsualiza y carga, «Añadir otra», quitar, guardar, y «+ Añadir progreso» con fotos) y la nueva «👤 INICIO» (la
+  foto, su tamaño, su sitio y la misma que Ajustes a 320, 390, 820 y 1280 px; un nombre larguísimo sin foto; la fila
+  «+ Añadir» del ancho de la de la situación actual, compacta, con el texto a la derecha, y que abre el ＋).
+  ⚠️ **La hoja del iPhone y el selector de Android solo se ven en un móvil de verdad** (R1): Chromium abre el diálogo de
+  archivos.
+
 ## v3.156.0 — P4: la tarjeta de progreso de Inicio y el rectángulo del foco (iPhone y iPad)
 
 > El último de los cuatro prompts del 2026-10-18 (`docs/14_PROMPTS_2026-10-18.md`).

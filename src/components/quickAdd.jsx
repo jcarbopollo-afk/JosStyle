@@ -300,12 +300,20 @@ export function AvisoAccion({ accion, accent, onDeshacer, onCerrar }) {
 /* ── El botón ＋ en sí (apartado 34) ───────────────────────────────────────
    *"En móvil, ＋ debe ser fácil de alcanzar."* Se coloca donde cada pantalla
    lo tenga; lo que comparte es el aspecto y la zona de toque. */
-export function BotonAnadir({ accent, onClick, texto = 'Añadir' }) {
+export function BotonAnadir({ accent, onClick, texto = 'Añadir', fila = false }) {
+  /* 2026-10-18 — en Inicio va como una FILA (`fila`): todo el ancho, compacta y con
+     «+ Añadir» a la derecha, con la superficie, el borde y el radio de la fila de la
+     situación actual (`IndicadorContexto`). Mismo botón, mismo toque, misma acción:
+     solo cambia la presentación. El Calendario la sigue usando pequeña. */
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl toque-44"
-      style={{ background: COLORS.surface2, color: accent }}
+      className={fila
+        ? 'w-full flex items-center justify-end gap-1.5 text-sm font-semibold rounded-3xl toque-44'
+        : 'flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl toque-44'}
+      style={fila
+        ? { background: COLORS.surface, border: `1px solid ${COLORS.border}`, color: accent, padding: '0.8rem 1.1rem', minHeight: 52 }
+        : { background: COLORS.surface2, color: accent }}
       aria-label={texto}
     >
       <Plus size={15} /> {texto}

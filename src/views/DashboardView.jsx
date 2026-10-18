@@ -31,6 +31,7 @@ import { ResumenRachaHoy } from './RachasView';
 import { resumenDelDia, eventosDelDia } from '../lib/calendario';
 import { puntuacionDelDia, mensajePuntuacion } from '../lib/puntuacion';
 import { saludoCompleto } from '../lib/fotoPerfil';
+import { CirculoAvatar } from '../components/avatarPerfil';
 import { Card, AIPanel, ScoreGauge, DashboardModuleCard, MiniAccessCard, QuickActionButton, TextInput, PrimaryButton, BotonBorrar } from '../components/ui';
 // Fase A4 — Notificaciones reales: los tres avisos automáticos de "Hoy" (Fase 20) son el primer
 // caso de uso real de src/lib/notificaciones.js — si Josué activa el permiso del sistema y la
@@ -684,11 +685,18 @@ export default function DashboardView({
 
   return (
     <div className="space-y-4 pb-4">
-      <div>
-        <p className="text-sm capitalize" style={{ color: COLORS.textMuted }}>{fechaHoy}</p>
-        <h1 className="text-2xl font-extrabold mt-0.5" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-          {saludoCompleto(saludo, perfil)}
-        </h1>
+      {/* 2026-10-18 — su foto de perfil a la derecha del saludo: el MISMO círculo que la
+          cabecera de Ajustes (`CirculoAvatar`, mismo tamaño, mismas iniciales sin foto),
+          leído de `perfil.foto`. ⚠️ `min-w-0` en el texto: un nombre largo baja de línea
+          en vez de empujar el círculo fuera de la pantalla. */}
+      <div className="flex items-center justify-between gap-3" data-cabecera-inicio>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm capitalize" style={{ color: COLORS.textMuted }}>{fechaHoy}</p>
+          <h1 className="text-2xl font-extrabold mt-0.5 break-words" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+            {saludoCompleto(saludo, perfil)}
+          </h1>
+        </div>
+        <CirculoAvatar perfil={perfil} accent={accent} lado={56} />
       </div>
 
       {/* Ajuste del indicador de contexto — Viaje/Vacaciones/Exámenes/Rutina normal: cerrado por
@@ -708,9 +716,7 @@ export default function DashboardView({
           fecha de hoy ya puesta. Lo que crea son entidades de siempre, así que
           aparece a la vez en Hoy, en la Agenda y en el Calendario (apartado 29):
           no hay nada que sincronizar. */}
-      <div className="flex justify-end">
-        <BotonAnadir accent={accent} onClick={() => setCreandoHoy(true)} />
-      </div>
+      <BotonAnadir accent={accent} onClick={() => setCreandoHoy(true)} fila />
 
       <IndicadorContexto modo={modo} onSetModo={onSetModo} accent={accent} />
 

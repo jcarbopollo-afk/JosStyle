@@ -16,7 +16,8 @@ import {
   OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, OPCIONES_SESION_PIN,
 } from '../tokens';
 import { calcularEdad, shade, hexToRgba, uid, todayISO } from '../lib/helpers';
-import { prepararFotoPerfil, esFotoValida, inicialesDe, nombreParaSaludo, TIPOS_ACEPTADOS } from '../lib/fotoPerfil';
+import { prepararFotoPerfil, esFotoValida, nombreParaSaludo, TIPOS_ACEPTADOS } from '../lib/fotoPerfil';
+import { CirculoAvatar } from '../components/avatarPerfil';
 import { permisoNotificaciones, pedirPermisoNotificaciones } from '../lib/notificaciones';
 /* Entrega 3 · F11 (HC F6, apartados 23 y 24) — qué puede y qué NO puede hacer
    esta plataforma. *"Si una capacidad no puede garantizarse desde Safari/PWA:
@@ -355,7 +356,7 @@ function SelectorFoto({ fondo, accent, urlFotoActual, onSubirFoto, onCambiar, on
   return (
     <div className="mt-3">
       {/* 📎 P1 — el selector común; la validación del fondo (`validarFotoFondo`) sigue siendo la suya. */}
-      <SelectorDeArchivos controlRef={inputRef} clase="imagen" accent={accent} titulo="Foto de fondo" disabled={subiendo} mostrarError={false} onElegir={(f) => elegir(eventoDeArchivos(f))} />
+      <SelectorDeArchivos controlRef={inputRef} clase="imagen" disabled={subiendo} mostrarError={false} onElegir={(f) => elegir(eventoDeArchivos(f))} />
 
       {/* Apartado 3: mientras hay una foto pendiente, manda la vista previa. */}
       {pendiente ? (
@@ -1728,36 +1729,9 @@ function OpcionesFila({ opciones, valor, onChange, accent }) {
    ⚠️ Con dos dibujos —uno aquí y otro en la cabecera— acabarían distintos en
    cuanto alguien tocara uno: el borde, el recorte o las iniciales. Es la lección
    de siempre del proyecto sobre las copias, aplicada a un círculo. */
-export function CirculoAvatar({ perfil, accent, lado = 88, aria = 'Tu foto de perfil' }) {
-  const foto = esFotoValida(perfil?.foto) ? perfil.foto : null;
-  const iniciales = inicialesDe(perfil || {});
-  return (
-    <div
-      className="rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden"
-      style={{
-        width: lado, height: lado,
-        background: foto ? 'transparent' : hexToRgba(accent, 0.14),
-        border: `2px solid ${hexToRgba(accent, foto ? 0.35 : 0.25)}`,
-      }}
-    >
-      {foto ? (
-        <img src={foto} alt={aria} className="w-full h-full object-cover" />
-      ) : iniciales ? (
-        /* ⚠️ Sin foto se pintan SUS INICIALES, no una silueta gris: un hueco con
-           tus iniciales parece tuyo; el monigote de desconocido parece un error.
-           El tamaño de la letra va con el círculo, o a 56 px se sale. */
-        <span
-          className="font-extrabold"
-          style={{ color: accent, fontFamily: "'Manrope', sans-serif", fontSize: Math.round(lado * 0.34) }}
-        >
-          {iniciales}
-        </span>
-      ) : (
-        <User size={Math.round(lado * 0.39)} style={{ color: accent }} aria-hidden="true" />
-      )}
-    </div>
-  );
-}
+// El círculo vive en `src/components/avatarPerfil.jsx` desde que Inicio también lo pinta
+// (2026-10-18): el mismo dibujo en las dos cabeceras. Se reexporta para quien lo importaba de aquí.
+export { CirculoAvatar };
 
 /* 🚨 PF F1 — **EL AVATAR DE LA CABECERA.** Josué: *"Al pulsar sobre el avatar,
    debe poderse seleccionar/cambiar la foto de perfil"*, así que pulsarlo abre
@@ -1826,7 +1800,7 @@ export function AvatarCabecera({ perfil, accent, onCambiar, lado = 56 }) {
         <p className="text-[11px] mt-1.5 text-right max-w-[170px]" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>
       )}
       {/* 📎 P1 — el selector común; la validación de la foto de perfil sigue siendo la suya. */}
-      <SelectorDeArchivos controlRef={fileRef} clase="imagen" accept={TIPOS_ACEPTADOS.join(',')} accent={accent} titulo="Foto de perfil" disabled={cargando} mostrarError={false} onElegir={(f) => elegir(eventoDeArchivos(f))} />
+      <SelectorDeArchivos controlRef={fileRef} clase="imagen" accept={TIPOS_ACEPTADOS.join(',')} disabled={cargando} mostrarError={false} onElegir={(f) => elegir(eventoDeArchivos(f))} />
     </div>
   );
 }
@@ -1916,7 +1890,7 @@ export function AvatarPerfil({ perfil, accent, onCambiar, onQuitar }) {
       )}
 
       {/* 📎 P1 — el selector común; la validación de la foto de perfil sigue siendo la suya. */}
-      <SelectorDeArchivos controlRef={fileRef} clase="imagen" accept={TIPOS_ACEPTADOS.join(',')} accent={accent} titulo="Foto de perfil" disabled={cargando} mostrarError={false} onElegir={(f) => elegir(eventoDeArchivos(f))} />
+      <SelectorDeArchivos controlRef={fileRef} clase="imagen" accept={TIPOS_ACEPTADOS.join(',')} disabled={cargando} mostrarError={false} onElegir={(f) => elegir(eventoDeArchivos(f))} />
     </Card>
   );
 }

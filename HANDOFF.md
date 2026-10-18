@@ -2,6 +2,14 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.157.0 — fotos en un toque, foto de perfil en Inicio y «+ Añadir» como fila):**
+> Añadir una foto ya no pasa por un menú propio («Hacer una foto» / «Fototeca o archivos»): se abre directamente el
+> selector del teléfono, que ya trae la cámara, las fotos y los archivos. En Fitness, «Añadir progreso» abre ese
+> selector y lo elegido se ve antes de guardar. En Inicio, su foto de perfil sale a la derecha del saludo (la misma de
+> Ajustes) y «+ Añadir» es una fila entera con el texto a la derecha. Antes (v3.153–v3.156) fueron a `main` los cuatro
+> prompts del 18 de octubre: selector de fotos, agua con jarra, IA «próximamente» y los dos fallos visuales del iPhone.
+> **Lo que queda: verlo en el iPhone** (la hoja del sistema solo se ve allí).
+
 > **📅 ACTUALIZACIÓN (v3.151.0 — Notas: editar una nota · Microsoft aplazado):**
 > Las notas de la Biblioteca **ya se pueden editar**: «Editar» en cada nota abre el mismo formulario con lo que tenía,
 > y se guarda o se cancela. Es la misma nota (no una copia), sube a Recientes y Deshacer la devuelve. Por decisión de

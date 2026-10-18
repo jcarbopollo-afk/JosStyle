@@ -10,7 +10,7 @@
    tandas de `FOTOS_POR_TANDA`, según se van necesitando.
    =========================================================================== */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDialogoAccesible } from './dialogoAccesible';
 import { MissingImage } from './estadosFitness';
 import { createPortal } from 'react-dom';
@@ -135,24 +135,31 @@ export function ProgressPhotoEmpty({ accent, onAnadir = null }) {
    🚨 Apartado 5 — *"No guardar automáticamente si el usuario todavía está en la
    previsualización"*: se elige, se ve, y **entonces** se guarda.
    🚨 Apartado 6 — varias fotos en una acción, y **cada una un registro**. */
-export function ProgressPhotoForm({ accent, hoy, onGuardar, onCancelar, guardando = false, error = null }) {
-  const [elegidas, setElegidas] = useState([]);
+export function ProgressPhotoForm({ accent, hoy, onGuardar, onCancelar, guardando = false, error = null, iniciales = [] }) {
+  /* Lo que ya eligió al tocar «Añadir progreso» (el selector se abre antes que este
+     formulario): llega aquí para verlo, ponerle fecha y etiquetas, y entonces guardar. */
+  const conId = (files) => files.map((file) => ({ id: `${file.name}-${file.size}-${Math.random()}`, file }));
+  const [elegidas, setElegidas] = useState(() => conId(iniciales || []));
+  const [vistas, setVistas] = useState({});
   const [fecha, setFecha] = useState(hoy);
   const [nota, setNota] = useState('');
   const [tags, setTags] = useState([]);
 
-  useEffect(() => () => elegidas.forEach((e) => URL.revokeObjectURL(e.vista)), [elegidas]);
+  /* 🐛 Las previsualizaciones se crean en un efecto y se sueltan en su limpieza: así
+     una foto que ya venía elegida no se queda sin imagen cuando React monta el
+     formulario dos veces (StrictMode, en desarrollo), ni se suelta una que se ve. */
+  useEffect(() => {
+    const urls = Object.fromEntries(elegidas.map((e) => [e.id, URL.createObjectURL(e.file)]));
+    setVistas(urls);
+    return () => Object.values(urls).forEach((u) => URL.revokeObjectURL(u));
+  }, [elegidas]);
 
-  /* 📎 P1 — lo elegido llega ya validado por el selector común (cámara, fototeca o archivos). */
+  /* 📎 P1 — lo elegido llega ya validado por el selector común (el del sistema: cámara, fototeca o archivos). */
   const elegir = (files) => {
     if (!files.length) return;
-    setElegidas((v) => [...v, ...files.map((file) => ({ id: `${file.name}-${file.size}-${Math.random()}`, file, vista: URL.createObjectURL(file) }))]);
+    setElegidas((v) => [...v, ...conId(files)]);
   };
-  const quitar = (id) => setElegidas((v) => {
-    const fuera = v.find((e) => e.id === id);
-    if (fuera) URL.revokeObjectURL(fuera.vista);
-    return v.filter((e) => e.id !== id);
-  });
+  const quitar = (id) => setElegidas((v) => v.filter((e) => e.id !== id));
   const alternarTag = (id) => setTags((v) => (v.includes(id) ? v.filter((t) => t !== id) : [...v, id]));
 
   return (
@@ -160,9 +167,9 @@ export function ProgressPhotoForm({ accent, hoy, onGuardar, onCancelar, guardand
       <p className="text-sm font-bold mb-3" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Añadir progreso</p>
 
       {/* Apartado 4 — «tomar fotografía si el dispositivo lo permite», y sin dar
-          por hecho que hay cámara. 📎 P1: el selector común ofrece lo que el
-          dispositivo tenga (cámara, fototeca o galería, archivos). */}
-      <SelectorDeArchivos clase="imagen" multiple maxBytes={MAX_FOTO_BYTES} disabled={guardando} onElegir={elegir} accent={accent} titulo="Añadir foto de progreso">
+          por hecho que hay cámara. El selector común abre el del sistema, que ya
+          trae lo que el dispositivo tenga (cámara, fototeca o galería, archivos). */}
+      <SelectorDeArchivos clase="imagen" multiple maxBytes={MAX_FOTO_BYTES} disabled={guardando} onElegir={elegir}>
         {({ abrir }) => (
           <button
             onClick={abrir} disabled={guardando}
@@ -183,7 +190,7 @@ export function ProgressPhotoForm({ accent, hoy, onGuardar, onCancelar, guardand
               {/* Apartado 15 — `object-contain`: nunca se estira una imagen. */}
               {/* 🐛 FIT F39 (apartado 22) — un archivo que el navegador no sabe
                   enseñar dejaba la imagen rota: se dice sin romper la selección. */}
-              <MissingImage src={e.vista} alt="Foto elegida, sin guardar todavía" className="w-full aspect-square object-contain" />
+              {vistas[e.id] ? <MissingImage src={vistas[e.id]} alt="Foto elegida, sin guardar todavía" className="w-full aspect-square object-contain" /> : <div className="w-full aspect-square" aria-hidden="true" />}
               <button
                 onClick={() => quitar(e.id)}
                 aria-label="Quitar esta foto de la selección"
@@ -485,6 +492,13 @@ export function ProgressPhotos({
   comparacionInicial = null, onComparacionConsumida = null,
 }) {
   const [anadiendo, setAnadiendo] = useState(false);
+  /* 2026-10-18 — «Añadir progreso» abre el selector del sistema directamente; lo
+     elegido abre el formulario ya con su previsualización. Cancelar el selector no
+     abre nada. */
+  const [iniciales, setIniciales] = useState([]);
+  const selector = useRef(null);
+  const anadir = () => { if (selector.current) selector.current.abrir(); };
+  const conElegidas = (files) => { setIniciales(files); setError(null); setAnadiendo(true); };
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   const [abierta, setAbierta] = useState(null);
@@ -526,6 +540,7 @@ export function ProgressPhotos({
         await onAddFoto(optimizada, { fecha, nota, tags });
       }
       setAnadiendo(false);
+      setIniciales([]);
     } catch (e) {
       setError(e || true);
     } finally {
@@ -543,9 +558,12 @@ export function ProgressPhotos({
 
   return (
     <div className="space-y-4">
+      {onAddFoto && !anadiendo && (
+        <SelectorDeArchivos controlRef={selector} clase="imagen" multiple maxBytes={MAX_FOTO_BYTES} onElegir={conElegidas} />
+      )}
       {/* Apartado 24 — el vacío, con su salida. */}
       {pantalla.estado.id === 'vacio' && !anadiendo && (
-        <ProgressPhotoEmpty accent={accent} onAnadir={onAddFoto ? () => setAnadiendo(true) : null} />
+        <ProgressPhotoEmpty accent={accent} onAnadir={onAddFoto ? anadir : null} />
       )}
 
       {anadiendo ? (
@@ -554,12 +572,13 @@ export function ProgressPhotos({
           hoy={hoy}
           guardando={guardando}
           error={error}
+          iniciales={iniciales}
           onGuardar={guardar}
-          onCancelar={() => { setAnadiendo(false); setError(null); }}
+          onCancelar={() => { setAnadiendo(false); setIniciales([]); setError(null); }}
         />
       ) : pantalla.estado.id !== 'vacio' && onAddFoto ? (
         <div className="flex flex-col gap-2">
-          <PrimaryButton onClick={() => setAnadiendo(true)} accent={accent} icon={Camera}>+ Añadir progreso</PrimaryButton>
+          <PrimaryButton onClick={anadir} accent={accent} icon={Camera}>+ Añadir progreso</PrimaryButton>
           {/* Apartado 25 — la sección de comparar existe siempre: o se usa, o
               dice qué falta. Nunca desaparece.
               🔓 Y desde la FIT F27 abre **el comparador entero** (su apartado 2:
@@ -593,7 +612,7 @@ export function ProgressPhotos({
           onZoom={comparador.cambiarZoom}
           onMover={comparador.mover}
           onCerrar={() => setComparando(false)}
-          onAnadir={onAddFoto ? () => { setComparando(false); setAnadiendo(true); } : null}
+          onAnadir={onAddFoto ? () => { setComparando(false); anadir(); } : null}
         />
       )}
 

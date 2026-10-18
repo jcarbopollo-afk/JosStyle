@@ -1863,6 +1863,13 @@ else
   fallo "Falla la P4 (tarjeta de progreso o rectángulo del foco)"; grep '✗' /tmp/jc_p4.log
 fi
 
+# 2026-10-18 · Inicio — la foto de perfil junto al saludo y la fila «+ Añadir».
+if node scripts/test-inicio-cabecera.mjs >/tmp/jc_inicio_cab.log 2>&1; then
+  ok "Inicio: foto de perfil y fila «+ Añadir» — $(grep -c '✓' /tmp/jc_inicio_cab.log) comprobaciones"
+else
+  fallo "Falla la cabecera de Inicio (foto de perfil o «+ Añadir»)"; grep '✗' /tmp/jc_inicio_cab.log
+fi
+
 # Entrega 3 · F21 — Biblioteca: Colecciones.
 if node --import ./scripts/resolver-vite.mjs scripts/test-colecciones.mjs >/tmp/jc_cols.log 2>&1; then
   ok "Biblioteca: Colecciones (E3 F21) — $(grep -c '✓' /tmp/jc_cols.log) comprobaciones"

@@ -273,7 +273,7 @@ function VideosTab({ skill, videos, onAddVideo, onDeleteVideo, onSetVideoFeedbac
           <TextInput value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej: segundo intento del día" />
         </Field>
         {/* 📎 P1 — grabar en el móvil, o elegir un vídeo que ya tengas. */}
-        <SelectorDeArchivos clase="video" maxBytes={200 * MB} disabled={subiendo} accent={accent} titulo={`Vídeo de ${skill}`} onElegir={(f) => handleFile(eventoDeArchivos(f))}>
+        <SelectorDeArchivos clase="video" maxBytes={200 * MB} disabled={subiendo} onElegir={(f) => handleFile(eventoDeArchivos(f))}>
           {({ abrir }) => (
             <button onClick={subiendo ? undefined : abrir} className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full" style={{ background: accent, color: COLORS.textOnAccent }} aria-busy={subiendo || undefined}>
               <TextoDeBoton estado={subiendo ? 'cargando' : 'reposo'} icono={<Video size={16} strokeWidth={2.5} />} textoCargando="Subiendo…">{`Subir vídeo de ${skill}`}</TextoDeBoton>

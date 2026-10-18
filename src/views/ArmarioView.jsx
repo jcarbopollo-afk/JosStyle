@@ -174,7 +174,7 @@ function FormularioPrenda({ inicial, accent, guardando, errorFoto, onGuardar, on
       {/* Apartado 4: la foto es opcional y se dice en la propia etiqueta, para que no
           parezca un paso obligatorio que hay que saltarse. */}
       {/* 📎 P1 — cámara, fototeca o archivos, con el selector común. */}
-      <SelectorDeArchivos clase="imagen" maxBytes={30 * MB} accent={accent} titulo="Foto de la prenda" onElegir={(f) => onFoto(f[0] || null)}>
+      <SelectorDeArchivos clase="imagen" maxBytes={30 * MB} onElegir={(f) => onFoto(f[0] || null)}>
         {({ abrir }) => (
           <button onClick={abrir} className="flex items-center gap-2 text-xs font-semibold mb-3 toque-44" style={{ color: accent }}>
             <Camera size={14} />
@@ -699,7 +699,7 @@ function FormularioOutfit({ inicial, prendas, accent, guardando, errorFoto, foto
       <SelectorPrendas prendas={prendas} seleccion={form.prendaIds} onToggle={toggle} accent={accent} />
 
       {/* 📎 P1 — cámara, fototeca o archivos, con el selector común. */}
-      <SelectorDeArchivos clase="imagen" maxBytes={30 * MB} accent={accent} titulo="Foto del outfit" onElegir={(f) => onFoto(f[0] || null)}>
+      <SelectorDeArchivos clase="imagen" maxBytes={30 * MB} onElegir={(f) => onFoto(f[0] || null)}>
         {({ abrir }) => (
           <button onClick={abrir} className="flex items-center gap-2 text-xs font-semibold mt-3 mb-3 toque-44" style={{ color: accent }}>
             <Camera size={14} />

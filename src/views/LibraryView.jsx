@@ -268,7 +268,7 @@ function AnadirArchivo({ tipo, onAdd, accent }) {
           también con la cámara y la fototeca. */}
       <SelectorDeArchivos
         clase={tipo === 'foto' ? 'imagen' : tipo === 'video' ? 'video' : 'documento'} accept={meta.accept}
-        maxBytes={tipo === 'video' ? 200 * MB : 50 * MB} disabled={subiendo} accent={accent}
+        maxBytes={tipo === 'video' ? 200 * MB : 50 * MB} disabled={subiendo}
         titulo={`Subir ${meta.label.toLowerCase()}`} onElegir={(f) => handleFile(eventoDeArchivos(f))}
       >
         {({ abrir }) => (
@@ -908,7 +908,7 @@ export function FormularioLibro({ libro = null, accent, onGuardar, onCancelar, o
           </div>
           <div className="flex-1">
             {/* 📎 P1 — una foto de la portada, o una imagen que ya tengas. */}
-            <SelectorDeArchivos clase="imagen" disabled={subiendo} accent={accent} titulo="Portada del libro" onElegir={(f) => elegirPortada(eventoDeArchivos(f))}>
+            <SelectorDeArchivos clase="imagen" disabled={subiendo} onElegir={(f) => elegirPortada(eventoDeArchivos(f))}>
               {({ abrir }) => (
                 <button
                   onClick={subiendo ? undefined : abrir} aria-busy={subiendo || undefined}

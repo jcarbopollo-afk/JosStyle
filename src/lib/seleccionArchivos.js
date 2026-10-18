@@ -4,21 +4,21 @@
    Josué: *"si cualquier apartado permite añadir, adjuntar, subir o seleccionar una
    imagen o un archivo, el usuario debe disponer de las opciones compatibles con su
    dispositivo para obtenerlo"*. Esto es la parte que decide, sin pintar nada:
-   qué opciones se ofrecen, con qué `accept` y `capture`, y si un archivo vale.
+   qué se abre, con qué `accept`, y si un archivo vale.
    La pieza que lo pinta es `src/components/selectorArchivos.jsx`.
 
-   🚨 **JOSSTYLE ES UNA WEB: LAS OPCIONES SON LAS DEL NAVEGADOR, NO UN MENÚ INVENTADO.**
-     · iPhone y iPad (Safari): un `<input type="file" accept="image/*">` **sin**
-       `capture` abre la hoja del propio iOS —Fototeca, Hacer foto, Elegir
-       archivo—; **con** `capture` va directo a la cámara. Así que se ofrecen dos:
-       «Hacer una foto» y «Fototeca o archivos». Una tercera abriría la misma hoja.
-     · Android (Chrome): sin `capture` y con `image/*` abre la galería (el
-       selector de fotos del sistema); con extensiones en vez de `image/*`, el
-       gestor de archivos; con `capture`, la cámara. Las tres son distintas.
-     · Ordenador: `capture` no hace nada, así que «Hacer una foto» va por la cámara
-       del navegador (`getUserMedia`) **solo si existe y la página es segura**; si
-       no, no se ofrece. La galería y los archivos son el mismo diálogo: uno.
-   ⚠️ Un documento **nunca** ofrece la cámara (apartado 2).
+   🚨 **UN SOLO TOQUE: EL SELECTOR DEL SISTEMA, SIN UN MENÚ DELANTE** (2026-10-18,
+   «Simplificar selección de fotos»). La primera versión ponía una hoja propia con
+   «Hacer una foto» y «Fototeca o archivos», y Josué la quitó: *"es redundante,
+   porque el selector nativo ya ofrece la opción de cámara"*. Así que se abre UN
+   `<input type="file">` **sin `capture`** y el navegador enseña lo suyo:
+     · iPhone y iPad (Safari): la hoja del propio iOS —Fototeca, Hacer foto,
+       Elegir archivo—.
+     · Android (Chrome): su selector, con la cámara, la galería y los archivos.
+     · Ordenador: el diálogo de archivos, directamente (la cámara del navegador
+       sería un paso más que nadie ha pedido).
+   🚨 **Nunca `capture`**: obliga a la cámara y en el iPhone quita la fototeca.
+   ⚠️ Un documento **nunca** ofrece la cámara: su `accept` no es de imagen.
 
    ⚠️ **ELEGIR NO ES GUARDAR** (apartado 6): esto solo dice si el archivo vale.
    Subirlo y decir si llegó sigue siendo de cada módulo.
@@ -38,71 +38,21 @@ export const MB = 1024 * 1024;
  *  pruebas, que se comían el código que venía detrás. */
 export const ACEPTA_IMAGEN_O_PDF = 'image/*,application/pdf';
 
-/* ── La plataforma, de lo que dice el navegador de verdad ───────────────────── */
-export function detectarPlataforma(entorno = (typeof window !== 'undefined' ? window : null)) {
-  const nav = entorno && entorno.navigator ? entorno.navigator : {};
-  const ua = String(nav.userAgent || '');
-  const tactil = Number(nav.maxTouchPoints || 0) > 0
-    || Boolean(entorno && typeof entorno.matchMedia === 'function' && entorno.matchMedia('(pointer: coarse)').matches);
-  // iPadOS 13+ se presenta como un Mac: lo delata la pantalla táctil.
-  const ios = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && Number(nav.maxTouchPoints || 0) > 1);
-  const android = /Android/i.test(ua);
-  const segura = Boolean(entorno && entorno.isSecureContext);
-  const camaraWeb = segura && Boolean(nav.mediaDevices && typeof nav.mediaDevices.getUserMedia === 'function');
-  const tipo = ios ? 'ios' : android ? 'android' : (tactil ? 'tactil' : 'ordenador');
-  return { tipo, ios, android, tactil, camaraWeb };
-}
-
 const sinComodin = (accept) => String(accept || '').split(',').map((s) => s.trim()).filter(Boolean);
 
 /**
- * Las opciones que tienen sentido para este contenido en este dispositivo.
- * @param clase      'imagen' | 'video' | 'documento'
- * @param accept     lo que acepta la función concreta (por defecto, el de su clase)
- * @param multiple   si se pueden elegir varios
- * @returns [{ id, etiqueta, modo: 'input' | 'camaraWeb', accept, capture }]
+ * Lo que se abre al tocar: siempre UNA opción, el selector del sistema.
+ * @param clase   'imagen' | 'video' | 'documento'
+ * @param accept  lo que acepta la función concreta (por defecto, el de su clase)
+ * @returns [{ id: 'archivos', etiqueta, accept }]
  */
-export function opcionesDeSeleccion({ clase = 'imagen', accept = null, plataforma = detectarPlataforma() } = {}) {
+export function opcionesDeSeleccion({ clase = 'imagen', accept = null } = {}) {
   const c = CLASES_DE_ARCHIVO[clase] || CLASES_DE_ARCHIVO.documento;
   const acepta = accept || c.accept;
-  const p = plataforma || {};
-  const opciones = [];
-  const esFoto = c.camara === 'foto';
-  const esVideo = c.camara === 'video';
-
-  if (c.camara) {
-    if (p.ios || p.android) {
-      opciones.push({ id: 'camara', etiqueta: esFoto ? 'Hacer una foto' : 'Grabar un vídeo', modo: 'input', accept: esFoto ? 'image/*' : 'video/*', capture: 'environment' });
-    } else if (p.camaraWeb && esFoto) {
-      // ⚠️ La cámara del ordenador solo para fotos: grabar vídeo en el navegador es otra función.
-      opciones.push({ id: 'camara', etiqueta: 'Hacer una foto', modo: 'camaraWeb', accept: 'image/jpeg', capture: null });
-    }
-  }
-
-  if (clase === 'documento' || !c.camara) {
-    opciones.push({ id: 'archivos', etiqueta: 'Seleccionar archivo', modo: 'input', accept: acepta, capture: null });
-    return opciones;
-  }
-
-  // Lo que acepta aparte de su clase (un PDF junto a las fotos): la galería no lo
-  // enseña, así que esa opción se queda con lo suyo y el resto va a «Archivos».
-  const grupo = esFoto ? 'image/' : 'video/';
-  const reglas = sinComodin(acepta);
-  const soloSuClase = reglas.filter((r) => r.toLowerCase().startsWith(grupo));
-  const mezcla = reglas.some((r) => !r.toLowerCase().startsWith(grupo) && !c.extensiones.includes(r.toLowerCase()));
-
-  if (p.ios) {
-    // La hoja del propio iOS ya trae Fototeca, Hacer foto y Elegir archivo.
-    opciones.push({ id: 'fototeca', etiqueta: esFoto ? 'Fototeca o archivos' : 'Vídeos o archivos', modo: 'input', accept: acepta, capture: null });
-  } else if (p.android) {
-    opciones.push({ id: 'fototeca', etiqueta: esFoto ? 'Galería' : 'Vídeos de la galería', modo: 'input', accept: soloSuClase.join(',') || c.accept, capture: null });
-    // Con extensiones y sin `image/*`, Android abre su gestor de archivos.
-    const porExtension = [...c.extensiones, ...sinComodin(acepta).filter((x) => !x.endsWith('/*'))];
-    opciones.push({ id: 'archivos', etiqueta: 'Archivos', modo: 'input', accept: [...new Set(porExtension)].join(','), capture: null });
-  } else {
-    opciones.push({ id: 'archivos', etiqueta: mezcla ? 'Elegir un archivo' : (esFoto ? 'Elegir una imagen' : 'Elegir un vídeo'), modo: 'input', accept: acepta, capture: null });
-  }
-  return opciones;
+  const grupo = c.camara === 'foto' ? 'image/' : c.camara === 'video' ? 'video/' : null;
+  const mezcla = !grupo || sinComodin(acepta).some((r) => !r.toLowerCase().startsWith(grupo) && !c.extensiones.includes(r.toLowerCase()));
+  const etiqueta = mezcla ? 'Seleccionar archivo' : (grupo === 'image/' ? 'Elegir o hacer foto' : 'Elegir o grabar vídeo');
+  return [{ id: 'archivos', etiqueta, accept: acepta }];
 }
 
 /* ── Validar lo elegido ─────────────────────────────────────────────────────── */
@@ -159,15 +109,6 @@ export function validarArchivos(archivos, { accept = '', maxBytes = null, maxArc
     validos.push(a);
   }
   return { validos, errores };
-}
-
-/* ── La cámara del navegador: qué decir cuando no se puede ─────────────────── */
-export function textoDeErrorDeCamara(error) {
-  const nombre = (error && error.name) || '';
-  if (nombre === 'NotAllowedError' || nombre === 'SecurityError') return 'No hay permiso para usar la cámara. Puedes dárselo en los ajustes del navegador, o elegir un archivo.';
-  if (nombre === 'NotFoundError' || nombre === 'OverconstrainedError') return 'No se ha encontrado ninguna cámara en este dispositivo. Puedes elegir un archivo.';
-  if (nombre === 'NotReadableError') return 'La cámara la está usando otra aplicación. Ciérrala y vuelve a intentarlo, o elige un archivo.';
-  return 'No se ha podido abrir la cámara. Puedes elegir un archivo.';
 }
 
 /** Para los manejadores de siempre, que reciben el evento de un `<input>`: el mismo

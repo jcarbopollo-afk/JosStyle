@@ -5305,10 +5305,10 @@ ok(await pulsar('Vida') && await pulsar('Mente'), 'CUMPLEAÑOS — de vuelta a M
 await esperarTexto(/Relaci[oó]n/i);
 
 /* ── 📎 P1 · SELECTOR: fotos y archivos en toda la aplicación (2026-10-18) ────
-   Chromium de escritorio, en una página segura (127.0.0.1): las opciones son las
-   del ordenador —la cámara del navegador y «Elegir una imagen»—. Sin cámara
-   física, la cámara contesta con un error, que es justo el caso que se prueba:
-   se dice en palabras y se puede seguir eligiendo un archivo. ⚠️ Un iPhone y un
+   🔓 Y desde el 2026-10-18, SIN MENÚ PROPIO: «Añadir progreso» abre directamente
+   el selector del sistema (en Chromium, el diálogo de archivos, que Playwright
+   recibe como `filechooser`). Ni «Hacer una foto» ni «Fototeca o archivos»: la
+   cámara la ofrece el propio selector del iPhone y de Android. ⚠️ Un iPhone y un
    Android de verdad quedan para Josué (R1). */
 console.log('\n── P1 · Selector de fotos y archivos ──');
 const erroresAntes_p1 = errores.length;
@@ -5323,45 +5323,46 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Progreso') && await pulsar('Fotos'), 'P1 — Fitness → Progreso → Fotos');
 await esperarTexto(/Añadir primera foto/i);
-ok(await pulsar('Añadir primera foto'), 'P1 — se abre el formulario');
-await esperarTexto(/Elegir o hacer foto/i);
-ok(await pulsar('Elegir o hacer foto'), 'P1 — y se pulsa «Elegir o hacer foto»');
-await page.waitForSelector('[role="dialog"][aria-label="Añadir foto de progreso"]', { timeout: 4000 }).catch(() => {});
-const hoja_p1 = await page.evaluate(() => {
-  const d = document.querySelector('[role="dialog"][aria-label="Añadir foto de progreso"]');
-  return d ? { texto: d.innerText, opciones: [...d.querySelectorAll('[data-opcion]')].map((b) => b.dataset.opcion), enBody: d.parentElement === document.body } : null;
-});
-ok(hoja_p1 && hoja_p1.enBody, `🚨 P1 — sale la hoja de opciones, sobre el \`body\` (${JSON.stringify(hoja_p1 && hoja_p1.opciones)})`);
-ok(hoja_p1 && /Hacer una foto/.test(hoja_p1.texto) && /Elegir una imagen/.test(hoja_p1.texto),
-  '🚨 P1 — en un ordenador con cámara: «Hacer una foto» y «Elegir una imagen» (una sola para la galería y los archivos)');
+/* Un toque de verdad (con el ratón: el navegador solo abre un selector de archivos desde un gesto). */
+const conSelector_p1 = async (nombre, files = null) => {
+  const [fc] = await Promise.all([
+    page.waitForEvent('filechooser', { timeout: 5000 }).catch(() => null),
+    page.getByRole('button', { name: nombre }).first().click().catch(() => null),
+  ]);
+  if (fc && files) await fc.setFiles(files);
+  return fc;
+};
+const fc1_p1 = await conSelector_p1('Añadir primera foto');
+ok(!!fc1_p1, '🚨 P1 — «Añadir primera foto» abre DIRECTAMENTE el selector del sistema');
+ok(fc1_p1 && fc1_p1.isMultiple(), '…con varias fotos a la vez');
+const sinHoja_p1 = await page.evaluate(() => ![...document.querySelectorAll('[role="dialog"]')].some((d) => /Hacer una foto|Fototeca|Elegir una imagen/.test(d.innerText)));
+ok(sinHoja_p1, '🚨 P1 — sin el menú intermedio «Hacer una foto» / «Fototeca o archivos»');
 const inputs_p1 = await page.evaluate(() => [...document.querySelectorAll('[data-selector-opcion]')].map((i) => ({ id: i.dataset.selectorOpcion, capture: i.getAttribute('capture'), accept: i.accept })));
-ok(inputs_p1.length >= 1 && inputs_p1.every((i) => !i.capture), `P1 — en el ordenador ningún \`<input>\` lleva \`capture\` (no hace nada allí): ${JSON.stringify(inputs_p1)}`);
+ok(inputs_p1.length >= 1 && inputs_p1.every((i) => !i.capture && i.id === 'archivos'), `🚨 P1 — ningún \`<input>\` lleva \`capture\` (en el iPhone quitaría la fototeca): ${JSON.stringify(inputs_p1)}`);
+ok(await page.evaluate(() => !document.querySelector('img[alt="Foto elegida, sin guardar todavía"]') && !/Guardar la foto/.test(document.body.innerText)), '…y cancelar el selector no abre nada');
 
-/* 5 · La cámara: sin cámara física (o sin permiso), se dice y se sigue. */
-ok(await pulsar('Hacer una foto'), 'P1 — se pulsa «Hacer una foto»');
-await page.waitForSelector('[role="dialog"][aria-label="Hacer una foto"]', { timeout: 4000 }).catch(() => {});
-const camara_p1 = await esperarTexto(/No hay permiso para usar la cámara|No se ha encontrado ninguna cámara|No se ha podido abrir la cámara|otra aplicación/, 6000);
-ok(/No hay permiso para usar la cámara|No se ha encontrado ninguna cámara|No se ha podido abrir la cámara|otra aplicación/.test(camara_p1),
-  '🚨 P1 — sin cámara o sin permiso, la ventana lo DICE en palabras, con la alternativa de elegir un archivo');
-ok(!/NotAllowedError|NotFoundError|DOMException|getUserMedia/.test(camara_p1), '…sin una palabra técnica');
-ok(await pulsar('Cerrar la cámara'), 'P1 — se cierra la cámara');
-await page.waitForTimeout(400);
-const camaraCerrada_p1 = await page.evaluate(() => !document.querySelector('[role="dialog"][aria-label="Hacer una foto"]'));
-ok(camaraCerrada_p1, '…y se va');
-
-/* 7 · Un archivo que no es una imagen: se dice, y no llega a la selección. */
-await page.setInputFiles('[data-selector-opcion="archivos"]', { name: 'notas.txt', mimeType: 'text/plain', buffer: Buffer.from('hola') });
+/* 7 · Un archivo que no es una imagen: se dice, y no abre el formulario. */
+await conSelector_p1('Añadir primera foto', { name: 'notas.txt', mimeType: 'text/plain', buffer: Buffer.from('hola') });
 const formato_p1 = await esperarTexto(/no es un formato que se pueda usar aquí/);
 ok(/«notas\.txt» no es un formato que se pueda usar aquí/.test(formato_p1), '🚨 P1 — un archivo que no es una imagen se dice, con su nombre');
 ok(await page.evaluate(() => !document.querySelector('img[alt="Foto elegida, sin guardar todavía"]')), '…y no entra en la selección');
 
-/* 1 y 2 · Una imagen del «dispositivo»: se previsualiza, sin guardar nada todavía. */
+/* 1 y 2 · Una imagen del «dispositivo»: abre el formulario con su previsualización, sin guardar nada todavía. */
 const escriturasFotos_p1 = guardado.filter((g) => g && g.key === 'saludFotos').length;
-await page.setInputFiles('[data-selector-opcion="archivos"]', { name: 'progreso.png', mimeType: 'image/png', buffer: PNG_DE_PRUEBA });
+await conSelector_p1('Añadir primera foto', { name: 'progreso.png', mimeType: 'image/png', buffer: PNG_DE_PRUEBA });
 await page.waitForSelector('img[alt="Foto elegida, sin guardar todavía"]', { timeout: 4000 }).catch(() => {});
-ok(await page.evaluate(() => !!document.querySelector('img[alt="Foto elegida, sin guardar todavía"]')), '🚨 P1 — la imagen elegida se previsualiza');
+ok(await page.evaluate(() => !!document.querySelector('img[alt="Foto elegida, sin guardar todavía"]')), '🚨 P1 — la imagen elegida abre el formulario y se previsualiza');
+const cargada_p1 = await page.waitForFunction(() => { const i = document.querySelector('img[alt="Foto elegida, sin guardar todavía"]'); return i && i.complete && i.naturalWidth > 0; }, null, { timeout: 4000 }).then(() => true).catch(() => false);
+ok(cargada_p1, '🐛 …y la previsualización CARGA (no se queda sin imagen al montarse el formulario)');
 ok(await page.evaluate(() => !/no es un formato/.test(document.body.innerText)), '…y el error de antes se va');
 ok(guardado.filter((g) => g && g.key === 'saludFotos').length === escriturasFotos_p1, '🚨 P1 — elegir NO es guardar: ni una escritura todavía');
+/* Añadir otra desde el formulario, y quitarla. */
+await conSelector_p1('Añadir otra', { name: 'otra.png', mimeType: 'image/png', buffer: PNG_DE_PRUEBA });
+await page.waitForTimeout(400);
+ok(await page.evaluate(() => document.querySelectorAll('img[alt="Foto elegida, sin guardar todavía"]').length === 2), 'P1 — «Añadir otra» suma una segunda, también directamente');
+ok(await pulsar('Quitar esta foto de la selección'), '…y se puede quitar');
+await page.waitForTimeout(300);
+ok(await page.evaluate(() => document.querySelectorAll('img[alt="Foto elegida, sin guardar todavía"]').length === 1), '…y queda una');
 
 /* 8 · Guardarla de verdad. */
 ok(await pulsar('Guardar la foto'), 'P1 — «Guardar la foto»');
@@ -5369,8 +5370,12 @@ await esperarTexto(/1 foto|12 |SEP|OCT|ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|NOV|DIC/)
 await page.waitForTimeout(800);
 ok((almacen.saludFotos || []).length === 1 && /usuario-prueba\//.test(almacen.saludFotos[0].path || ''),
   `🚨 P1 — y ahora sí: la foto está en la cuenta, en la carpeta del usuario (${JSON.stringify((almacen.saludFotos || []).map((f) => f.path))})`);
+/* Con fotos ya: «+ Añadir progreso» también abre el selector directamente. */
+const fc2_p1 = await conSelector_p1('Añadir progreso');
+ok(!!fc2_p1, '🚨 P1 — con fotos, «+ Añadir progreso» abre DIRECTAMENTE el selector');
+ok(await page.evaluate(() => !/Guardar la foto/.test(document.body.innerText)), '…y sin elegir nada no aparece un formulario vacío');
 
-const nuevos_p1 = errores.slice(erroresAntes_p1).filter((e) => !/getUserMedia|Requested device not found|Permission denied|NotAllowedError|NotFoundError/i.test(e));
+const nuevos_p1 = errores.slice(erroresAntes_p1);
 errores.splice(erroresAntes_p1);
 ok(nuevos_p1.length === 0, `P1 — ni un error de JavaScript${nuevos_p1.length ? `: ${nuevos_p1.join(' | ').slice(0, 300)}` : ''}`);
 almacen.ajustes = ajustesAntes_p1;
@@ -5630,6 +5635,86 @@ ok(nuevos_p4.length === 0, `P4 — ni un error de JavaScript${nuevos_p4.length ?
 Object.assign(almacen, antes_p4);
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
+
+/* ── 👤 INICIO · LA FOTO DE PERFIL Y LA FILA «+ AÑADIR» (2026-10-18) ──────────
+   La foto de perfil, a la derecha del saludo: el MISMO círculo y la MISMA foto que
+   la cabecera de Ajustes. Y «+ Añadir», como una fila entera, compacta y con el
+   texto a la derecha, que abre el ＋ de siempre. En un iPhone pequeño, uno normal,
+   un iPad y un ordenador. */
+console.log('\n── Inicio · foto de perfil y fila «+ Añadir» ──');
+const erroresAntes_ini = errores.length;
+const perfilAntes_ini = almacen.perfil;
+const PNG_INI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+const medirInicio_ini = () => page.evaluate(() => {
+  const cab = document.querySelector('[data-cabecera-inicio]');
+  if (!cab) return null;
+  const h1 = cab.querySelector('h1');
+  const circulo = cab.lastElementChild;
+  const img = circulo && circulo.querySelector('img');
+  const boton = [...document.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Añadir' && b.offsetParent);
+  const fila = [...document.querySelectorAll('button[aria-controls="panel-situacion-actual"]')][0];
+  const r = (el) => { if (!el) return null; const x = el.getBoundingClientRect(); return { l: Math.round(x.left), r: Math.round(x.right), t: Math.round(x.top), b: Math.round(x.bottom), w: Math.round(x.width), h: Math.round(x.height) }; };
+  const texto = boton ? (() => { const rg = document.createRange(); rg.selectNodeContents(boton); return r(rg); })() : null;
+  return {
+    cab: r(cab), h1: r(h1), circulo: r(circulo), src: img ? img.getAttribute('src') : null,
+    iniciales: circulo ? circulo.innerText.trim() : '', radio: circulo ? getComputedStyle(circulo).borderRadius : null,
+    boton: r(boton), texto, fila: fila ? r(fila.parentElement) : null,
+    justify: boton ? getComputedStyle(boton).justifyContent : null,
+  };
+});
+almacen.perfil = { nombre: 'Josué', nombreMostrado: 'Josué', foto: PNG_INI };
+for (const [ancho, alto] of [[320, 640], [390, 844], [820, 1180], [1280, 800]]) {
+  await page.setViewportSize({ width: ancho, height: alto });
+  await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(2000);
+  await esperarTexto(/Josué/);
+  const m = await medirInicio_ini();
+  ok(!!m && !!m.circulo, `👤 ${ancho} px — Inicio tiene la foto de perfil en su cabecera`);
+  if (!m || !m.circulo) continue;
+  ok(m.src === PNG_INI, `🚨 ${ancho} px — es SU foto, la de \`perfil.foto\``);
+  ok(m.circulo.w === 56 && m.circulo.h === 56 && /9999px|50%/.test(m.radio || ''), `${ancho} px — redonda y del tamaño de Ajustes (${m.circulo.w}×${m.circulo.h}, ${m.radio})`);
+  ok(m.circulo.r >= m.cab.r - 1 && m.circulo.l > m.h1.l, `${ancho} px — a la derecha (círculo ${m.circulo.l}–${m.circulo.r}, cabecera hasta ${m.cab.r})`);
+  ok(m.h1.r <= m.circulo.l, `${ancho} px — el saludo no se solapa con ella (saludo hasta ${m.h1.r}, círculo desde ${m.circulo.l})`);
+  const centro = (m.circulo.t + m.circulo.b) / 2;
+  ok(centro >= m.cab.t && centro <= m.cab.b, `${ancho} px — alineada con el bloque del saludo`);
+  ok(!!m.boton, `${ancho} px — está «+ Añadir»`);
+  if (m.boton && m.fila) {
+    ok(Math.abs(m.boton.w - m.fila.w) <= 2 && Math.abs(m.boton.l - m.fila.l) <= 2, `🚨 ${ancho} px — «+ Añadir» ocupa la fila entera, como la de la situación actual (${m.boton.w} px frente a ${m.fila.w})`);
+    ok(m.boton.h >= 44 && m.boton.h <= 64, `${ancho} px — y compacta (${m.boton.h} px de alto)`);
+    ok(m.justify === 'flex-end' && m.texto && m.boton.r - m.texto.r <= 24 && m.texto.l - m.boton.l > m.boton.w / 2, `🚨 ${ancho} px — con «+ Añadir» a la derecha (texto ${m.texto && m.texto.l}–${m.texto && m.texto.r} en ${m.boton.l}–${m.boton.r})`);
+  }
+  ok(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2)), `${ancho} px — nada se sale de lado`);
+}
+const ajustesSrc_ini = await (async () => {
+  await pulsar('Ajustes'); await esperarTexto(/Apariencia/i);
+  return page.evaluate(() => { const b = [...document.querySelectorAll('button')].find((x) => /tu foto de perfil/i.test(x.getAttribute('aria-label') || '')); const i = b && b.querySelector('img'); return i ? i.getAttribute('src') : null; });
+})();
+ok(ajustesSrc_ini === PNG_INI, '🚨 …y es la misma foto que enseña Ajustes');
+/* Un nombre muy largo, en el iPhone más estrecho, y sin foto: sus iniciales. */
+almacen.perfil = { nombre: 'Josué Maximiliano Fernández de la Torre y Santamaría', nombreMostrado: '', foto: null };
+await page.setViewportSize({ width: 320, height: 640 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+const largo_ini = await medirInicio_ini();
+ok(largo_ini && largo_ini.circulo && largo_ini.circulo.w === 56, `👤 nombre largo a 320 px — el círculo no encoge (${largo_ini && largo_ini.circulo && largo_ini.circulo.w} px)`);
+ok(largo_ini && largo_ini.h1.r <= largo_ini.circulo.l, '…ni se solapa con el saludo, que baja de línea');
+ok(largo_ini && !largo_ini.src && /^[A-ZÁÉÍÓÚÑ]{1,2}$/.test(largo_ini.iniciales), `…y sin foto, el avatar por defecto: sus iniciales («${largo_ini && largo_ini.iniciales}»)`);
+ok(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2)), '…y nada se sale de lado');
+/* «+ Añadir» sigue haciendo lo mismo: abre el ＋ de Hoy. */
+await page.setViewportSize({ width: 390, height: 844 });
+almacen.perfil = perfilAntes_ini;
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+ok(await pulsar('Añadir'), '«+ Añadir» se pulsa');
+await page.waitForTimeout(500);
+ok(await page.evaluate(() => [...document.querySelectorAll('[role="dialog"]')].some((d) => /Tarea/.test(d.innerText))), '🚨 …y abre el ＋ de siempre, con sus acciones');
+await page.keyboard.press('Escape');
+await page.waitForTimeout(500);
+const nuevos_ini = errores.slice(erroresAntes_ini);
+ok(nuevos_ini.length === 0, `Inicio — ni un error de JavaScript${nuevos_ini.length ? `: ${nuevos_ini.join(' | ').slice(0, 300)}` : ''}`);
+await page.setViewportSize({ width: 1280, height: 720 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1500);
 
 /* ── DIST F1 · GESTIÓN: Organización y Progreso ───────────────────────────── */
 ok(await pulsar('Gestión'), '🚨 se entra en GESTIÓN');

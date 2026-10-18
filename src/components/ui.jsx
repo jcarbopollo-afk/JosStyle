@@ -872,7 +872,7 @@ export function AIPanel({ label, accent, buildPrompt }) {
           <TextoDeBoton estado={loading ? 'cargando' : 'reposo'} icono={<Sparkles size={16} />} textoCargando="Pensando…">{label}</TextoDeBoton>
         </button>
         <SelectorDeArchivos
-          clase="imagen" accept={ACEPTA_IMAGEN_O_PDF} titulo="Adjuntar foto o PDF" accent={accent}
+          clase="imagen" accept={ACEPTA_IMAGEN_O_PDF}
           disabled={loading} onElegir={(f) => handleFile(eventoDeArchivos(f))}
         >
           {({ abrir }) => (

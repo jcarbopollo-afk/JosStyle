@@ -85,7 +85,7 @@ export function FotoDelEntrenamiento({ sesion, accent, onAddFoto = null, bloquea
         <>
           <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{T.explica}</p>
           <SelectorDeArchivos
-            clase="imagen" multiple maxBytes={MAX_FOTO_BYTES} accent={accent}
+            clase="imagen" multiple maxBytes={MAX_FOTO_BYTES}
             disabled={estado === 'subiendo'} titulo={T.boton} onElegir={subir}
           >
             {({ abrir }) => (

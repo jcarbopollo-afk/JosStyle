@@ -210,7 +210,7 @@ function MealForm({ onSave, onSaveFavorite, accent, fecha, momentoId }) {
         <GhostBtn onClick={() => setScanning(true)} icon={Barcode}>Escanear código</GhostBtn>
         {/* MS F9 — mientras analiza, «Analizando…» en su sitio, sin apagarse (`TextoDeBoton`).
             📎 P1 — cámara, o una foto que ya tengas (antes `capture` solo dejaba la cámara). */}
-        <SelectorDeArchivos clase="imagen" maxBytes={20 * MB} disabled={analizandoFoto} accent={accent} titulo="Foto del plato" onElegir={(f) => handleFotoComida(eventoDeArchivos(f))}>
+        <SelectorDeArchivos clase="imagen" maxBytes={20 * MB} disabled={analizandoFoto} onElegir={(f) => handleFotoComida(eventoDeArchivos(f))}>
           {({ abrir }) => (
             <button
               onClick={analizandoFoto ? undefined : abrir} aria-busy={analizandoFoto || undefined}

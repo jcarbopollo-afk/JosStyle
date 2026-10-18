@@ -14,8 +14,8 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  CLASES_DE_ARCHIVO, MB, detectarPlataforma, opcionesDeSeleccion, encajaConAccept,
-  textoDeTamano, validarArchivos, textoDeErrorDeCamara, eventoDeArchivos, ACEPTA_IMAGEN_O_PDF,
+  CLASES_DE_ARCHIVO, MB, opcionesDeSeleccion, encajaConAccept,
+  textoDeTamano, validarArchivos, eventoDeArchivos, ACEPTA_IMAGEN_O_PDF,
 } from '../src/lib/seleccionArchivos.js';
 import { MEDIA_PENDIENTE, FOTO_DEL_ENTRENAMIENTO, PREPARADO_PARA_FIT8 } from '../src/lib/finalizacion.js';
 import { crearFotoProgreso, normalizarFotoProgreso } from '../src/lib/fotosProgreso.js';
@@ -29,56 +29,26 @@ const RAIZ = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const leer = (rel) => readFileSync(join(RAIZ, rel), 'utf8');
 const sinComentarios = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\s*\}/g, '{}');
 
-const IOS = { tipo: 'ios', ios: true, android: false, tactil: true, camaraWeb: true };
-const ANDROID = { tipo: 'android', ios: false, android: true, tactil: true, camaraWeb: true };
-const PC = { tipo: 'ordenador', ios: false, android: false, tactil: false, camaraWeb: true };
-const PC_SIN_CAMARA = { ...PC, camaraWeb: false };
 const ids = (ops) => ops.map((o) => o.id);
 const archivo = (name, type, size = 1000) => ({ name, type, size });
 
-console.log('\n11 · La plataforma, de lo que dice el navegador');
-const ua = (userAgent, extra = {}) => ({ navigator: { userAgent, maxTouchPoints: 0, ...extra.nav }, isSecureContext: extra.segura !== false, matchMedia: () => ({ matches: false }) });
-const conCamara = { mediaDevices: { getUserMedia: () => null } };
-eq(detectarPlataforma(ua('Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X)', { nav: { maxTouchPoints: 5, ...conCamara } })).tipo, 'ios', 'un iPhone es iOS');
-eq(detectarPlataforma(ua('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', { nav: { maxTouchPoints: 5 } })).tipo, 'ios', '⚠️ un iPad con iPadOS 13+ se presenta como un Mac: lo delata la pantalla táctil');
-eq(detectarPlataforma(ua('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)')).tipo, 'ordenador', '…y un Mac de verdad sigue siendo un ordenador');
-eq(detectarPlataforma(ua('Mozilla/5.0 (Linux; Android 14; Pixel 8)', { nav: { maxTouchPoints: 5 } })).tipo, 'android', 'un Android es Android');
-eq(detectarPlataforma(ua('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', { nav: conCamara })).camaraWeb, true, 'un ordenador con cámara y página segura puede usarla');
-eq(detectarPlataforma(ua('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', { nav: conCamara, segura: false })).camaraWeb, false, '🚨 sin página segura (http) el navegador no deja usar la cámara: no se ofrece');
-eq(detectarPlataforma(ua('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')).camaraWeb, false, 'sin `mediaDevices`, tampoco');
-eq(detectarPlataforma(null).tipo, 'ordenador', 'sin `window` (Node), no revienta');
-
-console.log('\n1, 2 y 3 · Fotos: cámara, fototeca o galería y archivos, según el dispositivo');
-const iosFoto = opcionesDeSeleccion({ clase: 'imagen', plataforma: IOS });
-eq(ids(iosFoto), ['camara', 'fototeca'], 'iPhone: «Hacer una foto» y «Fototeca o archivos» (la hoja del propio iOS trae la fototeca, la cámara y Archivos)');
-ok(iosFoto[0].capture === 'environment' && iosFoto[0].modo === 'input', '…la cámara con `capture`, que en iOS va directa a la cámara');
-ok(!iosFoto[1].capture && iosFoto[1].accept === 'image/*', '…y la otra SIN `capture`, que es la que abre la hoja del sistema');
-const andFoto = opcionesDeSeleccion({ clase: 'imagen', plataforma: ANDROID });
-eq(ids(andFoto), ['camara', 'fototeca', 'archivos'], 'Android: cámara, galería y archivos, que allí son tres cosas distintas');
-eq(andFoto[1].etiqueta, 'Galería', '…la galería se llama así');
-ok(!andFoto[2].accept.includes('image/*') && andFoto[2].accept.includes('.jpg') && andFoto[2].accept.includes('.heic'), '…y «Archivos» va por extensiones, que es lo que hace a Android abrir su gestor de archivos');
-const pcFoto = opcionesDeSeleccion({ clase: 'imagen', plataforma: PC });
-eq(ids(pcFoto), ['camara', 'archivos'], 'ordenador con cámara: «Hacer una foto» y «Elegir una imagen»');
-eq(pcFoto[0].modo, 'camaraWeb', '…la cámara del navegador (`capture` no hace nada en un ordenador)');
-eq(pcFoto[1].etiqueta, 'Elegir una imagen', '…y la galería y los archivos son el mismo diálogo: uno');
-
-console.log('\n6 · Lo que no está disponible no se ofrece');
-eq(ids(opcionesDeSeleccion({ clase: 'imagen', plataforma: PC_SIN_CAMARA })), ['archivos'], 'un ordenador sin cámara: solo elegir (y con una opción, el botón abre el selector directamente)');
-eq(ids(opcionesDeSeleccion({ clase: 'video', plataforma: PC })), ['archivos'], 'grabar vídeo en el navegador es otra función: en un ordenador, solo elegir el vídeo');
-eq(ids(opcionesDeSeleccion({ clase: 'video', plataforma: IOS })), ['camara', 'fototeca'], 'en el iPhone sí se graba (con `capture`)');
-eq(opcionesDeSeleccion({ clase: 'video', plataforma: IOS })[0].etiqueta, 'Grabar un vídeo', '…y se llama por lo que hace');
-
-console.log('\n4 · Documentos: nunca la cámara');
-for (const [nombre, p] of [['iPhone', IOS], ['Android', ANDROID], ['ordenador', PC]]) {
-  const ops = opcionesDeSeleccion({ clase: 'documento', accept: '.pdf,.docx', plataforma: p });
-  eq(ids(ops), ['archivos'], `${nombre}: un documento solo ofrece «Seleccionar archivo»`);
-  eq(ops[0].accept, '.pdf,.docx', `…respetando lo que acepta la función (${nombre})`);
-}
+console.log('\n1, 2, 3 y 11 · Un toque: el selector del sistema, sin un menú propio delante (2026-10-18)');
+// Josué: el menú «Hacer una foto» / «Fototeca o archivos» era redundante: el selector
+// nativo ya ofrece la cámara. iPhone/iPad: la hoja de iOS (Fototeca, Hacer foto, Elegir
+// archivo); Android: cámara, galería y archivos; ordenador: el diálogo de archivos.
+const foto = opcionesDeSeleccion({ clase: 'imagen' });
+eq(ids(foto), ['archivos'], 'una foto: UNA opción, así que el botón abre directamente el selector');
+eq(foto[0].accept, 'image/*', '…con lo que acepta su clase');
+ok(!('capture' in foto[0]) && !('modo' in foto[0]), '🚨 …sin `capture` (obligaría a la cámara y en el iPhone quitaría la fototeca) ni cámara del navegador');
+eq(foto[0].etiqueta, 'Elegir o hacer foto', '…y se llama por lo que hace el selector del sistema');
+eq(ids(opcionesDeSeleccion({ clase: 'video' })), ['archivos'], 'un vídeo: también una');
+eq(opcionesDeSeleccion({ clase: 'video' })[0].accept, 'video/*', '…de vídeo');
 const mezcla = 'image/*,application/pdf';
-const andMezcla = opcionesDeSeleccion({ clase: 'imagen', accept: mezcla, plataforma: ANDROID });
-eq(andMezcla[1].accept, 'image/*', 'una foto o un PDF (el adjunto de la IA), en Android: la galería se queda con las fotos…');
-ok(andMezcla[2].accept.includes('application/pdf'), '…y el PDF va por «Archivos»');
-eq(opcionesDeSeleccion({ clase: 'imagen', accept: mezcla, plataforma: PC })[1].etiqueta, 'Elegir un archivo', '…en el ordenador no se dice «una imagen» si también vale un PDF');
+eq(opcionesDeSeleccion({ clase: 'imagen', accept: mezcla })[0].accept, mezcla, 'una foto o un PDF (el adjunto de la IA): lo que acepta la función, entero');
+eq(opcionesDeSeleccion({ clase: 'imagen', accept: mezcla })[0].etiqueta, 'Seleccionar archivo', '…y no se dice «foto» si también vale un PDF');
+const doc = opcionesDeSeleccion({ clase: 'documento', accept: '.pdf,.docx' });
+eq(ids(doc), ['archivos'], '4 · un documento: «Seleccionar archivo», nunca la cámara');
+eq(doc[0].accept, '.pdf,.docx', '…respetando lo que acepta la función');
 
 console.log('\n7 · Formatos y tamaños');
 ok(encajaConAccept(archivo('a.jpg', 'image/jpeg'), 'image/*'), 'una JPEG es una imagen');
@@ -97,17 +67,13 @@ eq(validarArchivos([archivo('a.jpg', 'image/jpeg'), archivo('b.jpg', 'image/jpeg
 eq(textoDeTamano(1536), '2 KB', 'kilobytes'); eq(textoDeTamano(1.5 * MB), '1,5 MB', 'megas, con coma');
 ok(v.errores.every((e) => !/null|undefined|NaN|error code|MIME|accept/i.test(e)), 'ni una palabra técnica en un error');
 
-console.log('\n5 · Sin permiso para la cámara');
-ok(/No hay permiso para usar la cámara/.test(textoDeErrorDeCamara({ name: 'NotAllowedError' })), 'permiso denegado: se dice, y dónde se cambia');
-ok(/elegir un archivo/.test(textoDeErrorDeCamara({ name: 'NotAllowedError' })), '…con la alternativa');
-ok(/ninguna cámara/.test(textoDeErrorDeCamara({ name: 'NotFoundError' })), 'sin cámara: se dice');
-ok(/otra aplicación/.test(textoDeErrorDeCamara({ name: 'NotReadableError' })), 'la cámara ocupada: se dice');
-ok(/No se ha podido abrir la cámara/.test(textoDeErrorDeCamara(new Error('x'))), 'cualquier otro: una frase, nunca la traza');
+console.log('\n5 y 6 · Sin menú propio, sin cámara propia');
 const COMP = leer('src/components/selectorArchivos.jsx');
 const COMP_C = sinComentarios(COMP);
-ok((COMP_C.match(/getUserMedia\(/g) || []).length === 1 && /export function CamaraWeb[\s\S]*getUserMedia\(/.test(COMP_C), '🚨 el permiso se pide en UN sitio: al abrir la cámara, nunca antes');
-ok(/\{camara && <CamaraWeb/.test(COMP_C), '…y la cámara solo se monta cuando se pulsa «Hacer una foto»');
-ok(/getTracks\(\)\.forEach\(\(t\) => t\.stop\(\)\)/.test(COMP_C) && /return \(\) => \{[\s\S]*?t\.stop\(\)/.test(COMP_C), '…y se apaga al cerrar, salga como salga');
+ok(!/getUserMedia|CamaraWeb|HojaDeOpciones|createPortal/.test(COMP_C), '🚨 ni la hoja de opciones ni la cámara del navegador: el permiso de la cámara lo pide el sistema, que es quien la abre');
+eq((COMP_C.match(/<input/g) || []).length, 1, 'un solo `<input type="file">` por selector');
+ok(!/capture=/.test(COMP_C), '…sin `capture`');
+ok(/<input[\s\S]{0,300}hidden className="hidden"/.test(COMP_C), '…con el atributo `hidden`: no cuenta como hermano para `space-y-*`');
 
 console.log('\n8 · Elegir no es guardar');
 const ev = eventoDeArchivos([archivo('a.jpg', 'image/jpeg')]);
@@ -156,23 +122,32 @@ for (const [r, nTotal] of Object.entries(PERMITIDOS)) {
   void nTotal;
 }
 ok(!/from '\.\/ui'|from '\.\.\/components\/ui'/.test(COMP), 'el selector no importa `ui.jsx` (que lo usa): sin ciclo');
-ok(/createPortal\(/.test(COMP_C) && /fixed inset-0 z-capa/.test(COMP_C) && /CAPAS\.veloHoja/.test(COMP_C) && /<AsaHoja/.test(COMP_C) && /useDialogoAccesible\(true/.test(COMP_C), 'la hoja de opciones es una hoja de JosStyle: portal, capa, velo, asa y teclado (MS F5, F6 y FIT F39)');
-ok(/data-opcion=\{o\.id\}/.test(COMP_C) && /data-selector-opcion=\{o\.id\}/.test(COMP_C), 'cada opción y cada `<input>` se encuentran por su id (el recorrido los usa)');
-ok(/if \(opciones\.length === 1\) usar\(opciones\[0\]\)/.test(COMP_C), 'con una sola opción no hay menú: un paso de más');
-ok(/if \(el\) el\.click\(\)/.test(COMP_C) && !/setTimeout\([^)]*click/.test(COMP_C), '🚨 el `<input>` se pulsa dentro del mismo toque (iOS solo abre el selector desde un gesto)');
+ok(/data-selector-opcion=\{opcion\.id\}/.test(COMP_C), 'el `<input>` se encuentra por su id (el recorrido lo usa)');
+ok(/if \(entrada\.current\) entrada\.current\.click\(\)/.test(COMP_C) && !/setTimeout\([^)]*click/.test(COMP_C), '🚨 el `<input>` se pulsa dentro del mismo toque (iOS solo abre el selector desde un gesto)');
 
 console.log('\n4 (Fitness) · Lo que estaba pendiente');
 ok(/vídeo/.test(MEDIA_PENDIENTE.que) && !/foto/.test(MEDIA_PENDIENTE.que), 'lo que sigue sin sitio es el VÍDEO del entrenamiento (no hay bucket), y se dice así');
 eq(MEDIA_PENDIENTE.campo, 'media', '…y `media` de la sesión sigue siendo el campo, a `null`');
 ok(PREPARADO_PARA_FIT8.some((p) => /vídeo/.test(p.que) && /fotos de progreso/.test(p.donde)), '…lo preparado lo dice igual');
-const foto = crearFotoProgreso({ path: 'u/1.jpg', fecha: '2026-10-18', createdFromWorkoutId: 'ses-1' });
-eq(normalizarFotoProgreso(foto).createdFromWorkoutId, 'ses-1', 'la foto de un entrenamiento se enlaza con `createdFromWorkoutId` (FIT F26), que sobrevive a la carga');
+const fotoP = crearFotoProgreso({ path: 'u/1.jpg', fecha: '2026-10-18', createdFromWorkoutId: 'ses-1' });
+eq(normalizarFotoProgreso(fotoP).createdFromWorkoutId, 'ses-1', 'la foto de un entrenamiento se enlaza con `createdFromWorkoutId` (FIT F26), que sobrevive a la carga');
 ok(/createdFromWorkoutId: sesion\.id/.test(FIN) && /fecha: sesion\.fecha/.test(FIN), '…con el id y la fecha del entrenamiento');
 ok(/\{!fallo && <FotoDelEntrenamiento/.test(FIN), '…y solo con el entrenamiento ya en la cuenta');
 const FIT = sinComentarios(leer('src/views/FitnessView.jsx'));
 ok(/onAddFoto=\{onAddFoto\}\s*fotosBloqueadas=\{protegidoFotos && !desbloqueadoFotos\}/.test(FIT), '🚨 con la misma protección que las fotos de progreso: con el PIN puesto y sin desbloquear, no se sube');
 ok(/T\.bloqueadas/.test(FIN) && /Progreso → Fotos/.test(FOTO_DEL_ENTRENAMIENTO.bloqueadas), '…y se dice dónde añadirla');
 ok(DEPENDENCIAS_PERMITIDAS.some((d) => d.modulo === 'selectorArchivos'), 'Fitness declara que usa el selector común (FIT F44)');
+
+console.log('\n«Añadir progreso» abre el selector directamente (2026-10-18)');
+const FP = sinComentarios(leer('src/components/fotosProgreso.jsx'));
+ok(/<PrimaryButton onClick=\{anadir\}[^>]*>\+ Añadir progreso<\/PrimaryButton>/.test(FP), '«+ Añadir progreso» llama a `anadir`, que abre el selector (no el formulario vacío)');
+ok(/const anadir = \(\) => \{ if \(selector\.current\) selector\.current\.abrir\(\); \}/.test(FP) && /<SelectorDeArchivos controlRef=\{selector\} clase="imagen" multiple maxBytes=\{MAX_FOTO_BYTES\} onElegir=\{conElegidas\}/.test(FP), '…con el selector común, varias fotos y el mismo tope de 30 MB');
+ok(/const conElegidas = \(files\) => \{ setIniciales\(files\); setError\(null\); setAnadiendo\(true\); \}/.test(FP), '…lo elegido abre el formulario con su previsualización (cancelar el selector no abre nada)');
+ok(/<ProgressPhotoEmpty accent=\{accent\} onAnadir=\{onAddFoto \? anadir : null\}/.test(FP) && /setComparando\(false\); anadir\(\);/.test(FP), '…igual desde el vacío y desde el comparador');
+ok(!/setAnadiendo\(true\)\s*[;}]?\s*\)?\s*\}?\s*accent=/.test(FP) && (FP.match(/setAnadiendo\(true\)/g) || []).length === 1, 'ningún botón abre ya el formulario vacío');
+ok(/iniciales=\{iniciales\}/.test(FP) && /useState\(\(\) => conId\(iniciales \|\| \[\]\)\)/.test(FP), 'el formulario recibe lo elegido y lo enseña antes de guardar (apartado 5 de la F26)');
+ok(/URL\.createObjectURL\(e\.file\)/.test(FP) && /return \(\) => Object\.values\(urls\)\.forEach/.test(FP), '🐛 las previsualizaciones se crean y se sueltan en el mismo efecto (StrictMode no deja una foto elegida sin imagen)');
+ok(/'Añadir otra' : 'Elegir o hacer foto'/.test(FP), '…y dentro se puede añadir otra');
 
 console.log('\n10 · Sin regresiones');
 eq(Object.keys(CLASES_DE_ARCHIVO), ['imagen', 'video', 'documento'], 'tres clases de contenido');

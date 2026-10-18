@@ -378,7 +378,7 @@ export function AlbumTab({ relacion, accent, onSubir, onFirmar, onBorrar }) {
         {error && <p className="text-xs mt-2" style={{ color: COLORS.negative }}>{error}</p>}
         {/* 📎 P1 — el botón abre el selector común (cámara, fototeca o archivos); la validación
             del álbum (`validarFotoAlbum`) sigue siendo la suya. */}
-        <SelectorDeArchivos controlRef={fileRef} clase="imagen" accept={TIPOS_FOTO_ALBUM.join(',')} accent={accent} titulo="Foto para el álbum" disabled={subiendo} mostrarError={false} onElegir={(f) => elegir(eventoDeArchivos(f))} />
+        <SelectorDeArchivos controlRef={fileRef} clase="imagen" accept={TIPOS_FOTO_ALBUM.join(',')} disabled={subiendo} mostrarError={false} onElegir={(f) => elegir(eventoDeArchivos(f))} />
       </Card>
 
       {fotos.length === 0 ? (

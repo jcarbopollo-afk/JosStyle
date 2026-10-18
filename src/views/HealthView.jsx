@@ -375,7 +375,7 @@ function BloqueFotos({ fotos, onAddFoto, onDeleteFoto, accent }) {
           <TextInput value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej: después de 3 meses de rutina" />
         </Field>
         {/* 📎 P1 — antes `capture` mandaba directo a la cámara: no se podía elegir una foto ya hecha. */}
-        <SelectorDeArchivos clase="imagen" maxBytes={30 * MB} disabled={uploading} accent={accent} titulo="Añadir foto de progreso" onElegir={(f) => handleFile(eventoDeArchivos(f))}>
+        <SelectorDeArchivos clase="imagen" maxBytes={30 * MB} disabled={uploading} onElegir={(f) => handleFile(eventoDeArchivos(f))}>
           {({ abrir }) => (
             <button
               onClick={uploading ? undefined : abrir} aria-busy={uploading || undefined}
