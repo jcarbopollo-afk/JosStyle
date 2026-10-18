@@ -26,6 +26,7 @@ import { eventosDeManosPies } from './manosPies';
 import { eventosDeSonrisa } from './sonrisa';
 import { eventosDeGustos } from './gustos';
 import { fechasAcademicas, tipoDeFecha } from './fechasAcademicas';
+import { eventosDeCumpleanos } from './cumpleanos';
 
 // Objetivos con plazo estimable (prediccionObjetivo, Fase 17) y todavía no cumplidos — un
 // objetivo ya marcado como cumplido no aporta nada al calendario, solo ruido. El plazo es una
@@ -251,7 +252,7 @@ function eventosDeArmario(armario) {
 //   (Diaria/Semanal/Mensual/Anual) y un progreso — mismo motivo que Hábitos/Rutinas.
 // - Recordatorios: no existen como módulo propio en la app — ya están cubiertos desde la Fase 1,
 //   Josué los crea directamente en el calendario (tipo "Recordatorio").
-export function eventosDerivados({ objetivos, estudios, calistenia, futbol, productividad, relacion, armario, estiloHombre, desde, hasta }) {
+export function eventosDerivados({ objetivos, estudios, calistenia, futbol, productividad, relacion, armario, estiloHombre, cumpleanos = null, desde, hasta }) {
   return [
     ...eventosDeObjetivos(objetivos),
     ...eventosDeEstudios(estudios),
@@ -259,6 +260,9 @@ export function eventosDerivados({ objetivos, estudios, calistenia, futbol, prod
     ...eventosDeTareas(productividad),
     ...eventosDeRelacion(relacion),
     ...eventosDeArmario(armario),
+    /* 🎂 2026-10-18 — los cumpleaños de Mente: la misma forma que las fechas de Relación, anclados
+       en su fecha original y repetidos cada año (`expandirRecurrentes`). Ni una ocurrencia guardada. */
+    ...eventosDeCumpleanos(cumpleanos),
     // EH F8, apartado 17 — *"No crear un segundo calendario. Debe utilizarse el
     // calendario existente."* Las rutinas de pelo entran por aquí como todo lo
     // demás: ⚠️ **derivadas y de solo lectura** (regla 11), calculadas de su
@@ -313,4 +317,5 @@ export const NOMBRES_ORIGEN = {
   productividad: 'Productividad',
   relacion: 'Relación',
   armario: 'Armario',
+  cumpleanos: 'Cumpleaños',
 };

@@ -63,6 +63,9 @@ import { verificarBiometria } from './lib/biometria';
 import { crearPinHash, verificarPin } from './lib/pin';
 import { calcularResumenModulo } from './lib/resumenesHub';
 import { DEFAULT_FITNESS } from './lib/fitness';
+/* 🎂 Cumpleaños (Mente, 2026-10-18) — su clave propia de `app_data`, con su puerta de carga. */
+import { DEFAULT_CUMPLEANOS, normalizarCumpleanos, eventosDeCumpleanos, cumpleanosActivo } from './lib/cumpleanos';
+import CumpleanosView from './views/CumpleanosView';
 /* FIT F26 — las fotos de progreso son `saludFotos` desde la Fase 3; esto les da
    su fábrica, su normalizador y su edición, sin crear una segunda lista. */
 import { crearFotoProgreso, normalizarFotosProgreso, editarFotoProgreso } from './lib/fotosProgreso';
@@ -147,7 +150,7 @@ import { useContextoFisico } from './components/responsiveMotion';
 /* MS F16 — los estados del sistema: lo que no se pudo cargar, lo que no ha llegado a la cuenta, la
    conexión, la espera del arranque y la sesión que caduca. */
 import { IndicadorDeSincronizacion, ErrorDeArranque, useEspera, AvisoDeEspera } from './components/estadosAsincronos';
-import { empezarSesionDeDatos, usuarioDeLaSesion, clavesSinCargar, consumirSalidaPedida, resumenSincronizacion } from './lib/sincronizacion';
+import { empezarSesionDeDatos, usuarioDeLaSesion, clavesSinCargar, consumirSalidaPedida, resumenSincronizacion, resultadoDeGuardados } from './lib/sincronizacion';
 import { arranqueSinDatos, motivoDeSalida } from './lib/estadosAsincronos';
 import { useFuentesListas } from './components/layoutMotion';
 import { AnuncioDeNavegacion } from './components/accesibilidadMotion';
@@ -530,6 +533,7 @@ export default function App() {
      NO se toca** — son las siete habilidades de siempre, y moverlas habría sido
      una migración a cambio de nada. */
   const [fitness, setFitness] = useState(DEFAULT_FITNESS);
+  const [cumpleanos, setCumpleanos] = useState(DEFAULT_CUMPLEANOS);
   const [futbol, setFutbol] = useState([]);
   const [economia, setEconomia] = useState(DEFAULT_ECONOMIA);
   const [salud, setSalud] = useState(DEFAULT_SALUD);
@@ -685,8 +689,9 @@ export default function App() {
         loadData(uidUser, 'horarioTop', DEFAULT_HORARIO_TOP),
         loadData(uidUser, 'estiloHombre', DEFAULT_ESTILO_HOMBRE),
         loadData(uidUser, 'fitness', DEFAULT_FITNESS),
+        loadData(uidUser, 'cumpleanos', DEFAULT_CUMPLEANOS),
       ];
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud, hor, eh, fit] = await Promise.all(cargas);
+      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud, hor, eh, fit, cumple] = await Promise.all(cargas);
       if (cancelled) return;
       /* 🚨 MS F16, apartados 5 y 20 — si no se pudo cargar NADA, no se enseña una cuenta vacía que
          no es la suya: se dice, y se vuelve a intentar. Si solo falla una parte, la aplicación
@@ -887,6 +892,8 @@ export default function App() {
         console.warn(`[Fitness] ${cargaFit.nuevos.length} registro(s) apartados en la cuarentena al cargar.`);
       }
       setFitness(cargaFit.fitness);
+      /* 🎂 Regla 5: `loadData` no fusiona. Lo que no se entiende se aparta (no se pierde al guardar). */
+      setCumpleanos(normalizarCumpleanos(cumple));
       setLoaded(true);
       /* SO — los datos ya estan en pantalla. Es el unico momento del ciclo en que
          'sincronizado' significa algo: antes de esto no hay nada que sincronizar,
@@ -1508,6 +1515,7 @@ export default function App() {
     relacion: { label: 'Relación', default: DEFAULT_RELACION, setter: setRelacion },
     fe: { label: 'Fe', default: DEFAULT_FE, setter: setFe },
     bienestar: { label: 'Bienestar digital', default: DEFAULT_BIENESTAR, setter: setBienestar },
+    cumpleanos: { label: 'Cumpleaños', default: DEFAULT_CUMPLEANOS, setter: setCumpleanos },
   };
   const borrarDatosModulo = async (id) => {
     const cfg = RESET_MODULOS[id];
@@ -1557,9 +1565,12 @@ export default function App() {
     const perfil = PERFILES_MODULOS.find((p) => p.id === perfilId);
     if (!perfil) return;
     const personalizables = MORE_NAV.filter((m) => m.id !== 'ajustes').map((m) => m.id);
-    const ocultos = perfil.activos === null
+    /* 🎂 Un perfil decide qué MÓDULOS usas: una sección apagada de dentro de una agrupadora
+       (Cumpleaños) se queda como él la dejó. */
+    const deSecciones = personalizacion.ocultos.filter((id) => !personalizables.includes(id));
+    const ocultos = [...(perfil.activos === null
       ? []
-      : personalizables.filter((id) => !perfil.activos.includes(id));
+      : personalizables.filter((id) => !perfil.activos.includes(id))), ...deSecciones];
     updatePersonalizacion({ ...personalizacion, ocultos });
     // Si el perfil acaba de desactivar la pestaña abierta, volver a "Hoy" para no dejar a Josué
     // mirando una pantalla de un módulo que ya no está activo.
@@ -1582,6 +1593,8 @@ export default function App() {
     diario: [diario, setDiario], biblioteca: [biblioteca, setBiblioteca],
     relacion: [relacion, setRelacion], fe: [fe, setFe], bienestar: [bienestar, setBienestar],
     armario: [armario, setArmario],
+    // 🎂 Cumpleaños (Mente) — su lista se borra a Eliminados recientemente, como todas (EH F45).
+    cumpleanos: [cumpleanos, setCumpleanos],
     /* FIT F4 — las plantillas de entrenamiento entran en la papelera universal.
        Es una lista dentro de `fitness`, como `comidas` dentro de `nutricion`:
        el motor de ME F3 ya lo soportaba. */
@@ -2053,36 +2066,42 @@ export default function App() {
   // al restaurarse duplicaría el elemento. Con la papelera dentro del snapshot, deshacer revierte
   // las dos cosas a la vez y los dos sistemas de recuperación no se pisan.
   const snapshotAndSave = (patch) => {
-    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion, horarioTop, fitness };
+    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion, horarioTop, fitness, cumpleanos };
     const nextHist = [...history, snapshot].slice(-10);
+    /* 🐛 2026-10-18 — devuelve el resultado de lo guardado (`{ ok, error }` de `saveData`), para que
+       una pantalla que tenga algo que decir de SU guardado lo pueda leer (editar un examen). Nadie
+       lo esperaba antes, así que quien no lo lea sigue igual. El historial de Deshacer no cuenta. */
+    const guardados = [];
     setHistory(nextHist);
     saveData(uidUser, 'historial', nextHist);
-    if (patch.sueno) { setSueno(patch.sueno); saveData(uidUser, 'sueno', patch.sueno); }
-    if (patch.calistenia) { setCalistenia(patch.calistenia); saveData(uidUser, 'calistenia', patch.calistenia); }
-    if (patch.futbol) { setFutbol(patch.futbol); saveData(uidUser, 'futbol', patch.futbol); }
-    if (patch.economia) { setEconomia(patch.economia); saveData(uidUser, 'economia', patch.economia); }
-    if (patch.salud) { setSalud(patch.salud); saveData(uidUser, 'salud', patch.salud); }
-    if (patch.nutricion) { setNutricion(patch.nutricion); saveData(uidUser, 'nutricion', patch.nutricion); }
-    if (patch.estudios) { setEstudios(patch.estudios); saveData(uidUser, 'estudios', patch.estudios); }
-    if (patch.negocio) { setNegocio(patch.negocio); saveData(uidUser, 'negocio', patch.negocio); }
-    if (patch.productividad) { setProductividad(patch.productividad); saveData(uidUser, 'productividad', patch.productividad); }
-    if (patch.objetivos) { setObjetivos(patch.objetivos); saveData(uidUser, 'objetivos', patch.objetivos); }
-    if (patch.calendario) { setCalendario(patch.calendario); saveData(uidUser, 'calendario', patch.calendario); }
-    if (patch.diario) { setDiario(patch.diario); saveData(uidUser, 'diario', patch.diario); }
-    if (patch.biblioteca) { setBiblioteca(patch.biblioteca); saveData(uidUser, 'biblioteca', patch.biblioteca); }
-    if (patch.relacion) { setRelacion(patch.relacion); saveData(uidUser, 'relacion', patch.relacion); }
-    if (patch.fe) { setFe(patch.fe); saveData(uidUser, 'fe', patch.fe); }
-    if (patch.bienestar) { setBienestar(patch.bienestar); saveData(uidUser, 'bienestar', patch.bienestar); }
-    if (patch.papelera) { setPapelera(patch.papelera); saveData(uidUser, 'papelera', patch.papelera); }
-    if (patch.armario) { setArmario(patch.armario); saveData(uidUser, 'armario', patch.armario); }
-    if (patch.rachas) { setRachas(patch.rachas); saveData(uidUser, 'rachas', patch.rachas); }
-    if (patch.gamificacion) { setGamificacion(patch.gamificacion); saveData(uidUser, 'gamificacionRachas', patch.gamificacion); }
-    if (patch.horarioTop) { setHorarioTop(patch.horarioTop); saveData(uidUser, 'horarioTop', patch.horarioTop); }
-    if (patch.estiloHombre) { setEstiloHombre(patch.estiloHombre); saveData(uidUser, 'estiloHombre', patch.estiloHombre); }
+    if (patch.sueno) { setSueno(patch.sueno); guardados.push(saveData(uidUser, 'sueno', patch.sueno)); }
+    if (patch.calistenia) { setCalistenia(patch.calistenia); guardados.push(saveData(uidUser, 'calistenia', patch.calistenia)); }
+    if (patch.futbol) { setFutbol(patch.futbol); guardados.push(saveData(uidUser, 'futbol', patch.futbol)); }
+    if (patch.economia) { setEconomia(patch.economia); guardados.push(saveData(uidUser, 'economia', patch.economia)); }
+    if (patch.salud) { setSalud(patch.salud); guardados.push(saveData(uidUser, 'salud', patch.salud)); }
+    if (patch.nutricion) { setNutricion(patch.nutricion); guardados.push(saveData(uidUser, 'nutricion', patch.nutricion)); }
+    if (patch.estudios) { setEstudios(patch.estudios); guardados.push(saveData(uidUser, 'estudios', patch.estudios)); }
+    if (patch.negocio) { setNegocio(patch.negocio); guardados.push(saveData(uidUser, 'negocio', patch.negocio)); }
+    if (patch.productividad) { setProductividad(patch.productividad); guardados.push(saveData(uidUser, 'productividad', patch.productividad)); }
+    if (patch.objetivos) { setObjetivos(patch.objetivos); guardados.push(saveData(uidUser, 'objetivos', patch.objetivos)); }
+    if (patch.calendario) { setCalendario(patch.calendario); guardados.push(saveData(uidUser, 'calendario', patch.calendario)); }
+    if (patch.diario) { setDiario(patch.diario); guardados.push(saveData(uidUser, 'diario', patch.diario)); }
+    if (patch.biblioteca) { setBiblioteca(patch.biblioteca); guardados.push(saveData(uidUser, 'biblioteca', patch.biblioteca)); }
+    if (patch.relacion) { setRelacion(patch.relacion); guardados.push(saveData(uidUser, 'relacion', patch.relacion)); }
+    if (patch.fe) { setFe(patch.fe); guardados.push(saveData(uidUser, 'fe', patch.fe)); }
+    if (patch.bienestar) { setBienestar(patch.bienestar); guardados.push(saveData(uidUser, 'bienestar', patch.bienestar)); }
+    if (patch.papelera) { setPapelera(patch.papelera); guardados.push(saveData(uidUser, 'papelera', patch.papelera)); }
+    if (patch.armario) { setArmario(patch.armario); guardados.push(saveData(uidUser, 'armario', patch.armario)); }
+    if (patch.rachas) { setRachas(patch.rachas); guardados.push(saveData(uidUser, 'rachas', patch.rachas)); }
+    if (patch.gamificacion) { setGamificacion(patch.gamificacion); guardados.push(saveData(uidUser, 'gamificacionRachas', patch.gamificacion)); }
+    if (patch.horarioTop) { setHorarioTop(patch.horarioTop); guardados.push(saveData(uidUser, 'horarioTop', patch.horarioTop)); }
+    if (patch.estiloHombre) { setEstiloHombre(patch.estiloHombre); guardados.push(saveData(uidUser, 'estiloHombre', patch.estiloHombre)); }
     /* FIT F4 — sin esta línea, eliminar una plantilla no guardaría nada y la
        pantalla se pintaría perfecta: `snapshotAndSave` solo escribe lo que
        conoce. */
-    if (patch.fitness) { setFitness(patch.fitness); saveData(uidUser, 'fitness', patch.fitness); }
+    if (patch.fitness) { setFitness(patch.fitness); guardados.push(saveData(uidUser, 'fitness', patch.fitness)); }
+    if (patch.cumpleanos) { setCumpleanos(patch.cumpleanos); guardados.push(saveData(uidUser, 'cumpleanos', patch.cumpleanos)); }
+    return resultadoDeGuardados(guardados);
   };
 
   const addSueno = (entry) => {
@@ -2471,6 +2490,11 @@ export default function App() {
   // snapshotAndSave/deshacer, igual que el resto de módulos de datos de la app.
   const addApunte = (a) => snapshotAndSave({ biblioteca: { ...biblioteca, apuntes: [...biblioteca.apuntes, a] } });
   const deleteApunte = (id) => eliminarConPapelera('biblioteca', 'apuntes', id);
+  /* 🎂 Cumpleaños (Mente) — escribir es `snapshotAndSave` (con Deshacer, y devuelve el `{ ok }` del
+     guardado para que el formulario no diga «guardado» si no ha llegado); borrar, la papelera. */
+  const addCumpleanos = (c) => (c ? snapshotAndSave({ cumpleanos: { ...cumpleanos, lista: [...(cumpleanos.lista || []).filter((x) => x.id !== c.id), c] } }) : null);
+  const updateCumpleanos = (c) => (c ? snapshotAndSave({ cumpleanos: { ...cumpleanos, lista: (cumpleanos.lista || []).map((x) => (x.id === c.id ? c : x)) } }) : null);
+  const deleteCumpleanos = (id) => eliminarConPapelera('cumpleanos', 'lista', id);
   /* v3.151.0 — editar una nota (Josué: *"tenemos que solucionar lo de editar las
      notas"*). La vista devuelve la nota ya calculada por `notas.js` —mismo id,
      misma fecha— y aquí solo se sustituye, como `updateEnlace` y `updateIdea`.
@@ -2723,6 +2747,8 @@ export default function App() {
     setGamificacion(last.gamificacion || GAMIFICACION_INICIAL); saveData(uidUser, 'gamificacionRachas', last.gamificacion || GAMIFICACION_INICIAL);
     setHorarioTop(last.horarioTop || DEFAULT_HORARIO_TOP); saveData(uidUser, 'horarioTop', last.horarioTop || DEFAULT_HORARIO_TOP);
     setEstiloHombre(last.estiloHombre || DEFAULT_ESTILO_HOMBRE); saveData(uidUser, 'estiloHombre', last.estiloHombre || DEFAULT_ESTILO_HOMBRE);
+    /* 🎂 Solo si el paso lo tenía: un paso de antes de Cumpleaños no puede vaciarlo. */
+    if (last.cumpleanos) { setCumpleanos(last.cumpleanos); saveData(uidUser, 'cumpleanos', last.cumpleanos); }
     setHistory(rest); saveData(uidUser, 'historial', rest);
   };
 
@@ -2859,6 +2885,9 @@ export default function App() {
     estiloHombre,
     desde: addDays(todayISO(), -365),
     hasta: addDays(todayISO(), 365),
+    /* 🎂 Los cumpleaños, como las fechas de Relación: anclados en su fecha y repetidos cada año
+       por `expandirRecurrentes`. Desactivado (o con Mente apagada), ninguno. */
+    cumpleanos: cumpleanosActivo(personalizacion.ocultos) ? cumpleanos : null,
   });
 
   /* 🚨 DIST F1 — **ESTO ERA `renderContent()` Y AHORA RECIBE EL ID.**
@@ -3359,6 +3388,16 @@ export default function App() {
             accent={accent}
           />
         );
+      /* 🎂 2026-10-18 — la cuarta sección de Mente. Su `case` es el que pide la agrupadora y el que
+         abre «Abrir en Cumpleaños» desde el Calendario. Desactivada, lo dice y no se pinta. */
+      case 'cumpleanos':
+        return (
+          <CumpleanosView
+            cumpleanos={cumpleanos} desactivado={!cumpleanosActivo(personalizacion.ocultos)}
+            onAdd={addCumpleanos} onUpdate={updateCumpleanos} onDelete={deleteCumpleanos}
+            accent={accent}
+          />
+        );
       case 'bienestar':
         return (
           <WellbeingView
@@ -3422,7 +3461,7 @@ export default function App() {
            progreso solo como referencia y **solo si no están detrás del PIN**
            (C-35): con `fotos_privadas` puesto, la exportación no las nombra. */
         const fotosExportables = seguridad.protectedActions.includes('fotos_privadas') ? null : saludFotos;
-        const paraExportar = { ...currentState, estiloHombre, fitness, fotosFitness: fotosExportables };
+        const paraExportar = { ...currentState, estiloHombre, fitness, fotosFitness: fotosExportables, cumpleanos };
         const exportarCSVProtegido = () => {
           const ejecutar = () => exportCSV(paraExportar);
           if (exportarProtegido) pedirVerificacionPin('Confirma tu PIN para exportar tus datos.', ejecutar); else ejecutar();
@@ -3554,6 +3593,7 @@ export default function App() {
           grupo={grupo}
           panelDe={renderModulo}
           protegerPanel={protegerPanel}
+          ocultos={personalizacion.ocultos}
           accent={accent}
         />
       );

@@ -147,7 +147,9 @@ export const PALABRAS_MODULOS = {
     'fe', 'dios', 'oracion', 'oración', 'iglesia', 'espiritual', 'biblia', 'servicio',
     'relacion', 'relación', 'pareja', 'novia', 'aniversario', 'privado',
     'movil', 'móvil', 'pantallas', 'tiempo de uso', 'tiempo de pantalla', 'digital', 'concentracion',
-    'concentración', 'desconectar', 'bienestar digital'],
+    'concentración', 'desconectar', 'bienestar digital',
+    // 🎂 2026-10-18 — la cuarta sección de Mente.
+    'cumpleaños', 'cumpleanos', 'cumple', 'felicitar'],
   /* 🚨 DIST F1 — lo mismo con Tareas, Calendario y Horario. «Qué tengo hoy»,
      «clases» o «eventos» tienen que seguir llevando a alguna parte. */
   organizacion: ['organizacion', 'organización', 'organizar',

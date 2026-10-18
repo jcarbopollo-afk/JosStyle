@@ -31,8 +31,9 @@ import {
   TIPOS_EVENTO_ACADEMICO, TIPO_EVENTO_POR_DEFECTO, tipoEventoAcademico, tipoDeFecha,
   ESTADOS_EXAMEN, ESTADOS_ENTREGA, estadoExamen, estadoEntrega,
   MAX_NOMBRE_FECHA, MAX_NOTAS_FECHA, cuentaAtras, fechasAcademicas,
-  crearEntrega, crearEventoAcademico, editarExamenFecha, editarEntrega, editarEventoAcademico,
+  crearEntrega, crearEventoAcademico, editarEntrega, editarEventoAcademico,
   cambiarEstadoExamen, cambiarEstadoEntrega, impactoDeEliminarFecha,
+  formularioDeExamen, cambiosDeExamen, editarExamen, textoDeFalloAlGuardar, MAX_NOTA_EXAMEN,
 } from '../lib/fechasAcademicas';
 import {
   PLANTILLAS_APP, DESDE_CERO, plantillaApp, plantillaParaTipo, ramasDePlantilla,
@@ -44,7 +45,9 @@ import {
   panelDelHome, VACIO_PROXIMO, FILTROS_EVENTOS, todasLasFechas, resumenRapido,
   proximoDeAsignatura, proximoDeApp, rutaDeFecha,
 } from '../lib/cierreEstudios';
-import { Card, SectionTitle, Field, TextInput, SelectInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel, TextoDeBoton } from '../components/ui';
+import { Card, SectionTitle, Field, TextInput, SelectInput, PrimaryButton, BotonBorrar, EmptyHint, AIPanel, TextoDeBoton, MensajeDeCampo } from '../components/ui';
+import { useTurnos } from '../components/estadosAsincronos';
+import { resumenSincronizacion } from '../lib/sincronizacion';
 import { Plegable, ListaAnimada } from '../components/layoutMotion';
 import { desplazarHasta } from '../lib/accesibilidadMotion';
 
@@ -178,8 +181,14 @@ function PlanRepaso({ examen, onUpdatePlan, accent }) {
   );
 }
 
-function ExamenItem({ examen, onUpdate, onDelete, accent, forzarAbierta, onFocoConsumido }) {
+/* 🐛 2026-10-18 — **un examen no se podía editar**, y la causa era ésta: los exámenes se pintan con
+   esta tarjeta (por su plan de repaso, Fase 6), y la tarjeta solo traía repaso, nota obtenida y
+   borrar. La edición estaba escrita (`accionesFecha.examen.editar`, ES F4) pero solo la llamaba el
+   panel de fechas, que no pintan los exámenes. Ahora «Editar» abre EL MISMO formulario de crear
+   (`FormFecha`), con todo lo que tiene el examen, y `onEditar` devuelve el resultado del guardado. */
+export function ExamenItem({ examen, asignaturas = [], onUpdate, onEditar, onDelete, accent, forzarAbierta, onFocoConsumido }) {
   const [abierto, setAbierto] = useState(false);
+  const [editando, setEditando] = useState(false);
   const dias = diasHasta(examen.fecha);
 
   // Ampliación del Dashboard — Centro de Control (apartado 6: "Examen de Biología — 3 días →
@@ -193,6 +202,20 @@ function ExamenItem({ examen, onUpdate, onDelete, accent, forzarAbierta, onFocoC
       onFocoConsumido && onFocoConsumido();
     }
   }, [forzarAbierta]);
+
+  if (editando && onEditar) {
+    return (
+      <div id={`examen-${examen.id}`}>
+        <FormFecha
+          accent={accent} tipo="examen" asignaturas={asignaturas}
+          inicial={{ id: examen.id, ...formularioDeExamen(examen) }} asignaturaFija={examen.asignaturaId}
+          onGuardar={(d) => onEditar(examen.id, d)}
+          onGuardado={() => setEditando(false)}
+          onCerrar={() => setEditando(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <Card id={`examen-${examen.id}`} style={{ padding: '0.9rem' }}>
@@ -218,7 +241,17 @@ function ExamenItem({ examen, onUpdate, onDelete, accent, forzarAbierta, onFocoC
             </div>
           )}
           <PlanRepaso examen={examen} onUpdatePlan={(plan) => onUpdate({ ...examen, planRepaso: plan })} accent={accent} />
-          <button onClick={() => onDelete(examen.id)} className="text-xs mt-3" style={{ color: COLORS.negative }}>Borrar examen</button>
+          <div className="flex items-center justify-between gap-2 mt-3">
+            {onEditar && (
+              <button
+                onClick={() => setEditando(true)} className="toque-44 inline-flex items-center gap-1.5 text-xs font-semibold"
+                style={{ color: accent }} aria-label={`Editar el examen ${examen.tema || 'Examen'}`}
+              >
+                <Pencil size={13} aria-hidden="true" /> Editar
+              </button>
+            )}
+            <button onClick={() => onDelete(examen.id)} className="text-xs" style={{ color: COLORS.negative }}>Borrar examen</button>
+          </div>
         </div>
       )}</Plegable>
     </Card>
@@ -437,15 +470,52 @@ function FilaFecha({ fila, nombreAsignatura, accent, onAbrir }) {
 }
 
 /* Apartados 2, 4, 6 y 18 — un formulario corto: *"Añadir → seleccionar asignatura → fecha →
-   guardar"*. Sirve para crear y para editar los tres tipos. */
-function FormFecha({ accent, tipo, asignaturas, inicial, asignaturaFija, onGuardar, onCerrar }) {
+   guardar"*. Sirve para crear y para editar los tres tipos.
+   🐛 2026-10-18 — **también los exámenes**: hasta hoy su tarjeta no llegaba nunca aquí en modo editar.
+   Si `onGuardar` devuelve una promesa (el resultado de `saveData`, `{ ok, error }`), el formulario
+   espera con el botón en «Guardando…», **no se cierra si no ha llegado** —lo dice debajo y deja los
+   datos escritos para reintentar— y solo entonces llama a `onGuardado`. Una respuesta de un guardado
+   anterior que llegue tarde no pinta nada (`useTurnos`, MS F16). Sin promesa, como siempre. */
+export function FormFecha({ accent, tipo, asignaturas, inicial, asignaturaFija, onGuardar, onGuardado, onCerrar }) {
   const [nombre, setNombre] = useState(inicial?.nombre || '');
   const [asignaturaId, setAsignaturaId] = useState(inicial?.asignaturaId || asignaturaFija || '');
-  const [fecha, setFecha] = useState(inicial?.fecha || todayISO());
+  // Al editar algo sin fecha no se le pone hoy por la espalda: el campo empieza vacío.
+  const [fecha, setFecha] = useState(inicial ? (inicial.fecha || '') : todayISO());
   const [hora, setHora] = useState(inicial?.hora || '');
   const [notas, setNotas] = useState(inicial?.notas || '');
   const [subtipo, setSubtipo] = useState(inicial?.subtipo || TIPO_EVENTO_POR_DEFECTO);
+  const [notaObjetivo, setNotaObjetivo] = useState(inicial?.notaObjetivo || '');
+  const [notaObtenida, setNotaObtenida] = useState(inicial?.notaObtenida || '');
+  const [guardando, setGuardando] = useState(false);
+  const [fallo, setFallo] = useState(null);
+  const turnos = useTurnos();
   const t = tipoDeFecha(tipo);
+  const esExamen = tipo === 'examen';
+  const idFallo = `fallo-fecha-${inicial?.id || 'nueva'}`;
+
+  const guardar = async () => {
+    if (guardando) return;
+    setFallo(null);
+    const datos = { nombre, asignaturaId: asignaturaFija || asignaturaId, fecha, hora, notas, tipo: subtipo };
+    if (esExamen) {
+      datos.notaObjetivo = notaObjetivo;
+      if (inicial) datos.notaObtenida = notaObtenida;
+    }
+    const r = onGuardar(datos);
+    if (!r || typeof r.then !== 'function') return;
+    const turno = turnos.nuevo();
+    setGuardando(true);
+    try {
+      const res = await r;
+      if (!turno.vigente()) return;
+      if (res && res.ok === false) setFallo(textoDeFalloAlGuardar(res));
+      else if (onGuardado) onGuardado();
+    } catch (e) {
+      if (turno.vigente()) setFallo(textoDeFalloAlGuardar(null));
+    } finally {
+      if (turno.vigente()) setGuardando(false);
+    }
+  };
 
   return (
     <Card>
@@ -496,13 +566,35 @@ function FormFecha({ accent, tipo, asignaturas, inicial, asignaturaFija, onGuard
         <TextInput value={notas} onChange={(e) => setNotas(e.target.value)} maxLength={MAX_NOTAS_FECHA} placeholder="Lo que quieras recordar" />
       </Field>
 
+      {/* Las dos notas que el examen guarda desde la Fase 6 y que no se podían corregir: la
+          objetivo no se podía poner nunca, y la obtenida solo una vez. */}
+      {esExamen && (
+        <div className={inicial ? 'grid grid-cols-2 gap-3' : ''}>
+          <Field label="Nota objetivo (opcional)">
+            <TextInput value={notaObjetivo} onChange={(e) => setNotaObjetivo(e.target.value)} maxLength={MAX_NOTA_EXAMEN} inputMode="decimal" placeholder="Ej: 8" />
+          </Field>
+          {inicial && (
+            <Field label="Nota obtenida (opcional)">
+              <TextInput value={notaObtenida} onChange={(e) => setNotaObtenida(e.target.value)} maxLength={MAX_NOTA_EXAMEN} inputMode="decimal" placeholder="Cuando lo sepas" />
+            </Field>
+          )}
+        </div>
+      )}
+
       <PrimaryButton
         accent={accent}
         disabled={!nombre.trim() || !(asignaturaFija || asignaturaId)}
-        onClick={() => onGuardar({ nombre, asignaturaId: asignaturaFija || asignaturaId, fecha, hora, notas, tipo: subtipo })}
+        estado={guardando ? 'cargando' : undefined}
+        onClick={guardar}
       >
         {inicial ? 'Guardar' : 'Crear'}
       </PrimaryButton>
+      <MensajeDeCampo id={idFallo}>{fallo}</MensajeDeCampo>
+      {inicial && (
+        <button onClick={onCerrar} className="w-full mt-2 rounded-xl py-2 text-xs font-semibold" style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, color: COLORS.textMuted }}>
+          Cancelar
+        </button>
+      )}
     </Card>
   );
 }
@@ -1071,8 +1163,18 @@ export default function EstudiosView({ estudios, horarioTop = null, sueno, onAdd
      cual sea la pantalla desde la que se toque: una sola puerta por tipo (apartado 19). */
   const accionesFecha = {
     examen: {
-      crear: (d) => onAddExamen({ id: uid(), asignaturaId: d.asignaturaId, tema: d.nombre, fecha: d.fecha, hora: d.hora, notas: d.notas, estado: 'proximo', notaObjetivo: '', notaObtenida: '', planRepaso: [] }),
-      editar: (id, d) => onUpdateExamenes(editarExamenFecha(estudios.examenes || [], id, { tema: d.nombre, fecha: d.fecha, hora: d.hora, notas: d.notas })),
+      crear: (d) => onAddExamen({ id: uid(), asignaturaId: d.asignaturaId, ...cambiosDeExamen(d), estado: 'proximo', notaObjetivo: cambiosDeExamen(d).notaObjetivo || '', notaObtenida: '', planRepaso: [] }),
+      /* 🐛 2026-10-18 — devuelve el resultado del guardado (`{ ok, error }`) para que el formulario
+         no diga que ha guardado si no ha llegado. Sin cambios no se escribe nada. */
+      editar: (id, d) => {
+        const actuales = estudios.examenes || [];
+        const nuevos = editarExamen(actuales, id, d);
+        /* Sin cambios no se escribe… salvo que lo último no llegara a la cuenta: entonces «Guardar»
+           otra vez es el reintento, y se vuelve a mandar en vez de decir que está guardado. */
+        const pendiente = resumenSincronizacion().pendientes.includes('estudios');
+        if (nuevos === actuales && !pendiente) return Promise.resolve({ ok: true, error: null, sinCambios: true });
+        return Promise.resolve(onUpdateExamenes(nuevos)).then((r) => r || { ok: true, error: null });
+      },
       estado: (id, e) => onUpdateExamenes(cambiarEstadoExamen(estudios.examenes || [], id, e)),
       eliminar: onDeleteExamen,
     },
@@ -1374,7 +1476,7 @@ export default function EstudiosView({ estudios, horarioTop = null, sueno, onAdd
                 {[...examenesAsig].sort((a, b) => ((a.fecha || '9999') > (b.fecha || '9999') ? 1 : -1)).map((ex) => (
                   <div key={ex.id}>
                     <ExamenItem
-                      examen={ex} onUpdate={onUpdateExamen} onDelete={onDeleteExamen} accent={accent}
+                      examen={ex} asignaturas={asignaturasApp} onUpdate={onUpdateExamen} onEditar={accionesFecha.examen.editar} onDelete={onDeleteExamen} accent={accent}
                       forzarAbierta={foco?.examenId === ex.id} onFocoConsumido={onFocoConsumido}
                     />
                     {/* Apartado 3 — su estado, con icono y palabra. */}
@@ -1886,7 +1988,7 @@ export default function EstudiosView({ estudios, horarioTop = null, sueno, onAdd
                 <div key={ex.id}>
                   <p className="text-[11px] mb-1" style={{ color: COLORS.textMuted }}>{nombreAsignatura(ex.asignaturaId)}</p>
                   <ExamenItem
-                    examen={ex} onUpdate={onUpdateExamen} onDelete={onDeleteExamen} accent={accent}
+                    examen={ex} asignaturas={asignaturasApp} onUpdate={onUpdateExamen} onEditar={accionesFecha.examen.editar} onDelete={onDeleteExamen} accent={accent}
                     forzarAbierta={foco?.examenId === ex.id} onFocoConsumido={onFocoConsumido}
                   />
                 </div>

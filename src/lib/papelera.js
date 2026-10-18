@@ -114,6 +114,8 @@ export const CATALOGO_PAPELERA = {
   // hoy se borran.
   'productividad.apuntes': { modulo: 'productividad', coleccion: 'apuntes', tipo: 'Apunte', campos: ['texto', 'fecha'], icono: 'productividad' },
   'objetivos.lista': { modulo: 'objetivos', coleccion: 'lista', tipo: 'Objetivo', campos: ['texto'], icono: 'objetivos' },
+  /* 🎂 2026-10-18 — un cumpleaños de Mente. Toda lista que se borra va aquí (EH F45): vuelve. */
+  'cumpleanos.lista': { modulo: 'cumpleanos', coleccion: 'lista', tipo: 'Cumpleaños', campos: ['nombre'], icono: 'cumpleanos' },
   'calendario.eventos': { modulo: 'calendario', coleccion: 'eventos', tipo: 'Evento', campos: ['titulo'], icono: 'calendario' },
   'diario.entradas': { modulo: 'diario', coleccion: 'entradas', tipo: 'Entrada del diario', campos: ['fecha'], icono: 'diario' },
   'biblioteca.apuntes': { modulo: 'biblioteca', coleccion: 'apuntes', tipo: 'Apunte', campos: ['titulo'], icono: 'biblioteca' },

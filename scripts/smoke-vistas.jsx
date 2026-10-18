@@ -417,7 +417,8 @@ import { CATALOGO_EJERCICIOS } from '../src/lib/ejercicios.js';
 import WellbeingView from '../src/views/WellbeingView.jsx';
 import HealthView from '../src/views/HealthView.jsx';
 import NutritionView from '../src/views/NutritionView.jsx';
-import EstudiosView from '../src/views/EstudiosView.jsx';
+import EstudiosView, { FormFecha as FormFechaEstudios, ExamenItem as ExamenItemEstudios } from '../src/views/EstudiosView.jsx';
+import CumpleanosView, { FormularioCumpleanos, TarjetaCumpleanos } from '../src/views/CumpleanosView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
 import PapeleraView from '../src/views/PapeleraView.jsx';
@@ -2983,6 +2984,41 @@ const CASOS = [
       ['EstudiosView · sin áreas', EstudiosView, () => propsEs({ programas: [], asignaturas: [], examenes: [], horas: [] })],
       /* Y con un examen destacado desde el Dashboard, que abre su rama sola. */
       ['EstudiosView · con foco en un examen', EstudiosView, () => propsEs(conApps, { foco: { examenId: 'e1' } })],
+      /* 🐛 2026-10-18 — editar un examen: el formulario de crear, con todo lo que tiene el examen, y la
+         tarjeta con su «Editar». Sin la edición, la tarjeta era solo repaso y borrar. */
+      /* 🎂 2026-10-18 — Cumpleaños (Mente): vacío, con cumpleaños (uno hoy, uno sin año y un 29 de
+         febrero), desactivado, y su formulario de crear y de editar. */
+      ['CumpleanosView · vacío', CumpleanosView, () => ({ cumpleanos: { lista: [] }, onAdd: noop, onUpdate: noop, onDelete: noop, accent })],
+      ['CumpleanosView · con cumpleaños', CumpleanosView, () => ({
+        cumpleanos: { lista: [
+          { id: 'c1', nombre: 'Marta', dia: Number(HOY.slice(8, 10)), mes: Number(HOY.slice(5, 7)), anio: 2008, relacion: 'Amiga' },
+          { id: 'c2', nombre: 'Leo', dia: 29, mes: 2, anio: null, relacion: null },
+          { id: 'c3', nombre: 'Abuela', dia: 1, mes: 1, anio: 1950, relacion: 'Familia' },
+        ] },
+        onAdd: noop, onUpdate: noop, onDelete: noop, accent,
+      })],
+      ['CumpleanosView · desactivado', CumpleanosView, () => ({ cumpleanos: { lista: [{ id: 'c1', nombre: 'Marta', dia: 1, mes: 1, anio: null }] }, desactivado: true, onAdd: noop, onUpdate: noop, onDelete: noop, accent })],
+      ['CumpleanosView · datos corruptos', CumpleanosView, () => ({ cumpleanos: { lista: [{ id: 'x', nombre: 'Sin fecha' }, null] }, onAdd: noop, onUpdate: noop, onDelete: noop, accent })],
+      ['FormularioCumpleanos · nuevo', FormularioCumpleanos, () => ({ lista: [], accent, onGuardar: noop, onCancelar: noop })],
+      ['FormularioCumpleanos · editar', FormularioCumpleanos, () => ({ inicial: { id: 'c1', nombre: 'Marta', dia: 12, mes: 5, anio: 2008, relacion: 'Amiga' }, lista: [], accent, onGuardar: noop, onCancelar: noop })],
+      ['TarjetaCumpleanos', TarjetaCumpleanos, () => ({ c: { id: 'c1', nombre: 'Marta', dia: 12, mes: 5, anio: 2008, relacion: 'Amiga', proximo: { fecha: '2027-05-12', dias: 3, esHoy: false, edad: 19 } }, accent, onEditar: noop, onEliminar: noop })],
+      ['FormFecha · editar un examen', FormFechaEstudios, () => ({
+        accent, tipo: 'examen', asignaturas: conApps.asignaturas, asignaturaFija: 'a1',
+        inicial: { id: 'e1', nombre: 'Derivadas', asignaturaId: 'a1', fecha: addDays(HOY, 3), hora: '09:00', notas: 'Tema 4', notaObjetivo: '9', notaObtenida: '' },
+        onGuardar: () => Promise.resolve({ ok: true }), onGuardado: noop, onCerrar: noop,
+      })],
+      ['FormFecha · editar un examen sin fecha', FormFechaEstudios, () => ({
+        accent, tipo: 'examen', asignaturas: conApps.asignaturas, asignaturaFija: 'a1',
+        inicial: { id: 'e9', nombre: 'Sin fecha', asignaturaId: 'a1', fecha: '', hora: '', notas: '', notaObjetivo: '', notaObtenida: '' },
+        onGuardar: noop, onGuardado: noop, onCerrar: noop,
+      })],
+      ['FormFecha · nuevo examen', FormFechaEstudios, () => ({
+        accent, tipo: 'examen', asignaturas: conApps.asignaturas, asignaturaFija: 'a1', onGuardar: noop, onCerrar: noop,
+      })],
+      ['ExamenItem · con Editar', ExamenItemEstudios, () => ({
+        examen: conApps.examenes[0], asignaturas: conApps.asignaturas, onUpdate: noop, onEditar: () => Promise.resolve({ ok: true }),
+        onDelete: noop, accent, forzarAbierta: false, onFocoConsumido: noop,
+      })],
       /* Entrega 3 · F42 (ES F2) — con ramas propias por área: una sección que él
          ha creado (sin sistema detrás) y un área a la que le quitó una. */
       ['EstudiosView · con ramas propias', EstudiosView, () => propsEs({

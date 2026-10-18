@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.151.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.152.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -2264,7 +2264,7 @@ un módulo dentro de un área para ser la quinta pestaña** (siguen siendo cinco
 | **Vida** | Estudios · Productividad · **Mente** · Biblioteca · Diario |
 | **Gestión** | **Organización** · Economía · Negocio · Armario · **Progreso** |
 
-**Mente** agrupa Fe, Relación y Bienestar digital. **Organización** agrupa Tareas, Calendario y
+**Mente** agrupa Fe, Relación, Bienestar digital y, desde la v3.152.0, **Cumpleaños** (`src/lib/cumpleanos.js`: fecha original guardada, la próxima calculada, recurrencia anual del Calendario, y se apaga con `personalizacion.ocultos` como un módulo). **Organización** agrupa Tareas, Calendario y
 Horario. **Progreso** es el «Números» de NAV F1 renombrado. Y **Rachas** deja de ser módulo suelto:
 la absorbe Productividad.
 
@@ -2276,6 +2276,13 @@ Productividad"*, y Productividad conserva Hábitos, Rachas, Objetivos, Pomodoro,
 había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
+
+🚨 **AHORA MISMO (2026-10-18): CUATRO PROMPTS DE JOSUÉ, EN ORDEN, UNO A UNO, CADA UNO A `main` CON `verificar.sh` EN
+VERDE.** Están copiados palabra por palabra en **`docs/14_PROMPTS_2026-10-18.md`** (con su tabla de estado): P1 selección
+universal de fotos y archivos · P2 objetivo de agua con jarra animada · P3 estados de IA no disponible · P4 los dos bugs
+visuales de móvil (tarjeta de progreso de Inicio y el rectángulo residual). 🔓 **Josué dio permiso expreso para subir a
+`main` sin preguntar** (*"no me pidas permiso de nada ejecútalo todo porque tienes permiso"*), y para seguir cuando se
+restablezca el límite. Antes de ellos va a `main` la v3.152.0 (editar exámenes + Cumpleaños).
 
 🔜 **PENDIENTE TRAS A1–A5 (decidido por Josué el 2026-10-17), en este orden:**
 - **Fase «guardar en el iPhone lo pendiente».** Josué lo AUTORIZA con sus palabras: *"yo sí que dejo que lo guarde

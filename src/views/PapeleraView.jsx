@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Trash2, RotateCcw, Moon, Dumbbell, Wallet, HeartPulse, Apple, GraduationCap,
-  Briefcase, ListTodo, Target, Calendar, BookOpen, Library, Church, Smartphone, Heart } from 'lucide-react';
+  Briefcase, ListTodo, Target, Calendar, BookOpen, Library, Church, Smartphone, Heart, Cake } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { Card, EmptyHint, Switch } from '../components/ui';
 import { describirEntrada, tiempoDesde, diasRestantes, ordenarPapelera, OPCIONES_RETENCION } from '../lib/papelera';
@@ -13,6 +13,7 @@ const ICONOS = {
   estudios: GraduationCap, negocio: Briefcase, productividad: ListTodo, objetivos: Target,
   calendario: Calendar, diario: BookOpen, biblioteca: Library, fe: Church,
   bienestar: Smartphone, relacion: Heart,
+  cumpleanos: Cake,
 };
 
 // Entrega 2 · ME Fase 3 — "Eliminados recientemente".

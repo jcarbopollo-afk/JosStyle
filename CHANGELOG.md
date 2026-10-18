@@ -1,5 +1,53 @@
 # CHANGELOG.md
 
+## v3.152.0 — Estudios: editar un examen · Mente: Cumpleaños
+
+> 🔓 Josué pidió no subir sin su permiso, y lo dio el mismo día al pasar los cuatro prompts siguientes
+> (`docs/14_PROMPTS_2026-10-18.md`): *"no me pidas permiso de nada ejecútalo todo porque tienes permiso"*.
+
+### 🐛 Editar un examen (Estudios)
+
+- **La causa:** los exámenes se pintan con `ExamenItem` (Fase 6, por su plan de repaso), y esa tarjeta **no tenía forma
+  de editar**: solo repaso, nota obtenida y «Borrar examen». La edición estaba escrita (`accionesFecha.examen.editar`,
+  ES F4) pero solo la llamaba `PanelFechas`, que pintan las entregas y los eventos, **nunca los exámenes**. Era una
+  función que nadie podía alcanzar.
+- **«Editar»** en la tarjeta abierta (las dos pantallas que pintan exámenes: la asignatura y el área) abre **el mismo
+  formulario de crear** (`FormFecha`) con todo lo que tiene: nombre, fecha, hora, notas, nota objetivo y nota obtenida
+  —esas dos no se podían corregir nunca—. «Cancelar» no guarda nada.
+- **Mismo id, solo lo editado, ni un duplicado** (`editarExamen` en `fechasAcademicas.js`): el plan de repaso, el
+  estado y la asignatura no se tocan; guardar sin cambios no escribe ni deja un Deshacer vacío.
+- 🚨 **No dice «guardado» si no ha llegado.** `snapshotAndSave` devuelve ahora el `{ ok, error }` de `saveData`
+  (`resultadoDeGuardados`, en `sincronizacion.js`; quien no lo lee sigue igual). El formulario espera con «Guardando…»,
+  si falla **no se cierra**, lo dice como alerta y deja lo escrito; «Guardar» otra vez reenvía aunque no haya cambios
+  (la clave sigue pendiente). Una respuesta vieja no pinta nada (`useTurnos`), y el orden de los guardados de una clave
+  ya lo garantiza `saveData` (MS F16).
+- ⚠️ Editar algo **sin fecha** ya no le pone la de hoy por la espalda (el formulario empezaba en hoy también al editar).
+
+### 🎂 Cumpleaños, la cuarta sección de Mente
+
+- Nombre y fecha obligatorios (día y mes; **el año es opcional**), relación opcional con sugerencias. Ver, editar en su
+  sitio y eliminar a **Eliminados recientemente** (de donde vuelve). Duplicados (mismo nombre el mismo día), fechas que
+  no existen (29-II de un año no bisiesto, 31-IV) y nacimientos futuros no se guardan, y se dice por qué.
+- 🚨 **Se guarda la fecha original, nunca la próxima.** La próxima se calcula (`proximoCumpleanos`); el Calendario la
+  saca del motor de recurrencias de siempre (`recurrencia: anual`, como las fechas de Relación): ni una ocurrencia
+  guardada, así que recalcular no duplica. **El 29 de febrero se celebra el 28 en años no bisiestos**, la misma regla
+  que `ocurrenciaDesdeAncla`: la pantalla y el Calendario dicen el mismo día (comprobado año a año).
+- **Activar y desactivar con el interruptor de los módulos** (`personalizacion.ocultos`, Ajustes → Pantalla principal,
+  debajo de Mente, con la misma confirmación). Apagado no sale en Mente ni en el Calendario y **no se borra nada**. Un
+  perfil rápido no lo reactiva por la espalda.
+- Clave nueva `cumpleanos` en `app_data` (sin SQL: las políticas RLS de `app_data` ya aíslan por usuario), con su
+  puerta de carga (lo que no se entiende se aparta, no se pierde), Deshacer, papelera, exportación y buscador. **No
+  entra en `currentState`**: no viaja a la IA (son datos de otras personas).
+- Movimiento del sistema, sin uno propio: `ListaAnimada`, `Plegable`, `CambioDeContenido`, `EmptyHint` y `AvisoAccion`.
+- ⏸ **Avisos**: no se manda ninguno. La infraestructura de avisos solo cubre eventos y tareas con hora y con la app
+  abierta; un cumpleaños sale en el Calendario el día que toca. Y el acceso rápido del Calendario en Inicio no expande
+  recurrencias (límite que ya tenía, igual con Relación).
+
+### Pruebas
+
+`test-editar-examenes.mjs` (58), `test-cumpleanos.mjs` (113), once casos nuevos en el banco de renderizado y dos
+secciones del recorrido de Chromium («ESTUDIOS · EDITAR UN EXAMEN» y «🎂 CUMPLEAÑOS»).
+
 ## v3.151.0 — Notas: editar una nota · y Microsoft, aplazado
 
 > 🔀 **Y la v3.151.0 lleva también las correcciones A1–A5 de la otra conversación**, que entraron en `main` sin

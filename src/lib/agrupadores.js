@@ -77,6 +77,18 @@ export const APPS_MENTE = [
     desc: 'Tiempo de pantalla y concentración',
     vacio: 'Registra tu tiempo de uso para verlo aquí',
   },
+  {
+    /* 🎂 2026-10-18 — Josué: *"un apartado «Cumpleaños» dentro de Mente, al mismo nivel que sus
+       otras tres"*. Sus datos son una clave nueva (`cumpleanos`), con su puerta de carga.
+       ⚠️ `desactivable`: se enciende y se apaga con el MISMO interruptor que un módulo
+       (`personalizacion.ocultos`, Ajustes → Pantalla principal), sin uno aparte. Apagado no se
+       pinta aquí ni sale en el Calendario, y **no se borra nada**: al volver, sigue todo. */
+    id: 'cumpleanos',
+    nombre: 'Cumpleaños',
+    desc: 'Los de la gente que te importa',
+    vacio: 'Todavía no has apuntado ningún cumpleaños',
+    desactivable: true,
+  },
 ];
 
 /* ---------------------------------------------------------------------------

@@ -4,6 +4,7 @@ import Papa from 'papaparse';
 import { calcularDuracion, formatHoras, todayISO } from './helpers';
 import { filasParaExportar } from './preferenciasEstilo';
 import { filasDeFitnessParaExportar } from './persistenciaFitness';
+import { filasDeCumpleanosParaExportar } from './cumpleanos';
 
 function downloadBlob(filename, content, mime) {
   const blob = new Blob([content], { type: mime });
@@ -17,7 +18,7 @@ function downloadBlob(filename, content, mime) {
   URL.revokeObjectURL(url);
 }
 
-export function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, fe, bienestar, estiloHombre = null, fitness = null, fotosFitness = null }) {
+export function buildExportRows({ sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, fe, bienestar, estiloHombre = null, fitness = null, fotosFitness = null, cumpleanos = null }) {
   const rows = [];
   /* ⚠️ **EH F34, apartado 14** — *"Estilo de hombre debe incluir sus datos dentro
      de esa exportación. **No crear otro sistema de exportación.**"* Así que entra
@@ -36,6 +37,9 @@ export function buildExportRows({ sueno, calistenia, futbol, economia, salud, nu
      las fotos solo como referencia y solo si no están detrás del PIN (C-35):
      quien llama pasa `fotosFitness: null` si lo están. */
   if (fitness) rows.push(...filasDeFitnessParaExportar(fitness, { fotos: fotosFitness }));
+  /* 🎂 2026-10-18 — los cumpleaños de Mente, también aparte de `currentState` (no van a la IA:
+     son nombres y fechas de otras personas). */
+  if (cumpleanos) rows.push(...filasDeCumpleanosParaExportar(cumpleanos));
   sueno.forEach((e) =>
     rows.push({
       modulo: 'Sueño',

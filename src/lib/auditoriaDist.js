@@ -41,7 +41,8 @@ export const ARBOL_DIST = {
   ],
   /* Lo que va DENTRO de cada agrupador, también literal. */
   dentroDe: {
-    mente: ['fe', 'relacion', 'bienestar'],
+    // 🎂 2026-10-18 — Josué pidió la cuarta: Cumpleaños, al mismo nivel que las otras tres.
+    mente: ['fe', 'relacion', 'bienestar', 'cumpleanos'],
     organizacion: ['tareas', 'calendario', 'horario'],
     numeros: ['estadisticas', 'predicciones', 'logros'],
     productividad: ['rachas'],

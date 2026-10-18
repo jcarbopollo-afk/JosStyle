@@ -1576,3 +1576,18 @@ iPhone, más que nada porque si no no se guarda, y como después se elimina"*. *
 pendiente se apunta en el dispositivo, se reintenta al volver a abrir y se borra en cuanto llega. Hasta esa fase,
 el comportamiento sigue siendo el de la F16.
 
+
+
+### C-72 — ✅ RESUELTA AL CONSTRUIR (v3.152.0, 2026-10-18) · «Activar y desactivar Cumpleaños con el mismo mecanismo que las otras secciones» cuando las otras tres secciones de Mente no tienen interruptor
+
+Fe, Relación y Bienestar digital salieron de `MORE_NAV` en la DIST F1: lo único que se apaga es **Mente entera**. La
+lectura que respeta las dos partes —«el mismo mecanismo» y «sin interruptor aparte»— es usar **el interruptor de los
+módulos** (`personalizacion.ocultos`, Ajustes → Pantalla principal), con la misma fila y la misma confirmación, debajo
+de Mente. La sub-app lo declara en su catálogo (`desactivable: true` en `APPS_MENTE`), así que no hay un segundo
+sistema. Apagado no se pinta en Mente ni sale en el Calendario, y no se borra nada. Las otras tres no cambian.
+
+### C-73 — ✅ RESUELTA AL CONSTRUIR (v3.152.0) · «Usar la infraestructura de recordatorios existente» cuando esa infraestructura solo avisa de cosas con hora
+
+`avisosPendientes` mira eventos del calendario y tareas con `notificar` y una hora, y solo con la aplicación abierta.
+Un cumpleaños es de todo el día, así que **no se le inventa una hora ni un aviso del sistema**: el recordatorio es su
+evento en el Calendario, que sale el día que toca. Si Josué quiere un aviso a una hora, es una función nueva.

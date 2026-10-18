@@ -8,6 +8,8 @@ import {
   MODOS_APP, DESCRIPCIONES_MODULOS, DEPENDENCIAS_MODULOS, PERFILES_MODULOS,
 } from '../tokens';
 import { Card, Switch } from '../components/ui';
+import { APPS_DE_AGRUPADORES } from '../lib/agrupadores';
+import { ICONOS_AGRUPADORES } from '../components/iconosAgrupadores';
 
 export const ICONOS_PERSONALIZABLES_MAP = { star: Star, zap: Zap, flame: Flame, sparkles: Sparkles, compass: Compass, gem: Gem, anchor: Anchor, feather: Feather };
 
@@ -113,6 +115,9 @@ function CentroModulos({ areas, modulos, personalizacion, onToggleOculto, accent
   const [confirmando, setConfirmando] = useState(null);
   const porId = Object.fromEntries(modulos.map((m) => [m.id, m]));
   const activos = modulos.filter((m) => !personalizacion.ocultos.includes(m.id)).length;
+  const subAppsDe = (id) => APPS_DE_AGRUPADORES
+    .filter((a) => a.agrupador === id && a.desactivable)
+    .map((a) => ({ id: a.id, label: a.nombre, icon: ICONOS_AGRUPADORES[a.id], desc: a.desc }));
 
   const Fila = ({ modulo, ultimo }) => {
     const oculto = personalizacion.ocultos.includes(modulo.id);
@@ -135,7 +140,7 @@ function CentroModulos({ areas, modulos, personalizacion, onToggleOculto, accent
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium" style={{ color: oculto ? COLORS.textMuted : COLORS.text }}>{modulo.label}</p>
             <p className="text-xs mt-0.5 leading-snug" style={{ color: COLORS.textMuted }}>
-              {DESCRIPCIONES_MODULOS[modulo.id] || ''}
+              {DESCRIPCIONES_MODULOS[modulo.id] || modulo.desc || ''}
             </p>
           </div>
           <Switch
@@ -210,7 +215,17 @@ function CentroModulos({ areas, modulos, personalizacion, onToggleOculto, accent
               {area.label}
             </p>
             {delArea.map((m, i) => (
-              <Fila key={m.id} modulo={m} ultimo={i === delArea.length - 1} />
+              <React.Fragment key={m.id}>
+                <Fila modulo={m} ultimo={i === delArea.length - 1 && !subAppsDe(m.id).length} />
+                {/* 🎂 2026-10-18 — una sección de dentro de una agrupadora que se puede apagar
+                    (Cumpleaños, en Mente) va debajo de ella, con EL MISMO interruptor y la misma
+                    confirmación: es `personalizacion.ocultos`, no un mecanismo aparte. */}
+                {subAppsDe(m.id).map((sub, j, arr) => (
+                  <div key={sub.id} className="pl-6">
+                    <Fila modulo={sub} ultimo={i === delArea.length - 1 && j === arr.length - 1} />
+                  </div>
+                ))}
+              </React.Fragment>
             ))}
           </div>
         );

@@ -1821,6 +1821,20 @@ else
   fallo "Falla editar una nota de la Biblioteca (v3.151.0)"; grep '✗' /tmp/jc_notas.log
 fi
 
+# 2026-10-18 — Estudios: editar un examen (la tarjeta de exámenes no tenía cómo).
+if node --import ./scripts/resolver-vite.mjs scripts/test-editar-examenes.mjs >/tmp/jc_editar_examenes.log 2>&1; then
+  ok "Estudios: editar un examen — $(grep -c '✓' /tmp/jc_editar_examenes.log) comprobaciones"
+else
+  fallo "Falla editar un examen de Estudios"; grep '✗' /tmp/jc_editar_examenes.log
+fi
+
+# 2026-10-18 — Mente: Cumpleaños, la cuarta sección.
+if node --import ./scripts/resolver-vite.mjs scripts/test-cumpleanos.mjs >/tmp/jc_cumpleanos.log 2>&1; then
+  ok "Mente: Cumpleaños — $(grep -c '✓' /tmp/jc_cumpleanos.log) comprobaciones"
+else
+  fallo "Falla Cumpleaños (Mente)"; grep '✗' /tmp/jc_cumpleanos.log
+fi
+
 # Entrega 3 · F21 — Biblioteca: Colecciones.
 if node --import ./scripts/resolver-vite.mjs scripts/test-colecciones.mjs >/tmp/jc_cols.log 2>&1; then
   ok "Biblioteca: Colecciones (E3 F21) — $(grep -c '✓' /tmp/jc_cols.log) comprobaciones"

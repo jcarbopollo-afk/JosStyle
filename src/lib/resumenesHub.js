@@ -271,12 +271,12 @@ export function calcularResumenModulo(id, s) {
         .reduce((a, r) => a + Number(r.minutos || 0), 0);
       const ultimoServicio = ultimoPorFecha(s.fe?.servicio);
       if (minutosHoy > 0) {
-        return { linea1: `${minutosHoy} min de pantalla hoy`, linea2: 'Fe, Relación y bienestar digital', estado: 'activo' };
+        return { linea1: `${minutosHoy} min de pantalla hoy`, linea2: 'Fe, Relación, bienestar digital y cumpleaños', estado: 'activo' };
       }
       if (ultimoServicio) {
-        return { linea1: `Último servicio: ${ultimoServicio.tipo}`, linea2: 'Fe, Relación y bienestar digital', estado: 'activo' };
+        return { linea1: `Último servicio: ${ultimoServicio.tipo}`, linea2: 'Fe, Relación, bienestar digital y cumpleaños', estado: 'activo' };
       }
-      return { linea1: 'Fe, Relación y bienestar digital', linea2: 'Toca para entrar', estado: 'vacio' };
+      return { linea1: 'Fe, Relación, bienestar digital y cumpleaños', linea2: 'Toca para entrar', estado: 'vacio' };
     }
     case 'organizacion': {
       /* Se deriva de las tres que contiene, sin guardar ni una cifra: las tareas

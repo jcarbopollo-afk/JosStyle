@@ -4649,6 +4649,128 @@ ok((guardadoEs3?.temas || []).some((t) => t.nombre === 'Tema 1 — Derivadas' &&
   '🚨 EL TEMA Y SU ESTADO SE HAN GUARDADO (apartado 11)');
 ok((guardadoEs3?.temas || []).every((t) => t.asignaturaId), '⚠️ y cada tema con su asignatura (apartado 12)');
 
+/* ── ESTUDIOS · EDITAR UN EXAMEN (2026-10-18) ────────────────────────────
+   🐛 Josué: los exámenes no se podían editar. La tarjeta (`ExamenItem`) solo traía repaso, nota y
+   borrar: la edición existía y no llegaba a ella nadie. Aquí, con el dedo: abrir, ver lo que tiene,
+   cancelar sin guardar, cambiar nombre, fecha, hora, notas y nota objetivo, que se vea, que siga
+   siendo UN examen con su id, que sobreviva a recargar, y que un guardado que falla LO DIGA. */
+const erroresAntes_exa = errores.length;
+const estudiosAntes_exa = JSON.parse(JSON.stringify(almacen.estudios || {}));
+const escrEs = () => guardado.filter((g) => g && g.key === 'estudios').length;
+const exGuardado = () => ((almacen.estudios || {}).examenes || []);
+const examenesAntes_exa = exGuardado().length;
+ok(await pulsar('Derivadas'), 'EXÁMENES — se abre la tarjeta del examen');
+await esperarTexto(/Borrar examen/i);
+ok(await pulsar('Editar el examen Derivadas'), '🐛 EXÁMENES — la tarjeta tiene «Editar»');
+await esperarTexto(/Editar examen/i);
+const valor_exa = (sel) => page.$eval(`#examen-eex1 ${sel}`, (e) => e.value).catch(() => null);
+ok(await valor_exa('input[placeholder="Ej: Derivadas"]') === 'Derivadas', '🚨 EXÁMENES — el formulario viene con el nombre');
+ok(await valor_exa('input[type="date"]') === DN(-3), '…con su fecha');
+ok(await valor_exa('input[placeholder="Ej: 8"]') === '9', '…y con su nota objetivo');
+ok(!(await page.$('#examen-eex1 select')), '…sin cambiar de asignatura por la puerta de atrás');
+
+/* Cancelar no guarda nada. */
+const escrAntesCancelar_exa = escrEs();
+await page.fill('#examen-eex1 input[placeholder="Ej: Derivadas"]', 'Esto no se guarda');
+await page.click('#examen-eex1 button:has-text("Cancelar")');
+const tras_cancelar_exa = await esperarTexto(/Derivadas/);
+ok(!/Esto no se guarda/.test(tras_cancelar_exa) && escrEs() === escrAntesCancelar_exa, '🚨 EXÁMENES — «Cancelar» cierra sin guardar nada');
+
+/* Editar de verdad: nombre, fecha, hora, notas y nota objetivo. */
+ok(await pulsar('Editar el examen Derivadas'), 'EXÁMENES — se vuelve a editar');
+await esperarTexto(/Editar examen/i);
+await page.fill('#examen-eex1 input[placeholder="Ej: Derivadas"]', 'Derivadas e integrales');
+await page.fill('#examen-eex1 input[type="date"]', DN(-10)); // ⚠️ `DN(n)` es hace n días: dentro de 10 es DN(-10)
+await page.fill('#examen-eex1 input[type="time"]', '10:30');
+await page.fill('#examen-eex1 input[placeholder="Lo que quieras recordar"]', 'Traer calculadora');
+await page.fill('#examen-eex1 input[placeholder="Ej: 8"]', '8,5');
+await page.click('#examen-eex1 button:has-text("Guardar")');
+const tras_guardar_exa = await esperarTexto(/Derivadas e integrales/);
+ok(/Derivadas e integrales/.test(tras_guardar_exa) && !(await page.$('#examen-eex1 input[type="date"]')), '🚨 EXÁMENES — se guarda, se cierra y la tarjeta dice el nombre nuevo');
+ok(/objetivo: 8,5/.test(tras_guardar_exa), '…y la nota objetivo nueva');
+const ex_exa = exGuardado().filter((e) => e.id === 'eex1');
+ok(ex_exa.length === 1 && exGuardado().length === examenesAntes_exa, `🚨 EXÁMENES — sigue siendo UN examen, con su id (${exGuardado().length} de ${examenesAntes_exa})`);
+ok(ex_exa[0] && ex_exa[0].tema === 'Derivadas e integrales' && ex_exa[0].fecha === DN(-10) && ex_exa[0].hora === '10:30'
+  && ex_exa[0].notas === 'Traer calculadora' && ex_exa[0].notaObjetivo === '8,5' && ex_exa[0].asignaturaId === 'ea1',
+  `…con lo editado en la cuenta, y la misma asignatura (${JSON.stringify(ex_exa[0])})`);
+
+/* Recargar: sigue ahí. */
+await page.reload({ waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+ok(await pulsar('Vida'), 'EXÁMENES — tras recargar, a Vida');
+ok(await pulsar('Estudios'), '…a Estudios');
+const homeRec_exa = await esperarTexto(/Bachillerato/i);
+ok(/Examen de Matemáticas/.test(homeRec_exa), `⚠️ EXÁMENES — el Home de Estudios lo enseña en PRÓXIMAMENTE: ahora es dentro de 10 días (${homeRec_exa.slice(0, 400).replace(/\n/g, ' | ')})`);
+ok(await pulsar('Bachillerato'), '…Bachillerato');
+await esperarTexto(/Asignaturas/i);
+ok(await pulsar('Asignaturas'), '…sus asignaturas');
+await esperarTexto(/Matemáticas/i);
+ok(await pulsar('Matemáticas'), '…Matemáticas');
+await esperarTexto(/Contenido/i);
+ok(await pulsar('Exámenes'), '…sus exámenes');
+const rec_exa = await esperarTexto(/Derivadas e integrales/);
+ok(/Derivadas e integrales/.test(rec_exa) && /objetivo: 8,5/.test(rec_exa), '🚨 EXÁMENES — Y SIGUE EDITADO DESPUÉS DE RECARGAR');
+
+/* Un guardado que no llega a la cuenta: se dice, y el formulario no se cierra. */
+ok(await pulsar('Derivadas e integrales'), 'EXÁMENES — se abre otra vez');
+await esperarTexto(/Borrar examen/i);
+ok(await pulsar('Editar el examen Derivadas e integrales'), '…a editar');
+await esperarTexto(/Editar examen/i);
+FALLAR_ESCRITURA.add('estudios');
+await page.fill('#examen-eex1 input[placeholder="Ej: Derivadas"]', 'Derivadas (final)');
+await page.click('#examen-eex1 button:has-text("Guardar")');
+const fallo_exa = await esperarTexto(/No se ha podido guardar en tu cuenta/i);
+ok(/No se ha podido guardar en tu cuenta/i.test(fallo_exa), '🚨 EXÁMENES — un guardado que falla LO DICE');
+ok(!!(await page.$('#examen-eex1 input[type="date"]')) && await valor_exa('input[placeholder="Ej: Derivadas"]') === 'Derivadas (final)',
+  '🚨 …y no hace como si hubiera guardado: el formulario sigue abierto, con lo escrito');
+ok(await page.$eval('#examen-eex1', (e) => [...e.querySelectorAll('[role="alert"]')].some((a) => /No se ha podido/.test(a.innerText))), '…como alerta');
+ok(exGuardado().find((e) => e.id === 'eex1')?.tema === 'Derivadas e integrales', '…porque de verdad no ha llegado: la cuenta sigue con lo de antes');
+FALLAR_ESCRITURA.delete('estudios');
+await page.click('#examen-eex1 button:has-text("Guardar")');
+await esperarTexto(/Derivadas \(final\)/);
+await page.waitForFunction(() => !document.querySelector('#examen-eex1 input[type="date"]'), null, { timeout: 8000 }).catch(() => {});
+ok(!(await page.$('#examen-eex1 input[type="date"]')), '🚨 EXÁMENES — «Guardar» otra vez lo reintenta, y ahora sí se cierra');
+ok(exGuardado().filter((e) => e.id === 'eex1').length === 1 && exGuardado().find((e) => e.id === 'eex1')?.tema === 'Derivadas (final)',
+  '…y llega a la cuenta, una sola vez');
+
+/* Crear y borrar siguen funcionando. */
+ok(await pulsar('Añadir examen'), 'EXÁMENES — crear sigue: se abre el formulario');
+await esperarTexto(/Nuevo\/a examen/i);
+await page.fill('input[placeholder="Ej: Derivadas"]', 'Examen de prueba');
+ok(await pulsar('Crear'), '…se crea');
+await esperarTexto(/Examen de prueba/);
+ok(exGuardado().some((e) => e.tema === 'Examen de prueba'), '🚨 EXÁMENES — el examen nuevo está en la cuenta');
+ok(await pulsar('Examen de prueba'), '…se abre');
+await esperarTexto(/Borrar examen/i);
+/* ⚠️ Con dos tarjetas abiertas hay dos «Borrar examen»: se pulsa el de ESTA. */
+ok(await page.locator('[id^="examen-"]', { hasText: 'Examen de prueba' }).locator('button:has-text("Borrar examen")').click().then(() => true, () => false), '…se borra (el suyo)');
+await page.waitForFunction(() => !/Examen de prueba/.test(document.body.innerText), null, { timeout: 8000 }).catch(() => {});
+ok(!exGuardado().some((e) => e.tema === 'Examen de prueba') && exGuardado().some((e) => e.id === 'eex1'),
+  '🚨 EXÁMENES — borrar sigue: se va el nuevo y el editado se queda');
+
+/* Lo provocado a propósito (el 500) se retira; lo que quede es un fallo. */
+const nuevos_exa = errores.splice(erroresAntes_exa);
+const ajenos_exa = nuevos_exa.filter((t) => !/status of 500|No se pudo guardar/i.test(t));
+ok(ajenos_exa.length === 0, `EXÁMENES — ni un error por el camino salvo el guardado que falla a propósito${ajenos_exa.length ? ` — ${ajenos_exa[0]}` : ''}`);
+errores.push(...ajenos_exa);
+FALLAR_ESCRITURA.clear();
+/* Y se deja todo como estaba, para que las secciones de después no hereden este escenario (E3 F6):
+   el examen de antes en la cuenta, se recarga y se vuelve a la misma pantalla. */
+almacen.estudios = estudiosAntes_exa;
+await page.reload({ waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+ok(await pulsar('Vida') && await pulsar('Estudios'), 'EXÁMENES — se deja como estaba: Estudios');
+await esperarTexto(/Bachillerato/i);
+ok(await pulsar('Bachillerato'), '…Bachillerato');
+await esperarTexto(/Asignaturas/i);
+ok(await pulsar('Asignaturas'), '…Asignaturas');
+await esperarTexto(/Matemáticas/i);
+ok(await pulsar('Matemáticas'), '…Matemáticas');
+await esperarTexto(/Contenido/i);
+ok(await pulsar('Exámenes'), '…y sus exámenes, con el de siempre');
+const deVuelta_exa = await esperarTexto(/Añadir examen/i);
+ok(/Derivadas/.test(deVuelta_exa) && !/integrales|\(final\)/.test(deVuelta_exa), '…que vuelve a llamarse «Derivadas»');
+
 /* ══════════════════════════════════════════════════════════════════════════
    E3 · FASE 44 (ES F4) — EXÁMENES, ENTREGAS Y FECHAS
    ══════════════════════════════════════════════════════════════════════════
@@ -5064,7 +5186,7 @@ for (const rotulo of [/Estudios/i, /Productividad/i, /Mente/i, /Biblioteca/i, /D
 ok(!/Calendario/i.test(vida_n1) && !/Horario/i.test(vida_n1),
   '⚠️ …y Calendario y Horario NO están en Vida: un módulo vive en un sitio, o se ve dos veces');
 ok(!/Rachas/i.test(vida_n1),
-  '🚨 …ni Rachas suelta: desde esta fase la absorbe Productividad');
+  `🚨 …ni Rachas suelta: desde esta fase la absorbe Productividad${/Rachas/i.test(vida_n1) ? ` («${(vida_n1.match(/.{0,60}Rachas.{0,60}/is) || [''])[0].replace(/\n/g, ' | ')}»)` : ''}`);
 
 /* ── MENTE: agrupa las tres, y las abre de verdad ─────────────────────────── */
 ok(await pulsar('Mente'), '🚨 se abre MENTE');
@@ -5077,6 +5199,109 @@ ok(await pulsar('Bienestar digital'), 'se abre Bienestar digital desde dentro de
 const bd_n1 = await esperarTexto(/pantalla|Tiempo|Concentraci/i);
 ok(/pantalla|Tiempo|Concentraci/i.test(bd_n1), '🚨 …y es la pantalla de siempre, no una copia');
 ok(await pulsar('Mente'), 'y se vuelve a Mente con su botón');
+await esperarTexto(/Relaci[oó]n/i);
+
+/* ── 🎂 CUMPLEAÑOS: la cuarta sección de Mente (2026-10-18) ────────────────
+   Crear, validar, editar, recargar, el Calendario, desactivar y reactivar sin
+   perder nada, y eliminar a Eliminados recientemente — con el dedo. */
+const erroresAntes_cum = errores.length;
+const hoy_cum = new Date().toLocaleDateString('sv-SE');
+const [, mesHoy_cum, diaHoy_cum] = hoy_cum.split('-').map(Number);
+const listaCum = () => ((almacen.cumpleanos || {}).lista || []);
+const cumpleAntes = almacen.cumpleanos;
+const mente_cum = await ver();
+ok(/Cumplea[nñ]os/.test(mente_cum), '🚨 CUMPLEAÑOS — Mente tiene una cuarta sección: Cumpleaños');
+ok(await pulsar('Abrir Cumpleaños'), 'CUMPLEAÑOS — se abre');
+const vacio_cum = await esperarTexto(/Todavía no has apuntado ningún cumpleaños/);
+ok(/Todavía no has apuntado ningún cumpleaños/.test(vacio_cum), '…vacío, y lo dice');
+ok(await pulsar('Añadir cumpleaños'), 'CUMPLEAÑOS — «Añadir cumpleaños»');
+await esperarTexto(/Nuevo cumpleaños/);
+ok(await pulsar('Guardar cumpleaños'), '…guardar sin nada');
+const errs_cum = await esperarTexto(/Escribe el nombre/);
+ok(/Escribe el nombre/.test(errs_cum) && /Elige el día y el mes/.test(errs_cum), '🚨 CUMPLEAÑOS — sin nombre ni fecha no se guarda, y dice qué falta');
+ok(listaCum().length === 0, '…y no ha escrito nada');
+await page.fill('input[placeholder="Ej: Marta"]', 'Marta');
+await page.selectOption('select[aria-label="Día"]', '29');
+await page.selectOption('select[aria-label="Mes"]', '2');
+await page.fill('input[aria-label="Año de nacimiento (opcional)"]', '2023');
+ok(await pulsar('Guardar cumpleaños'), '…un 29 de febrero de 2023');
+const bis_cum = await esperarTexto(/no fue bisiesto/);
+ok(/2023 no fue bisiesto/.test(bis_cum) && listaCum().length === 0, '🚨 CUMPLEAÑOS — una fecha que no existió no se guarda');
+await page.selectOption('select[aria-label="Día"]', String(diaHoy_cum));
+await page.selectOption('select[aria-label="Mes"]', String(mesHoy_cum));
+await page.fill('input[aria-label="Año de nacimiento (opcional)"]', '2008');
+await page.fill('input[placeholder="Amigo, familia…"]', 'Amiga');
+ok(await pulsar('Guardar cumpleaños'), 'CUMPLEAÑOS — se guarda el de Marta (hoy, de 2008)');
+const creado_cum = await esperarTexto(/Nació el/);
+ok(/Marta/.test(creado_cum) && /Hoy/.test(creado_cum) && new RegExp(`cumple ${Number(hoy_cum.slice(0, 4)) - 2008}`).test(creado_cum),
+  `🚨 CUMPLEAÑOS — sale en la lista: «Hoy», y cuántos cumple (${(creado_cum.match(/Hoy[^\n]*/) || [''])[0]})`);
+ok(listaCum().length === 1 && listaCum()[0].nombre === 'Marta' && listaCum()[0].anio === 2008 && listaCum()[0].relacion === 'Amiga',
+  `…y en la cuenta, con la fecha ORIGINAL (${JSON.stringify(listaCum()[0])})`);
+const id_cum = listaCum()[0]?.id;
+
+/* Editar: el mismo formulario, con lo que tiene; cambia el nombre, el id es el mismo. */
+ok(await pulsar('Editar el cumpleaños de Marta'), 'CUMPLEAÑOS — «Editar»');
+await esperarTexto(/Editar cumpleaños/);
+ok(await page.$eval('input[placeholder="Ej: Marta"]', (e) => e.value) === 'Marta' && await page.$eval('select[aria-label="Día"]', (e) => e.value) === String(diaHoy_cum),
+  '…el formulario viene con el nombre y la fecha');
+await page.fill('input[placeholder="Ej: Marta"]', 'Marta G.');
+ok(await pulsar('Guardar cambios'), '…se cambia el nombre');
+await esperarTexto(/Marta G\./);
+ok(listaCum().length === 1 && listaCum()[0].id === id_cum && listaCum()[0].nombre === 'Marta G.', '🚨 CUMPLEAÑOS — editado en su sitio: mismo id, ni un duplicado');
+
+/* Recargar: sigue ahí. */
+await page.reload({ waitUntil: 'networkidle' });
+await esperarTexto(/Hoy|Buenos|Buenas/);
+ok(await pulsar('Vida') && await pulsar('Mente'), 'CUMPLEAÑOS — tras recargar, Vida → Mente');
+await esperarTexto(/Relaci[oó]n/i);
+ok(await pulsar('Abrir Cumpleaños'), '…Cumpleaños');
+const rec_cum = await esperarTexto(/Marta G\./);
+ok(/Marta G\./.test(rec_cum), '🚨 CUMPLEAÑOS — sigue después de recargar');
+
+/* El Calendario: hoy es su cumpleaños. */
+ok(await pulsar('Gestión') && await pulsar('Organización'), 'CUMPLEAÑOS — al Calendario');
+await esperarTexto(/Calendario/i);
+ok(await pulsar('Abrir Calendario'), '…se abre');
+const cal_cum = await esperarTexto(/Cumpleaños de Marta G\./);
+ok(/Cumpleaños de Marta G\./.test(cal_cum), '🚨 CUMPLEAÑOS — sale en el Calendario, el día que toca');
+ok((cal_cum.match(/Cumpleaños de Marta G\./g) || []).length <= 2, '…sin duplicarse (como mucho en la lista del día y en «Próximamente»)');
+
+/* Desactivar y reactivar, con el interruptor de los módulos: nada se pierde. */
+ok(await pulsar('Ajustes'), 'CUMPLEAÑOS — Ajustes');
+ok(await pulsar('Pantalla principal'), '…Pantalla principal');
+await esperarTexto(/Personalizar mi sistema/);
+ok(await pulsar('Desactivar Cumpleaños'), '…el interruptor de Cumpleaños, debajo de Mente');
+await esperarTexto(/no se borra nada/);
+ok(await pulsar('Desactivar'), '…se confirma');
+await page.waitForTimeout(300);
+ok((almacen.personalizacion?.ocultos || []).includes('cumpleanos'), 'CUMPLEAÑOS — desactivado (en `ocultos`, como un módulo)');
+ok(listaCum().length === 1, '🚨 …y sus datos siguen en la cuenta');
+ok(await pulsar('Vida') && await pulsar('Mente'), '…a Mente');
+const menteOff_cum = await esperarTexto(/Relaci[oó]n/i);
+ok(!/Cumplea[nñ]os/.test(menteOff_cum), '🚨 CUMPLEAÑOS — desactivado no sale en Mente');
+ok(await pulsar('Gestión') && await pulsar('Organización') && await pulsar('Abrir Calendario'), '…ni en el Calendario:');
+await page.waitForTimeout(600);
+ok(!/Cumpleaños de Marta/.test(await ver()), '🚨 …el Calendario ya no lo enseña');
+ok(await pulsar('Ajustes') && await pulsar('Pantalla principal'), 'CUMPLEAÑOS — a reactivarlo');
+await esperarTexto(/Personalizar mi sistema/);
+ok(await pulsar('Activar Cumpleaños'), '…activar no pregunta');
+await page.waitForTimeout(300);
+ok(!(almacen.personalizacion?.ocultos || []).includes('cumpleanos'), '…reactivado');
+ok(await pulsar('Vida') && await pulsar('Mente') && await pulsar('Abrir Cumpleaños'), '…de vuelta en Mente');
+const on_cum = await esperarTexto(/Marta G\./);
+ok(/Marta G\./.test(on_cum), '🚨 CUMPLEAÑOS — reactivado, todo sigue como estaba');
+
+/* Eliminar: a Eliminados recientemente, y el vacío llega después. */
+ok(await pulsar('Eliminar el cumpleaños de Marta G.'), 'CUMPLEAÑOS — se elimina');
+const fuera_cum = await esperarTexto(/Todavía no has apuntado ningún cumpleaños/);
+ok(/Cumpleaños eliminado/.test(fuera_cum) || /Todavía no has apuntado/.test(fuera_cum), '…se va de la lista, con su aviso');
+ok(listaCum().length === 0 && ((almacen.papelera || {}).elementos || []).some((e) => e.modulo === 'cumpleanos' && e.coleccion === 'lista'),
+  '🚨 CUMPLEAÑOS — y va a Eliminados recientemente, de donde vuelve');
+
+const nuevos_cum = errores.slice(erroresAntes_cum);
+ok(nuevos_cum.length === 0, `CUMPLEAÑOS — ni un error de JavaScript${nuevos_cum.length ? `: ${nuevos_cum.join(' | ').slice(0, 300)}` : ''}`);
+almacen.cumpleanos = cumpleAntes;
+ok(await pulsar('Vida') && await pulsar('Mente'), 'CUMPLEAÑOS — de vuelta a Mente');
 await esperarTexto(/Relaci[oó]n/i);
 
 /* ── DIST F1 · GESTIÓN: Organización y Progreso ───────────────────────────── */

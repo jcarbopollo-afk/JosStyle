@@ -427,3 +427,19 @@ export function suscribirSincronizacion(fn) {
   oyentes.add(fn);
   return () => { oyentes.delete(fn); };
 }
+
+/** 🐛 2026-10-18 — lo que contesta un `snapshotAndSave` que escribe varias claves: el primer guardado
+ *  que no llegó, o `{ ok: true }` si llegaron todos. Una promesa que lanza cuenta como no llegada. */
+export function resultadoDeGuardados(promesas) {
+  return Promise.all((promesas || []).map((p) => Promise.resolve(p).catch((error) => ({ ok: false, error }))))
+    .then((rs) => rs.find((r) => r && r.ok === false) || { ok: true, error: null });
+}
+
+/** El texto de un guardado que no ha llegado (`{ ok: false, error }`). Nunca vacío: sin saber por
+ *  qué, sigue habiendo aviso. Si la clave no se pudo cargar o la sesión cambió, lo dice. */
+export const FALLO_AL_GUARDAR = 'No se ha podido guardar en tu cuenta. Vuelve a intentarlo.';
+export function textoDeFalloAlGuardar(res) {
+  const code = res && res.error && res.error.code;
+  if ((code === 'carga_fallida' || code === 'otra_sesion') && res.error.message) return `${res.error.message} El cambio no se ha guardado.`;
+  return FALLO_AL_GUARDAR;
+}

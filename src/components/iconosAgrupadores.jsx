@@ -21,13 +21,14 @@
    `MINI_APPS_PR`), que es igual de reconocible y tampoco es nuevo.
    =========================================================================== */
 import React from 'react';
-import { Church, Heart, Smartphone, ListChecks, Calendar, CalendarClock } from 'lucide-react';
+import { Church, Heart, Smartphone, ListChecks, Calendar, CalendarClock, Cake } from 'lucide-react';
 
 export const ICONOS_AGRUPADORES = {
   // Mente
   fe: Church,
   relacion: Heart,
   bienestar: Smartphone,
+  cumpleanos: Cake,
   // Organización
   tareas: ListChecks,
   calendario: Calendar,

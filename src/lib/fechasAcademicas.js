@@ -18,6 +18,7 @@
 // dentro de la asignatura no las vería la papelera (EH F45).
 
 import { uid, todayISO, horaValida, fechaValida } from './helpers';
+import { FALLO_AL_GUARDAR, textoDeFalloAlGuardar } from './sincronizacion';
 
 // ── Los tres tipos (apartado 12) ─────────────────────────────────────────────────────────────────
 // *"No depender únicamente del color. El icono y el texto deben indicar claramente el tipo."*
@@ -165,6 +166,54 @@ function editarEn(lista, id, cambios, normalizar) {
 export const editarExamenFecha = (examenes, id, cambios) => editarEn(examenes, id, cambios, normalizarExamen);
 export const editarEntrega = (entregas, id, cambios) => editarEn(entregas, id, cambios, normalizarEntrega);
 export const editarEventoAcademico = (eventos, id, cambios) => editarEn(eventos, id, cambios, normalizarEventoAcademico);
+
+/* 🐛 EDITAR UN EXAMEN (2026-10-18). Los exámenes se pintan con `ExamenItem` —el de la Fase 6, por su
+   plan de repaso— y esa tarjeta **no tenía forma de editar**: solo repaso, nota obtenida y borrar.
+   `editarExamenFecha` existía desde la ES F4 y nadie podía llegar a ella, porque el panel de fechas
+   que sí la llamaba solo lo usan las entregas y los eventos. Estas dos funciones son la traducción
+   entre el examen guardado (`tema`, Fase 6) y el formulario común (`nombre`), en un solo sitio.
+   ⚠️ El id y la asignatura no se tocan (`editarEn`), y el plan de repaso y el estado tampoco: el
+   formulario no los trae. */
+export const MAX_NOTA_EXAMEN = 20;
+
+export function formularioDeExamen(examen) {
+  const e = examen || {};
+  return {
+    nombre: typeof e.tema === 'string' ? e.tema : '',
+    asignaturaId: e.asignaturaId || '',
+    fecha: fechaValida(e.fecha) ? e.fecha : '',
+    hora: horaValida(e.hora) ? e.hora : '',
+    notas: typeof e.notas === 'string' ? e.notas : '',
+    notaObjetivo: typeof e.notaObjetivo === 'string' ? e.notaObjetivo : (e.notaObjetivo == null ? '' : String(e.notaObjetivo)),
+    notaObtenida: typeof e.notaObtenida === 'string' ? e.notaObtenida : (e.notaObtenida == null ? '' : String(e.notaObtenida)),
+  };
+}
+
+/** Lo que el formulario manda, con los nombres del examen guardado. Solo los campos que el
+ *  formulario tiene: lo que no trae (`notaObtenida` al crear) no se pisa. */
+export function cambiosDeExamen(d = {}) {
+  const c = { tema: typeof d.nombre === 'string' ? d.nombre : '', fecha: d.fecha || null, hora: d.hora || null, notas: d.notas || '' };
+  if (d.notaObjetivo !== undefined) c.notaObjetivo = String(d.notaObjetivo || '').trim().slice(0, MAX_NOTA_EXAMEN);
+  if (d.notaObtenida !== undefined) c.notaObtenida = String(d.notaObtenida || '').trim().slice(0, MAX_NOTA_EXAMEN);
+  return c;
+}
+
+/** Un examen editado conserva el resto de lo que tenía, y si no cambia nada es el MISMO objeto:
+ *  así guardar sin cambios no escribe ni deja un paso de Deshacer vacío. */
+export function editarExamen(examenes, id, d) {
+  const lista = examenes || [];
+  const antes = lista.find((e) => e && e.id === id);
+  if (!antes) return lista;
+  const nueva = editarExamenFecha(lista, id, cambiosDeExamen(d));
+  const despues = nueva.find((e) => e && e.id === id);
+  if (!despues) return lista;
+  const igual = Object.keys(despues).every((k) => despues[k] === antes[k]) && Object.keys(antes).every((k) => k in despues);
+  return igual ? lista : nueva;
+}
+
+/* El texto de un guardado que no ha llegado vive en `sincronizacion.js`: lo usan también otras
+   pantallas (Cumpleaños). Se reexporta con `export { }`, nunca `export … from` (EH F17). */
+export { FALLO_AL_GUARDAR, textoDeFalloAlGuardar };
 
 export const cambiarEstadoExamen = (examenes, id, estado) =>
   (examenes || []).map((e) => (e.id === id && IDS_ESTADO_EXAMEN.includes(estado) ? { ...e, estado } : e));

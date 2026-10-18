@@ -72,9 +72,12 @@ function TarjetaAgrupador({ app, linea, accent, onAbrir }) {
  * @param {function} protegerPanel  (appId, nodo) => ReactNode. Obligatoria si alguna
  *                                  sub-app declara `protegida`.
  * @param {object}   lineas         Opcional, appId → texto de la plaquita.
+ * @param {string[]} ocultos        `personalizacion.ocultos`: una sub-app `desactivable` que está
+ *                                  ahí no se pinta (sus datos siguen; Cumpleaños, 2026-10-18).
  */
-export default function AgrupadorView({ grupo, panelDe, protegerPanel = null, lineas = {}, accent }) {
+export default function AgrupadorView({ grupo, panelDe, protegerPanel = null, lineas = {}, ocultos = [], accent }) {
   const [abierta, setAbierta] = useState(null);
+  const visibles = grupo ? grupo.apps.filter((a) => !(a.desactivable && (ocultos || []).includes(a.id))) : [];
 
   if (!grupo) {
     return (
@@ -85,7 +88,7 @@ export default function AgrupadorView({ grupo, panelDe, protegerPanel = null, li
   }
 
   if (abierta) {
-    const app = grupo.apps.find((a) => a.id === abierta);
+    const app = visibles.find((a) => a.id === abierta);
     /* 🚨 **UNA SUB-APP PROTEGIDA SIN PROTECTOR NO SE PINTA, Y SE DICE.**
        Hasta esta fase el PIN de Relación lo ponía `App.jsx` mirando la PESTAÑA
        (`tab === 'relacion'`); al meterla dentro de Mente la pestaña pasa a ser
@@ -145,7 +148,7 @@ export default function AgrupadorView({ grupo, panelDe, protegerPanel = null, li
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        {grupo.apps.map((app) => (
+        {visibles.map((app) => (
           <TarjetaAgrupador
             key={app.id}
             app={app}

@@ -263,6 +263,9 @@ export const AVISOS_ACCION = {
   plantilla_duplicada: { texto: 'Plantilla duplicada', deshacer: false },
   /* ⚠️ `error: true` cambia el icono y el color, **y el texto dice qué hacer**
      (EH F62): nunca «Error» a secas. */
+  /* 🎂 2026-10-18 — Cumpleaños (Mente): lo que su pantalla no confirma ya en su sitio. */
+  cumpleanos_guardado: { texto: 'Cumpleaños guardado', deshacer: false },
+  cumpleanos_eliminado: { texto: 'Cumpleaños eliminado: está en Eliminados recientemente', deshacer: false },
   guardado_fallido: { texto: 'No se ha podido guardar en tu cuenta. Vuelve a intentarlo.', deshacer: false, error: true },
   /* FIT F41, apartado 34 — literal: *"Hay poco espacio disponible para guardar
      estos datos."* Y **no se borra nada para hacer sitio**: se dice. */

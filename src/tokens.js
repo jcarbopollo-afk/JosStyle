@@ -622,7 +622,7 @@ export const DESCRIPCIONES_MODULOS = {
   // DIST F1 — Tareas se fue a Organización y Rachas entró aquí.
   productividad: 'Hábitos, rachas, rutinas, metas, objetivos y Pomodoro.',
   // DIST F1 — las dos agrupadoras nuevas.
-  mente: 'Fe, Relación y bienestar digital, en un solo sitio.',
+  mente: 'Fe, Relación, bienestar digital y cumpleaños, en un solo sitio.',
   organizacion: 'Tus tareas, tu calendario y tu horario, juntos.',
   /* ⚠️ `numeros` no tenía descripción desde NAV F1, así que el buscador la
      dejaba vacía. Con la etiqueta nueva se aprovecha para ponerla. */
