@@ -474,15 +474,15 @@ prueba de Node pase: está hecha cuando se ve y se usa en la aplicación.** Para
 
 **Ejecuta `bash scripts/verificar.sh` antes de dar por terminada cualquier fase.** Desde v1.23.0 el
 entorno tiene acceso a npm otra vez, así que el proyecto **compila y se prueba de verdad**: build de
-Vite, **24 590 pruebas unitarias** con Node repartidas en **231 suites** (5 de ellas de auditoría),
-**3976 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **3506
-comprobaciones sobre la aplicación de verdad en Chromium** — **32 083 comprobaciones**.
+Vite, **24 654 pruebas unitarias** con Node repartidas en **232 suites** (5 de ellas de auditoría),
+**4020 casos de renderizado real** con `react-dom/server`, **11 reglas invariantes** y **3590
+comprobaciones sobre la aplicación de verdad en Chromium** — **32 275 comprobaciones**.
 
-⚠️ **Estas cifras están contadas de la pasada verde de la v3.151.0, una a una**, con la suma del
-propio log (`═══ TODO CORRECTO ═══`, 0 fallos): es la que llevó **editar una nota** a `main` **junto con las
-correcciones A1–A5 de la otra conversación**, verificadas juntas tras el merge. El salto desde la v3.150.0 es
-`test-notas.mjs`, tres casos del banco de renderizado y la sección «NOTAS · EDITAR UNA NOTA» del recorrido, más
-`test-correcciones-a1-a4`, `test-a5-sincronizacion` y su sección A1–A4. ⚠️ Un cambio futuro cuenta las suyas en su commit de cifras, cuando su pasada sale verde. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
+⚠️ **Estas cifras están contadas de la pasada verde de la v3.152.0, una a una**, con la suma del
+propio log (`═══ TODO CORRECTO ═══`, 0 fallos): es la que llevó **editar un examen y Cumpleaños** a `main`. Su único rojo fue una comprobación de
+`test-persistencia-fitness` que fijaba la línea exacta de la exportación (la v3.152.0 le añade `cumpleanos`): se amplió
+para aceptar claves detrás sin perder lo que protege, y esa suite se volvió a pasar sola. El salto desde la v3.151.0 es
+`test-editar-examenes`, `test-cumpleanos`, once casos del banco de renderizado y dos secciones del recorrido. ⚠️ Un cambio futuro cuenta las suyas en su commit de cifras, cuando su pasada sale verde. Y se vuelven a contar cada vez por lo que pasó en su día: las que hubo aquí —*"17 207 en
 145 suites"*— **no salían de ninguna pasada**, se habían ido arrastrando de turno en turno. Un
 número de este archivo que nadie vuelve a medir deja de ser un dato y pasa a ser una costumbre.
 ⚠️ Y las de antes —*"19 578 en 148 suites"*— eran de la **v3.68.0**: cuarenta fases atrás.

@@ -381,7 +381,7 @@ ok(!filas.some((f) => /cuarentena/i.test(JSON.stringify(f))), '…y la cuarenten
     '🚨 Entra por la exportación GLOBAL (`buildExportRows`), no por un exportador paralelo');
   const app = leer('src/App.jsx');
   ok(/const fotosExportables = seguridad\.protectedActions\.includes\('fotos_privadas'\) \? null : saludFotos;/.test(app)
-    && /const paraExportar = \{ \.\.\.currentState, estiloHombre, fitness, fotosFitness: fotosExportables \};/.test(app),
+    && /const paraExportar = \{ \.\.\.currentState, estiloHombre, fitness, fotosFitness: fotosExportables(, [a-zA-Z]+)* \};/.test(app),
     '…y App.jsx la pasa APARTE de `currentState` (que es también el contexto de la IA), con las fotos solo sin PIN');
   ok(!/const currentState = \{[^}]*\bfitness\b/.test(app), '…y `fitness` sigue fuera de `currentState`');
 }
