@@ -225,8 +225,12 @@ ok(/<AvatarCabecera/.test(VISTA), '…y se pinta de verdad en la pantalla de Aju
 /* 🚨 **UN SOLO DIBUJO DEL CÍRCULO.** Con dos —el de la cabecera y el de la
    tarjeta de Perfil— acabarían distintos en cuanto alguien tocara uno: el
    borde, el recorte o las iniciales. */
-ok(/export function CirculoAvatar/.test(VISTA),
-  '🚨 el círculo se dibuja UNA vez, en `CirculoAvatar`');
+// 2026-10-18 — el círculo se mudó a `src/components/avatarPerfil.jsx` porque Inicio
+// también lo pinta: sigue habiendo UN solo dibujo, y Ajustes lo importa de ahí.
+const AVATAR = readFileSync(join(raiz, 'src/components/avatarPerfil.jsx'), 'utf8');
+ok(/export function CirculoAvatar/.test(AVATAR) && !/function CirculoAvatar/.test(VISTA)
+  && /import \{ CirculoAvatar \} from '\.\.\/components\/avatarPerfil'/.test(VISTA),
+  '🚨 el círculo se dibuja UNA vez, en `CirculoAvatar` (avatarPerfil.jsx), y Ajustes lo importa');
 eq((VISTA.match(/<CirculoAvatar/g) || []).length, 2,
   '⚠️ …y lo usan los dos: la cabecera y la tarjeta de Perfil');
 
