@@ -61,6 +61,8 @@ import GestionTemas from '../components/GestionTemas';
 import { desenfoque } from '../lib/profundidad';
 import { Plegable } from '../components/layoutMotion';
 import { GiroDeCarga } from '../components/accesibilidadMotion';
+import { SelectorDeArchivos } from '../components/selectorArchivos';
+import { eventoDeArchivos } from '../lib/seleccionArchivos';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Fase A1 — Ajustes: arquitectura general (Entrega 1 de la especificación
@@ -352,7 +354,8 @@ function SelectorFoto({ fondo, accent, urlFotoActual, onSubirFoto, onCambiar, on
 
   return (
     <div className="mt-3">
-      <input ref={inputRef} type="file" accept="image/*" onChange={elegir} className="hidden" aria-hidden="true" tabIndex={-1} />
+      {/* 📎 P1 — el selector común; la validación del fondo (`validarFotoFondo`) sigue siendo la suya. */}
+      <SelectorDeArchivos controlRef={inputRef} clase="imagen" accent={accent} titulo="Foto de fondo" disabled={subiendo} mostrarError={false} onElegir={(f) => elegir(eventoDeArchivos(f))} />
 
       {/* Apartado 3: mientras hay una foto pendiente, manda la vista previa. */}
       {pendiente ? (
@@ -1822,15 +1825,8 @@ export function AvatarCabecera({ perfil, accent, onCambiar, lado = 56 }) {
       {error && (
         <p className="text-[11px] mt-1.5 text-right max-w-[170px]" style={{ color: COLORS.danger || COLORS.textMuted }}>{error}</p>
       )}
-      <input
-        ref={fileRef}
-        type="file"
-        accept={TIPOS_ACEPTADOS.join(',')}
-        onChange={elegir}
-        className="hidden"
-        aria-hidden="true"
-        tabIndex={-1}
-      />
+      {/* 📎 P1 — el selector común; la validación de la foto de perfil sigue siendo la suya. */}
+      <SelectorDeArchivos controlRef={fileRef} clase="imagen" accept={TIPOS_ACEPTADOS.join(',')} accent={accent} titulo="Foto de perfil" disabled={cargando} mostrarError={false} onElegir={(f) => elegir(eventoDeArchivos(f))} />
     </div>
   );
 }
@@ -1919,14 +1915,8 @@ export function AvatarPerfil({ perfil, accent, onCambiar, onQuitar }) {
         <p className="text-xs mt-3" style={{ color: COLORS.negative }}>{error}</p>
       )}
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept={TIPOS_ACEPTADOS.join(',')}
-        onChange={elegir}
-        className="hidden"
-        aria-label="Elegir una foto de perfil desde el dispositivo"
-      />
+      {/* 📎 P1 — el selector común; la validación de la foto de perfil sigue siendo la suya. */}
+      <SelectorDeArchivos controlRef={fileRef} clase="imagen" accept={TIPOS_ACEPTADOS.join(',')} accent={accent} titulo="Foto de perfil" disabled={cargando} mostrarError={false} onElegir={(f) => elegir(eventoDeArchivos(f))} />
     </Card>
   );
 }

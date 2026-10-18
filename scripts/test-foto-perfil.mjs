@@ -241,8 +241,10 @@ ok(/prepararFotoPerfil\(file\)/.test(VISTA),
    pantalla intermedia. */
 ok(/aria-label=\{tieneFoto \? 'Cambiar tu foto de perfil' : 'Elegir tu foto de perfil'\}/.test(VISTA),
   '🚨 pulsarlo abre el selector, y lo dice su `aria-label` (como con VoiceOver)');
-ok(/type="file"[\s\S]{0,200}accept=\{TIPOS_ACEPTADOS\.join\(','\)\}/.test(VISTA),
-  '⚠️ …aceptando los mismos tipos de siempre, HEIC incluido');
+/* 📎 P1 — el `<input>` lo pone ahora el selector común (cámara, fototeca,
+   archivos), y sigue recibiendo los mismos tipos. */
+ok(/<SelectorDeArchivos[^>]{0,300}accept=\{TIPOS_ACEPTADOS\.join\(','\)\}/.test(VISTA),
+  '⚠️ …aceptando los mismos tipos de siempre, HEIC incluido (por el selector común, P1)');
 
 /* 🚨 **QUITAR LA FOTO SIGUE SOLO EN PERFIL, CON SU CONFIRMACIÓN.** Un borrado a
    un toque desde la cabecera sería lo que la v3.68.0 evitó a propósito: no va a

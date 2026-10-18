@@ -2662,8 +2662,10 @@ export default function App() {
     const entry = crearFotoProgreso({ ...datos, path });
     const next = [...saludFotos, entry];
     setSaludFotos(next);
-    await saveData(uidUser, 'saludFotos', next);
-    return entry;
+    /* 📎 P1 — subir no es guardar: quien lo pida puede leer si el registro ha
+       llegado a la cuenta (`guardado.ok`) antes de decir «guardada». */
+    const guardado = await saveData(uidUser, 'saludFotos', next);
+    return { ...entry, guardado: guardado || { ok: true, error: null } };
   };
   /* FIT F26, apartados 3 y 18 — la fecha, la nota y las etiquetas se editan;
      el camino, el id y cuándo la subió, no. */

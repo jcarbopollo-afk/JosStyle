@@ -1591,3 +1591,21 @@ sistema. Apagado no se pinta en Mente ni sale en el Calendario, y no se borra na
 `avisosPendientes` mira eventos del calendario y tareas con `notificar` y una hora, y solo con la aplicación abierta.
 Un cumpleaños es de todo el día, así que **no se le inventa una hora ni un aviso del sistema**: el recordatorio es su
 evento en el Calendario, que sale el día que toca. Si Josué quiere un aviso a una hora, es una función nueva.
+
+### C-74 — ✅ RESUELTA AL CONSTRUIR (v3.153.0, P1) · «Hacer una foto, fototeca y archivos» en una web, y la foto de un entrenamiento sin bucket
+
+El prompt pide las tres opciones en cada dispositivo **y** que no se presuponga un menú igual en todos. Se resolvió con
+lo que hace de verdad cada navegador (`opcionesDeSeleccion`, en `src/lib/seleccionArchivos.js`):
+- **iPhone/iPad:** «Hacer una foto» (`capture`) y «Fototeca o archivos» (sin `capture`, que abre la hoja del propio iOS
+  con la fototeca, la cámara y Archivos). Una tercera opción abriría la misma hoja.
+- **Android:** cámara, galería (`image/*`) y archivos (por extensiones), que allí son tres selectores distintos.
+- **Ordenador:** la cámara del navegador (`getUserMedia`) solo si existe y la página es segura, y un solo «Elegir»
+  (la galería y los archivos son el mismo diálogo). Vídeo: solo elegir (grabar en el navegador sería otra función).
+- **Documentos:** solo «Seleccionar archivo», nunca la cámara. Los importadores de datos (JSON de Ajustes y de los
+  temas, el `.ics`) se quedan con su `<input>` nativo: para un documento es exactamente esa opción.
+
+Y Fitness: la «foto o vídeo del entrenamiento» (FIT F8, `MEDIA_PENDIENTE`) estaba pendiente por falta de bucket. **La
+foto ya tiene sitio sin inventar almacenamiento**: las fotos de progreso (`saludFotos`, bucket `progreso`) llevan
+`createdFromWorkoutId` desde la FIT F26 y su visor abre el entrenamiento. Así que, guardado el entrenamiento, se ofrece
+«Añadir una foto» que va allí, con la misma protección del PIN. **El vídeo sigue pendiente** (y `media` en `null`), y
+se dice así: añadirle un selector sin dónde guardarlo lo presentaría como terminado, que es lo que el prompt prohíbe.

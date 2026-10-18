@@ -21,7 +21,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   Check, ChevronRight, ChevronLeft, Trash2, Clock, Dumbbell, Calendar, AlertTriangle, RotateCcw,
-  StickyNote, Lock,
+  StickyNote, Lock, Camera,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { acentoLegible } from '../lib/acabadoFitness';
@@ -36,8 +36,75 @@ import { motivoDeFallo } from '../lib/persistenciaFitness';
 import { RankBadge } from '../components/rangos';
 import {
   resumenDeSesion, pantallaDeExito, guardarEntrenamiento, descartarEntrenamiento,
-  AVISO_SIN_SERIES, AVISO_DESCARTAR_FINAL, TEXTO_GUARDANDO, MEDIA_PENDIENTE,
+  AVISO_SIN_SERIES, AVISO_DESCARTAR_FINAL, TEXTO_GUARDANDO, MEDIA_PENDIENTE, FOTO_DEL_ENTRENAMIENTO,
 } from '../lib/finalizacion';
+import { SelectorDeArchivos } from '../components/selectorArchivos';
+import { optimizarImagen, MAX_FOTO_BYTES } from '../components/fotosProgreso';
+import { useTurnos } from '../components/estadosAsincronos';
+
+/* 📎 P1 — «Añadir una foto de este entrenamiento». Va a las fotos de progreso
+   (la misma lista, el mismo bucket y la misma protección que Progreso → Fotos),
+   con `createdFromWorkoutId`, así que su visor abre este entrenamiento. Solo
+   cuando el entrenamiento ya está guardado: antes no hay qué enlazar. */
+export function FotoDelEntrenamiento({ sesion, accent, onAddFoto = null, bloqueadas = false }) {
+  const [estado, setEstado] = useState('reposo'); // reposo | subiendo | guardada | pendiente | fallo
+  const [cuantas, setCuantas] = useState(0);
+  const turnos = useTurnos();
+  if (!sesion || (!onAddFoto && !bloqueadas)) return null;
+  const T = FOTO_DEL_ENTRENAMIENTO;
+
+  const subir = async (files) => {
+    if (!onAddFoto || estado === 'subiendo') return;
+    const turno = turnos.nuevo();
+    setEstado('subiendo');
+    let pendiente = false;
+    let subidas = 0;
+    try {
+      for (const file of files) {
+        const optimizada = await optimizarImagen(file);
+        const r = await onAddFoto(optimizada, { fecha: sesion.fecha, nota: '', tags: [], createdFromWorkoutId: sesion.id });
+        subidas += 1;
+        if (r && r.guardado && r.guardado.ok === false) pendiente = true;
+      }
+      if (turno.vigente()) setEstado(pendiente ? 'pendiente' : 'guardada');
+    } catch (e) {
+      if (turno.vigente()) setEstado('fallo');
+    } finally {
+      if (turno.vigente()) setCuantas((n) => n + subidas);
+    }
+  };
+
+  return (
+    <Card>
+      <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{T.titulo}</p>
+      {bloqueadas ? (
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+          <Lock size={11} className="inline -mt-0.5 mr-1" aria-hidden="true" />{T.bloqueadas}
+        </p>
+      ) : (
+        <>
+          <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{T.explica}</p>
+          <SelectorDeArchivos
+            clase="imagen" multiple maxBytes={MAX_FOTO_BYTES} accent={accent}
+            disabled={estado === 'subiendo'} titulo={T.boton} onElegir={subir}
+          >
+            {({ abrir }) => (
+              <GhostBtn onClick={abrir} disabled={estado === 'subiendo'}>
+                <span className="inline-flex items-center gap-1.5">
+                  <Camera size={15} aria-hidden="true" />
+                  {estado === 'subiendo' ? T.subiendo : (cuantas ? T.otra : T.boton)}
+                </span>
+              </GhostBtn>
+            )}
+          </SelectorDeArchivos>
+          {estado === 'guardada' && <p role="status" className="text-xs mt-2" style={{ color: COLORS.positive }}>{T.guardada}</p>}
+          {estado === 'pendiente' && <p role="status" className="text-xs mt-2" style={{ color: COLORS.warning }}>{T.pendiente}</p>}
+          {estado === 'fallo' && <p role="alert" className="text-xs mt-2" style={{ color: COLORS.negative }}>{T.fallo}</p>}
+        </>
+      )}
+    </Card>
+  );
+}
 
 /* ── Un dato del resumen (apartados 2, 4, 5 y 6) ──────────────────────────── */
 export function DatoResumen({ icono: Icono, etiqueta, valor, accent }) {
@@ -295,6 +362,8 @@ export default function FinalizacionView({
   onGuardar, onDescartar, onSeguir = null, onVolver = null,
   /* 🔓 FIT F37, apartado 14 — lo calcula quien tiene el `fitness` entero. */
   subidas = null,
+  /* 📎 P1 — la foto del entrenamiento, con la protección de las fotos de progreso. */
+  onAddFoto = null, fotosBloqueadas = false,
 }) {
   const resumen = useMemo(() => resumenDeSesion(sesion, { propios }), [sesion, propios]);
   const [nombre, setNombre] = useState(() => (resumen ? resumen.nombre : ''));
@@ -381,16 +450,21 @@ export default function FinalizacionView({
   /* 🚨 Apartado 19 — cuando ya está guardada, la pantalla de éxito. */
   if (guardada) {
     return (
-      <PantallaExito
-        datos={pantallaDeExito(guardada, { propios })}
-        accent={accent}
-        fallo={fallo}
-        reintentando={guardando}
-        onReintentar={reintentar}
-        subidas={subidas}
-        onVer={() => setViendo(true)}
-        onVolver={onVolver ? () => onVolver('plan') : null}
-      />
+      <div className="space-y-4">
+        <PantallaExito
+          datos={pantallaDeExito(guardada, { propios })}
+          accent={accent}
+          fallo={fallo}
+          reintentando={guardando}
+          onReintentar={reintentar}
+          subidas={subidas}
+          onVer={() => setViendo(true)}
+          onVolver={onVolver ? () => onVolver('plan') : null}
+        />
+        {/* 📎 P1 — solo con el entrenamiento en la cuenta: enlazar una foto a
+            uno que no ha llegado sería enlazarla a nada. */}
+        {!fallo && <FotoDelEntrenamiento sesion={guardada} accent={accent} onAddFoto={onAddFoto} bloqueadas={fotosBloqueadas} />}
+      </div>
     );
   }
 
@@ -440,8 +514,8 @@ export default function FinalizacionView({
         <Lock size={11} className="inline -mt-0.5 mr-1" aria-hidden="true" />
         {VISIBILIDADES.find((v) => v.id === 'privado').nombre}: solo lo ves tú.
       </p>
-      {/* 🚨 Apartado 14 — y ni un botón de foto o vídeo: no hay dónde guardarla,
-          y uno que falla en silencio es peor que no tenerlo. Se dice. */}
+      {/* 🚨 Apartado 14 — el vídeo no tiene dónde guardarse, y se dice. La foto
+          (P1) se ofrece al terminar de guardar, en la pantalla de éxito. */}
       <p className="text-[11px] px-1" style={{ color: COLORS.textMuted }}>
         {MEDIA_PENDIENTE.que} Todavía no se puede: {MEDIA_PENDIENTE.porQueNoHayBoton.toLowerCase()}
       </p>

@@ -12,6 +12,8 @@ import { desenfoque, sombra } from '../lib/profundidad';
 import { estadoDeBoton, TEXTOS_ESTADO_BOTON } from '../lib/estadosInteraccion';
 import { ListaAnimada } from './layoutMotion';
 import { useVacioQueLlega } from './vacioMotion';
+import { SelectorDeArchivos } from './selectorArchivos';
+import { eventoDeArchivos } from '../lib/seleccionArchivos';
 
 export function Card({ children, style, className = '', id }) {
   return (
@@ -827,10 +829,16 @@ export function AIPanel({ label, accent, buildPrompt }) {
         <button onClick={loading ? undefined : handleAsk} aria-busy={loading || undefined} className="flex items-center gap-2 text-sm font-semibold" style={{ color: accent }}>
           <TextoDeBoton estado={loading ? 'cargando' : 'reposo'} icono={<Sparkles size={16} />} textoCargando="Pensando…">{label}</TextoDeBoton>
         </button>
-        <label className="flex items-center gap-1 text-xs cursor-pointer flex-shrink-0" style={{ color: COLORS.textMuted }} title="Adjuntar foto, captura o PDF">
-          <Paperclip size={13} />
-          <input type="file" accept="image/*,application/pdf" onChange={handleFile} className="hidden" />
-        </label>
+        <SelectorDeArchivos
+          clase="imagen" accept="image/*,application/pdf" titulo="Adjuntar foto o PDF" accent={accent}
+          disabled={loading} onElegir={(f) => handleFile(eventoDeArchivos(f))}
+        >
+          {({ abrir }) => (
+            <button onClick={abrir} className="flex items-center gap-1 text-xs flex-shrink-0 p-1.5 -m-1.5 toque-44" style={{ color: COLORS.textMuted }} aria-label="Adjuntar foto, captura o PDF" title="Adjuntar foto, captura o PDF">
+              <Paperclip size={13} />
+            </button>
+          )}
+        </SelectorDeArchivos>
       </div>
       {adjunto && (
         <div className="flex items-center gap-1.5 mt-2 text-xs" style={{ color: COLORS.textMuted }}>

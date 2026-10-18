@@ -9,6 +9,8 @@ import { getSignedVideoUrl } from '../lib/supabase';
 import { BotonBorrar, BotonBorrarDefinitivo, Card, ListCard, ListRow, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, TextoDeBoton } from '../components/ui';
 import { Plegable } from '../components/layoutMotion';
 import { desplazarHasta } from '../lib/accesibilidadMotion';
+import { SelectorDeArchivos } from '../components/selectorArchivos';
+import { eventoDeArchivos, MB } from '../lib/seleccionArchivos';
 
 // Cuántos días seguidos (incluyendo hoy) hay que llevar entrenando la misma habilidad
 // para que aparezca el aviso de "descanso recomendado".
@@ -257,12 +259,14 @@ function VideosTab({ skill, videos, onAddVideo, onDeleteVideo, onSetVideoFeedbac
         <Field label="Nota (opcional, para este vídeo)">
           <TextInput value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej: segundo intento del día" />
         </Field>
-        <label className="block">
-          <div className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full cursor-pointer" style={{ background: accent, color: COLORS.textOnAccent }} aria-busy={subiendo || undefined}>
-            <TextoDeBoton estado={subiendo ? 'cargando' : 'reposo'} icono={<Video size={16} strokeWidth={2.5} />} textoCargando="Subiendo…">{`Subir vídeo de ${skill}`}</TextoDeBoton>
-          </div>
-          <input type="file" accept="video/*" onChange={handleFile} disabled={subiendo} className="hidden" />
-        </label>
+        {/* 📎 P1 — grabar en el móvil, o elegir un vídeo que ya tengas. */}
+        <SelectorDeArchivos clase="video" maxBytes={200 * MB} disabled={subiendo} accent={accent} titulo={`Vídeo de ${skill}`} onElegir={(f) => handleFile(eventoDeArchivos(f))}>
+          {({ abrir }) => (
+            <button onClick={subiendo ? undefined : abrir} className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full" style={{ background: accent, color: COLORS.textOnAccent }} aria-busy={subiendo || undefined}>
+              <TextoDeBoton estado={subiendo ? 'cargando' : 'reposo'} icono={<Video size={16} strokeWidth={2.5} />} textoCargando="Subiendo…">{`Subir vídeo de ${skill}`}</TextoDeBoton>
+            </button>
+          )}
+        </SelectorDeArchivos>
         <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
           La IA analiza unos pocos fotogramas del vídeo, no el vídeo fluido completo — es una limitación conocida, no un error.
         </p>

@@ -63,6 +63,8 @@ import { escalonado } from '../lib/motion';
 import { dominioEstable } from '../lib/datosMotion';
 import { ListaAnimada } from '../components/layoutMotion';
 import { useTurnos } from '../components/estadosAsincronos';
+import { SelectorDeArchivos } from '../components/selectorArchivos';
+import { eventoDeArchivos, MB } from '../lib/seleccionArchivos';
 
 const emptyForm = () => ({ nombre: '', calorias: '', proteinas: '', carbohidratos: '', grasas: '', fibra: '' });
 const round1 = (v) => Math.round((v || 0) * 10) / 10;
@@ -193,16 +195,19 @@ function MealForm({ onSave, onSaveFavorite, accent, fecha, momentoId }) {
     <Card>
       <div className="grid grid-cols-2 gap-3 mb-3">
         <GhostBtn onClick={() => setScanning(true)} icon={Barcode}>Escanear código</GhostBtn>
-        <label className="block" aria-busy={analizandoFoto || undefined}>
-          {/* MS F9 — mientras analiza, «Analizando…» en su sitio, sin apagarse (`TextoDeBoton`). */}
-          <div
-            className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold cursor-pointer"
-            style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
-          >
-            <TextoDeBoton estado={analizandoFoto ? 'cargando' : 'reposo'} icono={<Camera size={14} />} textoCargando="Analizando…">Foto del plato</TextoDeBoton>
-          </div>
-          <input type="file" accept="image/*" capture="environment" onChange={handleFotoComida} disabled={analizandoFoto} className="hidden" />
-        </label>
+        {/* MS F9 — mientras analiza, «Analizando…» en su sitio, sin apagarse (`TextoDeBoton`).
+            📎 P1 — cámara, o una foto que ya tengas (antes `capture` solo dejaba la cámara). */}
+        <SelectorDeArchivos clase="imagen" maxBytes={20 * MB} disabled={analizandoFoto} accent={accent} titulo="Foto del plato" onElegir={(f) => handleFotoComida(eventoDeArchivos(f))}>
+          {({ abrir }) => (
+            <button
+              onClick={analizandoFoto ? undefined : abrir} aria-busy={analizandoFoto || undefined}
+              className="w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold"
+              style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+            >
+              <TextoDeBoton estado={analizandoFoto ? 'cargando' : 'reposo'} icono={<Camera size={14} />} textoCargando="Analizando…">Foto del plato</TextoDeBoton>
+            </button>
+          )}
+        </SelectorDeArchivos>
       </div>
 
       {aviso && <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>{aviso}</p>}

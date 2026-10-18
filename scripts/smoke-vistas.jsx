@@ -393,8 +393,9 @@ import { diaARutina as diaARutinaF5 } from '../src/lib/planes.js';
    éxito solo aparece DESPUÉS de guardar, así que renderizar la vista no pinta ni
    una línea de ella (NAV F3). */
 import FinalizacionView, {
-  DatoResumen, FilaEjercicioFinal, PantallaExito, ResumenSesion,
+  DatoResumen, FilaEjercicioFinal, PantallaExito, ResumenSesion, FotoDelEntrenamiento,
 } from '../src/views/FinalizacionView.jsx';
+import { SelectorDeArchivos } from '../src/components/selectorArchivos.jsx';
 import {
   pasarAFinalizacion as pasarF8, resumenDeSesion as resumenF8,
   pantallaDeExito as exitoF8, guardarEntrenamiento as guardarF8,
@@ -4503,6 +4504,25 @@ const CASOS = [
   ['FinalizacionView', FinalizacionView, () => ({
     sesion: pasarF8(sesionVivaF7()), propios: [], accent,
     onGuardar: noop, onDescartar: noop, onSeguir: noop, onVolver: noop,
+  })],
+  /* 📎 P1 — la foto de un entrenamiento, con las fotos abiertas y con el PIN puesto. */
+  ['FotoDelEntrenamiento · se puede añadir', FotoDelEntrenamiento, () => ({
+    sesion: pasarF8(sesionUsadaF7()), accent, onAddFoto: () => Promise.resolve({ guardado: { ok: true } }),
+  })],
+  ['FotoDelEntrenamiento · fotos protegidas', FotoDelEntrenamiento, () => ({
+    sesion: pasarF8(sesionUsadaF7()), accent, onAddFoto: noop, bloqueadas: true,
+  })],
+  /* 📎 P1 — el selector común: el botón que pone cada pantalla, en las tres plataformas. */
+  ...[['iPhone', { tipo: 'ios', ios: true, android: false, tactil: true, camaraWeb: true }],
+    ['Android', { tipo: 'android', ios: false, android: true, tactil: true, camaraWeb: true }],
+    ['ordenador sin cámara', { tipo: 'ordenador', ios: false, android: false, tactil: false, camaraWeb: false }]]
+    .map(([nombre, plataforma]) => [`SelectorDeArchivos · ${nombre}`, SelectorDeArchivos, () => ({
+      clase: 'imagen', plataforma, accent, onElegir: noop,
+      children: ({ abrir }) => <button onClick={abrir}>Añadir foto</button>,
+    })]),
+  ['SelectorDeArchivos · documento', SelectorDeArchivos, () => ({
+    clase: 'documento', accept: '.pdf', accent, onElegir: noop,
+    children: ({ abrir }) => <button onClick={abrir}>Añadir archivo</button>,
   })],
   /* 🐛 ⚠️ **Sin sesión NO entra aquí**, y es la lección de la FIT F3 con
      `ResumenConstructor`: este arnés cuenta un render vacío como fallo, y

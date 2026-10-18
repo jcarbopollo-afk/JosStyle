@@ -6,6 +6,8 @@ import { Card, SectionTitle, Field, TextInput, Select, PrimaryButton, ToggleTab,
 import { CambioDeContenido } from '../components/motion';
 import { fotosDelAlbum, validarFotoAlbum, TIPOS_FOTO_ALBUM, MAX_NOTA_ALBUM, BORRADO_ALBUM } from '../lib/albumRelacion';
 import { GiroDeCarga } from '../components/accesibilidadMotion';
+import { SelectorDeArchivos } from '../components/selectorArchivos';
+import { eventoDeArchivos } from '../lib/seleccionArchivos';
 
 // Fase 13 — solo la lista de nombres del Prompt Maestro. Tocar uno abre el formulario de fecha
 // para que Josué la escriba él mismo.
@@ -374,14 +376,9 @@ export function AlbumTab({ relacion, accent, onSubir, onFirmar, onBorrar }) {
           </PrimaryButton>
         </div>
         {error && <p className="text-xs mt-2" style={{ color: COLORS.negative }}>{error}</p>}
-        <input
-          ref={fileRef}
-          type="file"
-          accept={TIPOS_FOTO_ALBUM.join(',')}
-          onChange={elegir}
-          className="hidden"
-          aria-label="Elegir una foto para el álbum"
-        />
+        {/* 📎 P1 — el botón abre el selector común (cámara, fototeca o archivos); la validación
+            del álbum (`validarFotoAlbum`) sigue siendo la suya. */}
+        <SelectorDeArchivos controlRef={fileRef} clase="imagen" accept={TIPOS_FOTO_ALBUM.join(',')} accent={accent} titulo="Foto para el álbum" disabled={subiendo} mostrarError={false} onElegir={(f) => elegir(eventoDeArchivos(f))} />
       </Card>
 
       {fotos.length === 0 ? (

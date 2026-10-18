@@ -1,5 +1,34 @@
 # CHANGELOG.md
 
+## v3.153.0 — P1: el selector de fotos y archivos de toda la aplicación
+
+> El primero de los cuatro prompts del 2026-10-18 (`docs/14_PROMPTS_2026-10-18.md`).
+
+- **Una pieza para todo:** `src/lib/seleccionArchivos.js` decide qué se ofrece y si un archivo vale;
+  `src/components/selectorArchivos.jsx` (`SelectorDeArchivos`) lo pinta. Cada pantalla conserva su botón y su forma de
+  guardar; lo que cambia es lo que sale al pulsarlo.
+- **Lo que ofrece cada dispositivo, de verdad** (es una web: las opciones son las del navegador, C-74):
+  iPhone y iPad → «Hacer una foto» y «Fototeca o archivos»; Android → cámara, galería y archivos; ordenador → la cámara
+  del navegador si la hay (y la página es segura) y «Elegir una imagen». Un documento, solo «Seleccionar archivo».
+  Con una sola opción no hay menú: el botón abre el selector directamente.
+- **La cámara del ordenador** abre su ventana con la vista previa; **el permiso se pide al pulsar «Hacer una foto»**,
+  nunca antes, y la cámara se apaga al cerrar. Sin permiso, sin cámara o con la cámara ocupada se dice en palabras, con
+  la alternativa de elegir un archivo.
+- **Formato, tamaño y archivos vacíos** se dicen debajo del botón con el nombre del archivo, y lo que no vale no llega
+  al módulo. 🚨 **Elegir no es guardar:** el selector no sube nada; subir una foto de progreso devuelve ahora también si
+  el registro ha llegado a la cuenta.
+- **Dónde:** fotos de progreso (Fitness y Salud — 🐛 las dos forzaban la cámara con `capture` y en el iPhone no dejaban
+  elegir de la fototeca), la foto del plato (Nutrición, igual), los vídeos de calistenia, los documentos y las
+  portadas de la Biblioteca, las fotos de prendas y outfits, el Álbum de Relación, la foto de fondo, la foto de perfil
+  y el adjunto de la IA (ahora el clip tiene nombre para VoiceOver).
+- **Fitness:** al guardar un entrenamiento se puede **añadir una foto de ese entrenamiento**, que va a Progreso → Fotos
+  enlazada a él (`createdFromWorkoutId`), con la misma protección del PIN; solo dice «guardada» si ha llegado. **El
+  vídeo sigue pendiente** (no hay bucket) y se dice así.
+- Pruebas: `test-seleccion-archivos` (91, registrada en `verificar.sh`), nueve casos del banco de renderizado y la
+  sección «P1 · SELECTOR» del recorrido (22: la hoja en el ordenador, la cámara que no está, un `.txt` rechazado, la
+  previsualización sin escribir nada y la foto guardada en la carpeta del usuario). ⚠️ **Sin cámara física ni iPhone
+  de verdad:** la hoja nativa de iOS y la cámara real quedan para Josué (R1).
+
 ## v3.152.0 — Estudios: editar un examen · Mente: Cumpleaños
 
 > 🔓 Josué pidió no subir sin su permiso, y lo dio el mismo día al pasar los cuatro prompts siguientes

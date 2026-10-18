@@ -915,6 +915,10 @@ function FitnessViewContenido({
         /* 🔓 FIT F37, apartado 14 — subir de rango, preguntado al motor de la F19
            con y sin esta sesión. Solo cuando ya está guardada. */
         subidas={enVivo.estado === 'completada' ? subidasDeRango(fitness || {}, enVivo, { propios, perfil }) : null}
+        /* 📎 P1 — la foto de este entrenamiento va a las fotos de progreso, con
+           su misma protección: si el PIN las tiene cerradas, aquí no se sube. */
+        onAddFoto={onAddFoto}
+        fotosBloqueadas={protegidoFotos && !desbloqueadoFotos}
       />
     );
   }

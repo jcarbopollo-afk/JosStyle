@@ -467,13 +467,33 @@ export const NO_EN_FIT8 = [
    y hasta entonces «Añadir foto o vídeo» fallaría en silencio en su iPhone: es
    exactamente lo que pasó con la foto de perfil, donde dos de los cinco buckets
    llevaban meses sin existir de verdad. El campo `media` está y vale `null`. */
+/* 📎 P1 (2026-10-18) — LA FOTO SÍ, EL VÍDEO NO. La foto de un entrenamiento ya
+   tiene dónde guardarse sin inventar nada: las fotos de progreso (`saludFotos`,
+   bucket `progreso`) llevan `createdFromWorkoutId` desde la FIT F26 y su visor
+   ya sabe abrir el entrenamiento. Así que, guardado el entrenamiento, se ofrece
+   «Añadir una foto», que va a Progreso → Fotos con su enlace. Lo que sigue sin
+   sitio es **el vídeo** (y `media` de la sesión sigue en `null`). */
 export const MEDIA_PENDIENTE = {
   campo: 'media',
-  que: 'Asociar una foto o un vídeo al entrenamiento (apartado 14).',
-  porQueNoHayBoton: 'No existe un bucket de Storage para entrenamientos, y el apartado prohíbe inventar almacenamiento. Un botón que no guarda nada es peor que no tenerlo.',
+  que: 'Asociar un vídeo al entrenamiento (apartado 14).',
+  porQueNoHayBoton: 'No existe un bucket de Storage para vídeos de entrenamientos, y el apartado prohíbe inventar almacenamiento. Las fotos sí: van a tus fotos de progreso, enlazadas a este entrenamiento.',
   necesita: 'Un bloque de SQL que cree el bucket con sus políticas `auth.uid()`, ejecutado por Josué.',
   quienDecide: 'Josué',
 };
+
+/* 📎 P1 — los textos de «Añadir una foto de este entrenamiento». Subir no es
+   guardar: `guardada` solo se dice cuando el registro ha llegado a la cuenta. */
+export const FOTO_DEL_ENTRENAMIENTO = Object.freeze({
+  titulo: 'Foto de este entrenamiento',
+  explica: 'Se guarda en tus fotos de progreso, enlazada a este entrenamiento.',
+  boton: 'Añadir una foto',
+  otra: 'Añadir otra',
+  subiendo: 'Subiendo la foto…',
+  guardada: 'Foto guardada en Progreso → Fotos.',
+  pendiente: 'La foto se ha subido, pero todavía no está guardada en tu cuenta. Se volverá a intentar sola.',
+  fallo: 'No se ha podido subir la foto. Comprueba la conexión y vuelve a intentarlo.',
+  bloqueadas: 'Tus fotos de progreso están protegidas con tu PIN: añádela desde Progreso → Fotos.',
+});
 
 /* Lo que queda preparado, con dónde vive (EH F55). */
 export const PREPARADO_PARA_FIT8 = [
@@ -481,7 +501,7 @@ export const PREPARADO_PARA_FIT8 = [
   { que: 'La adherencia al plan', donde: '`diaDePlan` en cada sesión completada (apartado 21).' },
   { que: 'La progresión por ejercicio', donde: 'Cada serie guarda `plan` y `hecho` por separado desde la F7.' },
   { que: 'La visibilidad social', donde: '`VISIBILIDADES`, con dos opciones declaradas y apagadas (apartado 15).' },
-  { que: 'La foto o el vídeo de la sesión', donde: '`MEDIA_PENDIENTE`: falta el bucket, y lo decide Josué.' },
+  { que: 'El vídeo de la sesión', donde: '`MEDIA_PENDIENTE`: falta el bucket, y lo decide Josué. La foto ya va a las fotos de progreso (P1).' },
 ];
 
 /* ═══════════════════════════════════════════════════════════════════════════

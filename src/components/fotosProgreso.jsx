@@ -10,7 +10,7 @@
    tandas de `FOTOS_POR_TANDA`, según se van necesitando.
    =========================================================================== */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDialogoAccesible } from './dialogoAccesible';
 import { MissingImage } from './estadosFitness';
 import { createPortal } from 'react-dom';
@@ -21,6 +21,8 @@ import { HOJA, acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import { Card, Field, TextInput, PrimaryButton, GhostBtn, BotonBorrarDefinitivo, SectionTitle } from './ui';
 import { getSignedPhotoUrl } from '../lib/supabase';
+import { SelectorDeArchivos } from './selectorArchivos';
+import { MB } from '../lib/seleccionArchivos';
 import {
   TAGS_FOTO, tagFoto, VACIO_FOTOS, ERRORES_FOTO, FOTOS_POR_TANDA, LADO_MAXIMO, CALIDAD_JPEG,
   dimensionesOptimizadas, etiquetaDeDia, sesionDeFoto, vecinasDeFoto,
@@ -85,6 +87,9 @@ export function useUrlsFirmadas(fotos, { porTanda = FOTOS_POR_TANDA } = {}) {
    orientación que el navegador ya aplica. Si algo falla —un navegador sin
    `createImageBitmap`, un formato raro— **se sube el original tal cual**: peor
    una foto sin comprimir que una foto girada o perdida. */
+/** 📎 P1 — el tope de una foto antes de reducirla (la de un iPhone ronda 3-8 MB). */
+export const MAX_FOTO_BYTES = 30 * MB;
+
 export async function optimizarImagen(file, { lado = LADO_MAXIMO, calidad = CALIDAD_JPEG } = {}) {
   try {
     if (typeof createImageBitmap !== 'function' || typeof document === 'undefined') return file;
@@ -135,13 +140,11 @@ export function ProgressPhotoForm({ accent, hoy, onGuardar, onCancelar, guardand
   const [fecha, setFecha] = useState(hoy);
   const [nota, setNota] = useState('');
   const [tags, setTags] = useState([]);
-  const entrada = useRef(null);
 
   useEffect(() => () => elegidas.forEach((e) => URL.revokeObjectURL(e.vista)), [elegidas]);
 
-  const elegir = (ev) => {
-    const files = [...(ev.target.files || [])];
-    ev.target.value = '';
+  /* 📎 P1 — lo elegido llega ya validado por el selector común (cámara, fototeca o archivos). */
+  const elegir = (files) => {
     if (!files.length) return;
     setElegidas((v) => [...v, ...files.map((file) => ({ id: `${file.name}-${file.size}-${Math.random()}`, file, vista: URL.createObjectURL(file) }))]);
   };
@@ -157,17 +160,20 @@ export function ProgressPhotoForm({ accent, hoy, onGuardar, onCancelar, guardand
       <p className="text-sm font-bold mb-3" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Añadir progreso</p>
 
       {/* Apartado 4 — «tomar fotografía si el dispositivo lo permite», y sin dar
-          por hecho que hay cámara: es el mismo `<input>` de siempre. */}
-      <label className="block">
-        <div
-          className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full cursor-pointer toque-44"
-          style={{ background: elegidas.length ? COLORS.surface2 : accent, color: elegidas.length ? COLORS.text : COLORS.textOnAccent, border: elegidas.length ? `1px solid ${COLORS.border}` : 'none' }}
-        >
-          <Camera size={16} strokeWidth={2.5} />
-          {elegidas.length ? 'Añadir otra' : 'Elegir o hacer foto'}
-        </div>
-        <input ref={entrada} type="file" accept="image/*" multiple onChange={elegir} disabled={guardando} className="hidden" />
-      </label>
+          por hecho que hay cámara. 📎 P1: el selector común ofrece lo que el
+          dispositivo tenga (cámara, fototeca o galería, archivos). */}
+      <SelectorDeArchivos clase="imagen" multiple maxBytes={MAX_FOTO_BYTES} disabled={guardando} onElegir={elegir} accent={accent} titulo="Añadir foto de progreso">
+        {({ abrir }) => (
+          <button
+            onClick={abrir} disabled={guardando}
+            className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full toque-44 disabled:opacity-60"
+            style={{ background: elegidas.length ? COLORS.surface2 : accent, color: elegidas.length ? COLORS.text : COLORS.textOnAccent, border: elegidas.length ? `1px solid ${COLORS.border}` : 'none' }}
+          >
+            <Camera size={16} strokeWidth={2.5} />
+            {elegidas.length ? 'Añadir otra' : 'Elegir o hacer foto'}
+          </button>
+        )}
+      </SelectorDeArchivos>
 
       {/* Apartado 5 — la previsualización, antes de guardar nada. */}
       {elegidas.length > 0 && (

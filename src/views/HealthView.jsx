@@ -19,6 +19,8 @@ import {
 import { escalonado } from '../lib/motion';
 import { dominioEstable } from '../lib/datosMotion';
 import { Plegable } from '../components/layoutMotion';
+import { SelectorDeArchivos } from '../components/selectorArchivos';
+import { eventoDeArchivos, MB } from '../lib/seleccionArchivos';
 
 /* Entrega 3 · Fase 30 (BN) — «Rediseño y reorganización del apartado Bienestar».
    ═══════════════════════════════════════════════════════════════════════════
@@ -372,15 +374,18 @@ function BloqueFotos({ fotos, onAddFoto, onDeleteFoto, accent }) {
         <Field label="Nota (opcional, para esta próxima foto)">
           <TextInput value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej: después de 3 meses de rutina" />
         </Field>
-        <label className="block" aria-busy={uploading || undefined}>
-          <div
-            className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full cursor-pointer"
-            style={{ background: accent, color: COLORS.textOnAccent }}
-          >
-            <TextoDeBoton estado={uploading ? 'cargando' : 'reposo'} icono={<Camera size={16} strokeWidth={2.5} />} textoCargando="Subiendo…">Añadir foto de progreso</TextoDeBoton>
-          </div>
-          <input type="file" accept="image/*" capture="environment" onChange={handleFile} disabled={uploading} className="hidden" />
-        </label>
+        {/* 📎 P1 — antes `capture` mandaba directo a la cámara: no se podía elegir una foto ya hecha. */}
+        <SelectorDeArchivos clase="imagen" maxBytes={30 * MB} disabled={uploading} accent={accent} titulo="Añadir foto de progreso" onElegir={(f) => handleFile(eventoDeArchivos(f))}>
+          {({ abrir }) => (
+            <button
+              onClick={uploading ? undefined : abrir} aria-busy={uploading || undefined}
+              className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full"
+              style={{ background: accent, color: COLORS.textOnAccent }}
+            >
+              <TextoDeBoton estado={uploading ? 'cargando' : 'reposo'} icono={<Camera size={16} strokeWidth={2.5} />} textoCargando="Subiendo…">Añadir foto de progreso</TextoDeBoton>
+            </button>
+          )}
+        </SelectorDeArchivos>
       </Card>
 
       {fotos.length === 0 && <EmptyHint text="Todavía no has subido ninguna foto de progreso." />}

@@ -1835,6 +1835,13 @@ else
   fallo "Falla Cumpleaños (Mente)"; grep '✗' /tmp/jc_cumpleanos.log
 fi
 
+# 2026-10-18 · P1 — el selector de fotos y archivos de toda la aplicación.
+if node --import ./scripts/resolver-vite.mjs scripts/test-seleccion-archivos.mjs >/tmp/jc_seleccion.log 2>&1; then
+  ok "P1: selección de fotos y archivos — $(grep -c '✓' /tmp/jc_seleccion.log) comprobaciones"
+else
+  fallo "Falla la selección de fotos y archivos (P1)"; grep '✗' /tmp/jc_seleccion.log
+fi
+
 # Entrega 3 · F21 — Biblioteca: Colecciones.
 if node --import ./scripts/resolver-vite.mjs scripts/test-colecciones.mjs >/tmp/jc_cols.log 2>&1; then
   ok "Biblioteca: Colecciones (E3 F21) — $(grep -c '✓' /tmp/jc_cols.log) comprobaciones"

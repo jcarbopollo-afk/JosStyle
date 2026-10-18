@@ -507,7 +507,7 @@ export const NO_EN_FIT10 = [
   { que: 'Gráficas, récords, evolución, rangos e IA', porque: 'Apartado 45: son la F11 en adelante.' },
   { que: 'Editar una sesión del historial', porque: 'Apartado 30: *"Los datos registrados representan lo que ocurrió."* Solo consulta y eliminación.' },
   { que: 'Compartir', porque: 'Apartado 31: no hay sistema social, y un botón sin función es un botón muerto.' },
-  { que: 'La foto o el vídeo de la sesión', porque: 'Apartado 27: se enseña «si existe». No puede existir: no hay dónde guardarla (FIT F8, `MEDIA_PENDIENTE`), así que no se pinta ni un bloque vacío.' },
+  { que: 'La foto o el vídeo de la sesión', porque: 'Apartado 27: se enseña «si existe». El vídeo no puede existir: no hay dónde guardarlo (FIT F8, `MEDIA_PENDIENTE`). La foto (P1) vive en Progreso → Fotos, enlazada por `createdFromWorkoutId`, y es su visor el que abre el entrenamiento: no se copia aquí.' },
   { que: 'Un estado de carga y de error propios, con «Reintentar»', porque: 'Apartado 35. El historial no hace una lectura aparte: lee `fitness`, que la aplicación ya cargó al entrar y cuyo fallo ya gestiona. Un «Reintentar» que no tiene nada que reintentar es un control decorativo (regla 8). Los estados «vacío» y «sin resultados» sí están.' },
 ];
 

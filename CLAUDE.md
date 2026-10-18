@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.152.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.153.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -2282,7 +2282,13 @@ VERDE.** Están copiados palabra por palabra en **`docs/14_PROMPTS_2026-10-18.md
 universal de fotos y archivos · P2 objetivo de agua con jarra animada · P3 estados de IA no disponible · P4 los dos bugs
 visuales de móvil (tarjeta de progreso de Inicio y el rectángulo residual). 🔓 **Josué dio permiso expreso para subir a
 `main` sin preguntar** (*"no me pidas permiso de nada ejecútalo todo porque tienes permiso"*), y para seguir cuando se
-restablezca el límite. Antes de ellos va a `main` la v3.152.0 (editar exámenes + Cumpleaños).
+restablezca el límite. Antes de ellos fue a `main` la v3.152.0 (editar exámenes + Cumpleaños). ✅ **P1 hecha (v3.153.0).**
+- 🚨 **UNA FOTO O UN ARCHIVO SE ELIGE CON `SelectorDeArchivos`** (P1, `src/components/selectorArchivos.jsx` y
+  `src/lib/seleccionArchivos.js`): nunca un `<input type="file">` suelto ni un `capture` (fuerza la cámara y en el
+  iPhone quita la fototeca) — `test-seleccion-archivos` barre las vistas, y solo deja los importadores de datos (JSON,
+  `.ics`). Cada pantalla pone su botón (`children({ abrir })`) o, si ya abría su `<input>` con `ref.click()`, pasa
+  `controlRef`; el módulo recibe `File[]` ya validados (`eventoDeArchivos` para los manejadores de siempre), y con
+  `mostrarError={false}` valida él. **Elegir no es guardar**: subir y decir si ha llegado sigue siendo del módulo.
 
 🔜 **PENDIENTE TRAS A1–A5 (decidido por Josué el 2026-10-17), en este orden:**
 - **Fase «guardar en el iPhone lo pendiente».** Josué lo AUTORIZA con sus palabras: *"yo sí que dejo que lo guarde

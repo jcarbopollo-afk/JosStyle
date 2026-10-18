@@ -34,6 +34,8 @@ import {
 import { CambioDeContenido, ChevronDespliegue, LatidoAlMarcar } from '../components/motion';
 import { Plegable } from '../components/layoutMotion';
 import { GiroDeCarga } from '../components/accesibilidadMotion';
+import { SelectorDeArchivos } from '../components/selectorArchivos';
+import { MB } from '../lib/seleccionArchivos';
 
 /* ---------- Miniatura ----------
    Apartado 6: "nunca dejar un enorme espacio vacío por no tener imagen". Sin foto se
@@ -171,11 +173,15 @@ function FormularioPrenda({ inicial, accent, guardando, errorFoto, onGuardar, on
 
       {/* Apartado 4: la foto es opcional y se dice en la propia etiqueta, para que no
           parezca un paso obligatorio que hay que saltarse. */}
-      <label className="flex items-center gap-2 text-xs font-semibold mb-3 cursor-pointer" style={{ color: accent }}>
-        <Camera size={14} />
-        {fotoPendiente ? `Foto elegida: ${fotoPendiente}` : 'Añadir foto (opcional)'}
-        <input type="file" accept="image/*" className="hidden" onChange={(e) => onFoto(e.target.files?.[0] || null)} />
-      </label>
+      {/* 📎 P1 — cámara, fototeca o archivos, con el selector común. */}
+      <SelectorDeArchivos clase="imagen" maxBytes={30 * MB} accent={accent} titulo="Foto de la prenda" onElegir={(f) => onFoto(f[0] || null)}>
+        {({ abrir }) => (
+          <button onClick={abrir} className="flex items-center gap-2 text-xs font-semibold mb-3 toque-44" style={{ color: accent }}>
+            <Camera size={14} />
+            {fotoPendiente ? `Foto elegida: ${fotoPendiente}` : 'Añadir foto (opcional)'}
+          </button>
+        )}
+      </SelectorDeArchivos>
       {errorFoto && <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>{errorFoto}</p>}
 
       <button
@@ -692,11 +698,15 @@ function FormularioOutfit({ inicial, prendas, accent, guardando, errorFoto, foto
       </p>
       <SelectorPrendas prendas={prendas} seleccion={form.prendaIds} onToggle={toggle} accent={accent} />
 
-      <label className="flex items-center gap-2 text-xs font-semibold mt-3 mb-3 cursor-pointer" style={{ color: accent }}>
-        <Camera size={14} />
-        {fotoPendiente ? `Foto elegida: ${fotoPendiente}` : 'Foto del outfit (opcional)'}
-        <input type="file" accept="image/*" className="hidden" onChange={(e) => onFoto(e.target.files?.[0] || null)} />
-      </label>
+      {/* 📎 P1 — cámara, fototeca o archivos, con el selector común. */}
+      <SelectorDeArchivos clase="imagen" maxBytes={30 * MB} accent={accent} titulo="Foto del outfit" onElegir={(f) => onFoto(f[0] || null)}>
+        {({ abrir }) => (
+          <button onClick={abrir} className="flex items-center gap-2 text-xs font-semibold mt-3 mb-3 toque-44" style={{ color: accent }}>
+            <Camera size={14} />
+            {fotoPendiente ? `Foto elegida: ${fotoPendiente}` : 'Foto del outfit (opcional)'}
+          </button>
+        )}
+      </SelectorDeArchivos>
       {errorFoto && <p className="text-xs mb-3" style={{ color: COLORS.textMuted }}>{errorFoto}</p>}
 
       <button

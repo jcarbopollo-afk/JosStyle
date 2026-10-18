@@ -72,6 +72,8 @@ import {
 import { Card, SectionTitle, Field, TextInput, Textarea, Select, PrimaryButton, GhostBtn, EmptyHint, BotonBorrar, BotonBorrarDefinitivo, TextoDeBoton } from '../components/ui';
 import { escalonado, transicion } from '../lib/motion';
 import { Plegable } from '../components/layoutMotion';
+import { SelectorDeArchivos } from '../components/selectorArchivos';
+import { eventoDeArchivos, MB } from '../lib/seleccionArchivos';
 
 // Fase 11 — Biblioteca: PDFs, vídeos, fotos, apuntes y enlaces conviven en un único listado
 // buscable. Los tres tipos de archivo comparten forma { id, tipo, path, titulo, fecha } +
@@ -262,17 +264,25 @@ function AnadirArchivo({ tipo, onAdd, accent }) {
       <Field label="Título (opcional — si lo dejas vacío se usa el nombre del archivo)">
         <TextInput value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder={`Ej: Apuntes de Biología — Tema 3`} />
       </Field>
-      <label className="block" aria-busy={subiendo || undefined}>
-        <div
-          className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full cursor-pointer"
-          style={{ background: accent, color: COLORS.textOnAccent }}
-        >
-          <TextoDeBoton estado={subiendo ? 'cargando' : 'reposo'} icono={<Upload size={16} strokeWidth={2.5} />} textoCargando={tipo === 'pdf' ? 'Subiendo y leyendo el PDF…' : 'Subiendo…'}>
-            {`Subir ${meta.label.toLowerCase()}`}
-          </TextoDeBoton>
-        </div>
-        <input type="file" accept={meta.accept} onChange={handleFile} disabled={subiendo} className="hidden" />
-      </label>
+      {/* 📎 P1 — el selector común: un PDF solo con archivos (sin cámara); una foto o un vídeo,
+          también con la cámara y la fototeca. */}
+      <SelectorDeArchivos
+        clase={tipo === 'foto' ? 'imagen' : tipo === 'video' ? 'video' : 'documento'} accept={meta.accept}
+        maxBytes={tipo === 'video' ? 200 * MB : 50 * MB} disabled={subiendo} accent={accent}
+        titulo={`Subir ${meta.label.toLowerCase()}`} onElegir={(f) => handleFile(eventoDeArchivos(f))}
+      >
+        {({ abrir }) => (
+          <button
+            onClick={subiendo ? undefined : abrir} aria-busy={subiendo || undefined}
+            className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold w-full"
+            style={{ background: accent, color: COLORS.textOnAccent }}
+          >
+            <TextoDeBoton estado={subiendo ? 'cargando' : 'reposo'} icono={<Upload size={16} strokeWidth={2.5} />} textoCargando={tipo === 'pdf' ? 'Subiendo y leyendo el PDF…' : 'Subiendo…'}>
+              {`Subir ${meta.label.toLowerCase()}`}
+            </TextoDeBoton>
+          </button>
+        )}
+      </SelectorDeArchivos>
     </Card>
   );
 }
@@ -896,17 +906,22 @@ export function FormularioLibro({ libro = null, accent, onGuardar, onCancelar, o
           <div style={{ width: 56, flexShrink: 0 }}>
             <Portada libro={{ titulo: form.titulo || '?' }} url={null} alto={76} accent={accent} />
           </div>
-          <label className="flex-1" aria-busy={subiendo || undefined}>
-            <div
-              className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold cursor-pointer toque-44"
-              style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
-            >
-              <TextoDeBoton estado={subiendo ? 'cargando' : 'reposo'} icono={<Upload size={14} />} textoCargando="Subiendo…">
-                {portada ? 'Cambiar la portada' : 'Elegir una imagen'}
-              </TextoDeBoton>
-            </div>
-            <input type="file" accept="image/*" onChange={elegirPortada} disabled={subiendo} className="hidden" />
-          </label>
+          <div className="flex-1">
+            {/* 📎 P1 — una foto de la portada, o una imagen que ya tengas. */}
+            <SelectorDeArchivos clase="imagen" disabled={subiendo} accent={accent} titulo="Portada del libro" onElegir={(f) => elegirPortada(eventoDeArchivos(f))}>
+              {({ abrir }) => (
+                <button
+                  onClick={subiendo ? undefined : abrir} aria-busy={subiendo || undefined}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold toque-44"
+                  style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+                >
+                  <TextoDeBoton estado={subiendo ? 'cargando' : 'reposo'} icono={<Upload size={14} />} textoCargando="Subiendo…">
+                    {portada ? 'Cambiar la portada' : 'Elegir una imagen'}
+                  </TextoDeBoton>
+                </button>
+              )}
+            </SelectorDeArchivos>
+          </div>
         </div>
         {aviso ? <p className="text-xs mt-1.5" style={{ color: COLORS.textMuted }}>{aviso}</p> : null}
       </Field>
