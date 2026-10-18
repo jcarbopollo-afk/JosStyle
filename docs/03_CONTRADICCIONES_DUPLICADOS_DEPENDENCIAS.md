@@ -1609,3 +1609,15 @@ foto ya tiene sitio sin inventar almacenamiento**: las fotos de progreso (`salud
 `createdFromWorkoutId` desde la FIT F26 y su visor abre el entrenamiento. Así que, guardado el entrenamiento, se ofrece
 «Añadir una foto» que va allí, con la misma protección del PIN. **El vídeo sigue pendiente** (y `media` en `null`), y
 se dice así: añadirle un selector sin dónde guardarlo lo presentaría como terminado, que es lo que el prompt prohíbe.
+
+### C-75 — ✅ RESUELTA AL CONSTRUIR (v3.154.0, P2) · «Calcular el objetivo de agua automáticamente» y «el objetivo manual siempre tiene prioridad», sin prescribir
+
+El prompt pide un objetivo calculado con sus datos y, a la vez, que no se presente como prescripción ni dependa de la
+hipertrofia. Se resolvió así (`src/lib/aguaNutricion.js`):
+- **La propuesta se calcula en el momento y no se guarda** (`objetivoAgua.ml: null`): 30 ml por kilo de su peso del
+  perfil (la referencia de la EFSA, ~2 L para beber a su edad), más 0,25-0,5 L si su nivel de actividad de NU F3 es
+  moderado o alto, acotado entre 1,5 y 3,5 L y en vasos enteros. Sin peso, 2 L con el aviso de añadirlo. **El objetivo
+  corporal y las calorías no cuentan**, y una prueba lo comprueba.
+- **El suyo se guarda** (`objetivoAgua.ml`, entre 0,5 y 6 L) y manda siempre; «Usar la propuesta» vuelve a `null`.
+- Se dice que es **orientativo, no una indicación médica**, y que mide el agua **registrada**, no la hidratación total.
+- El registro no cambia: el total por fecha de la Fase 4, que no puede contar un vaso dos veces al recargar.

@@ -1,5 +1,27 @@
 # CHANGELOG.md
 
+## v3.154.0 — P2: el objetivo diario de agua y su jarra
+
+> El segundo de los cuatro prompts del 2026-10-18 (`docs/14_PROMPTS_2026-10-18.md`). Solo Nutrición → Agua.
+
+- **Un objetivo diario** (`src/lib/aguaNutricion.js`, C-75): se **propone** con su peso del perfil (30 ml por kilo,
+  más un poco si su actividad de los objetivos de Nutrición es moderada o alta; entre 1,5 y 3,5 L, en vasos) o, sin
+  peso, 2 L con el aviso de añadirlo. **Ni el objetivo corporal ni las calorías cuentan.** «Cambiar objetivo» deja
+  poner el suyo (0,5 a 6 L), que manda siempre y se guarda en `nutricion.objetivoAgua`; «Usar la propuesta» vuelve.
+  Se dice que es orientativo, no una indicación médica, y que mide el agua registrada, no toda la hidratación.
+- **La jarra** (`src/components/jarraAgua.jsx`): transparente, a la derecha de los vasos (debajo si no caben), se
+  llena con lo bebido frente al objetivo. El agua sube y baja con el Motion System (`jarra-nivel`: `scaleY` en
+  `medium`, al ritmo de las barras de progreso, en el `MOTION_MAP`; en Reducido cambia sin animarse). Porcentaje y
+  litros al lado («0,75 L de 2,25 L», «Te faltan 1,5 L (6 vasos)»); al cumplirlo, un ✓ que late una vez; **pasarse
+  la deja llena con la cifra real** (150 %) y dice cuánto de más.
+- **Los vasos de 25 cl, como siempre**: se guarda el total de cada fecha, así que recargar no puede contar uno dos
+  veces; ahora con nombre para VoiceOver, y «−» apagado a 0. **Cada día empieza de cero** —también si la aplicación se
+  queda abierta pasada la medianoche o se vuelve a ella— y lo de antes se queda guardado («Ayer bebiste 1 L»). La
+  puerta de carga limpia un día roto en vez de pintar `NaN`.
+- Pruebas: `test-agua-nutricion` (81, en `verificar.sh`), siete casos del banco de renderizado y la sección «P2 ·
+  AGUA» del recorrido (33: la propuesta, tres vasos, la jarra y su duración, un objetivo imposible rechazado, pasarse,
+  recargar, volver a la propuesta, un día nuevo y 320 px de ancho).
+
 ## v3.153.0 — P1: el selector de fotos y archivos de toda la aplicación
 
 > El primero de los cuatro prompts del 2026-10-18 (`docs/14_PROMPTS_2026-10-18.md`).

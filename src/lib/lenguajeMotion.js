@@ -209,7 +209,7 @@ export const PAREJAS = Object.freeze([
 
 /** Las clases que hacen lo mismo y tienen que ir al MISMO ritmo (apartado 8). */
 export const EQUIVALENTES = Object.freeze([
-  { que: 'Las barras de progreso', clases: ['barra-progreso', 'progreso-libro', 'nu-progreso', 'fit-barra'] },
+  { que: 'Las barras de progreso', clases: ['barra-progreso', 'progreso-libro', 'nu-progreso', 'fit-barra', 'jarra-nivel'] },
   { que: 'Las hojas que suben', clases: ['hoja-entra', 'calendar-sheet'] },
   { que: 'Volver y cambiar de sección', clases: ['nav-vuelve', 'nav-seccion'] },
   { que: 'Lo que aparece en su sitio, pequeño', clases: ['despliegue-entra', 'vacio-entra', 'campo-mensaje-entra', 'menu-entra'] },

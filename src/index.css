@@ -1356,6 +1356,25 @@ html[data-motion='reducido'] .esqueleto {
   transition: width var(--motion-dur-medium) var(--ease-premium);
 }
 
+/* 💧 P2 — el agua de la jarra de Nutrición. Es una barra de progreso de pie: sube
+   y baja al ritmo de las otras cuatro (`medium`, la curva de JosStyle). Se escala
+   el agua desde el fondo (`scaleY`, que no repinta) dentro del recorte de la
+   jarra, así que nada se deforma. En Reducido el nivel cambia sin animarse: es
+   un cambio de tamaño, y Reducido no escala (MS F1). */
+.jarra-nivel {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transition: transform var(--motion-dur-medium) var(--ease-premium);
+}
+html[data-motion='reducido'] .jarra-nivel {
+  transition-property: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='off']) .jarra-nivel {
+    transition-property: none;
+  }
+}
+
 /* Entrega 3 · F25 (PR F3) — Pomodoro.
    *"Debe existir una animación/progreso circular que represente el tiempo
    restante… animaciones fluidas y que no consuman recursos innecesariamente."*

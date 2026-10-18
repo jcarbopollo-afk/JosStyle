@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.153.0**. Vite + React 18 + Tailwind + Supabase + una función
+**Estado:** `package.json` **v3.154.0**. Vite + React 18 + Tailwind + Supabase + una función
 serverless en Vercel que hace de proxy a Anthropic.
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
@@ -2282,7 +2282,7 @@ VERDE.** Están copiados palabra por palabra en **`docs/14_PROMPTS_2026-10-18.md
 universal de fotos y archivos · P2 objetivo de agua con jarra animada · P3 estados de IA no disponible · P4 los dos bugs
 visuales de móvil (tarjeta de progreso de Inicio y el rectángulo residual). 🔓 **Josué dio permiso expreso para subir a
 `main` sin preguntar** (*"no me pidas permiso de nada ejecútalo todo porque tienes permiso"*), y para seguir cuando se
-restablezca el límite. Antes de ellos fue a `main` la v3.152.0 (editar exámenes + Cumpleaños). ✅ **P1 hecha (v3.153.0).**
+restablezca el límite. Antes de ellos fue a `main` la v3.152.0 (editar exámenes + Cumpleaños). ✅ **P1 hecha (v3.153.0).** ✅ **P2 hecha (v3.154.0)**: el objetivo de agua es `src/lib/aguaNutricion.js` (la propuesta se calcula y no se guarda; el suyo, en `nutricion.objetivoAgua`, manda; ni el objetivo corporal ni las calorías cuentan, C-75) y la jarra, `JarraDeAgua` (`jarra-nivel`, una barra de progreso de pie).
 - 🚨 **UNA FOTO O UN ARCHIVO SE ELIGE CON `SelectorDeArchivos`** (P1, `src/components/selectorArchivos.jsx` y
   `src/lib/seleccionArchivos.js`): nunca un `<input type="file">` suelto ni un `capture` (fuerza la cámara y en el
   iPhone quita la fototeca) — `test-seleccion-archivos` barre las vistas, y solo deja los importadores de datos (JSON,

@@ -1842,6 +1842,13 @@ else
   fallo "Falla la selección de fotos y archivos (P1)"; grep '✗' /tmp/jc_seleccion.log
 fi
 
+# 2026-10-18 · P2 — el objetivo diario de agua y su jarra (Nutrición → Agua).
+if node --import ./scripts/resolver-vite.mjs scripts/test-agua-nutricion.mjs >/tmp/jc_agua.log 2>&1; then
+  ok "P2: objetivo de agua y jarra — $(grep -c '✓' /tmp/jc_agua.log) comprobaciones"
+else
+  fallo "Falla el objetivo de agua (P2)"; grep '✗' /tmp/jc_agua.log
+fi
+
 # Entrega 3 · F21 — Biblioteca: Colecciones.
 if node --import ./scripts/resolver-vite.mjs scripts/test-colecciones.mjs >/tmp/jc_cols.log 2>&1; then
   ok "Biblioteca: Colecciones (E3 F21) — $(grep -c '✓' /tmp/jc_cols.log) comprobaciones"

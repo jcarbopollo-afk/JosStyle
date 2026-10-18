@@ -56,12 +56,17 @@ import {
 } from '../lib/inteligenciaNutricion';
 import { buscarProductoPorCodigoBarras, buscarAlimentosPorNombre } from '../lib/openFoodFacts';
 import { askAIWithImage, AI_SYSTEM } from '../lib/ai';
-import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, TextoDeBoton } from '../components/ui';
+import { BotonBorrar, Card, SectionTitle, Field, TextInput, PrimaryButton, GhostBtn, ToggleTab, EmptyHint, AIPanel, TextoDeBoton, MensajeDeCampo } from '../components/ui';
 import BarcodeScanner from '../components/BarcodeScanner';
 import { CambioDeContenido, LatidoAlMarcar, useAnimacionDeGrafica, CifraQueCambia } from '../components/motion';
 import { escalonado } from '../lib/motion';
 import { dominioEstable } from '../lib/datosMotion';
-import { ListaAnimada } from '../components/layoutMotion';
+import { ListaAnimada, Plegable } from '../components/layoutMotion';
+import { JarraDeAgua, useHoyISO } from '../components/jarraAgua';
+import {
+  objetivoDeAgua, progresoAgua, mlDelDia, validarObjetivoAgua, guardarObjetivoAgua, textoDeLitros, fraseDeAgua, TEXTOS_AGUA,
+} from '../lib/aguaNutricion';
+import { textoDeFalloAlGuardar } from '../lib/sincronizacion';
 import { useTurnos } from '../components/estadosAsincronos';
 import { SelectorDeArchivos } from '../components/selectorArchivos';
 import { eventoDeArchivos, MB } from '../lib/seleccionArchivos';
@@ -1430,36 +1435,137 @@ function ComidasTab({ comidas, nutricion, perfil, onAdd, onAddFavorito, onDelete
   );
 }
 
-function AguaTab({ agua, onSetAgua, accent }) {
-  const hoy = todayISO();
-  const mlHoy = agua[hoy] || 0;
+/* 💧 P2 — el agua del día frente a su objetivo, con la jarra. El registro es el de
+   siempre (vasos de `VASO_ML` que suman y restan, el total por fecha); lo nuevo es
+   el objetivo —propuesto o suyo— y la jarra que se llena con él. */
+export function AguaTab({ nutricion, perfil = null, onSetAgua, onGuardarObjetivoAgua = null, accent }) {
+  const hoy = useHoyISO();
+  const n = nutricion && typeof nutricion === 'object' ? nutricion : {};
+  const agua = n.agua || {};
+  const mlHoy = mlDelDia(agua, hoy);
   const vasos = Math.round(mlHoy / VASO_ML);
+  const objetivo = objetivoDeAgua(n, perfil);
+  const p = progresoAgua(mlHoy, objetivo.ml);
+  const mlAyer = mlDelDia(agua, addDays(hoy, -1));
+  const [editando, setEditando] = useState(false);
+  const [texto, setTexto] = useState('');
+  const [error, setError] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+  const turnos = useTurnos();
+
+  const abrir = () => {
+    setTexto(String(objetivo.ml / 1000).replace('.', ','));
+    setError(null);
+    setEditando(true);
+  };
+  /* Guardar dice si ha llegado: si no, el formulario no se cierra y lo dice. */
+  const guardar = async (ml) => {
+    if (!onGuardarObjetivoAgua || guardando) return;
+    const turno = turnos.nuevo();
+    setGuardando(true);
+    setError(null);
+    try {
+      const r = await Promise.resolve(onGuardarObjetivoAgua(guardarObjetivoAgua(ml, hoy)));
+      if (!turno.vigente()) return;
+      if (r && r.ok === false) setError(textoDeFalloAlGuardar(r));
+      else setEditando(false);
+    } catch (e) {
+      if (turno.vigente()) setError(textoDeFalloAlGuardar({ ok: false, error: e }));
+    } finally {
+      if (turno.vigente()) setGuardando(false);
+    }
+  };
+  const enviar = () => {
+    const v = validarObjetivoAgua(texto);
+    if (!v.ok) { setError(v.error); return; }
+    guardar(v.ml);
+  };
 
   return (
     <div className="space-y-4">
-      <Card className="flex flex-col items-center py-8">
-        <Droplet size={32} style={{ color: accent }} />
-        <p className="text-3xl font-extrabold mt-3" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
-          {(mlHoy / 1000).toFixed(2)} L
-        </p>
-        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{vasos} vasos de {VASO_ML} ml hoy</p>
-        <div className="flex gap-3 mt-5">
-          <button
-            onClick={() => onSetAgua(hoy, Math.max(0, mlHoy - VASO_ML))}
-            className="w-11 h-11 rounded-full flex items-center justify-center text-lg font-bold"
-            style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
-          >
-            −
-          </button>
-          <button
-            onClick={() => onSetAgua(hoy, mlHoy + VASO_ML)}
-            className="w-11 h-11 rounded-full flex items-center justify-center"
-            style={{ background: accent, color: COLORS.textOnAccent }}
-          >
-            <Plus size={18} strokeWidth={2.5} />
-          </button>
+      <Card className="py-6">
+        <div className="flex items-center justify-center gap-6 flex-wrap">
+          <div className="flex flex-col items-center">
+            <Droplet size={32} style={{ color: accent }} aria-hidden="true" />
+            <p className="text-3xl font-extrabold mt-3" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+              <CifraQueCambia valor={mlHoy}>{(mlHoy / 1000).toFixed(2)} L</CifraQueCambia>
+            </p>
+            <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{vasos} vasos de {VASO_ML} ml hoy</p>
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => onSetAgua(hoy, Math.max(0, mlHoy - VASO_ML))}
+                aria-label="Quitar un vaso de agua" disabled={mlHoy === 0}
+                className="w-11 h-11 rounded-full flex items-center justify-center text-lg font-bold disabled:opacity-40"
+                style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
+              >
+                −
+              </button>
+              <button
+                onClick={() => onSetAgua(hoy, mlHoy + VASO_ML)}
+                aria-label="Añadir un vaso de agua"
+                className="w-11 h-11 rounded-full flex items-center justify-center"
+                style={{ background: accent, color: COLORS.textOnAccent }}
+              >
+                <Plus size={18} strokeWidth={2.5} />
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-col items-center" data-jarra-agua>
+            <JarraDeAgua progreso={p} />
+            <p className="text-sm font-bold mt-2" style={{ color: COLORS.text, fontVariantNumeric: 'tabular-nums' }}>
+              <CifraQueCambia valor={p.porcentaje}>{`${p.porcentaje} %`}</CifraQueCambia>
+            </p>
+            <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{textoDeLitros(mlHoy)} de {textoDeLitros(objetivo.ml)}</p>
+          </div>
         </div>
+        <p role="status" className="text-xs text-center mt-4 font-semibold" style={{ color: p.alcanzado ? COLORS.positive : COLORS.textMuted }}>
+          {fraseDeAgua(p)}
+        </p>
       </Card>
+
+      <Card>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: COLORS.textMuted }}>Objetivo diario</p>
+            <p className="text-lg font-extrabold mt-0.5" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{textoDeLitros(objetivo.ml)}</p>
+            <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{objetivo.texto}</p>
+          </div>
+          {onGuardarObjetivoAgua && !editando && (
+            <GhostBtn onClick={abrir}>Cambiar objetivo</GhostBtn>
+          )}
+        </div>
+        <Plegable abierto={editando && !!onGuardarObjetivoAgua}>
+          {() => (
+            <div className="pt-3 space-y-3">
+              <Field label="Litros al día">
+                <TextInput
+                  value={texto} onChange={(e) => { setTexto(e.target.value); setError(null); }}
+                  inputMode="decimal" placeholder="Ej: 2,25" aria-label="Objetivo diario de agua, en litros"
+                  aria-invalid={error ? true : undefined} aria-describedby={error ? 'agua-objetivo-error' : undefined}
+                  onKeyDown={(e) => { if (e.key === 'Enter') enviar(); }}
+                />
+              </Field>
+              <MensajeDeCampo id="agua-objetivo-error">{error}</MensajeDeCampo>
+              <div className="flex gap-2 flex-wrap">
+                <PrimaryButton accent={accent} onClick={enviar} estado={guardando ? 'cargando' : 'reposo'}>Guardar objetivo</PrimaryButton>
+                <GhostBtn onClick={() => { setEditando(false); setError(null); }} disabled={guardando}>Cancelar</GhostBtn>
+              </div>
+              {objetivo.manual && (
+                <GhostBtn onClick={() => guardar(null)} disabled={guardando}>
+                  {`Usar la propuesta (${textoDeLitros(objetivo.propuesta.ml)})`}
+                </GhostBtn>
+              )}
+            </div>
+          )}
+        </Plegable>
+        <p className="text-[11px] mt-3" style={{ color: COLORS.textMuted }}>{TEXTOS_AGUA.orientativo}</p>
+      </Card>
+
+      {mlAyer > 0 && (
+        <p className="text-xs px-1" style={{ color: COLORS.textMuted }}>
+          Ayer bebiste {textoDeLitros(mlAyer)}. Cada día empieza de cero y lo de antes se queda guardado.
+        </p>
+      )}
     </div>
   );
 }
@@ -1809,7 +1915,7 @@ function EstadisticasNutricion({ nutricion, accent }) {
 }
 
 
-export default function NutritionView({ nutricion, perfil, onAddComida, onDeleteComida, onActualizarComida, onAddFavorito, onRegistrarFavorito, onEliminarFavorito, onSetAgua, onGuardarObjetivos, onGuardarAlimentoPropio, onEliminarAlimentoPropio, onAlternarFavoritoAlimento, accent }) {
+export default function NutritionView({ nutricion, perfil, onAddComida, onDeleteComida, onActualizarComida, onAddFavorito, onRegistrarFavorito, onEliminarFavorito, onSetAgua, onGuardarObjetivoAgua = null, onGuardarObjetivos, onGuardarAlimentoPropio, onEliminarAlimentoPropio, onAlternarFavoritoAlimento, accent }) {
   const [sub, setSub] = useState('comidas');
 
   return (
@@ -1853,7 +1959,7 @@ export default function NutritionView({ nutricion, perfil, onAddComida, onDelete
           onAlternarFavoritoAlimento={onAlternarFavoritoAlimento} accent={accent}
         />
       )}
-      {sub === 'agua' && <AguaTab agua={nutricion.agua} onSetAgua={onSetAgua} accent={accent} />}
+      {sub === 'agua' && <AguaTab nutricion={nutricion} perfil={perfil} onSetAgua={onSetAgua} onGuardarObjetivoAgua={onGuardarObjetivoAgua} accent={accent} />}
       {sub === 'favoritos' && (
         <FavoritosTab favoritos={nutricion.favoritos} onRegistrar={onRegistrarFavorito} onEliminar={onEliminarFavorito} accent={accent} />
       )}
@@ -1872,6 +1978,7 @@ export default function NutritionView({ nutricion, perfil, onAddComida, onDelete
           `Análisis nutricional de Josué, 16 años, con SUS datos ya resumidos (JSON): ` +
           `${JSON.stringify(contextoIANutricion(nutricion))}. ` +
           `Agua de los últimos días (JSON, ml por fecha): ${JSON.stringify(nutricion.agua)}. ` +
+          `Objetivo diario de agua: ${objetivoDeAgua(nutricion, perfil).ml} ml (orientativo). ` +
           `No des objetivos calóricos estrictos ni un plan de dieta — céntrate en hábitos, constancia, variedad y energía. ` +
           `Ten en cuenta SU objetivo: una desviación no significa lo mismo para perder grasa que para ganar masa. ` +
           `Y lo que no está registrado no es lo mismo que no consumido: no supongas que se salta comidas. ` +

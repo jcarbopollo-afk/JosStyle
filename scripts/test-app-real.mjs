@@ -5378,6 +5378,96 @@ almacen.saludFotos = fotosAntes_p1;
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 
+/* ── 💧 P2 · AGUA: el objetivo diario y la jarra (2026-10-18) ───────────────
+   Con su peso (75 kg) y sin actividad configurada, la propuesta es 2,25 L. Tres
+   vasos, la jarra y el porcentaje; un objetivo suyo que se pasa; uno imposible
+   que se rechaza; recargar; volver a la propuesta; y un día nuevo. */
+console.log('\n── P2 · Agua ──');
+const erroresAntes_p2 = errores.length;
+const nutriAntes_p2 = almacen.nutricion;
+const perfilAntes_p2 = almacen.perfil;
+almacen.nutricion = { comidas: [], agua: {}, favoritos: [] };
+almacen.perfil = { ...(almacen.perfil || {}), peso: 75 };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Nutrición') && await pulsar('Agua'), 'P2 — Bienestar → Nutrición → Agua');
+const inicio_p2 = await esperarTexto(/Objetivo diario/i);
+ok(/2,25 L/.test(inicio_p2) && /Propuesto con tu peso \(75 kg\)/.test(inicio_p2), '🚨 P2 — el objetivo se propone con su peso: 2,25 L (75 kg × 30 ml, en vasos)');
+ok(/orientativa, no una indicación médica/.test(inicio_p2), '…dicho como estimación orientativa');
+const jarra_p2 = () => page.evaluate(() => {
+  const svg = document.querySelector('[data-jarra-agua] svg[role="img"]');
+  const r = document.querySelector('.jarra-nivel');
+  return svg && r ? { etiqueta: svg.getAttribute('aria-label'), relleno: Number(r.dataset.relleno), dura: getComputedStyle(r).transitionDuration, propiedad: getComputedStyle(r).transitionProperty } : null;
+});
+const j0_p2 = await jarra_p2();
+ok(j0_p2 && j0_p2.relleno === 0 && /0 L de 2,25 L, 0 %/.test(j0_p2.etiqueta), `P2 — la jarra empieza vacía, y lo dice (${JSON.stringify(j0_p2)})`);
+ok(j0_p2 && j0_p2.dura === '0.28s' && /transform/.test(j0_p2.propiedad), '🚨 P2 — el agua sube con el Motion System: `transform` en `medium` (280 ms)');
+ok(await page.evaluate(() => !!document.querySelector('[aria-label="Quitar un vaso de agua"]:disabled')), 'con 0 no se puede quitar un vaso');
+
+for (let i = 0; i < 3; i += 1) { ok(await pulsar('Añadir un vaso de agua'), `P2 — vaso ${i + 1}`); await page.waitForTimeout(350); }
+const j3_p2 = await jarra_p2();
+const tres_p2 = await ver();
+ok(/0\.75 L/.test(tres_p2) && /3 vasos de 250 ml hoy/.test(tres_p2), '🚨 P2 — tres vasos de 25 cl: 0,75 L, al momento');
+ok(j3_p2 && Math.abs(j3_p2.relleno - 0.333) < 0.002 && /0,75 L de 2,25 L, 33 %/.test(j3_p2.etiqueta), `🚨 P2 — la jarra se llena un tercio y el porcentaje lo dice (${JSON.stringify(j3_p2)})`);
+ok(/33 %/.test(tres_p2) && /Te faltan 1,5 L \(6 vasos\)/.test(tres_p2), '…con lo que falta, en litros y en vasos');
+ok((almacen.nutricion.agua || {})[DN(0)] === 750, '🚨 P2 — guardado el total del día (750 ml), una sola cifra: recargar no puede sumar dos veces');
+
+/* Un objetivo imposible se rechaza; el suyo manda. */
+ok(await pulsar('Cambiar objetivo'), 'P2 — «Cambiar objetivo»');
+const campo_p2 = 'input[aria-label="Objetivo diario de agua, en litros"]';
+await page.waitForSelector(campo_p2, { timeout: 4000 }).catch(() => {});
+await page.fill(campo_p2, '9');
+ok(await pulsar('Guardar objetivo'), 'P2 — se intenta guardar 9 L');
+const malo_p2 = await esperarTexto(/entre 0,5 y 6 litros/);
+ok(/Pon un objetivo entre 0,5 y 6 litros/.test(malo_p2) && await page.evaluate((c) => document.querySelector(c)?.getAttribute('aria-invalid') === 'true', campo_p2),
+  '🚨 P2 — un objetivo imposible se rechaza en palabras, con el campo marcado');
+ok(!(almacen.nutricion.objetivoAgua && almacen.nutricion.objetivoAgua.ml), '…y no se guarda nada');
+await page.fill(campo_p2, '0,5');
+ok(await pulsar('Guardar objetivo'), 'P2 — se guarda 0,5 L');
+const pasado_p2 = await esperarTexto(/por encima de tu objetivo/);
+const jp_p2 = await jarra_p2();
+ok(/0,25 L por encima de tu objetivo/.test(pasado_p2) && /150 %/.test(pasado_p2), '🚨 P2 — pasarse del objetivo: se dice cuánto, y la cifra real (150 %)');
+ok(jp_p2 && jp_p2.relleno === 1 && /objetivo cumplido/.test(jp_p2.etiqueta), '…con la jarra llena y «cumplido»');
+ok(/Tu objetivo/.test(pasado_p2) && almacen.nutricion.objetivoAgua && almacen.nutricion.objetivoAgua.ml === 500, '🚨 P2 — su objetivo manda, y está en la cuenta');
+
+/* Recargar: sigue igual. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Nutrición') && await pulsar('Agua'), 'P2 — tras recargar, de vuelta a Agua');
+const recarga_p2 = await esperarTexto(/Objetivo diario/i);
+ok(/0\.75 L/.test(recarga_p2) && /Tu objetivo/.test(recarga_p2) && /150 %/.test(recarga_p2), '🚨 P2 — al recargar, lo bebido y su objetivo siguen ahí, sin duplicar nada');
+
+/* Volver a la propuesta. */
+ok(await pulsar('Cambiar objetivo') && await pulsar('Usar la propuesta (2,25 L)'), 'P2 — «Usar la propuesta»');
+const prop_p2 = await esperarTexto(/Propuesto con tu peso/);
+ok(/Propuesto con tu peso \(75 kg\)/.test(prop_p2) && /33 %/.test(prop_p2) && almacen.nutricion.objetivoAgua && almacen.nutricion.objetivoAgua.ml === null,
+  'P2 — de vuelta a la propuesta (y guardado como tal)');
+
+/* Un día nuevo: lo de ayer se queda, hoy empieza de cero. */
+almacen.nutricion = { ...almacen.nutricion, agua: { [DN(1)]: 1000 } };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Nutrición') && await pulsar('Agua'), 'P2 — un día nuevo');
+const nuevo_p2 = await esperarTexto(/Objetivo diario/i);
+const jn_p2 = await jarra_p2();
+ok(/0\.00 L/.test(nuevo_p2) && jn_p2 && jn_p2.relleno === 0, '🚨 P2 — el día nuevo empieza de cero…');
+ok(/Ayer bebiste 1 L/.test(nuevo_p2) && almacen.nutricion.agua[DN(1)] === 1000, '…y lo de ayer sigue guardado');
+
+/* En un iPhone pequeño: nada se sale de lado. */
+await page.setViewportSize({ width: 320, height: 640 });
+await page.waitForTimeout(400);
+const ancho_p2 = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth, vista: window.innerWidth }));
+ok(ancho_p2.doc <= ancho_p2.vista, `P2 — a 320 px de ancho no se sale de lado (${ancho_p2.doc} ≤ ${ancho_p2.vista})`);
+await page.setViewportSize({ width: 1280, height: 720 });
+await page.waitForTimeout(300);
+
+const nuevos_p2 = errores.slice(erroresAntes_p2);
+ok(nuevos_p2.length === 0, `P2 — ni un error de JavaScript${nuevos_p2.length ? `: ${nuevos_p2.join(' | ').slice(0, 300)}` : ''}`);
+almacen.nutricion = nutriAntes_p2;
+almacen.perfil = perfilAntes_p2;
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
 /* ── DIST F1 · GESTIÓN: Organización y Progreso ───────────────────────────── */
 ok(await pulsar('Gestión'), '🚨 se entra en GESTIÓN');
 const ges_n1 = await esperarTexto(/Econom[ií]a/i);

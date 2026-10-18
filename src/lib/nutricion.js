@@ -38,6 +38,7 @@
    construye es el **historial y las estadísticas**, que son la Fase 2. */
 
 import { todayISO, addDays } from './helpers';
+import { normalizarAgua, normalizarObjetivoAgua } from './aguaNutricion';
 
 /* ══════════════════════════════════════════════════════════════════════════
    1 · LOS CUATRO INDICADORES — apartados 2, 3 y 4
@@ -115,7 +116,9 @@ export function normalizarComidas(lista) {
  *  en el siguiente guardado (regla 5). */
 export function normalizarNutricionDe(nutricion) {
   const n = nutricion && typeof nutricion === 'object' ? nutricion : {};
-  return { ...n, comidas: normalizarComidas(n.comidas) };
+  /* 💧 P2 — el agua, limpia (un día con texto o negativo no se pinta como `NaN`),
+     y su objetivo, con su puerta de carga (regla 5). */
+  return { ...n, comidas: normalizarComidas(n.comidas), agua: normalizarAgua(n.agua), objetivoAgua: normalizarObjetivoAgua(n.objetivoAgua) };
 }
 
 /* ══════════════════════════════════════════════════════════════════════════

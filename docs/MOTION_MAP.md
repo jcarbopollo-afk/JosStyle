@@ -5,7 +5,7 @@
 > `node --import ./scripts/resolver-vite.mjs scripts/generar-motion-map.mjs`. No lo edites a mano: edita
 > el mapa y vuelve a generarlo. `scripts/test-motion-f0.mjs` lo compara y se pone rojo si no coincide.
 
-**85 elementos**: ✅ Existe 82 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 1 · 🚨 Fuera de control 0.
+**86 elementos**: ✅ Existe 83 · ⚠️ Inconsistente 2 · ⬜ Sin movimiento 1 · 🚨 Fuera de control 0.
 
 ## Resumen
 
@@ -93,6 +93,7 @@
 | Cambiar de mes en el Calendario | W | 2 · Suave | 220 ms | ✅ Existe | F10 |
 | El progreso de un libro | W | 3 · Protagonista | 280 ms | ✅ Existe | F17 |
 | El progreso de un macro | W | 3 · Protagonista | 280 ms | ✅ Existe | F17 |
+| El agua de la jarra (Nutrición → Agua) | W | 3 · Protagonista | 280 ms | ✅ Existe | F17 |
 | Una barra de progreso de Fitness | W | 3 · Protagonista | 280 ms | ✅ Existe | F17 |
 | La muestra de «Ver cómo se mueve» en Ajustes | R | 3 · Protagonista | 420 ms | ✅ Existe | F1 |
 | Todo lo que se añada a partir de hoy | X | 0 · Estático | — | ✅ Existe | F0 |
@@ -2634,6 +2635,36 @@
 | Móvil | Igual |
 | Escritorio | Igual |
 | Movimiento reducido | Se funde en su sitio, sin desplazarse ni escalar (en Reducido los tokens de distancia y escala valen 0 y 1, MS F1). Con «Sin movimiento», aparece directamente en su estado final. |
+
+#### El agua de la jarra (Nutrición → Agua)
+
+`jarra_agua` · ✅ Existe · lo trata la **F17**
+
+| Campo | Valor |
+|---|---|
+| Ubicación | src/index.css · src/components/jarraAgua.jsx (JarraDeAgua) |
+| Componente | JarraDeAgua |
+| Clase CSS | `.jarra-nivel` |
+| @keyframes | — |
+| En ANIMACIONES_HC | — |
+| Función | Que el agua suba o baje al añadir o quitar un vaso, en vez de saltar (P2). |
+| Estado inicial | El nivel de antes |
+| Estado final | Lo bebido frente al objetivo (llena al cumplirlo, también si se pasa) |
+| Entrada | — |
+| Salida | — |
+| Interacción | Añadir o quitar un vaso, o cambiar el objetivo |
+| Transición | transform (scaleY desde el fondo) |
+| Duración | 280 ms |
+| Curva | --ease-premium |
+| Spring | — |
+| Retraso | — |
+| Escalonado | — |
+| Intensidad | 3 · Protagonista |
+| Prioridad | media |
+| Relación | Una barra de progreso de pie: al ritmo de las otras cuatro (F14). El ✓ de «cumplido» es `LatidoAlMarcar`. |
+| Móvil | Igual |
+| Escritorio | Igual |
+| Movimiento reducido | El nivel cambia sin animarse. |
 
 #### Una barra de progreso de Fitness
 

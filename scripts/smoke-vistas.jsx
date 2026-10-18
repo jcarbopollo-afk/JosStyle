@@ -417,7 +417,8 @@ import { crearRutina as crearRutinaF3, anadirEjercicio as anadirF3, editarLinea 
 import { CATALOGO_EJERCICIOS } from '../src/lib/ejercicios.js';
 import WellbeingView from '../src/views/WellbeingView.jsx';
 import HealthView from '../src/views/HealthView.jsx';
-import NutritionView from '../src/views/NutritionView.jsx';
+import NutritionView, { AguaTab } from '../src/views/NutritionView.jsx';
+import { JarraDeAgua } from '../src/components/jarraAgua.jsx';
 import EstudiosView, { FormFecha as FormFechaEstudios, ExamenItem as ExamenItemEstudios } from '../src/views/EstudiosView.jsx';
 import CumpleanosView, { FormularioCumpleanos, TarjetaCumpleanos } from '../src/views/CumpleanosView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
@@ -2799,7 +2800,16 @@ const CASOS = [
       onAlternarFavoritoAlimento: noop,
       accent, ...extra,
     });
+    /* 💧 P2 — el agua: vacía, a medias, cumplida, pasada, con su objetivo y con datos rotos. */
+    const propsAgua = (nutricion, perfil = { peso: 75 }) => ({ nutricion, perfil, onSetAgua: noop, onGuardarObjetivoAgua: () => Promise.resolve({ ok: true }), accent });
     return [
+      ['AguaTab · vacía, sin peso', AguaTab, () => propsAgua({ agua: {} }, null)],
+      ['AguaTab · a medias', AguaTab, () => propsAgua({ agua: { [HOY]: 1000 } })],
+      ['AguaTab · cumplida', AguaTab, () => propsAgua({ agua: { [HOY]: 2250 } })],
+      ['AguaTab · pasada del objetivo', AguaTab, () => propsAgua({ agua: { [HOY]: 3000, [addDays(HOY, -1)]: 1750 }, objetivoAgua: { ml: 2500, fecha: HOY } })],
+      ['AguaTab · datos rotos', AguaTab, () => propsAgua({ agua: { [HOY]: 'x' }, objetivoAgua: { ml: -3 } }, { peso: 0 })],
+      ['JarraDeAgua · vacía', JarraDeAgua, () => ({ progreso: { ml: 0, objetivo: 2000, porcentaje: 0, relleno: 0, alcanzado: false } })],
+      ['JarraDeAgua · llena', JarraDeAgua, () => ({ progreso: { ml: 2500, objetivo: 2000, porcentaje: 125, relleno: 1, alcanzado: true } })],
       ['NutritionView', NutritionView, (e) => propsNu(e.nutricion)],
       /* Un día entero con sus momentos, y una comida **sin momento** —de antes de
          esta fase— que tiene que caer en Extras sin perderse. */

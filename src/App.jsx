@@ -2154,6 +2154,9 @@ export default function App() {
   const registrarFavorito = (fav) => snapshotAndSave({ nutricion: { ...nutricion, comidas: [...nutricion.comidas, { ...fav, id: uid(), fecha: todayISO() }] } });
   const eliminarFavorito = (id) => snapshotAndSave({ nutricion: { ...nutricion, favoritos: nutricion.favoritos.filter((f) => f.id !== id) } });
   const setAgua = (fecha, ml) => snapshotAndSave({ nutricion: { ...nutricion, agua: { ...nutricion.agua, [fecha]: ml } } });
+  /* 💧 P2 — el objetivo diario de agua: una preferencia, en la clave de siempre.
+     `ml: null` vuelve a la propuesta calculada. Devuelve si ha llegado (`{ ok }`). */
+  const guardarObjetivoAgua = (objetivoAgua) => snapshotAndSave({ nutricion: { ...nutricion, objetivoAgua } });
   /* E3 F35 (NU F3) — los objetivos ya vienen calculados y CONFIRMADOS por
      `planObjetivos`: aquí solo se guardan, dentro de la clave de siempre. */
   const guardarObjetivosNutricion = (objetivos) => snapshotAndSave({ nutricion: { ...nutricion, objetivos } });
@@ -3033,7 +3036,7 @@ export default function App() {
             onEliminarAlimentoPropio={eliminarAlimentoPropio}
             onAlternarFavoritoAlimento={alternarFavoritoAlim}
             onRegistrarFavorito={registrarFavorito} onEliminarFavorito={eliminarFavorito}
-            onSetAgua={setAgua} accent={accent}
+            onSetAgua={setAgua} onGuardarObjetivoAgua={guardarObjetivoAgua} accent={accent}
           />
         );
       case 'estudios':
