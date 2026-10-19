@@ -133,7 +133,9 @@ ok(comportamientoDeScroll(contextoMotion()) === 'smooth' && comportamientoDeScro
   const a = auditarAccesibilidadMotion({ archivos: ARCHIVOS, css: CSS });
   ok(a.cuentas.scroll_suave_a_mano === 0, `🐛 ni un \`behavior: 'smooth'\` escrito a mano: eran siete, e ignoraban «Reducir movimiento»${a.cuentas.scroll_suave_a_mano ? ` — ${a.hallazgos.filter((h) => h.tipo === 'scroll_suave_a_mano').map((h) => `${h.archivo}:${h.linea}`).join(', ')}` : ''}`);
   const usan = Object.entries(ARCHIVOS).filter(([, src]) => /\bdesplazarHasta\(/.test(sinComentarios(src))).map(([a]) => a);
-  ok(['src/views/EstudiosView.jsx', 'src/views/EntrenamientoVivoView.jsx', 'src/views/ObjectivesView.jsx', 'src/views/ProductivityView.jsx', 'src/views/EstiloHombreView.jsx', 'src/views/TrainingView.jsx'].every((f) => usan.includes(f)), '…ahora son `desplazarHasta`, en las seis pantallas');
+  /* 🧹 2026-10-19 — eran seis con `TrainingView`, que se fue de Fitness con su
+     bloque de calistenia y fútbol: quedan cinco. */
+  ok(['src/views/EstudiosView.jsx', 'src/views/EntrenamientoVivoView.jsx', 'src/views/ObjectivesView.jsx', 'src/views/ProductivityView.jsx', 'src/views/EstiloHombreView.jsx'].every((f) => usan.includes(f)) && !existsSync(join(RAIZ, 'src/views/TrainingView.jsx')), '…ahora son `desplazarHasta`, en las cinco pantallas que quedan (la sexta, la de calistenia, se quitó)');
   ok(/\{ modulo: 'accesibilidadMotion', solo: \['desplazarHasta'\]/.test(leer('src/lib/arquitecturaFitness.js')), '…y Fitness solo toma eso de aquí (FIT F44)');
 }
 

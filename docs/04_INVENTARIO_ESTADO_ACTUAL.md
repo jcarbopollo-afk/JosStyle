@@ -359,7 +359,7 @@ Animaciones del sistema de navegación, `--ease-premium`, reglas `html[data-radi
 | `DashboardView.jsx` (489 l.) | 🔴 **MODIFICAR** | 3 niveles + acciones rápidas + 3 avisos + `IndicadorContexto` + `AccesoCalendarioYAgenda` + métricas favoritas + `ScoreGauge`. **R0.2 / R4.1** (puntuación), **R3.1** (filtrado por `dashboardOcultos`), **R4.2** (revisión periódica) |
 | `SettingsView.jsx` (1268 l.) | 🔴 **MODIFICAR** | 12 categorías. La vista más grande después de `App.jsx`. **Casi todo R3, R5, R6, R7, R8 pasa por aquí**. Contiene `OpcionesFila`, `DeportesChips`, `LesionesEditor`, `InfoOnly` |
 | `CalendarView.jsx` (694 l.) | **MODIFICAR** | Mes/Agenda, recurrencia, filtros por tipo, búsqueda, `FilaEvento`, `DetalleEventoDerivado`, 3 modales con `createPortal`. **R2.3–R2.6** |
-| `TrainingView.jsx` (442 l.) | **EXISTE** | 7 `SkillCard` en rejilla 2×2, 4 subpestañas cada una, fútbol, vídeos. ⬜ `VideosTab` sin compactar a propósito |
+| ~~`TrainingView.jsx`~~ | 🧹 **RETIRADA** (v3.158.0) | Eran 7 `SkillCard`, 4 subpestañas cada una, fútbol y vídeos, pintadas dentro de Fitness → Entrenamiento. Josué pidió quitar el bloque entero (2026-10-19); se borró con `videoFrames.js`. **Los datos siguen**: `calistenia`, `futbol` y `calisteniaVideos` en `app_data`, y los vídeos en su bucket |
 | `ProductivityView.jsx` (404 l.) | **MODIFICAR** | **R2.1**: añadir periodicidad al modelo de hábitos y rutinas |
 | `EstudiosView.jsx` (402 l.) | **EXISTE** | Programas → asignaturas → exámenes, con deep-link en cascada |
 | `NutritionView.jsx` (322 l.) | **EXISTE** | |

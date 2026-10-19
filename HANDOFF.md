@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.158.0 — Fitness → Entrenamiento sin el bloque de calistenia y fútbol):**
+> Por petición de Josué, el área Entrenamiento de Fitness ya no enseña «Habilidades» ni nada de lo que iba debajo
+> (las siete habilidades de calistenia, el selector Calistenia/Fútbol, los partidos y la sugerencia de la IA): ahora
+> termina en «Secciones» (Más planes, Ejercicios, Historial). **No se ha borrado ningún dato**: la calistenia, los
+> partidos y los vídeos siguen guardados en su cuenta. Verificado con `verificar.sh` en verde y subido a `main`
+> cuando Josué dijo «súbelo todo», junto con los documentos de la Fase 0 de asistentes (`docs/15_…`).
+
 > **📅 ACTUALIZACIÓN (v3.157.0 — fotos en un toque, foto de perfil en Inicio y «+ Añadir» como fila):**
 > Añadir una foto ya no pasa por un menú propio («Hacer una foto» / «Fototeca o archivos»): se abre directamente el
 > selector del teléfono, que ya trae la cámara, las fotos y los archivos. En Fitness, «Añadir progreso» abre ese

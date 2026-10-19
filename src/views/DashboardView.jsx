@@ -780,8 +780,10 @@ export default function DashboardView({
               icon={Dumbbell} accent={accent} titulo="Entreno"
               vacio={!skillDestacada}
               valor={skillDestacada ? `${skillDestacada.skill}: ${skillDestacada.data.nivel}%` : undefined}
-              sub={skillDestacada ? 'Toca para abrir esta habilidad' : 'Toca para empezar a registrar'}
-              onClick={() => onNavegar('entreno', skillDestacada ? { skill: skillDestacada.skill } : undefined)}
+              /* 🧹 2026-10-19 — el bloque de habilidades de Fitness se quitó, así
+                 que ya no hay una habilidad que abrir: se abre Fitness. */
+              sub={skillDestacada ? 'Toca para abrir Fitness' : 'Toca para empezar a registrar'}
+              onClick={() => onNavegar('entreno')}
             />
           )}
           {!oculto('objetivos') && (

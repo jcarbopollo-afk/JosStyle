@@ -52,7 +52,7 @@ import { eventoDesdeQuickAdd } from './lib/accionesHoyAgenda';
 // Entrega 3 · F14 (HC F9) — la forma de la pantalla mientras carga (apartados 23 y 24).
 import { esqueleto } from './lib/pulidoHC';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
-import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadTrainingVideo, deleteTrainingVideo, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl, uploadFotoRelacion, getSignedFotoRelacionUrl, deleteFotoRelacion, vigilarLaConexion } from './lib/supabase';
+import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl, uploadFotoRelacion, getSignedFotoRelacionUrl, deleteFotoRelacion, vigilarLaConexion } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, addDays, hexToRgba, fechaLocalISO } from './lib/helpers';
 import { normalizarPerfilFoto } from './lib/fotoPerfil';
@@ -98,10 +98,10 @@ import HubView from './views/HubView';
 import Auth from './components/Auth';
 import DashboardView from './views/DashboardView';
 import SleepView from './views/SleepView';
-/* FIT F1 — la pantalla de `entreno` pasa a ser `FitnessView`, que **renderiza
-   `TrainingView` entera** dentro de su área de Entrenamiento (E3 F23): agrupar
-   pantallas es renderizarlas, nunca copiarlas. Por eso aquí ya no hace falta
-   importarla: la importa quien la pinta. */
+/* FIT F1 — la pantalla de `entreno` pasa a ser `FitnessView`. (Hasta el
+   2026-10-19 pintaba dentro `TrainingView` —calistenia y fútbol—; se quitó a
+   petición de Josué. `calistenia` y `futbol` se siguen cargando: los leen
+   Inicio, los hubs, Estadísticas, Predicciones, la IA y la papelera.) */
 import FitnessView from './views/FitnessView';
 import FinanceView from './views/FinanceView';
 import HealthView from './views/HealthView';
@@ -539,7 +539,6 @@ export default function App() {
   const [salud, setSalud] = useState(DEFAULT_SALUD);
   const [saludFotos, setSaludFotos] = useState([]); // metadatos; el archivo en sí vive en Supabase Storage
   const [nutricion, setNutricion] = useState(DEFAULT_NUTRICION);
-  const [calisteniaVideos, setCalisteniaVideos] = useState([]); // metadatos; el archivo vive en Supabase Storage
   const [estudios, setEstudios] = useState(DEFAULT_ESTUDIOS);
   const [negocio, setNegocio] = useState(DEFAULT_NEGOCIO);
   const [productividad, setProductividad] = useState(DEFAULT_PRODUCTIVIDAD);
@@ -660,7 +659,6 @@ export default function App() {
         loadData(uidUser, 'salud', DEFAULT_SALUD),
         loadData(uidUser, 'saludFotos', []),
         loadData(uidUser, 'nutricion', DEFAULT_NUTRICION),
-        loadData(uidUser, 'calisteniaVideos', []),
         loadData(uidUser, 'estudios', DEFAULT_ESTUDIOS),
         loadData(uidUser, 'negocio', DEFAULT_NEGOCIO),
         loadData(uidUser, 'productividad', DEFAULT_PRODUCTIVIDAD),
@@ -691,7 +689,7 @@ export default function App() {
         loadData(uidUser, 'fitness', DEFAULT_FITNESS),
         loadData(uidUser, 'cumpleanos', DEFAULT_CUMPLEANOS),
       ];
-      const [a, p, s, c, f, e, sal, sf, nut, cv, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud, hor, eh, fit, cumple] = await Promise.all(cargas);
+      const [a, p, s, c, f, e, sal, sf, nut, est, neg, prod, obj, cal, dia, bib, bibArch, rel, feData, bien, pers, notif, hcol, tp, temGuard, h, pap, arm, rach, gam, aud, hor, eh, fit, cumple] = await Promise.all(cargas);
       if (cancelled) return;
       /* 🚨 MS F16, apartados 5 y 20 — si no se pudo cargar NADA, no se enseña una cuenta vacía que
          no es la suya: se dice, y se vuelve a intentar. Si solo falla una parte, la aplicación
@@ -775,7 +773,6 @@ export default function App() {
          pierde nada: conserva su id, su camino, su fecha y su nota. */
       setSaludFotos(normalizarFotosProgreso(sf));
       setNutricion(normalizarMisAlimentosDe(normalizarNutricionF4(normalizarNutricionObjetivos(normalizarNutricionDe(nut)))));
-      setCalisteniaVideos(cv);
       /* 🚨 E3 F41 (ES F1) — LAS APPS DE ESTUDIOS SON LOS PROGRAMAS DE SIEMPRE. El
          normalizador les añade `icono`, `categoria`, `orden` y `oculto` y corre
          AQUÍ, al cargar y antes de que nada los lea (regla 5, EH F46): sin esto,
@@ -1918,7 +1915,6 @@ export default function App() {
   // economía, medidas y entradas médicas de Salud, comidas, partidos de fútbol y horas de
   // estudio. Todos entran por la papelera, como el resto.
   const deleteRegistroSueno = (id) => eliminarConPapelera('sueno', null, id);
-  const deletePartido = (id) => eliminarConPapelera('futbol', null, id);
   const deleteMovimiento = (id) => eliminarConPapelera('economia', 'movimientos', id);
   /* FIT F4 — y por la misma puerta que todo lo demás (ME F3): la plantilla va a
      Eliminados recientes y vuelve entera, con sus ejercicios y su orden. */
@@ -2107,11 +2103,6 @@ export default function App() {
   const addSueno = (entry) => {
     snapshotAndSave({ sueno: [...sueno, entry] });
     emitir('SLEEP_LOGGED', {});
-  };
-  const updateSkill = (skill, data) => snapshotAndSave({ calistenia: { ...calistenia, [skill]: data } });
-  const addPartido = (entry) => {
-    snapshotAndSave({ futbol: [...futbol, entry] });
-    emitir('TRAINING_COMPLETED', { de: 'futbol' });
   };
   const addMovimiento = (mov) => snapshotAndSave({ economia: { ...economia, movimientos: [...economia.movimientos, mov] } });
   // A3/A5 — la hucha solo suma: un total negativo, que no es un número, fuera de rango o que BAJA del actual no se
@@ -2684,28 +2675,9 @@ export default function App() {
     await deleteProgressPhoto(path);
   };
 
-  // Vídeos de calistenia — mismo motivo que las fotos de Salud: fuera del sistema de deshacer,
-  // para no dejar archivos huérfanos en Storage sin ninguna fila que los referencie.
-  const addVideo = async (skill, file, nota) => {
-    const path = await uploadTrainingVideo(uidUser, file);
-    const entry = { id: uid(), skill, path, fecha: todayISO(), nota: nota || '', feedback: '' };
-    const next = [...calisteniaVideos, entry];
-    setCalisteniaVideos(next);
-    await saveData(uidUser, 'calisteniaVideos', next);
-  };
-  const deleteVideo = async (id, path) => {
-    const next = calisteniaVideos.filter((v) => v.id !== id);
-    setCalisteniaVideos(next);
-    await saveData(uidUser, 'calisteniaVideos', next);
-    await deleteTrainingVideo(path);
-  };
-  // El análisis de IA se guarda en el propio vídeo para no tener que repetirlo cada vez que se
-  // abre la pestaña — pero solo se dispara cuando el usuario toca "Analizar con IA", nunca solo.
-  const setVideoFeedback = async (id, feedback) => {
-    const next = calisteniaVideos.map((v) => (v.id === id ? { ...v, feedback } : v));
-    setCalisteniaVideos(next);
-    await saveData(uidUser, 'calisteniaVideos', next);
-  };
+  // (Los vídeos de calistenia —subir, borrar y su análisis— se gestionaban aquí para el bloque
+  // de calistenia de Fitness, que se quitó el 2026-10-19. Lo guardado se queda donde está: la
+  // clave `calisteniaVideos` en `app_data` y los archivos en su bucket de Supabase Storage.)
 
   // Fase 11 — Biblioteca: archivos (pdf/vídeo/foto) fuera del sistema de deshacer, mismo motivo
   // exacto que las fotos de progreso y los vídeos de calistenia — implican un archivo real en
@@ -2959,9 +2931,8 @@ export default function App() {
       case 'sueno':
         return <SleepView sueno={sueno} onAdd={addSueno} onDelete={deleteRegistroSueno} accent={accent} foco={focoPara('sueno')} onFocoConsumido={consumirFoco} />;
       case 'entreno':
-        /* FIT F1 — la misma entrada de siempre, con Fitness por fuera. `TrainingView`
-           recibe EXACTAMENTE las mismas props que recibía aquí: las pasa `FitnessView`
-           tal cual a su área de Entrenamiento, sin tocar ni una.
+        /* FIT F1 — la misma entrada de siempre, con Fitness por fuera. (Las props de
+           calistenia, fútbol y vídeos se quitaron el 2026-10-19 con su bloque.)
            🔓 **FIT F26 — y ya NO es de solo lectura.** El área de Progreso pasa a ser el
            diario visual entero: añadir varias, fecharlas, agruparlas por día, abrirlas,
            compararlas y borrarlas. ⚠️ **Siguen siendo las MISMAS** (`saludFotos`, el
@@ -2974,9 +2945,6 @@ export default function App() {
         return (
           <FitnessView
             fitness={fitness}
-            calistenia={calistenia} onUpdateSkill={updateSkill}
-            futbol={futbol} onAddPartido={addPartido} onDeletePartido={deletePartido}
-            videos={calisteniaVideos} onAddVideo={addVideo} onDeleteVideo={deleteVideo} onSetVideoFeedback={setVideoFeedback}
             fotos={saludFotos} rachas={rachas}
             /* 🚨 FIT F26 (C-35), CORREGIDO EN LA F27 — **la misma puerta que
                Salud, y eso incluye poder abrirla**. Antes se pasaba `null` con
@@ -2999,7 +2967,6 @@ export default function App() {
             onEliminarObjetivo={deleteObjetivoFitness}
             accent={accent} onIr={setTab}
             perfil={perfilFitness}
-            foco={focoPara('entreno')} onFocoConsumido={consumirFoco}
           />
         );
       case 'salud':

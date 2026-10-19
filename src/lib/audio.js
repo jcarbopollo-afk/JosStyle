@@ -399,6 +399,11 @@ export const SIN_EMISOR_TODAVIA = {
   // Funciones que no existen, y no se van a fingir.
   LEVEL_UP: 'No hay niveles: RA F3 decidió no construirlos (D2-02).',
 
+  /* 🧹 2026-10-19 — lo emitía «Registrar partido de hoy», y el registro de
+     partidos se fue de Fitness con el bloque de calistenia y fútbol (pedido por
+     Josué). Conectarlo a otra acción sería un sonido nuevo que nadie ha pedido. */
+  TRAINING_COMPLETED: 'Lo emitía registrar un partido de fútbol, que se quitó de Fitness con su bloque (2026-10-19).',
+
   // Aplazado por su propia fase, con fecha.
 };
 

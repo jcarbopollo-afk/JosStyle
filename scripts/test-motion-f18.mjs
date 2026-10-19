@@ -11,7 +11,7 @@
    de la consola. Lo que necesita un navegador —el ✓ que no late al abrir y sí al marcar, play ↔ pausa, la barra
    de volver sin transform puesto e `inspeccionar` de verdad— está en la sección «MS F18» de `test-app-real.mjs`.
    =========================================================================== */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
@@ -208,11 +208,15 @@ const VISTA = (n) => leer(`src/views/${n}.jsx`);
   const l = siguienteLatido(siguienteLatido(null, true), true);
   ok(l.veces === 0 && !l.late, 'una marca que ya estaba puesta al abrir no late (la regla de la F3, ahora también para el ✓)');
   ok(/latido = 'favorito'/.test(MOT) && /claseDeLatido\(latido\)/.test(MOT), '`LatidoAlMarcar` recibe `latido`, y por defecto es el de un favorito (las trece marcas de la F3 no cambian)');
-  const tareas = ['CalendarView', 'ProductivityView', 'FaithView', 'TrainingView'].reduce((n, v) => n + (VISTA(v).match(/latido="tarea"/g) || []).length, 0);
-  ok(tareas === 8 && /latido="habito"/.test(VISTA('ProductivityView')), `el ✓ de las tareas (${tareas}: Calendario, Productividad, Fe, Entrenamiento) y el del hábito, por \`LatidoAlMarcar\``);
+  /* 🧹 2026-10-19 — eran ocho con el ✓ de un paso de progresión de calistenia
+     (`TrainingView`), que se fue de Fitness con su bloque: quedan siete. */
+  const tareas = ['CalendarView', 'ProductivityView', 'FaithView'].reduce((n, v) => n + (VISTA(v).match(/latido="tarea"/g) || []).length, 0);
+  ok(tareas === 7 && /latido="habito"/.test(VISTA('ProductivityView')), `el ✓ de las tareas (${tareas}: Calendario, Productividad y Fe) y el del hábito, por \`LatidoAlMarcar\``);
   ok(Object.keys(TODOS).filter((r) => !r.startsWith('src/lib/')).every((r) => !/className=["'{`][^"'}`]*\b(tarea-hecha|habito-hecho)\b/.test(TODOS[r])),
     '🚨 y ninguna pantalla escribe la clase en el icono: latiría al abrir');
-  ok(/aria-pressed=\{!!p\.hecho\}/.test(VISTA('TrainingView')), '🐛 la casilla de un paso de progresión dice si está marcada (`aria-pressed`): siempre decía «Marcar hecho»');
+  /* 🧹 2026-10-19 — la casilla de un paso de progresión de calistenia se fue con
+     su bloque de Fitness (pedido por Josué): se da la vuelta. */
+  ok(!existsSync(join(RAIZ, 'src/views/TrainingView.jsx')), '🧹 la casilla de un paso de progresión de calistenia ya no existe: se quitó con su bloque de Fitness');
 }
 
 /* ---------------------------------------------------------------------------

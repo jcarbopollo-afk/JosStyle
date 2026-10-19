@@ -3488,24 +3488,18 @@ const CASOS = [
     accent,
   })],
   /* FIT F1 — Fitness entero, tal y como lo recibe de `App.jsx`.
-     🐛 **Y con él entra `TrainingView`, que era la SEXTA vista sin un solo caso
-     de renderizado** —tras `LibraryView`, `HealthView`, `NutritionView`,
-     `EstudiosView` y `RelationView`—: la pantalla de calistenia se pintaba en
-     producción desde la Fase 2 y no la probaba nadie. Fitness arranca en el área
-     de Entrenamiento, que la renderiza, así que a partir de aquí sí. */
+     🧹 (Hasta el 2026-10-19 también pintaba `TrainingView`, la pantalla de
+     calistenia y fútbol; se quitó de Fitness a petición de Josué, y con ella sus
+     props.) */
   ['FitnessView', FitnessView, (e) => ({
-    fitness: e.fitness, calistenia: e.calistenia, onUpdateSkill: noop,
-    futbol: e.futbol, onAddPartido: noop, onDeletePartido: noop,
-    videos: [], onAddVideo: noop, onDeleteVideo: noop, onSetVideoFeedback: noop,
+    fitness: e.fitness,
     fotos: [], rachas: e.rachas, accent, onIr: noop,
   })],
   /* ⚠️ **Lo guardado ANTES de esta fase**: sin la clave `fitness`, que es como
      lo tiene quien ya usaba la aplicación. `loadData` no fusiona con el valor
      por defecto, así que este caso es el real, no el teórico (regla 5). */
-  ['FitnessView', FitnessView, (e) => ({
-    fitness: undefined, calistenia: e.calistenia, onUpdateSkill: noop,
-    futbol: e.futbol, onAddPartido: noop, onDeletePartido: noop,
-    videos: [], onAddVideo: noop, onDeleteVideo: noop, onSetVideoFeedback: noop,
+  ['FitnessView', FitnessView, () => ({
+    fitness: undefined,
     fotos: undefined, rachas: undefined, accent, onIr: noop,
   })],
   /* 🚨 **Las otras dos áreas se prueban APARTE, y hace falta.** `FitnessView`

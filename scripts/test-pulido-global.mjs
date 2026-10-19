@@ -160,18 +160,19 @@ const borrarNormal = UI.slice(iBorrar, UI.indexOf('export function ', iBorrar + 
 ok(!/useState/.test(borrarNormal),
   '⚠️ `BotonBorrar` sigue sin preguntar nada: lo que borra va a Eliminados recientemente y vuelve (apartado 3: "no añadir confirmaciones innecesarias por todas partes")');
 
-// Las tres cosas que borran un archivo de verdad, y que por tanto sí preguntan.
+// Las cosas que borran un archivo de verdad, y que por tanto sí preguntan.
+// 🧹 2026-10-19 — eran tres: el vídeo de calistenia se borraba desde `TrainingView`,
+// que se fue de Fitness con su bloque (pedido por Josué). Quedan dos.
 for (const [vista, que] of [['src/views/HealthView.jsx', 'la foto de progreso'],
-  ['src/views/TrainingView.jsx', 'el vídeo de calistenia'],
   ['src/views/LibraryView.jsx', 'el archivo de la Biblioteca']]) {
   const v = sinComentarios(leer(vista));
   ok(/BotonBorrarDefinitivo/.test(v), `${que} pregunta antes de borrarse (se va del almacenamiento y no puede ir a la papelera)`);
 }
 
 // Y ninguno de los tres avisos promete algo que no es verdad ni al revés.
-const avisos = ['src/views/HealthView.jsx', 'src/views/TrainingView.jsx', 'src/views/LibraryView.jsx']
+const avisos = ['src/views/HealthView.jsx', 'src/views/LibraryView.jsx']
   .flatMap((f) => [...sinComentarios(leer(f)).matchAll(/detalle="([^"]+)"/g)].map((m) => m[1]));
-ok(avisos.length === 3, 'los tres avisos están escritos');
+ok(avisos.length === 2, 'los dos avisos están escritos');
 ok(avisos.every((a) => /no se puede recuperar/.test(a)),
   '🚨 y dicen la verdad: eso NO se recupera (lo de la papelera, en cambio, no se pregunta)');
 

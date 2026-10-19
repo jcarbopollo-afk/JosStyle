@@ -1,5 +1,54 @@
 # CHANGELOG.md
 
+## v3.158.0 — Fitness → Entrenamiento sin el bloque de calistenia y fútbol
+
+> Encargo de Josué del 2026-10-19: *«Eliminación completa del bloque circulado de Fitness»* — todo lo que había debajo
+> de «Secciones» en Fitness → Entrenamiento, no solo «Habilidades». Sin nada en su sitio, sin tocar «Más planes»,
+> «Ejercicios», «Historial» ni la barra de abajo, y **sin borrar ni un dato**.
+
+### 🧹 Lo que se ha quitado
+- **De la pantalla:** el título «Habilidades» y su descripción, «Entrenamiento · Calistenia y fútbol», el selector
+  Calistenia / Fútbol, las siete tarjetas de habilidad (Handstand, Front Lever, Back Lever, Planche, Human Flag, Muscle
+  Up, L-Sit) con su nivel, su porcentaje y sus pestañas (Progresión, PRs, Sesiones, Vídeos), el registro de partidos y
+  el panel «Sugerencia de entrenamiento». Ahora el área termina en «Secciones».
+- **Del código:** `src/views/TrainingView.jsx` entero (solo lo pintaba Fitness) y `src/lib/videoFrames.js` (solo lo
+  usaba esa pantalla para analizar un vídeo). En `FitnessView.jsx`, el bloque, el import, las props de calistenia,
+  fútbol y vídeos y el `foco` de una habilidad. En `App.jsx`, `updateSkill`, `addPartido`, `deletePartido`, `addVideo`,
+  `deleteVideo`, `setVideoFeedback`, el estado y la carga de `calisteniaVideos` y sus props. En `fitness.js`,
+  `resumenEntrenamiento` (solo lo leía el subtítulo de «Habilidades») y el acceso `habilidades` de
+  `ACCESOS_ENTRENAMIENTO`. En los mapas: la pantalla en `CAPAS_FITNESS`, las dependencias `ai`, `videoFrames` y
+  `disponibilidadIA` en `DEPENDENCIAS_PERMITIDAS`, y su línea en `ARCHIVOS_CON_RED` y `NOMBRES_DE_CLAVE`.
+- **Tres textos que prometían lo quitado (regla 8):** la tarjeta «Entreno» de Inicio decía *«Toca para abrir esta
+  habilidad»* (ahora *«Toca para abrir Fitness»* y abre Fitness sin foco), la descripción del módulo en Personalización
+  hablaba de fútbol, y el buscador llevaba «futbol» y «partido» a Fitness.
+
+### 🧷 Lo que la retirada obligaba a declarar
+- **El sonido `TRAINING_COMPLETED`** solo lo emitía «Registrar partido de hoy»: va a `SIN_EMISOR_TODAVIA` (`audio.js`)
+  con su motivo. Conectarlo a otra acción sería un sonido nuevo que nadie ha pedido.
+- **La colección `futbol` de la papelera** se queda en `CATALOGO_PAPELERA` para que los partidos que ya estén en
+  «Eliminados recientemente» se sigan viendo con su nombre y se puedan recuperar. Nace `SOLO_PARA_RESTAURAR`
+  (`papelera.js`), y `auditar-modulos` (P7c) exige que cada una tenga motivo, que **nadie la cree ni la borre** y que
+  `App.jsx` la sepa restaurar (`MODULOS_PAPELERA`); quitando `futbol` de ahí se pone roja, comprobado.
+- **El mínimo de desplegables** de `test-motion-f3` baja de 23 a 22: el de la tarjeta de una habilidad se fue con ella.
+
+### 🔒 Lo que se queda (y por qué)
+- **Los datos, enteros:** `calistenia`, `futbol` y `calisteniaVideos` siguen en `app_data`, y los vídeos en su bucket de
+  Storage. Ni una migración ni un borrado. `calistenia` y `futbol` se siguen cargando porque los leen Inicio, el hub de
+  Bienestar, Estadísticas, Predicciones, las sugerencias de la IA, la papelera, Deshacer y «Eliminar datos» de
+  Privacidad.
+- **Los servicios:** `uploadTrainingVideo`, `getSignedVideoUrl` y `deleteTrainingVideo` siguen en `supabase.js` (los
+  archivos siguen en el bucket), y `askAIWithImages` en `ai.js`.
+- La categoría «Habilidades» de la biblioteca de ejercicios y el filtro «Calistenia» son **otra cosa** (el catálogo de
+  la FIT F2) y no se han tocado.
+
+### ✅ Pruebas
+- Se dieron la vuelta, sin borrar ninguna: `test-fitness` (el área ya no pinta la calistenia, `habilidades` ya no es un
+  acceso, `resumenEntrenamiento` retirado), `test-arquitectura-fitness` (la aplicación entra solo por `FitnessView`),
+  `test-disponibilidad-ia`, `test-seleccion-archivos`, `test-motion-f12`, `test-motion-f18`, `test-pulido-global`, el
+  banco de renderizado y `test-robustez-fitness` (sin las props viejas), y la sección «FIT F1» del recorrido: el área de
+  Entrenamiento abre con Tu Plan y Secciones (Más planes, Ejercicios, Historial) y **sin** ninguna tarjeta de habilidad,
+  ni «Habilidades», ni «Calistenia y fútbol», ni el fútbol, ni su panel de IA.
+
 ## v3.157.0 — Fotos sin menú intermedio, la foto de perfil en Inicio y «+ Añadir» como fila
 
 > Dos encargos de Josué del 2026-10-18, después de los cuatro prompts: *«Simplificar selección de fotos y añadir avatar

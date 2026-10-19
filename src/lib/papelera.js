@@ -193,6 +193,16 @@ export const CATALOGO_PAPELERA = {
   'relacion.fechas': { modulo: 'relacion', coleccion: 'fechas', tipo: 'Fecha importante', campos: ['etiqueta'], icono: 'relacion', privado: true },
 };
 
+/* 🧹 2026-10-19 — Colecciones que ya NO se crean ni se borran desde ninguna
+   pantalla, pero que se quedan en el catálogo para que lo que YA está en
+   Eliminados recientemente se siga viendo con su nombre y se pueda recuperar
+   (los datos guardados no se tocan). Una línea por colección, con su motivo.
+   `scripts/auditar-modulos.mjs` comprueba que de verdad nadie las crea y que
+   `App.jsx` las sabe restaurar (`MODULOS_PAPELERA`). */
+export const SOLO_PARA_RESTAURAR = {
+  futbol: 'Los partidos se registraban en el bloque de calistenia y fútbol de Fitness, que Josué pidió quitar el 2026-10-19. Los guardados siguen en `futbol`, y los que estén en la papelera vuelven a su sitio.',
+};
+
 /** Clave de catálogo a partir de módulo y colección. */
 export function claveCatalogo(modulo, coleccion) {
   return coleccion ? `${modulo}.${coleccion}` : modulo;

@@ -9,7 +9,7 @@
 //    regresiones.
 // ============================================================================
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { register } from 'node:module';
 
 /* `supabase.js` lee `import.meta.env`, que en Node no existe: se le da uno de mentira
@@ -53,7 +53,7 @@ for (const [codigo, c] of Object.entries(CODIGOS_IA)) ok(!PALABRAS_TECNICAS_IA.t
 ok(PALABRAS_TECNICAS_IA.test('Añade ANTHROPIC_API_KEY en las variables de entorno del proyecto en Vercel.'), '…y el barrido SÍ caza la frase de antes (no puede pasar sin mirar)');
 eq(errorDeIA(sinClave).message, CODIGOS_IA.ia_no_habilitada.texto, '🚨 el `message` del error es la frase, no la técnica');
 ok(/ANTHROPIC_API_KEY/.test(errorDeIA(sinClave).tecnico), '…lo técnico va aparte (`tecnico`), para la consola');
-const SRC = ['src/components/ui.jsx', 'src/views/EstudiosView.jsx', 'src/views/ObjectivesView.jsx', 'src/views/TrainingView.jsx', 'src/views/NutritionView.jsx'];
+const SRC = ['src/components/ui.jsx', 'src/views/EstudiosView.jsx', 'src/views/ObjectivesView.jsx', 'src/views/NutritionView.jsx'];
 for (const r of SRC) {
   const c = leer(r);
   ok(!/set\w*\(\s*(e|err|error)\.message \|\| '[^']*\bIA\b/.test(c), `${r}: ninguna pantalla pinta \`e.message\` de la IA`);
@@ -126,8 +126,6 @@ const SITIOS = [
   ['src/views/EstudiosView.jsx', '«Explícame un concepto»', 'Explícame un concepto'],
   ['src/views/EstudiosView.jsx', 'el plan de repaso de un examen', 'Plan de repaso'],
   ['src/views/ObjectivesView.jsx', 'la revisión de objetivos', 'Revisión de objetivos'],
-  ['src/views/TrainingView.jsx', 'la progresión de calistenia', 'Progresión de calistenia'],
-  ['src/views/TrainingView.jsx', 'el análisis de un vídeo', 'Análisis de vídeo'],
   ['src/views/NutritionView.jsx', 'la foto de un plato', 'Foto del plato'],
 ];
 for (const [ruta, que, etiqueta] of SITIOS) {
@@ -135,8 +133,11 @@ for (const [ruta, que, etiqueta] of SITIOS) {
   ok(c.includes(`registrarErrorIA(e, '${etiqueta}')`) || c.includes(`registrarErrorIA(err, '${etiqueta}')`), `${que}: registra lo técnico y decide con \`estadoDeErrorIA\``);
 }
 for (const ruta of new Set(SITIOS.map((s) => s[0]))) ok(/<IAProximamente/.test(leer(ruta)), `${ruta} enseña \`IAProximamente\``);
-const TRAIN = leer('src/views/TrainingView.jsx');
-ok(/if \(estadoDeErrorIA\(err\)\.pendiente\) setIaPendienteVideo\(video\.id\);\s*else onSetVideoFeedback/.test(TRAIN), '🚨 con la IA sin habilitar NO se guarda un «no se ha podido» como análisis del vídeo');
+/* 🧹 2026-10-19 — la progresión de calistenia y el análisis de un vídeo vivían en
+   `TrainingView`, que se fue de Fitness con su bloque (pedido por Josué). La
+   comprobación de que un «no se ha podido» no se guardaba como análisis del vídeo
+   se da la vuelta: ya no hay ninguna pantalla que pueda guardarlo. */
+ok(!existsSync(join(RAIZ, 'src/views/TrainingView.jsx')), '🧹 la progresión de calistenia y el análisis de vídeo ya no existen: no queda pantalla que guarde un fallo de la IA como análisis');
 
 console.log('\n6 y 7 · Motion y tamaños');
 const bloque = UI.slice(UI.indexOf('export function IAProximamente'), UI.indexOf('export function AIPanel'));

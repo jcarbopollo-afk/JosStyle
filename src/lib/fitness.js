@@ -115,7 +115,7 @@ export const MAPEO_EXISTENTE = [
     campos: ['nivel', 'progresion', 'prs', 'sesiones'],
     gestionaEn: 'entreno',
     seccion: 'habilidades',
-    porque: 'Siete habilidades con su progresión, sus récords, sus sesiones y sus vídeos desde la Fase 2. El área ENTRENAMIENTO las enseña renderizando su pantalla, no copiándolas (E3 F23).',
+    porque: 'Siete habilidades con su progresión, sus récords, sus sesiones y sus vídeos desde la Fase 2. El área ENTRENAMIENTO las enseñaba renderizando su pantalla, no copiándolas (E3 F23); el 2026-10-19 ese bloque se quitó de Fitness a petición de Josué, y los datos se quedan guardados donde estaban (los siguen leyendo Inicio, Estadísticas, Predicciones y la IA).',
   },
   {
     modelo: 'Racha de entrenamiento',
@@ -141,9 +141,10 @@ export const MAPEO_EXISTENTE = [
 
    *"Áreas principales: Rangos · Progreso · Entrenamiento"*, fijado como
    decisión de producto en el apartado 22. Son **tres**, no cuatro: lo que ya
-   existe —las habilidades de calistenia y los partidos— entra **dentro** de
-   ENTRENAMIENTO, que es su sitio, en vez de abrir una cuarta pestaña que
-   contradiría esa decisión.
+   existía —las habilidades de calistenia y los partidos— entró **dentro** de
+   ENTRENAMIENTO, que era su sitio, en vez de abrir una cuarta pestaña que
+   contradiría esa decisión (y el 2026-10-19 salió de Fitness entero, a
+   petición de Josué, con sus datos guardados).
 
    El `icono` es un nombre, no un componente: los componentes de lucide viven en
    la vista, como `CATEGORIAS_ARMARIO` / `ICONOS_CATEGORIA` (E3 F3). Un icono
@@ -1090,11 +1091,13 @@ export const ACCESOS_ENTRENAMIENTO = [
      porque «Planificaciones» al lado de «Tu Plan» parecían lo mismo. */
   { id: 'planificaciones', nombre: 'Más planes', que: 'La biblioteca de planes prediseñados de JosStyle.', existe: true, enFase: null },
   /* FIT F3 — ya existen: son las rutinas que guarda el constructor, en la clave
-     `plantillas`. ⚠️ **No se pinta como botón en «Secciones»**, igual que
-     `habilidades`: tiene su propia sección en esta misma pantalla, y dos
+     `plantillas`. ⚠️ **No se pinta como botón en «Secciones»**: tiene su propia sección en esta misma pantalla, y dos
      entradas al mismo sitio en una pantalla es la redundancia de la E3 F30. */
   { id: 'plantillas', nombre: 'Tus plantillas', que: 'Las rutinas que te crees tú.', existe: true, enFase: null },
-  { id: 'habilidades', nombre: 'Habilidades', que: 'Calistenia: progresión, récords, sesiones y vídeos.', existe: true, enFase: null },
+  /* 🧹 2026-10-19 — «Habilidades» (la calistenia y el fútbol de siempre) ya no
+     es un acceso: Josué pidió quitar ese bloque de Fitness entero. No se
+     declara con `existe: false`, porque eso pintaría «Llega en…» de algo que
+     no va a llegar; sus datos siguen en `calistenia` y `futbol`. */
   /* FIT F2 — el catálogo maestro. Es el primero de los accesos nuevos que
      existe de verdad, así que se pinta como un botón y no como una frase. */
   { id: 'ejercicios', nombre: 'Ejercicios', que: 'El catálogo completo, con sus músculos, su material y su técnica.', existe: true, enFase: null },
@@ -1115,22 +1118,9 @@ export function resumenProgreso(fotos) {
   };
 }
 
-/* El resumen del área ENTRENAMIENTO. Suma lo que hay en Fitness **y** lo que ya
-   existe en calistenia: si contara solo lo suyo, diría «sin entrenamientos» a
-   alguien con siete habilidades en marcha. Es la lección de la E3 F22 —un
-   contador que solo mira una de sus dos listas— antes de que pase. */
-export function resumenEntrenamiento(fitness, calistenia) {
-  const f = fitness || DEFAULT_FITNESS;
-  const sesionesCal = Object.values(calistenia || {}).reduce(
-    (n, s) => n + lista(s?.sesiones).length, 0
-  );
-  const habilidadesActivas = Object.values(calistenia || {}).filter(
-    (s) => lista(s?.sesiones).length > 0 || lista(s?.progresion).length > 0
-  ).length;
-  const planes = lista(f.planes).length + lista(f.plantillas).length;
-  const sesiones = lista(f.sesiones).length + sesionesCal;
-  return { planes, sesiones, habilidadesActivas };
-}
+/* 🧹 `resumenEntrenamiento` (FIT F1) se retiró el 2026-10-19: solo lo leía el
+   subtítulo del bloque «Habilidades», que se quitó de Fitness a petición de
+   Josué. Contar aquí lo de calistenia ya no lo enseña nadie. */
 
 /* ⚠️ **Y AQUÍ NO HAY UNA LÍNEA DE HUB.** La plaquita de Bienestar y la tarjeta de
    Inicio las escribe `calcularResumenModulo('entreno', …)` desde la Fase 19, y

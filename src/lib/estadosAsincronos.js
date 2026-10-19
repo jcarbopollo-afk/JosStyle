@@ -102,7 +102,7 @@ export const TIEMPOS_ASINCRONOS = Object.freeze({
 export const NOMBRES_DE_CLAVE = Object.freeze({
   ajustes: 'Ajustes', perfil: 'tu perfil', sueno: 'Sueño', calistenia: 'Calistenia', futbol: 'Fútbol',
   economia: 'Economía', salud: 'Salud', saludFotos: 'las fotos de progreso', nutricion: 'Nutrición',
-  calisteniaVideos: 'los vídeos de calistenia', estudios: 'Estudios', negocio: 'Negocio', productividad: 'Productividad',
+  estudios: 'Estudios', negocio: 'Negocio', productividad: 'Productividad',
   objetivos: 'Objetivos', calendario: 'el Calendario', diario: 'el Diario', biblioteca: 'la Biblioteca',
   bibliotecaArchivos: 'los documentos', relacion: 'Relación', fe: 'Fe', bienestar: 'Bienestar digital',
   personalizacion: 'la personalización', notificaciones: 'los avisos', historialColor: 'los colores recientes',
@@ -368,7 +368,6 @@ export const ARCHIVOS_CON_RED = Object.freeze({
   'src/views/NutritionView.jsx': 'off',
   'src/views/EstudiosView.jsx': 'ia',
   'src/views/ObjectivesView.jsx': 'ia',
-  'src/views/TrainingView.jsx': 'ia',
 });
 
 export function banderasSinFinally(src) {

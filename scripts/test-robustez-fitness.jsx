@@ -30,7 +30,7 @@ import BibliotecaPlanesView from '../src/views/BibliotecaPlanesView.jsx';
 import ClasificacionView from '../src/views/ClasificacionView.jsx';
 import EntrenamientoVivoView, { SesionRecuperable } from '../src/views/EntrenamientoVivoView.jsx';
 import FinalizacionView from '../src/views/FinalizacionView.jsx';
-import { ACCENTS, DEFAULT_CALISTENIA } from '../src/tokens.js';
+import { ACCENTS } from '../src/tokens.js';
 import { DEFAULT_FITNESS } from '../src/lib/fitness.js';
 import { normalizarFitnessConSesiones, sesionActiva } from '../src/lib/entrenamiento.js';
 import { pasarAFinalizacion } from '../src/lib/finalizacion.js';
@@ -145,7 +145,7 @@ function pantallas(f, etiqueta) {
   const historial = f ? sesionesDelHistorial(f) : [];
   const objetivos = f ? listaDeObjetivos(f).objetivos : [];
   const lista = [
-    ['Fitness (Entrenamiento)', FitnessView, { fitness: f, calistenia: DEFAULT_CALISTENIA, onUpdateSkill: noop, futbol: [], onAddPartido: noop, onDeletePartido: noop, videos: [], onAddVideo: noop, onDeleteVideo: noop, onSetVideoFeedback: noop, fotos: FOTOS_CORRUPTAS, rachas: undefined, accent, onIr: noop, onGuardarFitness: noop }],
+    ['Fitness (Entrenamiento)', FitnessView, { fitness: f, fotos: FOTOS_CORRUPTAS, rachas: undefined, accent, onIr: noop, onGuardarFitness: noop }],
     ['Rangos (área)', AreaRangos, { fitness: f, accent, onMusculo: noop, onEntrenar: noop }],
     ['Rangos', RangosView, { fitness: f, propios, perfil: { peso: 'x' }, accent, onEntrenar: noop, onClasificar: noop, onEjercicio: noop }],
     ['Progreso', ProgresoView, { fitness: f, fotos: FOTOS_CORRUPTAS, accent, onEntrenar: noop, onIrAFotos: noop, onGuardarFitness: noop }],

@@ -119,8 +119,12 @@ export const PALABRAS_MODULOS = {
   /* 🏷️ FIT F1 — el modulo pasa a llamarse «Fitness», asi que su palabra nueva
      entra aqui **y las de siempre se quedan**: buscar «entrenamiento» o
      «calistenia» tiene que seguir encontrandolo (E3 F23 y E3 F30 con «salud»).
-     Un renombrado muda sus palabras al buscador, no las borra. */
-  entreno: ['fitness', 'entrenar', 'entrenamiento', 'calistenia', 'gimnasio', 'ejercicio', 'futbol', 'deporte', 'habilidades', 'dominadas', 'partido', 'pesas', 'rangos'],
+     Un renombrado muda sus palabras al buscador, no las borra.
+     🧹 2026-10-19 — «futbol» y «partido» sí se van: el registro de partidos se
+     quitó de Fitness con el bloque de calistenia, y llevarían a una pantalla
+     donde ya no está. («calistenia» y «habilidades» se quedan: son filtros de
+     la biblioteca de ejercicios.) */
+  entreno: ['fitness', 'entrenar', 'entrenamiento', 'calistenia', 'gimnasio', 'ejercicio', 'deporte', 'habilidades', 'dominadas', 'pesas', 'rangos'],
   estudios: ['estudiar', 'asignaturas', 'examenes', 'notas', 'clase', 'instituto', 'deberes', 'repaso'],
   negocio: ['proyectos', 'emprender', 'empresa', 'ingresos', 'clientes'],
   /* 🚨 E3 F23 (PR F1) — Objetivos dejó de ser un módulo y es una mini-app de

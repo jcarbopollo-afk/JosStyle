@@ -26,7 +26,7 @@ import {
   crearMuscleRank, normalizarMuscleRank, MODELOS,
   CLAVE_FITNESS, DEFAULT_FITNESS, normalizarFitness,
   rachaDeFitness, ESTADOS_VACIOS, CTA_CLASIFICAR, ACCESOS_ENTRENAMIENTO,
-  resumenProgreso, resumenEntrenamiento,
+  resumenProgreso,
   NO_EN_FIT1, condicionFIT1, PALABRAS_DE_JUEGO, textosDeFitness,
 } from '../src/lib/fitness.js';
 
@@ -294,24 +294,25 @@ ok(!/0 restantes/.test(JSON.stringify(CTA_CLASIFICAR)),
    cuarto —el catálogo— con todo el derecho: saltó con el código bien. Es la
    bomba de relojería de `MODULOS_EH.length === 13` por enésima vez. Se
    comprueba **que estén los que tienen que estar**, no cuántos hay. */
-ok(['planificaciones', 'plantillas', 'habilidades']
+ok(['planificaciones', 'plantillas', 'ejercicios', 'historial']
   .every((id) => ACCESOS_ENTRENAMIENTO.some((a) => a.id === id)),
   'Los accesos del área de Entrenamiento están, y se comprueban por su id, no por su número');
 ok(ACCESOS_ENTRENAMIENTO.filter((a) => !a.existe).every((a) => a.enFase),
   'Los que no existen dicen cuándo llegan');
-ok(ACCESOS_ENTRENAMIENTO.find((a) => a.id === 'habilidades')?.existe === true,
-  'Y Habilidades SÍ existe: es la calistenia que ya lleva registrada');
+/* 🧹 2026-10-19 — se da la vuelta: Habilidades (la calistenia y el fútbol) salió de
+   Fitness a petición de Josué. Ni un acceso, y tampoco uno «que llega»: no va a llegar. */
+ok(!ACCESOS_ENTRENAMIENTO.some((a) => a.id === 'habilidades'),
+  '🧹 Habilidades ya NO es un acceso de Entrenamiento: su bloque se quitó (2026-10-19), y sus datos siguen en `calistenia`');
 
 console.log('\n── 16. Los resúmenes cuentan lo que hay, de las dos listas ──');
 ok(resumenProgreso([]).vacio === true, 'Sin fotos, el estado vacío');
 ok(resumenProgreso([{ id: 1 }, { id: 2 }]).cuantas === 2,
   '🚨 Con dos fotos dice dos: la pantalla NO puede decirle que no tiene ninguna teniendo dos');
 ok(resumenProgreso([{ id: 1 }]).texto.includes('1 foto'), 'Y en singular con una');
-const cal = { Handstand: { sesiones: [{ id: 'a' }, { id: 'b' }], progresion: [] }, Planche: { sesiones: [], progresion: [{ id: 'p' }] } };
-const re = resumenEntrenamiento(DEFAULT_FITNESS, cal);
-ok(re.sesiones === 2, '🚨 Las sesiones de calistenia cuentan: si contara solo las suyas diría «sin entrenamientos» con siete habilidades en marcha (E3 F22)');
-ok(re.habilidadesActivas === 2, 'Y cuenta las habilidades con algo registrado');
-ok(resumenEntrenamiento(DEFAULT_FITNESS, {}).sesiones === 0, 'Sin nada, cero');
+/* 🧹 2026-10-19 — `resumenEntrenamiento` contaba la calistenia para el subtítulo
+   del bloque «Habilidades». Con el bloque fuera, no lo lee nadie y se retira. */
+ok(!/export function resumenEntrenamiento/.test(LIB_CODIGO),
+  '🧹 `resumenEntrenamiento` se retiró con el bloque de Habilidades: no queda nadie que lo lea');
 ok(!/linea1/.test(LIB_CODIGO),
   '🚨 Y aquí NO hay una segunda línea de hub: la escribe calcularResumenModulo desde la Fase 19 (D2-07)');
 ok(MAPEO_EXISTENTE.some((m) => m.yaEs === 'resumenesHub'),
@@ -356,8 +357,10 @@ ok(!/'calistenia'\s*:/.test(LIB_CODIGO), 'Fitness no redefine la clave de calist
 ok(/from '\.\.\/lib\/fitness'/.test(VISTA), 'La vista importa esta librería en vez de calcular por su cuenta');
 ok(!/#[0-9a-fA-F]{6}/.test(VISTA), 'Ni un hex suelto en la vista (regla 2)');
 ok(!/#[0-9a-fA-F]{6}/.test(LIB_CODIGO), 'Ni en la librería');
-ok(/TrainingView/.test(VISTA),
-  '🚨 El área de Entrenamiento RENDERIZA la pantalla de calistenia, no copia su contenido (E3 F23)');
+/* 🧹 2026-10-19 — se da la vuelta: el área de Entrenamiento renderizaba la pantalla
+   de calistenia (E3 F23) y Josué pidió quitarla entera. Ni renderizada ni copiada. */
+ok(!/TrainingView/.test(VISTA.replace(/\/\*[\s\S]*?\*\//g, '')) && !/Handstand|Calistenia y fútbol|onAddPartido/.test(VISTA),
+  '🧹 El área de Entrenamiento ya NO pinta la pantalla de calistenia y fútbol: ni la renderiza ni copia su contenido');
 
 console.log('\n── 20. La condición de finalización se calcula, no se afirma ──');
 const cond = condicionFIT1({ app: APP, vista: VISTA, tokens: TOKENS });

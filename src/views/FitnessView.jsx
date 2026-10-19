@@ -6,13 +6,15 @@
    *"Jos Style → Fitness abre correctamente un módulo que ya parece una parte
    real de la aplicación"*.
 
-   🚨 **ESTA PANTALLA NO REESCRIBE LA DE CALISTENIA.** `TrainingView` —siete
-   habilidades con su progresión, sus récords, sus sesiones, sus vídeos y los
-   partidos de fútbol— se renderiza **tal cual**, con las mismas props que
-   `App.jsx` ya pasaba. Es la E3 F23 con Productividad y NAV F1 con Números:
-   *agrupar pantallas es renderizarlas, nunca copiarlas*. Si una fase futura la
-   «integrara» copiando su contenido, habría dos versiones de lo mismo y
-   acabarían diciendo cosas distintas — hay una prueba que lo vigila.
+   🧹 **EL BLOQUE DE CALISTENIA Y FÚTBOL YA NO ESTÁ (2026-10-19, pedido por
+   Josué).** La F1 renderizaba aquí `TrainingView` —siete habilidades con su
+   progresión, récords, sesiones y vídeos, los partidos de fútbol y su panel de
+   IA— debajo de «Secciones». Se quitó entero, sin poner nada en su sitio, y
+   `TrainingView.jsx` con él. ⚠️ **Lo guardado no se toca**: `calistenia`,
+   `futbol` y `calisteniaVideos` siguen en `app_data` (y los vídeos en su
+   bucket), y Inicio, Estadísticas, Predicciones y la IA siguen leyendo los dos
+   primeros. No se volvió a copiar nada: *agrupar pantallas es renderizarlas,
+   nunca copiarlas* (E3 F23) sigue valiendo para lo que queda.
 
    🚨 **Y NO GUARDA NI UNA CIFRA.** Los números del área de Entrenamiento, el
    recuento de fotos y la racha se derivan en el momento desde `fitness.js`.
@@ -30,12 +32,11 @@ import { hexToRgba } from '../lib/helpers';
 import { Card, SectionTitle, GhostBtn, EmptyHint } from '../components/ui';
 import {
   AREAS_FITNESS, AREA_INICIAL, ESTADOS_VACIOS, ACCESOS_ENTRENAMIENTO,
-  rachaDeFitness, resumenProgreso, resumenEntrenamiento,
+  rachaDeFitness, resumenProgreso,
 } from '../lib/fitness';
 import { iconoDeArea } from '../components/iconosFitness';
-import TrainingView from './TrainingView';
-/* FIT F2 — el catálogo se renderiza entero aquí dentro, como `TrainingView`:
-   agrupar pantallas es renderizarlas, nunca copiarlas (E3 F23). */
+/* FIT F2 — el catálogo se renderiza entero aquí dentro: agrupar pantallas es
+   renderizarlas, nunca copiarlas (E3 F23). */
 import EjerciciosView from './EjerciciosView';
 import { esDesarrollo } from '../components/diagnosticoCatalogo';
 /* 🔓 FIT F36, apartado 47 — un fallo al pintar un área se queda en su área. */
@@ -279,13 +280,14 @@ export function AreaProgreso({ fitness = null, fotos, accent, onIr = null, onEnt
 }
 
 /* ── Área: ENTRENAMIENTO (apartado 12) ────────────────────────────────────
-   *"Tu Plan"*, *"Planificaciones"* y *"Tus plantillas"*, más lo que ya existe:
-   las habilidades de calistenia. El apartado 23 prohíbe construir aquí el
+   *"Tu Plan"*, *"Planificaciones"* y *"Tus plantillas"*. (Las habilidades de
+   calistenia y el fútbol se pintaban debajo hasta el 2026-10-19: se quitaron a
+   petición de Josué, con sus datos intactos.) El apartado 23 prohíbe construir aquí el
    constructor, la biblioteca y el historial, así que los accesos que aún no
    existen **se dicen** en vez de ofrecerse como botones que no llevan a
    ninguna parte (regla 8). */
 export function AreaEntrenamiento({
-  fitness, calistenia, accent, entrenoProps, onAbrirConstructor = null,
+  fitness, accent, onAbrirConstructor = null,
   onGuardarFitness = null, onEliminarPlantilla = null, onEmpezarSesion = null,
   sesionEnCurso = null, onContinuarSesion = null, onDescartarSesion = null, onFinalizarSesion = null,
   sesionSinGuardar = null, onSeguirGuardando = null, onDescartarSinGuardar = null,
@@ -299,7 +301,6 @@ export function AreaEntrenamiento({
      vuelve el historial si se abrió desde Progreso. */
   inicio = null, onInicioConsumido = null, onVolverAArea = null,
 }) {
-  const resumen = resumenEntrenamiento(fitness, calistenia);
   const propios = (fitness || {}).ejercicios || [];
   /* 🚨 Lo que construye Josué son **plantillas**, no planes. Lo dejó escrito la
      F1 en `crearWorkoutPlan`: *"un plan y una plantilla son la misma forma: lo
@@ -616,7 +617,7 @@ export function AreaEntrenamiento({
           {/* 🚨 El que EXISTE es un botón; el que no, una frase que dice cuándo
               llega. Un botón que no lleva a ninguna parte es el control
               decorativo de la regla 8. */}
-          {ACCESOS_ENTRENAMIENTO.filter((a) => a.existe && a.id !== 'habilidades' && a.id !== 'plantillas').map((a) => (
+          {ACCESOS_ENTRENAMIENTO.filter((a) => a.existe && a.id !== 'plantillas').map((a) => (
             <button
               key={a.id}
               onClick={() => setDentro(a.id)}
@@ -650,18 +651,6 @@ export function AreaEntrenamiento({
             </Card>
           ))}
         </div>
-      </div>
-
-      <div>
-        <SectionTitle
-          sub={resumen.habilidadesActivas > 0
-            ? `${resumen.habilidadesActivas} en marcha · progresión, récords, entrenamientos y vídeos`
-            : 'Calistenia: progresión, récords, entrenamientos y vídeos'}
-        >
-          Habilidades
-        </SectionTitle>
-        {/* 🚨 La pantalla de siempre, entera y sin tocar. */}
-        <TrainingView {...entrenoProps} accent={accent} />
       </div>
     </div>
   );
@@ -716,9 +705,8 @@ export default function FitnessView(props) {
 }
 
 function FitnessViewContenido({
-  fitness, calistenia, onUpdateSkill, futbol, onAddPartido, onDeletePartido,
-  videos, onAddVideo, onDeleteVideo, onSetVideoFeedback,
-  fotos = [], rachas, accent, foco, onFocoConsumido, onIr, onGuardarFitness = null,
+  fitness,
+  fotos = [], rachas, accent, onIr, onGuardarFitness = null,
   onEliminarPlantilla = null, onEliminarSesion = null, onEliminarObjetivo = null,
   perfil = null,
   /* 🚨 FIT F26 (C-35), CORREGIDO EN LA F27 — las fotos de progreso son las de
@@ -776,14 +764,6 @@ function FitnessViewContenido({
   const cambiarArea = (a) => { setInicio(null); setOrigenProgreso(null); setArea(a); };
   const inicioDe = (a) => (inicio && inicio.area === a ? inicio : null);
 
-  /* ⚠️ Un foco que llega apuntando a una habilidad no puede quedarse escondido
-     detrás del área que estuviera abierta: es la lección de la E3 F24 —un
-     elemento recién creado no puede desaparecer por el filtro puesto—. Si viene
-     un foco, se abre el área que lo sabe interpretar. */
-  useEffect(() => {
-    if (foco) setArea('entrenamiento');
-  }, [foco]);
-
   /* FIT F3 — qué se está construyendo es estado de la pantalla, nunca un dato
      guardado (EH F40). `null` = no se está construyendo nada. */
   const [creando, setCreando] = useState(null);
@@ -806,10 +786,6 @@ function FitnessViewContenido({
      división escrita, y `planes` es la biblioteca de una fase posterior. */
   const plantillas = (fitness?.plantillas) || [];
   const propios = (fitness?.ejercicios) || [];
-  const entrenoProps = {
-    calistenia, onUpdateSkill, futbol, onAddPartido, onDeletePartido,
-    videos, onAddVideo, onDeleteVideo, onSetVideoFeedback, foco, onFocoConsumido,
-  };
 
   /* ⚠️ La sesión sale de lo GUARDADO, nunca de una copia en el estado de la
      pantalla: con dos, marcar una serie escribiría en una y se pintaría la otra
@@ -1034,7 +1010,7 @@ function FitnessViewContenido({
       {area === 'entrenamiento' && (
         <AreaSegura clave="entrenamiento" nombre="Entrenamiento" accent={accent}>
         <AreaEntrenamiento
-          fitness={fitness} calistenia={calistenia} accent={accent} entrenoProps={entrenoProps}
+          fitness={fitness} accent={accent}
           onGuardarFitness={guardarF}
           onEliminarPlantilla={onEliminarPlantilla}
           onEliminarSesion={onEliminarSesion}

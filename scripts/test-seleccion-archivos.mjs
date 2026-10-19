@@ -10,7 +10,7 @@
 // ⚠️ Ni una cámara física ni un iPhone de verdad: eso queda para Josué (R1).
 // ============================================================================
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -90,7 +90,6 @@ const INTEGRACIONES = [
   ['src/components/fotosProgreso.jsx', 'las fotos de progreso (Fitness → Progreso → Fotos)'],
   ['src/views/HealthView.jsx', 'las fotos de progreso de Salud'],
   ['src/views/NutritionView.jsx', 'la foto del plato'],
-  ['src/views/TrainingView.jsx', 'los vídeos de calistenia'],
   ['src/views/LibraryView.jsx', 'los documentos y las portadas de la Biblioteca'],
   ['src/views/ArmarioView.jsx', 'las fotos de prendas y outfits'],
   ['src/views/RelationView.jsx', 'el Álbum de Relación'],
@@ -99,6 +98,9 @@ const INTEGRACIONES = [
   ['src/views/FinalizacionView.jsx', 'la foto de un entrenamiento'],
 ];
 for (const [ruta, que] of INTEGRACIONES) ok(/<SelectorDeArchivos/.test(leer(ruta)) && /import \{ SelectorDeArchivos \}/.test(leer(ruta)), `${que} usan el selector común`);
+/* 🧹 2026-10-19 — los vídeos de calistenia se elegían en `TrainingView`, que se fue
+   de Fitness con su bloque (pedido por Josué). Se da la vuelta: ya no hay pantalla. */
+ok(!existsSync(join(RAIZ, 'src/views/TrainingView.jsx')), '🧹 los vídeos de calistenia ya no tienen pantalla: se quitaron con su bloque de Fitness (lo subido sigue en su bucket)');
 /* Lo que queda con su `<input>` de siempre: importar un archivo de datos. Para un
    documento, «Seleccionar archivo» ES el selector nativo: no hay más opciones. */
 const PERMITIDOS = { 'src/components/GestionTemas.jsx': 1, 'src/views/SettingsView.jsx': 4 };

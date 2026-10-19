@@ -82,11 +82,13 @@ ok(CAPAS_FITNESS.every((c) => c.id && c.nombre && c.que && c.archivos.length > 0
 ok(capaDe('src/lib/motorRangos.js')?.id === 'motores' && capaDe('src/views/FitnessView.jsx')?.id === 'pantallas' && capaDe('src/lib/nada.js') === null,
   '`capaDe` dice la capa de un archivo, y `null` si no es de Fitness');
 /* 🚨 Lo que de verdad importa la aplicación desde Fitness: el cierre de imports
-   desde sus dos puertas, parando en las dependencias declaradas. Un archivo
+   desde su puerta, parando en las dependencias declaradas. Un archivo
    nuevo que la aplicación use y no esté en el mapa lo pone rojo — la lección
    de `ARCHIVOS_FITNESS` (F39), que se quedó corta sin que nadie lo notara. */
 const alcanzados = new Set();
-const pendientes = ['src/views/TrainingView.jsx', 'src/views/FitnessView.jsx'];
+/* 🧹 2026-10-19 — la segunda puerta era `TrainingView` (calistenia y fútbol), y
+   se fue de Fitness con su bloque: ahora la aplicación entra solo por aquí. */
+const pendientes = ['src/views/FitnessView.jsx'];
 const externas = new Set(DEPENDENCIAS_PERMITIDAS.map((d) => d.modulo));
 while (pendientes.length) {
   const f = pendientes.pop();

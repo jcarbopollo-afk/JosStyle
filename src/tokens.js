@@ -615,7 +615,7 @@ export const DESCRIPCIONES_MODULOS = {
   salud: 'Peso, medidas, tensión, historial médico y fotos de progreso.',
   sueno: 'Cuántas horas duermes y con qué calidad.',
   nutricion: 'Comidas, macros y agua, con escaneo por código de barras.',
-  entreno: 'Calistenia por habilidad, progresiones, récords y fútbol.',
+  entreno: 'Tu plan, plantillas, ejercicios, historial, progreso y rangos.',
   calendario: 'Tus eventos y los que salen solos del resto de módulos.',
   estudios: 'Asignaturas, exámenes, horas de estudio y planes de repaso.',
   negocio: 'Ideas y proyectos personales, con ingresos y gastos.',

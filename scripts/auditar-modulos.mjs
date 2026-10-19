@@ -22,7 +22,7 @@
 // Uso:  node --import ./scripts/resolver-vite.mjs scripts/auditar-modulos.mjs
 // ---------------------------------------------------------------------------
 import { readFileSync } from 'node:fs';
-import { CATALOGO_PAPELERA, claveCatalogo } from '../src/lib/papelera.js';
+import { CATALOGO_PAPELERA, claveCatalogo, SOLO_PARA_RESTAURAR } from '../src/lib/papelera.js';
 
 const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 
@@ -105,12 +105,26 @@ if (sinCatalogo.length) {
   ok(`P7 · las ${borradas.size} colecciones borrables están descritas en el catálogo`);
 }
 
-/* ---------- P7b · el catálogo no describe colecciones sin borrado real ---------- */
-const huerfanas = [...gestionadas].filter((c) => !borradas.has(c));
+/* ---------- P7b · el catálogo no describe colecciones sin borrado real ----------
+   🧹 Salvo las de `SOLO_PARA_RESTAURAR` (2026-10-19): ya no se crean ni se borran
+   desde ninguna pantalla, pero lo que esté en Eliminados recientemente tiene que
+   seguir viéndose con su nombre y poder volver. La excepción no es gratis: cada una
+   tiene su motivo, NADIE la crea (si alguien la vuelve a crear, necesita su
+   borrado y sale de la lista) y `App.jsx` la sabe restaurar. */
+const huerfanas = [...gestionadas].filter((c) => !borradas.has(c) && !SOLO_PARA_RESTAURAR[c]);
 if (huerfanas.length) {
   fallo(`El catálogo describe colecciones sin borrado real: ${huerfanas.join(', ')}`);
 } else {
   ok('P7b · el catálogo no tiene entradas huérfanas');
+}
+const restaurables = app.slice(app.indexOf('const MODULOS_PAPELERA = {'), app.indexOf('};', app.indexOf('const MODULOS_PAPELERA = {')));
+const soloRestaurarMal = Object.entries(SOLO_PARA_RESTAURAR).filter(([c, motivo]) =>
+  !gestionadas.has(c) || borradas.has(c) || creadas.has(c) || typeof motivo !== 'string' || motivo.length < 40
+  || !new RegExp(`\\b${CATALOGO_PAPELERA[c].modulo}: \\[`).test(restaurables));
+if (soloRestaurarMal.length) {
+  fallo(`«Solo para restaurar» mal declaradas (sin motivo, todavía se crean o se borran, o App.jsx no sabe restaurarlas): ${soloRestaurarMal.map(([c]) => c).join(', ')}`);
+} else {
+  ok(`P7c · las ${Object.keys(SOLO_PARA_RESTAURAR).length} colecciones «solo para restaurar» tienen motivo, nadie las crea y se pueden recuperar`);
 }
 
 /* ---------- P9 · toda entrada del catálogo se puede nombrar en la papelera ----------

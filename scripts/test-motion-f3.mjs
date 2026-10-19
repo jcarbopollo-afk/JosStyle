@@ -159,7 +159,9 @@ ok(!!chevron && /rotate\(var\(--giro, 0deg\)\)/.test(chevron) && /transition:\s*
 ok(/html\[data-motion='reducido'\] \.chevron-gira\s*\{[^}]*transition-property:\s*none/.test(CSS_LIMPIO), '…y en Reducido llega sin girar');
 ok(/export function ChevronDespliegue/.test(COMP) && /giroDeChevron/.test(COMP) && /'--giro'/.test(COMP), '`ChevronDespliegue` (motion.jsx) pone el giro que decide la librería');
 const usosChevron = Object.values(VISTAS).reduce((n, src) => n + (src.match(/<ChevronDespliegue\b/g) || []).length, 0);
-ok(usosChevron >= 23, `🚨 los ${usosChevron} desplegables usan el mismo icono que gira`);
+/* 🧹 2026-10-19 — eran 23 con el de la tarjeta de una habilidad de calistenia
+   (`TrainingView`), que se fue de Fitness con su bloque: el mínimo baja uno. */
+ok(usosChevron >= 22, `🚨 los ${usosChevron} desplegables usan el mismo icono que gira`);
 ok(aud.cuentas.chevron_que_se_cambia === 0 && aud.cuentas.chevron_girado_a_mano === 0,
   '…y ni uno cambia un icono por otro ni gira el suyo a mano');
 

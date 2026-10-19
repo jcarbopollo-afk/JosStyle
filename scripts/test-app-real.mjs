@@ -6691,10 +6691,11 @@ ok(/inicio/i.test(nutri_nv || ''),
    correctamente **sin datos**. Y el criterio de éxito remata: que parezca *"una
    parte real de la aplicación"*.
 
-   🚨 Lo que más importa aquí no es lo que se ve, sino lo que NO se ha perdido:
-   la pantalla de calistenia —siete habilidades, récords, sesiones, vídeos y los
-   partidos— tiene que seguir estando dentro, entera. Si un día alguien
-   «integra» Fitness copiando su contenido, esta sección se pone roja. */
+   🧹 Hasta el 2026-10-19 esta sección vigilaba que la pantalla de calistenia
+   —siete habilidades, récords, sesiones, vídeos y los partidos— siguiera
+   dentro, entera. Josué pidió quitar ese bloque de Fitness, así que la
+   comprobación se da la vuelta: ni el bloque ni nada suyo, y lo que queda
+   (Tu Plan, Más planes, Ejercicios, Historial) sigue en su sitio. */
 console.log('\n── FIT F1 · Fitness: la fundación ──');
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
@@ -6712,11 +6713,17 @@ const barra_fit = await page.evaluate(() => {
 });
 ok(barra_fit.length === 5, `⚠️ la barra de abajo sigue con sus cinco pestañas (${barra_fit.join(' · ')})`);
 
-/* Arranca en Entrenamiento, y ahí tiene que seguir estando TODO lo de antes. */
-ok(/Habilidades/i.test(enFitness), '⚠️ el área de Entrenamiento abre por defecto, con sus Habilidades');
-ok(/Handstand|Planche|Front Lever/i.test(enFitness),
-  '🚨 FIT F1 — la pantalla de calistenia sigue DENTRO, entera: no se ha copiado ni se ha perdido');
+/* Arranca en Entrenamiento. Se lee cuando ya está pintado entero («Secciones» es lo
+   último que queda), para que una ausencia no salga verde por haber mirado antes. */
 ok(/Tu Plan/i.test(enFitness), '…y la estructura nueva: «Tu Plan» (apartado 12)');
+const entreno_fit1 = await esperarTexto(/Historial/);
+ok(/Secciones/.test(entreno_fit1) && /Más planes/.test(entreno_fit1) && /Ejercicios/.test(entreno_fit1) && /Historial/.test(entreno_fit1),
+  '⚠️ el área de Entrenamiento abre por defecto, con Secciones: Más planes, Ejercicios e Historial');
+ok(!/Handstand|Planche|Front Lever|Back Lever|Human Flag|Muscle Up|L-Sit/i.test(entreno_fit1),
+  '🧹 FIT F1 — ni una tarjeta de habilidad de calistenia (bloque quitado a petición de Josué, 2026-10-19)');
+ok(!/Habilidades/.test(entreno_fit1) && !/Calistenia y fútbol/i.test(entreno_fit1) && !/Fútbol/.test(entreno_fit1)
+  && !/Sugerencia de entrenamiento/i.test(entreno_fit1) && !/Registrar partido|Partidos/i.test(entreno_fit1),
+  '🧹 …ni el título «Habilidades», ni «Entrenamiento · Calistenia y fútbol», ni el selector Calistenia/Fútbol, ni el fútbol, ni su panel de IA');
 
 /* Área RANGOS, sin datos: «Sin Rango» y el texto literal del apartado 9. */
 ok(await pulsar('Rangos'), 'se cambia al área de Rangos');
