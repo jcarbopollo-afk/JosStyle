@@ -37,7 +37,7 @@ ok(/<BotonAnadir accent=\{accent\} onClick=\{\(\) => setCreandoHoy\(true\)\} fil
 ok(!/<div className="flex justify-end">\s*<BotonAnadir/.test(DASH), '…sin el envoltorio que lo dejaba pequeño a la derecha');
 const ba = QA.slice(QA.indexOf('export function BotonAnadir('), QA.indexOf('<Plus size={15} />'));
 ok(/fila = false/.test(ba), 'la forma pequeña sigue siendo la de serie (el Calendario no cambia)');
-ok(/'w-full flex items-center justify-end gap-1\.5 text-sm font-semibold rounded-3xl toque-44'/.test(ba), 'fila: todo el ancho, el texto a la derecha, el radio de la fila de la situación actual');
+ok(/'w-full flex items-center justify-center gap-1\.5 text-sm font-semibold rounded-3xl toque-44'/.test(ba), 'fila: todo el ancho, solo el + centrado, el radio de la fila de la situación actual');
 ok(/background: COLORS\.surface, border: `1px solid \$\{COLORS\.border\}`, color: accent, padding: '0\.8rem 1\.1rem', minHeight: 52/.test(ba), '…con su superficie, su borde y su relleno, y compacta');
 ok(/onClick=\{onClick\}/.test(ba) && /aria-label=\{texto\}/.test(ba), 'el mismo toque y el mismo nombre para VoiceOver');
 ok(!/active:scale|animate-|transition/.test(ba), 'sin animaciones nuevas: la respuesta al toque es la de siempre');

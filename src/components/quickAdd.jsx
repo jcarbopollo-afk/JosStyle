@@ -309,14 +309,14 @@ export function BotonAnadir({ accent, onClick, texto = 'Añadir', fila = false }
     <button
       onClick={onClick}
       className={fila
-        ? 'w-full flex items-center justify-end gap-1.5 text-sm font-semibold rounded-3xl toque-44'
+        ? 'w-full flex items-center justify-center gap-1.5 text-sm font-semibold rounded-3xl toque-44'
         : 'flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-xl toque-44'}
       style={fila
         ? { background: COLORS.surface, border: `1px solid ${COLORS.border}`, color: accent, padding: '0.8rem 1.1rem', minHeight: 52 }
         : { background: COLORS.surface2, color: accent }}
       aria-label={texto}
     >
-      <Plus size={15} /> {texto}
+      {fila ? <Plus size={18} aria-hidden="true" /> : <><Plus size={15} /> {texto}</>}
     </button>
   );
 }

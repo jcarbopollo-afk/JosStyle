@@ -5652,14 +5652,15 @@ const medirInicio_ini = () => page.evaluate(() => {
   const circulo = cab.lastElementChild;
   const img = circulo && circulo.querySelector('img');
   const boton = [...document.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Añadir' && b.offsetParent);
+  const textoBoton = boton ? boton.innerText.trim() : null;
   const fila = [...document.querySelectorAll('button[aria-controls="panel-situacion-actual"]')][0];
   const r = (el) => { if (!el) return null; const x = el.getBoundingClientRect(); return { l: Math.round(x.left), r: Math.round(x.right), t: Math.round(x.top), b: Math.round(x.bottom), w: Math.round(x.width), h: Math.round(x.height) }; };
-  const texto = boton ? (() => { const rg = document.createRange(); rg.selectNodeContents(boton); return r(rg); })() : null;
+  const texto = boton && boton.querySelector('svg') ? r(boton.querySelector('svg')) : null;
   return {
     cab: r(cab), h1: r(h1), circulo: r(circulo), src: img ? img.getAttribute('src') : null,
     iniciales: circulo ? circulo.innerText.trim() : '', radio: circulo ? getComputedStyle(circulo).borderRadius : null,
     boton: r(boton), texto, fila: fila ? r(fila.parentElement) : null,
-    justify: boton ? getComputedStyle(boton).justifyContent : null,
+    justify: boton ? getComputedStyle(boton).justifyContent : null, textoBoton,
   };
 });
 almacen.perfil = { nombre: 'Josué', nombreMostrado: 'Josué', foto: PNG_INI };
@@ -5680,8 +5681,11 @@ for (const [ancho, alto] of [[320, 640], [390, 844], [820, 1180], [1280, 800]]) 
   ok(!!m.boton, `${ancho} px — está «+ Añadir»`);
   if (m.boton && m.fila) {
     ok(Math.abs(m.boton.w - m.fila.w) <= 2 && Math.abs(m.boton.l - m.fila.l) <= 2, `🚨 ${ancho} px — «+ Añadir» ocupa la fila entera, como la de la situación actual (${m.boton.w} px frente a ${m.fila.w})`);
+    ok(m.textoBoton === '', `${ancho} px — sin el texto «Añadir» (${JSON.stringify(m.textoBoton)})`);
     ok(m.boton.h >= 44 && m.boton.h <= 64, `${ancho} px — y compacta (${m.boton.h} px de alto)`);
-    ok(m.justify === 'flex-end' && m.texto && m.boton.r - m.texto.r <= 24 && m.texto.l - m.boton.l > m.boton.w / 2, `🚨 ${ancho} px — con «+ Añadir» a la derecha (texto ${m.texto && m.texto.l}–${m.texto && m.texto.r} en ${m.boton.l}–${m.boton.r})`);
+    const centroB = (m.boton.l + m.boton.r) / 2; const centroT = m.texto && (m.texto.l + m.texto.r) / 2;
+    const medioB = (m.boton.t + m.boton.b) / 2; const medioT = m.texto && (m.texto.t + m.texto.b) / 2;
+    ok(m.justify === 'center' && m.texto && Math.abs(centroB - centroT) <= 2 && Math.abs(medioB - medioT) <= 2, `🚨 ${ancho} px — solo el + y centrado (centro ${centroT}, ${medioT} en ${centroB}, ${medioB})`);
   }
   ok(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2)), `${ancho} px — nada se sale de lado`);
 }
