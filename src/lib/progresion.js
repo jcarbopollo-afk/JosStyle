@@ -511,6 +511,44 @@ export function ultimaVez(fitness, exerciseId, { propios = [], antesDe = null } 
   return a ? { fecha: a.fecha, clase: a.clase, texto: textoSerie(a.clase, a.mejor), series: textoSeries(a.clase, a.series) } : null;
 }
 
+/**
+ * 🔓 Fase 1C — **el primer récord personal verificable**, para el logro «Primer PR»
+ * (`logros.js`). Un récord es una aparición cuya mejor serie **supera** —`compararSeries`,
+ * la regla del apartado 14, la misma de `mejorHistorico`— a la mejor de **todas las
+ * anteriores** del mismo ejercicio y **la misma clase**. Así:
+ *   · la primera vez que se hace un ejercicio **no** es un récord: no hay marca que superar
+ *     (por eso la Fase 1B no podía contar «la primera sesión»);
+ *   · igualar la mejor marca tampoco, ni bajar de ella;
+ *   · con lastre y sin lastre, o con y sin peso apuntado, son marcas distintas (apartado 4).
+ * Derivado, como todo aquí: no se guarda nada, y borrar la sesión del récord lo deshace.
+ * Devuelve el **primero** en el tiempo, o `null`.
+ */
+export function primerRecordPersonal(fitness) {
+  let primero = null;
+  for (const apariciones of indiceDeProgresion(fitness).values()) {
+    /* El índice va de la más reciente a la más antigua: se recorre al revés. */
+    const cronologico = [...apariciones].reverse();
+    const mejorPorClase = new Map();
+    for (const a of cronologico) {
+      if (!a || !a.mejor) continue;
+      const previa = mejorPorClase.get(a.clase);
+      const supera = !!previa && compararSeries(a.clase, a.mejor, previa) > 0;
+      if (supera) {
+        const antes = !primero || a.fecha < primero.fecha
+          || (a.fecha === primero.fecha && (a.momento || 0) < (primero.momento || 0));
+        if (antes) {
+          primero = {
+            exerciseId: a.exerciseId, nombre: a.nombre, fecha: a.fecha, momento: a.momento,
+            sesionId: a.sesionId, clase: a.clase, texto: textoSerie(a.clase, a.mejor),
+          };
+        }
+      }
+      if (!previa || supera) mejorPorClase.set(a.clase, a.mejor);
+    }
+  }
+  return primero;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    6 · LO QUE NO SE CONSTRUYE
    ═══════════════════════════════════════════════════════════════════════════ */

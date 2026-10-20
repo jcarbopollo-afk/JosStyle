@@ -757,9 +757,11 @@ function CorrelacionEstudio({ sueno, horas, accent }) {
       </p>
       {c.suficientesDatos ? (
         <p className="text-xs leading-relaxed" style={{ color: COLORS.textMuted }}>
+          {/* 🐛 Fase 1B (CX-11) — los días son días, no entradas por asignatura, y la segunda
+              media no «baja» por decreto: con los días contados bien, puede ser mayor. */}
           En los días con al menos 7h de sueño la noche anterior ({c.diasBuenSueno} días con datos), has estudiado de media{' '}
-          <span style={{ color: COLORS.text, fontWeight: 600 }}>{c.mediaHorasConBuenSueno}h</span>. Con menos de 7h ({c.diasSuenoCorto} días), la media baja a{' '}
-          <span style={{ color: COLORS.text, fontWeight: 600 }}>{c.mediaHorasConSuenoCorto}h</span>.
+          <span style={{ color: COLORS.text, fontWeight: 600 }}>{c.mediaHorasConBuenSueno}h</span> al día. Con menos de 7h ({c.diasSuenoCorto} días), la media es de{' '}
+          <span style={{ color: COLORS.text, fontWeight: 600 }}>{c.mediaHorasConSuenoCorto}h</span> al día.
         </p>
       ) : (
         <p className="text-xs" style={{ color: COLORS.textMuted }}>

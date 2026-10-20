@@ -548,7 +548,7 @@ function ultimoPorFechaLocal(lista) {
 }
 
 export default function DashboardView({
-  perfil, sueno, calistenia, futbol, economia, relacion, favoritas, productividad, estudios, modo, onSetModo, notificaciones,
+  perfil, sueno, calistenia, futbol, fitness, economia, relacion, favoritas, productividad, estudios, modo, onSetModo, notificaciones,
   calendario, derivadosCalendario,
   // Ampliación del Dashboard — Centro de Control
   salud, objetivos, nutricion, negocio, diario, biblioteca, fe, bienestar, resumenes, dashboardOcultos, modulosDesactivados, onNavegar,
@@ -605,7 +605,7 @@ export default function DashboardView({
   // las áreas que Josué realmente usa que ha registrado HOY, y viene con su desglose para poder
   // explicarlo en vez de mostrar un número a secas.
   const puntuacion = puntuacionDelDia(
-    { sueno, calistenia, futbol, nutricion, productividad, diario, estudios, salud },
+    { sueno, calistenia, futbol, fitness, nutricion, productividad, diario, estudios, salud },
     undefined,
     // Un módulo desactivado no cuenta para la puntuación (Entrega 2 · ME Fase 1): si Josué ha
     // dicho que no usa Sueño, bajarle la nota por no registrarlo sería justo lo contrario.
@@ -655,17 +655,13 @@ export default function DashboardView({
     .filter((x) => x.dias >= 0)
     .sort((a, b) => a.dias - b.dias)[0] || null;
 
-  // Habilidad destacada de calistenia: la entrenada más recientemente; si ninguna tiene sesiones
-  // todavía, la de mayor progreso (apartado 6: "Handstand — 72% → abrir directamente Handstand").
-  const skillsConSesion = Object.entries(calistenia)
-    .map(([skill, data]) => ({ skill, data, ultima: ultimoPorFechaLocal(data.sesiones) }))
-    .filter((x) => x.ultima)
-    .sort((a, b) => (a.ultima.fecha < b.ultima.fecha ? 1 : -1));
-  const skillDestacada = skillsConSesion[0]
-    || Object.entries(calistenia).map(([skill, data]) => ({ skill, data }))
-      .filter((x) => x.data.nivel > 0)
-      .sort((a, b) => b.data.nivel - a.data.nivel)[0]
-    || null;
+  /* 🐛 Fase 1B (CX-12) — la tarjeta «Entreno» enseñaba la habilidad de calistenia «destacada»,
+     que ya no se puede registrar: vacía para quien entrena a diario en Fitness y congelada para
+     quien la tenía guardada. Ahora dice el último entrenamiento COMPLETADO de Fitness, con el
+     mismo resumen que la tarjeta del hub de Bienestar (`resumenesHub.js`, caso `entreno`): una
+     sola lectura, no dos que puedan decir cosas distintas. */
+  const rEntreno = resumenes?.entreno;
+  const hayEntreno = rEntreno?.estado === 'activo';
 
   // ---------- Nivel 2: relevante pero no crítico ----------
   // Tarea pendiente más próxima (apartado 6: "Trabajo de Biología pendiente → abrir esa tarea").
@@ -778,11 +774,9 @@ export default function DashboardView({
           {!oculto('entreno') && (
             <DashboardModuleCard
               icon={Dumbbell} accent={accent} titulo="Entreno"
-              vacio={!skillDestacada}
-              valor={skillDestacada ? `${skillDestacada.skill}: ${skillDestacada.data.nivel}%` : undefined}
-              /* 🧹 2026-10-19 — el bloque de habilidades de Fitness se quitó, así
-                 que ya no hay una habilidad que abrir: se abre Fitness. */
-              sub={skillDestacada ? 'Toca para abrir Fitness' : 'Toca para empezar a registrar'}
+              vacio={!hayEntreno}
+              valor={hayEntreno ? rEntreno.linea1 : undefined}
+              sub={hayEntreno ? rEntreno.linea2 : 'Toca para empezar a registrar'}
               onClick={() => onNavegar('entreno')}
             />
           )}

@@ -121,9 +121,15 @@ ok(aAuditoriaReal.length === 0,
 const motorAVisual = saltos(['datos', 'modelo', 'motores', 'lecturas', 'utilidades'], ['auditorias'])
   .filter((x) => !/validacionCatalogo|fechasFitness/.test(x));
 ok(motorAVisual.length === 0, `🚨 …y ningún motor ni lectura importa la capa visual ni las auditorías${lista(motorAVisual)}`);
-const hojas = ['src/lib/fechasFitness.js', 'src/lib/numerosFitness.js']
+/* 🔓 Fase 1B — la lista de hojas sale de la capa, no se escribe a mano: así la
+   regla de qué entrenamientos cuentan (`sesionesCompletadas.js`), que leen
+   Inicio, Estadísticas y Predicciones, queda vigilada igual que las fechas. */
+const archivosHoja = CAPAS_FITNESS.find((c) => c.id === 'utilidades').archivos;
+ok(archivosHoja.includes('src/lib/fechasFitness.js') && archivosHoja.includes('src/lib/numerosFitness.js')
+  && archivosHoja.includes('src/lib/sesionesCompletadas.js'), 'Las hojas del árbol son las de fechas, las de números y la de qué entrenamientos cuentan');
+const hojas = archivosHoja
   .filter((r) => importsDe(r).some((spec) => { const d = resolver(r, spec); return d && capaDe(d); }));
-ok(hojas.length === 0, 'Las utilidades de fechas y números no importan nada de Fitness: se pueden usar desde cualquier sitio sin ciclo (apartado 38)');
+ok(hojas.length === 0, 'Las utilidades de fechas, números y entrenamientos completados no importan nada de Fitness: se pueden usar desde cualquier sitio sin ciclo (apartado 38)');
 ok(Object.entries(todosSrc).every(([r, s]) => r === 'src/lib/arquitecturaFitness.js' || !/from\s+'[^']*arquitecturaFitness'/.test(s)),
   'Nadie en `src/` importa esta auditoría');
 

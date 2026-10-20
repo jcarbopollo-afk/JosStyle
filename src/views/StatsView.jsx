@@ -34,10 +34,15 @@ function TarjetaCorrelacion({ icon: Icon, titulo, suficientesDatos, resumenFalta
   );
 }
 
-export default function StatsView({ sueno, estudios, diario, calistenia, accent }) {
+export default function StatsView({ sueno, estudios, diario, calistenia, fitness, accent }) {
+  /* 🐛 Fase 1B — `diario` puede llegar sin `entradas` (una cuenta nueva, o datos
+     importados a medias): sin esta guarda la pantalla entera se caía. */
+  const entradas = Array.isArray(diario?.entradas) ? diario.entradas : [];
   const cEstudio = correlacionSuenoEstudio(sueno, estudios?.horas || []);
-  const cAnimo = correlacionSuenoAnimo(sueno, diario.entradas);
-  const cEntreno = correlacionEntrenoAnimo(calistenia, diario.entradas);
+  const cAnimo = correlacionSuenoAnimo(sueno, entradas);
+  /* 🐛 Fase 1B (CX-09) — los entrenamientos de Fitness y, si los hay, los días de la calistenia
+     de antes; solo sus fechas, y cada día una vez. */
+  const cEntreno = correlacionEntrenoAnimo({ fitness, calistenia }, entradas);
 
   const hayAlgunaCorrelacion = cEstudio.suficientesDatos || cAnimo.suficientesDatos || cEntreno.suficientesDatos;
 
@@ -83,17 +88,28 @@ export default function StatsView({ sueno, estudios, diario, calistenia, accent 
 
       <TarjetaCorrelacion
         icon={Dumbbell}
-        titulo="Entrenar calistenia y ánimo"
+        titulo="Entrenar y ánimo"
         suficientesDatos={cEntreno.suficientesDatos}
-        resumenFalta={`llevas ${cEntreno.diasConEntreno} día(s) con sesión registrada y ${cEntreno.diasSinEntreno} sin ella (con entrada de Diario), hacen falta al menos 3 de cada`}
+        resumenFalta={cEntreno.desde
+          ? `en las semanas en las que registraste algún entrenamiento llevas ${cEntreno.diasConEntreno} día(s) con entrenamiento y ${cEntreno.diasSinEntreno} sin él (con entrada de Diario), hacen falta al menos 3 de cada`
+          : 'todavía no hay ningún entrenamiento completado en Fitness'}
       >
         <FilaComparacion
-          etiquetaA={`Días con sesión (${cEntreno.diasConEntreno})`}
+          etiquetaA={`Días con entrenamiento (${cEntreno.diasConEntreno})`}
           valorA={cEntreno.mediaAnimoConEntreno}
-          etiquetaB={`Días sin sesión (${cEntreno.diasSinEntreno})`}
+          etiquetaB={`Días sin entrenamiento (${cEntreno.diasSinEntreno})`}
           valorB={cEntreno.mediaAnimoSinEntreno}
           unidad="/5 de ánimo medio"
         />
+        <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
+          {cEntreno.conCalisteniaAnterior
+            ? 'Cuenta los entrenamientos completados en Fitness y los días de calistenia que registraste antes.'
+            : 'Cuenta los entrenamientos completados en Fitness.'}
+          {/* 🐛 Fase 1C (CX-09) — una semana sin ningún entrenamiento registrado no dice si
+              descansó o no lo apuntó: sus días no se comparan, y se dice cuántos son. */}
+          {' '}Solo compara las semanas en las que registraste algún entrenamiento: en una semana sin ninguno no se sabe si descansaste o no lo apuntaste.
+          {cEntreno.diasFuera > 0 && ` ${cEntreno.diasFuera} ${cEntreno.diasFuera === 1 ? 'día de Diario se queda' : 'días de Diario se quedan'} fuera por eso.`}
+        </p>
       </TarjetaCorrelacion>
 
       <p className="text-xs text-center px-4" style={{ color: COLORS.textMuted }}>

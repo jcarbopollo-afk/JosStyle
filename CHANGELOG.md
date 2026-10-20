@@ -1,5 +1,133 @@
 # CHANGELOG.md
 
+## v3.160.0 — Fase 1C: correcciones finales tras la auditoría adversarial
+
+> Encargo de Josué del 2026-10-20 (*«FASE 1C — CORRECCIONES FINALES TRAS AUDITORÍA ADVERSARIAL»*): corregir lo que una
+> auditoría de solo lectura de las Fases 1 y 1B confirmó, **antes de publicar nada**. Sin asistentes nuevos ni Fase 2, sin
+> tocar los 12 paneles de IA ni su contexto, sin dependencias, sin refactorizaciones generales, conservando todos los
+> datos históricos y **sin commit ni push** (lo dijo él). Decisión **DA-11** en `docs/15_asistentes/DECISIONES.md`.
+
+### 🐛 Lo que se ha corregido
+- **CX-09 · Dejar de apuntar ya no fabrica una diferencia de ánimo.** La 1B comparaba todo el Diario desde el primer
+  entrenamiento, así que si dejaba de registrar entrenamientos y seguía escribiendo el Diario, esos días caían en «sin
+  entreno»: con dos semanas apuntando y cuatro meses de Diario salían 6 días «con» (ánimo 4) frente a 134 «sin» (3,1),
+  una diferencia que solo decía **cuándo dejó de apuntar**. Ahora solo se comparan **las semanas (lunes–domingo) con algún
+  entrenamiento registrado, entre el primero y el último**: con el mismo escenario, 6 y 6 días, ánimo 4 y 4. Lo que queda
+  fuera se cuenta (`diasFuera`) y la tarjeta lo dice. El mínimo sigue en 3 días por grupo, la calistenia de antes sigue
+  contando por sus fechas y cada día cuenta una vez. ⚠️ Coste conocido, escrito: una semana entera de descanso de verdad
+  también se queda fuera.
+- **CX-09 · Un ánimo es un entero del 1 al 5** (`esAnimoValido`): `true` contaba como 1, `[4]` como 4 y `'4'` como 4.
+- **CX-09 · Las sesiones se cuentan por `id`, como la puerta de carga** (`sinDuplicadosPorId`): sin `id` (o vacío, o 0) no
+  cuentan; uno numérico de una importación sí; la misma sesión repetida con dos fechas cuenta una vez, en la última.
+- **«Primer PR» ya se puede conseguir.** Para una cuenta nueva era imposible (pedía un récord de calistenia, que ya no se
+  registra). Ahora se consigue **superando una marca en Fitness** (`primerRecordPersonal` en `progresion.js`, con la
+  comparación de la F11: mismo ejercicio, misma clase, una sesión completada; la primera vez, igualar, quedarse por debajo,
+  cambiar de clase o una sesión en curso **no** cuentan) **o** con el PR de calistenia de antes, que **se conserva**.
+  Siguen siendo 12 insignias, no se convierte nada y no hay migración: los logros se derivan.
+- **CX-18 · Imagen personal → «Tu entrenamiento» lee Fitness.** Leía solo la calistenia y decía que se editaba en
+  «Calistenia», una sección que ya no existe. Ahora dice cuántos entrenamientos completados hay en Fitness; la calistenia de
+  antes solo si no hay ninguno, **dicha como de antes y con su última fecha**; y sin nada, «Abrir Fitness».
+- **CX-19 · Fechas.** Un entrenamiento con fecha futura salía como «Último entrenamiento hoy» en Inicio y en Bienestar, y
+  Predicciones lo contaba para su mínimo: ahora el último es el último **hasta hoy** y solo cuentan días pasados. Y los
+  resúmenes de los hubs **se recalculan a medianoche** con la aplicación abierta: `App.jsx` pide el día con `useHoyISO()`
+  —el hook de la jarra de agua: un aviso a la medianoche siguiente y otro al volver a la app, sin intervalos ni pintados
+  continuos—, antes de los `return` condicionales (regla 4).
+
+### 🔒 Lo que se queda a propósito
+- Los 12 paneles de IA y su contexto (DA-09): siguen recibiendo la calistenia y no Fitness. El contexto de IA de Imagen
+  personal no lee Fitness y sigue sin estar conectado a ninguna pantalla.
+- Las 6 librerías de Imagen personal construidas y sin conectar (CX-13), por orden expresa.
+- **CX-17** (el área «Entrenamiento» de la puntuación cuenta los días de descanso): sigue siendo de Josué.
+- Los datos: ni uno se borra ni se migra.
+
+### 🧪 Pruebas
+- **`scripts/test-correcciones-1c.mjs`** (nueva, en `verificar.sh`): **107 comprobaciones de valores**, con los
+  entrenamientos fabricados por el flujo real: la interrupción reproducida con la regla de la 1B y corregida, un hueco en
+  medio, la cola de la misma semana, un registro constante (que sigue enseñando la diferencia de verdad), el mínimo, 21
+  ánimos válidos e inválidos, ids y duplicados, Imagen personal con solo Fitness, solo calistenia o nada, «Primer PR» en
+  cuenta nueva / histórico / primera vez / empate / peor / otra clase / en curso / con peso, fechas futuras y el cableado
+  de `useHoyISO`.
+- **`scripts/test-correcciones-1c.jsx`** (nueva, en `verificar.sh`): **15 comprobaciones de lo que se ve**: «Mis datos»,
+  Logros y Estadísticas pintados.
+- La suite de la 1B, **dada la vuelta** donde cambió la regla (no borrada); `leerDato` con la misma forma en los dos
+  caminos; y la sección «F1B» del recorrido de Chromium con los valores **calculados de la semana** (no dependen del día),
+  la frase de los días fuera y «Primer PR» conseguido (28 comprobaciones, pasada sola en verde).
+- Una prueba de mutación sobre una copia: 17 cambios de la lógica nueva, y las pruebas se pusieron rojas con todos.
+- **`bash scripts/verificar.sh`:** **en verde** (2026-10-20: `═══ TODO CORRECTO ═══`, salida 0, ni un ✗, ninguna suite omitida): build de Vite, 241 suites de Node con 25 282 comprobaciones (las dos de la 1C dentro), 4088 casos de renderizado, las reglas invariantes y **3764 comprobaciones en Chromium** (la sección «F1B» dentro, sin un error de JavaScript en todo el recorrido).
+- ⚠️ **Sin probar en el iPhone:** el cambio de día a medianoche con la aplicación abierta y el toque en «Abrir Fitness».
+
+## v3.159.0 — Fase 1B: datos y métricas que decían cosas falsas
+
+> Encargo de Josué del 2026-10-19 (*«JOS STYLE — FASE 1B: CORRECCIÓN DE DATOS Y MÉTRICAS»*): corregir los errores
+> que la Fase 1 del sistema de asistentes confirmó **antes** de diseñar ningún asistente, porque un asistente que se
+> apoye en esos motores repetiría el error. Sin asistentes nuevos, sin tocar los 12 paneles de IA, sin dependencias,
+> sin borrar ni migrar ni un dato, y **sin commit ni push** (lo dijo él). El detalle de cada decisión, en
+> `docs/15_asistentes/DECISIONES.md` (**DA-10** y la tabla CX).
+
+### 🐛 Lo que se ha corregido
+- **CX-11 · Tres asignaturas el mismo día ya no son tres días.** Estudios apunta una entrada de horas por asignatura y
+  las correlaciones cruzaban **cada entrada**: 4 «días con datos» y 1,5 h de media donde había 2 días y 3 h. Ahora las
+  horas se **suman por día** (`horasDeEstudioPorDia`) y el Diario se agrupa igual (`animoPorDia`). De paso, un ánimo o
+  unas horas que no están ya no cuentan como 0 ni dan «NaN /5». Lo pintaban Estudios y Estadísticas.
+- **CX-16 (salió al arreglar la anterior) · Estudios decía «la media baja a X h» siempre**, también cuando con menos
+  sueño había estudiado más. Ahora *«la media es de X h al día»*.
+- **CX-09 · «Entrenar calistenia y ánimo» → «Entrenar y ánimo», y lee Fitness.** Solo miraba la calistenia, que ya no
+  se puede registrar: con entrenamientos de Fitness decía «0 días con sesión», y con calistenia vieja **podía dar la
+  conclusión al revés**. Un día con entreno es ahora un día con un entrenamiento **completado** de Fitness o una sesión
+  de la calistenia de antes —**solo su fecha**, cada día una vez— y solo se comparan los días del Diario **desde el
+  primer entrenamiento registrado** (la regla de la constancia de la FIT F31: antes no se sabe si entrenaba).
+- **CX-12 · Las tarjetas, la puntuación y la predicción leen Fitness.**
+  - La tarjeta **«Entreno» de Inicio** y la de **Fitness del hub de Bienestar** dicen el **último entrenamiento
+    completado** («Tirón · Último entrenamiento hace 3 días»), con **un solo resumen** para las dos. Antes: la habilidad
+    de calistenia congelada, o «Sin sesiones todavía» a quien entrenaba a diario.
+  - La **puntuación del día** da el entrenamiento por hecho con Fitness. Antes, quien tuviera calistenia guardada
+    «usaba» el área y **nunca la tenía hecha**, aunque entrenara.
+  - **Predicciones · «Constancia de entreno»** cuenta **días con entrenamiento** en las dos últimas quincenas
+    (`prediccionConstanciaEntreno`). Antes pedía «4 sesiones en alguna habilidad» (imposible). Y cuando no puede
+    comparar lo dice: pocos días, una historia que no cubre las dos quincenas (no dice «subiendo» solo por haber
+    empezado) o ningún entrenamiento en cuatro semanas (antes decía «estable» con 0 y 0).
+- **CX-14 · «Hace 1 día» de algo de hoy.** Las tarjetas de Salud, Fitness, Diario y Fe de los hubs restaban horas
+  desde la medianoche del registro: a partir de mediodía, lo de hoy era «hace 1 día» y lo de ayer «hace 2». Ahora cuentan
+  **días de calendario** con el `diasDesde` de Salud (`calcularResumenModulo` acepta un `hoy` para poder probarlo), y
+  una fecha rota dice «Fecha no disponible» en vez de «hace null días».
+- **CX-15 · Progreso no veía el Diario.** `hayDatosPara` medía la longitud de una lista sobre módulos que son objetos
+  (`diario`, `objetivos`, `calistenia`), así que siempre daban 0; Predicciones miraba además el historial **médico**,
+  que no usa ninguna tarjeta. Ahora cada sub-app declara **las series que lee su pantalla** (`SERIES_DE_NUMEROS`). Solo
+  se cuenta si hay elementos —un booleano—: **Relación no está** y no se lee ni un texto.
+
+### 🧱 Cómo, sin ciclos ni copias
+- **La regla de qué entrenamiento cuenta se muda a una hoja**, `src/lib/sesionesCompletadas.js` (`sesionesDelHistorial`,
+  `ESTADO_DEL_HISTORIAL` y `fechasConEntrenamiento`), y `historial.js` la reexporta: importar `historial.js` desde
+  Predicciones habría sido un **ciclo** (`historial` → … → Calendario → `predicciones`). Entra en la capa de utilidades
+  de `CAPAS_FITNESS`, y `test-arquitectura-fitness` saca ahora la lista de hojas **de la capa**, no a mano.
+- **`src/lib/fechasDeEntreno.js`** es la única lectura de «qué días entrenó» para la correlación, la puntuación y la
+  predicción. Si Josué prefiere que la calistenia de antes no cuente, se quita en un sitio.
+- `App.jsx` pasa `fitness` a Inicio, a Progreso y a los resúmenes del hub (y lo pone en sus dependencias).
+
+### 🔒 Lo que se queda a propósito
+- **El logro «Primer PR»**: los PRs de la calistenia eran texto libre y Fitness deduce sus mejores marcas (la primera vez
+  que se hace un ejercicio ya es «la mejor»), así que no hay equivalencia segura. Quien lo consiguió lo conserva; está
+  escrito en `logros.js`.
+- **La IA generativa**: el Consejo del día, las Sugerencias y `currentState` siguen mandando la calistenia y no Fitness
+  (DA-09: los paneles de IA no se tocan en esta fase).
+- **Los datos**: `calistenia` y `futbol` siguen enteros en `app_data`; todo lo nuevo es lectura.
+- ⚠️ **Nuevo hallazgo, sin tocar (CX-17):** el área «Entrenamiento» de la puntuación cuenta también los días de
+  descanso; ya pasaba con la calistenia y ahora también con Fitness. Es una decisión de diseño de Josué.
+
+### 🧪 Pruebas
+- **`scripts/test-correlaciones-metricas.mjs`** (nueva, en `verificar.sh`): **134 comprobaciones de valores**, con los
+  entrenamientos fabricados por el flujo real de la aplicación: con y sin calistenia antigua, sin datos e insuficientes,
+  varias asignaturas el mismo día y en días distintos, un reloj fijo a las 15:00, a las 23:59 y a las 00:05 y el cambio
+  de hora de octubre en Madrid, Diario vacío y con datos, entradas rotas, un entrenamiento en curso, la misma sesión dos
+  veces, «Primer PR» conseguido y no, y que Relación no cuente.
+- **Banco de renderizado**: Estadísticas, Predicciones e Inicio con entrenamientos de Fitness de verdad, y Estadísticas
+  con un Diario sin `entradas`.
+- **Recorrido de Chromium, sección «F1B»** (23 comprobaciones): Inicio, la puntuación, Bienestar, Estadísticas y
+  Predicciones con lo sembrado, y la calistenia guardada intacta.
+- **Pasada entera de `bash scripts/verificar.sh`: en verde** (`═══ TODO CORRECTO ═══`, salida 0, ni un ✗, ninguna
+  suite omitida): build, 239 suites de Node con 25 158 comprobaciones, 4088 casos de renderizado y 3759 comprobaciones
+  en Chromium.
+
 ## v3.158.0 — Fitness → Entrenamiento sin el bloque de calistenia y fútbol
 
 > Encargo de Josué del 2026-10-19: *«Eliminación completa del bloque circulado de Fitness»* — todo lo que había debajo

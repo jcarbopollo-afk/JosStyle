@@ -1,10 +1,12 @@
 # Catálogo de patrones
 
 > Parte de [`../15_ASISTENTES_MAESTRO.md`](../15_ASISTENTES_MAESTRO.md).
-> **Estado: 🟡 iniciado (Fase 0). NO está completo.** Contiene el método, la plantilla, el índice de
-> fuentes de patrones ya existentes y **tres fichas completas** (las correlaciones, leídas línea a
-> línea en `src/lib/correlaciones.js`) como ejemplo del nivel exigido. El catálogo exhaustivo es la
-> **Fase 3** (por módulo) y la **Fase 4** (cruces).
+> **Estado: 🟡 iniciado (Fase 0), con las fuentes verificadas en la Fase 1. NO está completo.**
+> Contiene el método, la plantilla, el índice de fuentes de patrones ya existentes y **tres fichas
+> completas** (las correlaciones), ya **contrastadas ejecutándolas** en la Fase 1. El catálogo
+> exhaustivo es la **Fase 3** (por módulo) y la **Fase 4** (cruces).
+>
+> 🚨 **DA-09:** todo patrón de este catálogo se calcula y se redacta **sin inferencia generativa**.
 
 ---
 
@@ -62,8 +64,11 @@
 ## 4. Índice de fuentes de patrones ya existentes (fichas pendientes)
 
 Cada línea es una función de análisis **localizada en el código** el 2026-10-19 que dará al menos una
-ficha **existente** en la Fase 3. Las firmas y la forma de lo que devuelven **no están verificadas**
-todavía (salvo `correlaciones.js`).
+ficha **existente** en la Fase 3. **Sus firmas y la forma de lo que devuelven se verificaron en la
+Fase 1** (V1, y V2 ejecutándolas con datos vacíos para las principales): ver
+[`INVENTARIO.md`](INVENTARIO.md) §7. ⚠️ Las de `insights.js`, `resumenPeriodico.js` y las demás
+librerías **sin conectar** de Imagen personal (CX-13) existen y tienen pruebas, pero **ninguna
+pantalla las usa**: sus fichas serán «existente, sin integrar».
 
 | Fuente | Funciones | Ficha futura |
 |---|---|---|
@@ -82,9 +87,12 @@ todavía (salvo `correlaciones.js`).
 | `insights.js`, `ideasEstilo.js`, `resumenPeriodico.js` | insights por periodo, ideas cruzadas, resumen | PAT-IMG |
 | `avisosPlanificacion/Horario/Estilo.js` | qué se avisa y cuándo | patrones **proactivos** (P-04) |
 
-Módulos **sin motor de análisis localizado** todavía (se mira en la Fase 1): Salud física, Sueño
-(más allá de las correlaciones), Economía (más allá de `hucha.js`), Fe, Negocio, Biblioteca, Diario,
-Bienestar digital.
+**Resultado de la Fase 1** sobre los módulos que faltaban: **Salud física** tiene `salud.js` (estado
+actual, aviso de registro, evolución del peso, lesiones); **Sueño** solo tiene presentación
+(`ventanaDeDias`) y las correlaciones; **Economía** tiene `hucha.js`, pero el saldo y el mes se
+calculan dentro de `FinanceView.jsx`; **Biblioteca** tiene búsqueda y organización, no análisis;
+**Fe, Diario, Negocio y Bienestar digital no tienen motor**: sus fuentes de patrones habría que
+crearlas.
 
 ## 5. Fichas completas
 
@@ -103,10 +111,10 @@ Bienestar digital.
 | 9. No activarse | Con menos de 2 días en algún grupo; sin registros de estudio ese día |
 | 10. Respuesta | Dos medias y cuántos días hay en cada grupo; nunca «dormir más te hace estudiar más» |
 | 11. Ejemplo (FICTICIO) | 3 días ≥ 7 h con 2,5 h de estudio de media; 2 días < 7 h con 1 h de media |
-| 12. Casos límite | ⚠️ **CX-10**: el comentario habla de «la noche anterior» y el código cruza la misma fecha; depende de qué fecha guarda un registro de sueño. Pocos días → mucha varianza. Exámenes (estudio forzado) sesgan |
+| 12. Casos límite | ✅ **CX-10 resuelta (Fase 1, V3):** un registro de sueño lleva la fecha del día en que se apunta, y se apunta por la mañana (*«¿Has dormido siesta ayer?»*), así que «misma fecha» **sí es** la noche anterior. ⚠️ Se descuadra un día si se apunta al acostarse o pasada la medianoche siguiente. ❌ **CX-11 (V3):** cruza **cada registro de horas**, no cada día: tres asignaturas un día cuentan como tres días y la media sale por entrada (4 días y 1,5 h donde son 2 días y 3 h). ✅ **Corregido en la Fase 1B:** se suma por día antes de cruzar (`horasDeEstudioPorDia`). Pocos días → mucha varianza. Exámenes sesgan |
 | 13. Privacidad | Solo datos del propio usuario; sin módulos privados |
-| 14. Pruebas | Existe cobertura indirecta (`test-sueno-grafica`). Falta suite propia: grupos en el límite (1 y 2 días), sueño sin hora, fechas sin cruce, y aclarar CX-10 |
-| 15. Estado | **existente** (no verificado: CX-10) |
+| 14. Pruebas | ✅ `test-correlaciones-metricas.mjs` (Fase 1B): varias asignaturas el mismo día y en días distintos, grupos en el límite, horas rotas, sin datos |
+| 15. Estado | **existente**, corregido en la Fase 1B (CX-11) |
 
 ### PAT-X-002 · Sueño y ánimo
 
@@ -123,27 +131,27 @@ Bienestar digital.
 | 9. No activarse | Sin entradas de Diario con ánimo; menos de 2 días en un grupo |
 | 10. Respuesta | Medias de ánimo por grupo y días; sin causalidad |
 | 11. Ejemplo (FICTICIO) | Ánimo medio 4,0 con ≥ 7 h (4 días) y 3,1 con < 7 h (3 días) |
-| 12. Casos límite | `Number(null)` es 0: una entrada sin ánimo puede contar como 0 (**por verificar** en la Fase 1); mismo problema de fechas que CX-10 |
+| 12. Casos límite | ✅ **Verificado (Fase 1, V3):** `animo: null` cuenta como 0 y `animo` ausente da `NaN` (la tarjeta pintaría «NaN /5»). **Desde la pantalla no puede pasar**: el Diario pone 3 por defecto y guarda una entrada por día; solo con datos importados o corruptos, porque `diario` se carga sin normalizador. Fechas: lo mismo que PAT-X-001 (bien si el sueño se apunta por la mañana) |
 | 13. Privacidad | ⚠️ **Lee el Diario**, que AXION aísla por defecto: un asistente que lo use necesita la decisión **P-06** |
-| 14. Pruebas | Sin suite propia localizada. Faltan: ánimo vacío, límite de días, fechas |
-| 15. Estado | **existente** (no verificado) |
+| 14. Pruebas | `test-sueno-grafica` solo comprueba que devuelva un objeto. Faltan: ánimo vacío o ausente, límite de días |
+| 15. Estado | **existente**, verificado en la Fase 1 (correcto con los datos que puede crear la pantalla) |
 
 ### PAT-X-003 · Entreno y ánimo
 
 | Campo | Contenido |
 |---|---|
 | 1. Nombre y propósito | Comparar el ánimo los días con entreno y sin entreno. |
-| 2. Módulos | Entrenamiento (calistenia), Diario |
+| 2. Módulos | Entrenamiento (Fitness y las fechas de la calistenia de antes, desde la Fase 1B), Diario |
 | 3. Pregunta | ¿Los días que entreno me siento distinto? |
-| 4. Datos y fuentes | `calistenia[habilidad].sesiones[].fecha`; `diario.entradas[]` → `fecha`, `animo`. `correlacionEntrenoAnimo(calistenia, entradasDiario)` |
+| 4. Datos y fuentes | `fitness.sesiones` completadas (por `id`) y `calistenia[habilidad].sesiones[].fecha` vía `fechasDeEntreno`; `diario.entradas[]` → `fecha`, `animo` (entero 1–5). `correlacionEntrenoAnimo({ fitness, calistenia }, entradasDiario)` (firma de la Fase 1B; antes `(calistenia, entradasDiario)`) |
 | 5. Activación | Al pintar `StatsView` |
-| 6. Ventana y frecuencia | Todo el historial; en cada pintado |
+| 6. Ventana y frecuencia | Desde la Fase 1C: las semanas (lunes–domingo) con algún entrenamiento registrado, entre el primero y el último; en cada pintado |
 | 7. Lógica | Junta las fechas con alguna sesión (sin duplicar); media de ánimo de las entradas de esos días frente al resto |
 | 8. Mínimo | ≥ 3 días en cada grupo |
 | 9. No activarse | Menos de 3 días en un grupo |
-| 10. Respuesta | Dos medias y los días de cada grupo; sin causalidad |
+| 10. Respuesta | Dos medias y los días de cada grupo, qué semanas compara y cuántos días deja fuera; sin causalidad |
 | 11. Ejemplo (FICTICIO) | Ánimo 4,2 con entreno (5 días) y 3,6 sin entreno (9 días) |
-| 12. Casos límite | ⚠️ **CX-09**: solo mira `calistenia`, no `fitness.sesiones` (Entrega 4); con los entrenamientos de Fitness podría decir que no hay datos. Mismo `Number(null)` que PAT-X-002 |
+| 12. Casos límite | ❌ **CX-09 verificado (Fase 1, V3): error real.** Solo mira `calistenia`, que ya no se puede registrar (v3.158.0), y nunca `fitness.sesiones`. Con 5 entrenamientos de Fitness: «0 días con sesión». Con 3 sesiones viejas de calistenia en días de ánimo bajo: **ánimo 2,0 con entreno frente a 4,1 sin él, cuando la verdad era al revés**. Propuesta: fechas = unión de Fitness completadas y calistenia antigua (`INVENTARIO.md` §5.2). ✅ **Corregido en la Fase 1B (v3.159.0, DA-10):** días con entreno = Fitness completados + **fechas** de la calistenia de antes, cada día una vez, y solo desde el primer entrenamiento registrado. 🐛 **Fase 1C (DA-11):** dejar de registrar llenaba «sin entreno» con días de los que no se sabe nada (6 días con 4 frente a 134 con 3,1); ahora solo las semanas con algún entrenamiento, entre el primero y el último, y se dice cuántos días quedan fuera. ⚠️ Una semana entera de descanso de verdad también queda fuera |
 | 13. Privacidad | Lee el Diario (P-06) |
-| 14. Pruebas | Sin suite propia. Faltan: sesiones de Fitness, días duplicados, ánimo vacío |
-| 15. Estado | **existente** (no verificado: CX-09) |
+| 14. Pruebas | ✅ `test-correlaciones-metricas.mjs` (Fase 1B): sesiones de Fitness del flujo real, mezcla con calistenia antigua, en curso, repetidas, sin datos, insuficientes, Diario vacío, ánimo vacío; y la sección «F1B» del recorrido. Fase 1C: `test-correcciones-1c.mjs` (registro interrumpido, hueco en medio, cola de la semana, registro constante, mínimo, ánimos inválidos, ids) y `.jsx` |
+| 15. Estado | **existente**, corregido en la Fase 1B y en la 1C (CX-09) |

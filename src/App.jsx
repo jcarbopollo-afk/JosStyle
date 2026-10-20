@@ -144,6 +144,8 @@ import {
 import { tipoDeNavegacion, claseDeNavegacion, claveDeScroll, indiceDePestana, estiloDelIndicador, ultimoDePila } from './lib/transicionNavegacion';
 import { hayOrigen } from './lib/continuidad';
 import { useContenedorDesdeOrigen } from './components/continuidad';
+/* Fase 1C — el día de hoy que cambia a medianoche (el hook de la jarra de agua, P2). */
+import { useHoyISO } from './components/jarraAgua';
 import { useNavegacionEnLaPagina } from './components/navegacionMotion';
 import { useCapasMotion } from './components/capasMotion';
 import { useContextoFisico } from './components/responsiveMotion';
@@ -1125,9 +1127,15 @@ export default function App() {
 
   // RA Fase 4 · apartado 31 — el resumen de Rachas recorre historiales día a día, así que
   // esto va memoizado. El resto son sumas baratas sobre datos que ya están en memoria.
+  /* 🐛 Fase 1C — el día de hoy, que cambia a medianoche y al volver a la aplicación. Los
+     resúmenes iban memorizados solo por los datos: con la app abierta de un día para otro, la
+     tarjeta seguía diciendo «Último entrenamiento hoy» hasta que cambiara algo. Es el mismo
+     hook que ya usa la jarra de agua (P2): un solo aviso a la medianoche siguiente y una
+     comprobación al volver, sin intervalos. */
+  const diaDeHoy = useHoyISO();
   const resumenesTodos = useMemo(() => Object.fromEntries(
-    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop })])
-  ), [sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop]);
+    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, fitness, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop }, diaDeHoy)])
+  ), [sueno, calistenia, futbol, fitness, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop, diaDeHoy]);
 
   // FIT F16 — el peso corporal que usan los rangos de Fitness. Vive en Salud (sus medidas), no
   // en Fitness: duplicarlo daría dos pesos distintos, y el de los rangos sería el viejo. Se manda
@@ -2882,7 +2890,7 @@ export default function App() {
       case 'hoy':
         return (
           <DashboardView
-            perfil={perfil} sueno={sueno} calistenia={calistenia} futbol={futbol} economia={economia}
+            perfil={perfil} sueno={sueno} calistenia={calistenia} futbol={futbol} fitness={fitness} economia={economia}
             relacion={relacion} favoritas={favoritasResueltas}
             productividad={productividad} estudios={estudios}
             /* ⚠️ Con los nombres escritos: la auditoría de ME F4 los busca literales. */
@@ -3079,7 +3087,10 @@ export default function App() {
                conoce."* Se le PASA lo que ya existe para que el asistente lo lea
                y no lo pregunte. ⚠️ Nada de esto se copia dentro de
                `estiloHombre`: se mira y se olvida (F1, apartado 10). */
-            datosGlobales={{ perfil, salud, objetivos, calistenia, sueno }}
+            /* 🔓 Fase 1C — y `fitness`: «Tu entrenamiento» lee los entrenamientos completados
+               de Fitness (antes solo la calistenia, que ya no se puede registrar). Se lee y se
+               olvida, como el resto: no entra en `estiloHombre` ni en su contexto de IA. */
+            datosGlobales={{ perfil, salud, objetivos, calistenia, sueno, fitness }}
             /* EH F5, apartado 1 — la plaquita de Estilo y armario abre EL
                ARMARIO QUE YA EXISTE. ⚠️ Se pasa en solo lectura: aquí no se
                guarda ni una prenda (*"no crear un segundo sistema de ropa"*). */
@@ -3390,7 +3401,7 @@ export default function App() {
       case 'numeros':
         return (
           <NumbersView
-            sueno={sueno} estudios={estudios} diario={diario} calistenia={calistenia}
+            sueno={sueno} estudios={estudios} diario={diario} calistenia={calistenia} fitness={fitness}
             objetivos={objetivos} productividad={productividad} salud={salud}
             economia={economia} bienestar={bienestar} fe={fe} nutricion={nutricion}
             accent={accent}

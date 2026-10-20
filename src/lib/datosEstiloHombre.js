@@ -215,6 +215,9 @@ export function leerDato(estado, id, datosGlobales = {}) {
       // ⚠️ Apartado 3 — aquí no se edita. Se dice dónde.
       editableAqui: false,
       donde: global.donde,
+      /* 🔓 Fase 1C — el módulo al que se puede ir a registrarlo, si el dato lo declara
+         (hoy solo «Tu entrenamiento» → Fitness). */
+      irA: global.irA || null,
       texto: tiene ? String(valor) : TEXTO_SIN_DATO,
       actualizadoEn: null,
       privado: false,
@@ -233,6 +236,8 @@ export function leerDato(estado, id, datosGlobales = {}) {
     // Apartado 8 — *"Nunca bloquear la información introducida."*
     editableAqui: true,
     donde: 'Imagen personal',
+    /* Fase 1C — la misma forma que un dato global: aquí se edita, no hay a dónde ir. */
+    irA: null,
     texto: tiene ? String(entrada.valor) : TEXTO_SIN_DATO,
     actualizadoEn: entrada ? entrada.actualizadoEn : null,
     privado: !!cat?.privado,

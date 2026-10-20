@@ -31,6 +31,12 @@
 
 import { FUENTES_GLOBALES, MODULOS_EH, IDS_EH, moduloEH, normalizarEstiloHombre } from './estiloDeHombre';
 import { todayISO } from './helpers';
+/* 🔓 Fase 1C — el dato «Tu entrenamiento» lee los entrenamientos de Fitness con la regla del
+   historial (la hoja `sesionesCompletadas.js`) y la calistenia de antes solo por sus fechas
+   (`fechasDeEntreno`). Las dos son hojas: no arrastran Fitness ni crean ciclos. */
+import { sesionesDelHistorial } from './sesionesCompletadas';
+import { fechasDeEntreno } from './fechasDeEntreno';
+import { fechaLarga } from './fechasFitness';
 
 /* ===========================================================================
    1 · LOS PASOS (apartados 1, 2, 3 y 14)
@@ -348,13 +354,13 @@ export const DATOS_GLOBALES_EH = [
   {
     campo: 'entrenamiento',
     que: 'Tu entrenamiento',
-    donde: 'Calistenia',
-    leer: (g) => {
-      const c = g?.calistenia;
-      if (!c || typeof c !== 'object') return null;
-      const sesiones = Object.values(c).reduce((s, h) => s + (Array.isArray(h?.sesiones) ? h.sesiones.length : 0), 0);
-      return sesiones > 0 ? sesiones : null;
-    },
+    /* 🐛 Fase 1C — decía «Calistenia» y solo contaba sus sesiones, que desde la v3.158.0 ya no
+       se pueden registrar: a quien entrena en Fitness le decía que no tenía este dato y le
+       mandaba a una sección que ya no existe. Se registra en Fitness. */
+    donde: 'Fitness',
+    /* Fase 1C — a dónde lleva «Mis datos» cuando falta: el módulo de Fitness (`entreno`). */
+    irA: 'entreno',
+    leer: (g) => lecturaDeEntrenamiento(g),
   },
   {
     campo: 'sueno',
@@ -363,6 +369,32 @@ export const DATOS_GLOBALES_EH = [
     leer: (g) => (Array.isArray(g?.sueno) && g.sueno.length > 0 ? g.sueno.length : null),
   },
 ];
+
+/**
+ * 🔓 Fase 1C — lo que JosStyle sabe de su entrenamiento, dicho tal cual:
+ *   · con entrenamientos **completados** en Fitness, cuántos (cada sesión una vez, por su
+ *     `id`: la regla del historial de la FIT F10);
+ *   · si solo tiene la **calistenia de antes**, cuántos días registró y **cuándo fue el
+ *     último** —es historia, y se dice que lo es: no se enseña como si fuera de ahora—;
+ *   · sin nada, `null` (y la pantalla lo dice y lleva a Fitness).
+ * ⚠️ No se suman las dos fuentes: son cosas distintas (sesiones y días) y de épocas distintas;
+ * con Fitness, lo de antes ya no describe cómo entrena. No es un análisis: es un recuento.
+ */
+export function lecturaDeEntrenamiento(g) {
+  const fitness = g && typeof g === 'object' ? g.fitness : null;
+  const sesiones = new Set(sesionesDelHistorial(fitness).map((s) => s.id)).size;
+  if (sesiones > 0) {
+    return `${sesiones} ${sesiones === 1 ? 'entrenamiento completado' : 'entrenamientos completados'} en Fitness`;
+  }
+  const antes = fechasDeEntreno({ calistenia: g && typeof g === 'object' ? g.calistenia : null });
+  if (antes.deCalistenia > 0) {
+    const dias = antes.deCalistenia;
+    /* «De antes» va delante: en el iPhone la línea se corta por la derecha, y lo que no puede
+       perderse es que esto es historia. */
+    return `Calistenia de antes: ${dias} ${dias === 1 ? 'día registrado' : 'días registrados'}, el último el ${fechaLarga(antes.ultima)}`;
+  }
+  return null;
+}
 
 export const datoGlobalEH = (campo) => DATOS_GLOBALES_EH.find((d) => d.campo === campo) || null;
 

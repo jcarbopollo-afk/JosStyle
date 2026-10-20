@@ -826,7 +826,7 @@ export function GestionarApartados({ estado, accent, onCambiar, onCerrar, onMisD
 
    ⚠️ **Nunca `undefined` ni `null`** (apartado 15): lo que falta dice *"Todavía
    no tienes esta información"* y ofrece añadirlo. */
-export function MisDatosEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar }) {
+export function MisDatosEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onIr }) {
   const [editando, setEditando] = useState(null);   // { id, valor }
   const grupos = useMemo(() => todosLosDatos(estado, datosGlobales), [estado, datosGlobales]);
   const resumen = useMemo(() => resumenDatos(estado, datosGlobales), [estado, datosGlobales]);
@@ -875,8 +875,18 @@ export function MisDatosEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
                         {d.tiene ? d.texto : TEXTO_SIN_DATO}
                       </p>
                     </div>
-                    {/* ⚠️ Apartado 3 — lo global no se toca desde aquí. */}
-                    {!d.editableAqui ? (
+                    {/* ⚠️ Apartado 3 — lo global no se toca desde aquí. 🔓 Fase 1C — pero si falta y
+                        el dato dice dónde se registra (`irA`), se puede ir: «Tu entrenamiento» lleva
+                        a Fitness, que existe, en vez de nombrar una sección que ya no está. */}
+                    {!d.editableAqui && !d.tiene && d.irA && onIr ? (
+                      <button
+                        onClick={() => onIr(d.irA)}
+                        className="flex items-center gap-1 flex-shrink-0 text-[10px] font-semibold"
+                        style={{ color: accent }}
+                      >
+                        Abrir {d.donde}
+                      </button>
+                    ) : !d.editableAqui ? (
                       <span className="flex items-center gap-1 flex-shrink-0">
                         <Lock size={11} style={{ color: COLORS.textMuted }} />
                         <span className="text-[10px]" style={{ color: COLORS.textMuted }}>{d.donde}</span>
@@ -10240,7 +10250,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     return (
       <MisDatosEH
         estado={estado} accent={accent} datosGlobales={datosGlobales}
-        onCambiar={onCambiar} onCerrar={() => setMisDatos(false)}
+        onCambiar={onCambiar} onCerrar={() => setMisDatos(false)} onIr={onIr}
       />
     );
   }

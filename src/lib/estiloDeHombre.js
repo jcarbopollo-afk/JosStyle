@@ -452,7 +452,9 @@ export const FUENTES_GLOBALES = {
   peso: { modulo: 'salud', clave: 'salud', que: 'Las medidas de Salud' },
   perfil: { modulo: 'perfil', clave: 'perfil', que: 'El perfil de Josué' },
   objetivos: { modulo: 'objetivos', clave: 'objetivos', que: 'Los objetivos largos' },
-  entrenamientos: { modulo: 'entreno', clave: 'calistenia', que: 'Las sesiones de calistenia' },
+  /* 🔓 Fase 1C — los entrenamientos viven en Fitness (`fitness.sesiones`); la calistenia de
+     antes ya no se puede registrar y solo se lee como historia (`lecturaDeEntrenamiento`). */
+  entrenamientos: { modulo: 'entreno', clave: 'fitness', que: 'Los entrenamientos de Fitness' },
   sueno: { modulo: 'sueno', clave: 'sueno', que: 'El registro de sueño' },
   nutricion: { modulo: 'nutricion', clave: 'nutricion', que: 'Las comidas y el agua' },
   diario: { modulo: 'diario', clave: 'diario', que: 'Las entradas del diario' },

@@ -26,6 +26,8 @@
    diciendo `MORE_NAV`, `AREAS_NAV` y la personalización de la Fase 19.
    =========================================================================== */
 
+import { fechasDeEntreno } from './fechasDeEntreno';
+
 /* ---------------------------------------------------------------------------
    Las tres sub-apps.
 
@@ -127,6 +129,57 @@ export const NO_SE_GUARDA = {
    que sí existe.
    --------------------------------------------------------------------------- */
 
+/* 🐛 Fase 1B (CX-15) — **ESTADÍSTICAS NO VEÍA EL DIARIO, Y NO ERA SOLO ESO.** `hayDatosPara`
+   medía `largo(x)` —la longitud de una lista— sobre módulos que **no son listas**: `diario` es
+   `{ entradas }`, `objetivos` es `{ lista, ultimaRevision }` y `calistenia` un objeto por
+   habilidad. Los tres daban 0 siempre, así que con cinco entradas de Diario y ninguna noche el hub
+   decía que Estadísticas no tenía datos; Predicciones miraba además el historial MÉDICO de Salud,
+   que no usa ninguna de sus tarjetas, y no miraba Fitness. Ahora cada sub-app declara **las series
+   que lee su pantalla**, con la forma que tienen de verdad, y «tiene datos» es que alguna tenga
+   algo. Solo se cuenta si hay elementos —un booleano—: no se lee ni un texto, y Relación no está. */
+const listaDe = (x) => (Array.isArray(x) ? x : []);
+const hayEn = (x) => listaDe(x).length > 0;
+const objetoDe = (x) => (x && typeof x === 'object' && !Array.isArray(x) ? x : {});
+const SERIE_ENTRENAMIENTOS = {
+  serie: 'Días con entrenamiento (Fitness y la calistenia de antes)',
+  hay: (s) => fechasDeEntreno({ fitness: s.fitness, calistenia: s.calistenia }).todas.size > 0,
+};
+
+export const SERIES_DE_NUMEROS = Object.freeze({
+  /* Las tres correlaciones de `StatsView`: sueño ↔ estudio, sueño ↔ ánimo, entreno ↔ ánimo. */
+  estadisticas: [
+    { serie: 'Noches de sueño', hay: (s) => hayEn(s.sueno) },
+    { serie: 'Entradas del Diario', hay: (s) => hayEn(objetoDe(s.diario).entradas) },
+    { serie: 'Horas de estudio', hay: (s) => hayEn(objetoDe(s.estudios).horas) },
+    SERIE_ENTRENAMIENTOS,
+  ],
+  /* Las seis tarjetas de `PredictionsView`. */
+  predicciones: [
+    { serie: 'Objetivos', hay: (s) => hayEn(objetoDe(s.objetivos).lista) },
+    { serie: 'Hábitos', hay: (s) => hayEn(objetoDe(s.productividad).habitos) },
+    { serie: 'Medidas de Salud', hay: (s) => hayEn(objetoDe(s.salud).medidas) },
+    SERIE_ENTRENAMIENTOS,
+    { serie: 'Movimientos de Economía', hay: (s) => hayEn(objetoDe(s.economia).movimientos) },
+    { serie: 'Exámenes', hay: (s) => hayEn(objetoDe(s.estudios).examenes) },
+  ],
+  /* Lo que cuentan las insignias de `calcularLogros` (`logros.js`). */
+  logros: [
+    { serie: 'Hábitos', hay: (s) => hayEn(objetoDe(s.productividad).habitos) },
+    { serie: 'Entradas del Diario', hay: (s) => hayEn(objetoDe(s.diario).entradas) },
+    { serie: 'Objetivos', hay: (s) => hayEn(objetoDe(s.objetivos).lista) },
+    { serie: 'Sesiones de concentración', hay: (s) => hayEn(objetoDe(s.bienestar).sesiones) },
+    { serie: 'Servicio de Fe', hay: (s) => hayEn(objetoDe(s.fe).servicio) },
+    { serie: 'Comidas', hay: (s) => hayEn(objetoDe(s.nutricion).comidas) },
+    { serie: 'Medidas de Salud', hay: (s) => hayEn(objetoDe(s.salud).medidas) },
+    { serie: 'Récords de la calistenia de antes', hay: (s) => Object.values(objetoDe(s.calistenia)).some((sk) => hayEn(sk && sk.prs)) },
+    /* 🔓 Fase 1C — «Primer PR» lee también los entrenamientos de Fitness (un récord es superar
+       una marca anterior): son una serie de esta pantalla. */
+    { serie: 'Entrenamientos de Fitness (para «Primer PR»)', hay: (s) => fechasDeEntreno({ fitness: s.fitness }).deFitness > 0 },
+    { serie: 'Movimientos de Economía', hay: (s) => hayEn(objetoDe(s.economia).movimientos) },
+    { serie: 'Noches de sueño', hay: (s) => hayEn(s.sueno) },
+  ],
+});
+
 /**
  * ¿Tiene esta sub-app algo que enseñar con los datos que hay?
  *
@@ -135,26 +188,11 @@ export const NO_SE_GUARDA = {
  */
 export function hayDatosPara(id, estado = {}) {
   const s = estado && typeof estado === 'object' ? estado : {};
-  const largo = (x) => (Array.isArray(x) ? x.length : 0);
-  switch (id) {
-    case 'estadisticas':
-      // Las correlaciones necesitan al menos dos series registradas.
-      return largo(s.sueno) > 0 || largo(s.diario) > 0 || largo(s.calistenia) > 0;
-    case 'predicciones':
-      return largo(s.objetivos) > 0 || largo(s.salud?.historial) > 0;
-    case 'logros':
-      /* 🐛 **Esto devolvía `true` a secas, y la prueba lo cazó.** El razonamiento
-         era *"siempre hay insignias que enseñar, aunque estén bloqueadas"* —
-         cierto— pero la pantalla de Números no pregunta *"¿hay algo que
-         dibujar?"*, pregunta **"¿tiene datos?"**. Con la aplicación recién
-         estrenada decía *«1 de 3 con datos»* teniendo Josué cero registros: el
-         número inventado que prohíben la E3 F13 y la E3 F24. Una insignia
-         bloqueada no es un dato suyo. */
-      return largo(s.diario?.entradas) > 0 || largo(s.productividad?.tareas) > 0
-        || largo(s.objetivos) > 0 || largo(s.sueno) > 0 || largo(s.calistenia) > 0;
-    default:
-      return null;
-  }
+  const series = SERIES_DE_NUMEROS[id];
+  if (!series) return null;
+  /* 🐛 Logros devolvía `true` a secas y decía «1 de 3 con datos» con la aplicación vacía:
+     una insignia bloqueada no es un dato suyo. Por eso cada sub-app mira sus series. */
+  return series.some((x) => x.hay(s));
 }
 
 /**

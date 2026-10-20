@@ -4,7 +4,7 @@ import { COLORS } from '../tokens';
 import { formatFecha } from '../lib/helpers';
 import {
   prediccionObjetivo, prediccionAbandonoHabito, prediccionPeso,
-  prediccionFuerza, prediccionAhorro, prediccionNotas,
+  prediccionConstanciaEntreno, DIAS_MINIMOS_CONSTANCIA, prediccionAhorro, prediccionNotas,
 } from '../lib/predicciones';
 import { Card, SectionTitle } from '../components/ui';
 
@@ -120,21 +120,30 @@ function PesoTarjeta({ salud }) {
   );
 }
 
-function FuerzaTarjeta({ calistenia }) {
-  const p = prediccionFuerza(calistenia);
+/* 🐛 Fase 1B (CX-12) — leía la calistenia, que ya no se puede registrar, y pedía «4 sesiones en
+   alguna habilidad». Ahora cuenta DÍAS con entrenamiento (Fitness y la calistenia de antes), y
+   cuando no puede comparar dice por qué, en vez de afirmar un ritmo. */
+const FALTA_CONSTANCIA = {
+  pocos_dias: `hacen falta al menos ${DIAS_MINIMOS_CONSTANCIA} días con un entrenamiento completado en Fitness`,
+  historial_corto: 'hacen falta cuatro semanas desde tu primer entrenamiento registrado para comparar dos quincenas completas',
+  sin_actividad_reciente: 'no hay entrenamientos completados en las últimas cuatro semanas',
+};
+
+function ConstanciaTarjeta({ fitness, calistenia }) {
+  const p = prediccionConstanciaEntreno({ fitness, calistenia });
   return (
     <TarjetaPrediccion
       icon={Dumbbell}
       titulo="Constancia de entreno"
       suficientesDatos={p.suficientesDatos}
-      resumenFalta="hacen falta al menos 4 sesiones registradas en alguna habilidad"
+      resumenFalta={FALTA_CONSTANCIA[p.motivo] || FALTA_CONSTANCIA.pocos_dias}
     >
       <p className="text-sm mt-2" style={{ color: COLORS.text }}>
-        En <span className="font-semibold">{p.skill}</span>, la habilidad que más entrenas: <span className="font-semibold">{p.sesionesRecientes}</span> sesiones en los últimos 14 días
-        frente a <span className="font-semibold">{p.sesionesAnteriores}</span> en los 14 anteriores — tu ritmo va <span className="font-semibold">{p.tendencia}</span>.
+        <span className="font-semibold">{p.diasRecientes}</span> {p.diasRecientes === 1 ? 'día' : 'días'} con entrenamiento en los últimos 14
+        frente a <span className="font-semibold">{p.diasAnteriores}</span> en los 14 anteriores — tu ritmo va <span className="font-semibold">{p.tendencia}</span>.
       </p>
       <p className="text-xs mt-2" style={{ color: COLORS.textMuted }}>
-        No hay una cifra de fuerza fiable que proyectar (tus PRs son texto libre, no números comparables) — esto refleja constancia, no rendimiento.
+        Cuenta días con un entrenamiento completado en Fitness (y los de calistenia que registraste antes), no su intensidad: esto refleja constancia, no rendimiento.
       </p>
     </TarjetaPrediccion>
   );
@@ -186,7 +195,7 @@ function NotasTarjeta({ estudios }) {
   );
 }
 
-export default function PredictionsView({ objetivos, productividad, salud, calistenia, economia, estudios, accent }) {
+export default function PredictionsView({ objetivos, productividad, salud, calistenia, fitness, economia, estudios, accent }) {
   return (
     <div className="space-y-4 pb-4">
       <SectionTitle sub="Proyecciones simples sobre tu propio historial — nunca una decisión tomada por ti">
@@ -196,7 +205,7 @@ export default function PredictionsView({ objetivos, productividad, salud, calis
       <ObjetivosTarjeta objetivos={objetivos} />
       <HabitosTarjeta productividad={productividad} />
       <PesoTarjeta salud={salud} />
-      <FuerzaTarjeta calistenia={calistenia} />
+      <ConstanciaTarjeta fitness={fitness} calistenia={calistenia} />
       <AhorroTarjeta economia={economia} />
       <NotasTarjeta estudios={estudios} />
 

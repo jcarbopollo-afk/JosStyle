@@ -173,9 +173,13 @@ ok(!/\b0\b/.test(resVacio.linea2),
   '🚨 Sin datos el resumen NO dice «0 de 3»: un cero sería inventarse un mal resultado donde no ha registrado nada');
 eq(resVacio.estado, 'vacio', '…y se marca como vacío');
 
-const conDatos = { sueno: [{ id: '1' }], objetivos: [{ id: 'o' }] };
+/* 🐛 Fase 1B (CX-15) — el escenario tenía `objetivos` como lista, y en la aplicación es
+   `{ lista, ultimaRevision }`: con la forma de mentira el recuento «pasaba» por el sueño
+   mientras los objetivos de verdad no contaban nunca. Ahora va con la forma real, y las
+   tres sub-apps tienen algo (Estadísticas y Logros por el sueño, Predicciones por el objetivo). */
+const conDatos = { sueno: [{ id: '1' }], objetivos: { lista: [{ id: 'o' }], ultimaRevision: null } };
 const resLleno = resumenNumeros(conDatos);
-ok(/3 de 3|2 de 3|1 de 3/.test(resLleno.linea2), 'Con datos sí se cuenta cuántas tienen algo que enseñar');
+ok(/3 de 3/.test(resLleno.linea2), `Con datos sí se cuenta cuántas tienen algo que enseñar (${resLleno.linea2})`);
 /* 🐛 Esto devolvía `true` a secas y decía «1 de 3 con datos» con la aplicación
    vacía. Una insignia bloqueada no es un dato de Josué. */
 ok(hayDatosPara('logros', vacio) === false,

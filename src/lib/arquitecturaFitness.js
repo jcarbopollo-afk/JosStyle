@@ -79,8 +79,8 @@ export const CAPAS_FITNESS = Object.freeze([
   },
   {
     id: 'utilidades', nombre: 'Utilidades (hojas del árbol)',
-    que: 'Fechas y números con un formato por papel; no importan nada de Fitness (apartados 38 y 39).',
-    archivos: ['src/lib/fechasFitness.js', 'src/lib/numerosFitness.js'],
+    que: 'Fechas y números con un formato por papel, y qué entrenamientos cuentan (Fase 1B); no importan nada de Fitness (apartados 38 y 39).',
+    archivos: ['src/lib/fechasFitness.js', 'src/lib/numerosFitness.js', 'src/lib/sesionesCompletadas.js'],
   },
   {
     id: 'auditorias', nombre: 'Auditorías y declaraciones',

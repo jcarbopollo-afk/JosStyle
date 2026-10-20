@@ -507,6 +507,20 @@ const fitnessConProgresoF12 = () => [60, 62.5, 65].reduce((f, peso, i) => {
   return guardarSesionF10(f, guardarF8(pasarF8(s), { confirmado: true }).sesion);
 }, {});
 
+/* 🐛 Fase 1B (CX-09, CX-12) — entrenamientos COMPLETADOS repartidos en seis semanas que acaban
+   hoy, para que Estadísticas, Predicciones y la tarjeta de Inicio pinten su lectura con datos de
+   Fitness, no solo el vacío. Con el flujo de la aplicación, como el resto. */
+const fitnessRecienteF1B = () => [-40, -35, -20, -18, -12, -9, -5, -2, 0]
+  .map((d) => addDays(HOY, d))
+  .reduce((f, fecha) => {
+    let s = empezarF7({ nombre: 'Tirón', lineas: anadirF3(crearRutinaF3({ nombre: 'Tirón' }), 'dominada-prona').lineas, hoy: fecha, ahora: Date.parse(`${fecha}T18:00:00`) });
+    const e = ejsF7(s)[0];
+    s = marcarF7(editarF7(s, e.id, e.series[0].id, { reps: 8 }), e.id, e.series[0].id, true);
+    return guardarSesionF10(f, guardarF8(pasarF8(s), { confirmado: true }).sesion);
+  }, {});
+const diarioF1B = () => ({ entradas: [-12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0]
+  .map((d, i) => ({ id: `d${i}`, fecha: addDays(HOY, d), animo: (i % 3) + 2, comoMeSiento: '', queHeAprendido: '', queMejorareManana: '' })) });
+
 /* FIT F17 — dos ejercicios estimados por el cuestionario, sin una sola sesión. */
 const fitnessClasificadoF17 = () => {
   let f = {};
@@ -1089,6 +1103,8 @@ const CASOS = [
     ];
   })(),
   ['DashboardView', DashboardView, propsDashboard],
+  /* 🐛 Fase 1B (CX-12) — la tarjeta «Entreno» con el último entrenamiento de Fitness. */
+  ['DashboardView · con entrenamientos de Fitness', DashboardView, (e) => propsDashboard({ ...e, fitness: fitnessRecienteF1B() })],
   ['SleepView', SleepView, (e) => ({ sueno: e.sueno, onAdd: noop, onDelete: noop, accent })],
   /* Entrega 3 · F31 (SU F1) — el registro nuevo y, sobre todo, **lo guardado con
      la forma vieja**: `siesta` en minutos y sin `siestaAyer`. Y una noche sin
@@ -1129,8 +1145,13 @@ const CASOS = [
   ['FinanceView', FinanceView, (e) => ({ economia: e.economia, onAdd: noop, onDelete: noop, onUpdate: noop, accent })],
   ['ObjectivesView', ObjectivesView, (e) => ({ objetivos: e.objetivos, onAdd: noop, onToggle: noop, onDelete: noop, onRevisar: noop, accent })],
   ['DiaryView', DiaryView, (e) => ({ diario: e.diario, onAdd: noop, onDelete: noop, accent })],
-  ['StatsView', StatsView, (e) => ({ sueno: e.sueno, estudios: e.estudios, diario: e.diario, calistenia: e.calistenia, accent })],
-  ['PredictionsView', PredictionsView, (e) => ({ objetivos: e.objetivos, productividad: e.productividad, salud: e.salud, calistenia: e.calistenia, economia: e.economia, estudios: e.estudios, accent })],
+  ['StatsView', StatsView, (e) => ({ sueno: e.sueno, estudios: e.estudios, diario: e.diario, calistenia: e.calistenia, fitness: e.fitness, accent })],
+  ['PredictionsView', PredictionsView, (e) => ({ objetivos: e.objetivos, productividad: e.productividad, salud: e.salud, calistenia: e.calistenia, fitness: e.fitness, economia: e.economia, estudios: e.estudios, accent })],
+  /* 🐛 Fase 1B — con entrenamientos de Fitness de verdad: la correlación con el ánimo y la
+     constancia de entreno pintan su lectura (antes no podían: solo leían la calistenia). */
+  ['StatsView · con entrenamientos de Fitness', StatsView, (e) => ({ sueno: e.sueno, estudios: e.estudios, diario: diarioF1B(), calistenia: e.calistenia, fitness: fitnessRecienteF1B(), accent })],
+  ['StatsView · sin `entradas` en el Diario', StatsView, (e) => ({ sueno: e.sueno, estudios: e.estudios, diario: {}, calistenia: e.calistenia, fitness: e.fitness, accent })],
+  ['PredictionsView · con entrenamientos de Fitness', PredictionsView, (e) => ({ objetivos: e.objetivos, productividad: e.productividad, salud: e.salud, calistenia: {}, fitness: fitnessRecienteF1B(), economia: e.economia, estudios: e.estudios, accent })],
   ['AchievementsView', AchievementsView, (e) => ({ ...e, accent })],
   /* RA Fase 4 · apartado 36 — las pruebas visuales que pide, una por una. Se montan
      con el servicio real, no con datos inventados a mano: así, si el motor cambiara de
@@ -3482,7 +3503,7 @@ const CASOS = [
      ⚠️ El caso que más importa es el de datos vacíos: sin nada registrado, las
      tres plaquitas tienen que decir QUÉ FALTA, nunca un cero. */
   ['NumbersView', NumbersView, (e) => ({
-    sueno: e.sueno, estudios: e.estudios, diario: e.diario, calistenia: e.calistenia,
+    sueno: e.sueno, estudios: e.estudios, diario: e.diario, calistenia: e.calistenia, fitness: e.fitness,
     objetivos: e.objetivos, productividad: e.productividad, salud: e.salud,
     economia: e.economia, bienestar: e.bienestar, fe: e.fe, nutricion: e.nutricion,
     accent,

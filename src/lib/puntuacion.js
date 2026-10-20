@@ -38,6 +38,7 @@
 // ---------------------------------------------------------------------------
 
 import { todayISO, addDays } from './helpers';
+import { fechasDeEntreno } from './fechasDeEntreno';
 
 // Un área entra en el cálculo solo si `usa` es true (Josué tiene datos ahí).
 // `hecho` responde a "¿lo he registrado hoy?".
@@ -67,8 +68,11 @@ function construirAreas(estado, hoy) {
   const horas = lista(estudios.horas);
   const medidas = lista(salud.medidas);
 
-  // Todas las sesiones de calistenia de las 7 habilidades, unificadas.
-  const sesionesCalistenia = Object.values(calistenia).flatMap((s) => lista(s && s.sesiones));
+  /* 🐛 Fase 1B (CX-12) — el área solo miraba la calistenia, que ya no se puede registrar:
+     quien la tuviera guardada «usaba» el área y nunca la tenía hecha, aunque entrenara en
+     Fitness cada día. Los días con entreno son ahora los entrenamientos completados de Fitness
+     y las fechas de la calistenia de antes (`fechasDeEntreno`); los partidos, como siempre. */
+  const diasEntreno = fechasDeEntreno({ fitness: e.fitness, calistenia }).todas;
 
   // El sueño se registra por la mañana pero describe la noche anterior, así que
   // se acepta tanto el registro de hoy como el de ayer: a las 9 de la mañana,
@@ -85,8 +89,8 @@ function construirAreas(estado, hoy) {
     {
       id: 'entreno',
       etiqueta: 'Entrenamiento',
-      usa: sesionesCalistenia.length > 0 || futbol.length > 0,
-      hecho: sesionesCalistenia.some((s) => s.fecha === hoy) || futbol.some((p) => p.fecha === hoy),
+      usa: diasEntreno.size > 0 || futbol.length > 0,
+      hecho: diasEntreno.has(hoy) || futbol.some((p) => p.fecha === hoy),
     },
     {
       id: 'nutricion',

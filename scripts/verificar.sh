@@ -1639,6 +1639,32 @@ else
   fallo "Falla la navegación o el apartado Números"; grep '✗' /tmp/jc_numeros.log
 fi
 
+# Fase 1B (asistentes) — las correlaciones, las tarjetas, la puntuación y la predicción con los
+# datos de verdad: días y no asignaturas (CX-11), Fitness y no la calistenia (CX-09, CX-12), «hace
+# N días» por días de calendario (CX-14) y Progreso reconociendo el Diario (CX-15). Comprueba
+# VALORES: la única prueba que tenían las correlaciones era que devolvieran un objeto.
+if node --import ./scripts/resolver-vite.mjs scripts/test-correlaciones-metricas.mjs >/tmp/jc_f1b.log 2>&1; then
+  ok "Datos y métricas: correlaciones, tarjetas y fechas (Fase 1B) — $(grep -c '✓' /tmp/jc_f1b.log) comprobaciones"
+else
+  fallo "Falla un cálculo de las correlaciones, las tarjetas o las fechas relativas"; grep '✗' /tmp/jc_f1b.log
+fi
+
+# Fase 1C — lo que la auditoría adversarial encontró en la 1B: dejar de registrar entrenamientos
+# no fabrica una diferencia de ánimo (CX-09), el ánimo es un entero del 1 al 5, los ids según el
+# contrato de la puerta de carga, «Tu entrenamiento» de Imagen personal lee Fitness, «Primer PR»
+# se puede conseguir (y lo conseguido se conserva), lo fechado en el futuro no es «hoy» y «hoy»
+# cambia a medianoche. Y lo que se VE de todo ello, pintado con react-dom/server.
+if node --import ./scripts/resolver-vite.mjs scripts/test-correcciones-1c.mjs >/tmp/jc_f1c.log 2>&1; then
+  ok "Correcciones finales tras la auditoría (Fase 1C) — $(grep -c '✓' /tmp/jc_f1c.log) comprobaciones"
+else
+  fallo "Falla una corrección de la Fase 1C (correlación, Imagen personal, Primer PR o fechas)"; grep '✗' /tmp/jc_f1c.log
+fi
+if node scripts/smoke.mjs test-correcciones-1c.jsx >/tmp/jc_f1c_vista.log 2>&1; then
+  ok "Lo que se ve de la Fase 1C (Mis datos, Logros y Estadísticas) — $(grep -c '✓' /tmp/jc_f1c_vista.log) comprobaciones"
+else
+  fallo "Una pantalla de la Fase 1C no enseña lo que debe"; grep '✗' /tmp/jc_f1c_vista.log
+fi
+
 # Ajustes · Perfil — la foto de perfil y el nombre de los saludos.
 if node --import ./scripts/resolver-vite.mjs scripts/test-foto-perfil.mjs >/tmp/jc_fotoperfil.log 2>&1; then
   ok "Ajustes: foto de perfil y saludos — $(grep -c '✓' /tmp/jc_fotoperfil.log) comprobaciones"

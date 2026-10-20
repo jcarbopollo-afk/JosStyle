@@ -2,6 +2,32 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.160.0 — Asistentes, Fase 1C: correcciones tras la auditoría; sin commit ni push, por orden de Josué):**
+> Una auditoría adversarial de la 1 y la 1B encontró cuatro cosas que seguían diciendo algo falso o imposible, y están
+> corregidas: «Entrenar y ánimo» ya no convierte **dejar de apuntar** en días sin entreno (compara solo las semanas con
+> algún entrenamiento registrado, entre el primero y el último, y dice cuántos días deja fuera; el ánimo tiene que ser un
+> entero del 1 al 5 y las sesiones se cuentan por `id`); el logro **«Primer PR» se puede conseguir** superando una marca
+> en Fitness (el de calistenia se conserva; siguen siendo 12); Imagen personal → «Tu entrenamiento» lee Fitness y ofrece
+> «Abrir Fitness» (CX-18); y un entrenamiento con fecha futura ya no sale como «hoy», y «hoy» cambia a medianoche con la
+> app abierta (CX-19). Decisión **DA-11**. Ni un dato se migra; los 12 paneles de IA y su contexto, sin tocar. **Falta
+> verlo en el iPhone**: sobre todo el cambio de día a medianoche y el botón «Abrir Fitness». CX-17 sigue siendo de Josué.
+
+> **📅 ACTUALIZACIÓN (v3.159.0 — Asistentes, Fase 1B: datos y métricas corregidos; sin commit ni push, por orden de Josué):**
+> Lo que la Fase 1 confirmó que daba información falsa, corregido: «Entrenar y ánimo» lee los entrenamientos de Fitness
+> (CX-09); tres asignaturas el mismo día ya cuentan como un día (CX-11); Inicio, Bienestar, la puntuación y Predicciones
+> leen Fitness (CX-12; el logro «Primer PR» se conserva porque no hay equivalencia segura, y la IA no se toca, DA-09);
+> «hace N días» cuenta días de calendario (CX-14); y Progreso reconoce el Diario (CX-15). La calistenia antigua cuenta
+> **solo por sus fechas** y ningún dato se borra (DA-10). Queda para Josué **CX-17** (el área «Entrenamiento» de la
+> puntuación cuenta los días de descanso). Detalle en `docs/15_asistentes/DECISIONES.md` y en el `CHANGELOG`.
+
+> **📅 ACTUALIZACIÓN (2026-10-19 — Asistentes, Fase 1: inventario, sin tocar código):**
+> Inventario completo de lo que existe antes de diseñar asistentes, en `docs/15_asistentes/INVENTARIO.md`. Lo más
+> importante: la correlación «entreno ↔ ánimo» da datos falsos (CX-09), seis sitios siguen enseñando la calistenia
+> antigua y ninguno los entrenamientos de Fitness (CX-12, con propuesta), e Imagen personal tiene 7 apartados sin
+> pantalla y seis librerías construidas sin conectar (CX-13). 🚨 **Decisión firme de Josué (DA-09):** asistentes y
+> chatbots, también los del Pro, **sin inferencia generativa**; solo la IA libre Premium, al final. **Siguiente
+> recomendada: Fase 1b** (arreglar esos datos), cuando Josué la autorice. Ni commit ni push de esta fase: lo pidió él.
+
 > **📅 ACTUALIZACIÓN (v3.158.0 — Fitness → Entrenamiento sin el bloque de calistenia y fútbol):**
 > Por petición de Josué, el área Entrenamiento de Fitness ya no enseña «Habilidades» ni nada de lo que iba debajo
 > (las siete habilidades de calistenia, el selector Calistenia/Fútbol, los partidos y la sugerencia de la IA): ahora

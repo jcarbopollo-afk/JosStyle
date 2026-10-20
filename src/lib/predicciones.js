@@ -4,7 +4,8 @@
 // con el mismo tono "prudente y directo" del resto de la IA de la app. Nada aquí es un modelo
 // estadístico complejo: son medias, tasas y regresiones lineales simples, siempre explicables.
 
-import { todayISO, fechaLocalISO } from './helpers';
+import { todayISO, fechaLocalISO, addDays } from './helpers';
+import { fechasDeEntreno } from './fechasDeEntreno';
 
 function diasEntre(fechaA, fechaB) {
   return Math.round((new Date(fechaB + 'T00:00:00') - new Date(fechaA + 'T00:00:00')) / 86400000);
@@ -81,29 +82,39 @@ export function prediccionPeso(medidas) {
   return { suficientesDatos: true, pesoActual, tendenciaSemana, pesoEstimado30d };
 }
 
-// --- 4. Fuerza (calistenia): sin un valor numérico fiable (los PRs son texto libre, ej. "30s
-// hold"), la proyección honesta aquí es de constancia, no de una cifra inventada: ¿va a más o a
-// menos la frecuencia de sesiones de la habilidad que más entrena? ---
-export function prediccionFuerza(calistenia) {
-  const skills = Object.entries(calistenia || {});
-  const [nombreSkill, data] = skills.reduce(
-    (mejor, actual) => ((actual[1].sesiones || []).length > (mejor[1]?.sesiones || []).length ? actual : mejor),
-    [null, { sesiones: [] }]
-  );
-  const sesiones = data?.sesiones || [];
-  if (!nombreSkill || sesiones.length < 4) return { suficientesDatos: false };
+// --- 4. Constancia de entreno ---
+// 🐛 Fase 1B (CX-12) — antes era `prediccionFuerza(calistenia)`: el ritmo de la habilidad de
+// calistenia con más sesiones, que desde la v3.158.0 ya no se puede registrar, así que pedía
+// «4 sesiones en alguna habilidad» (imposible) o repetía el ritmo congelado de lo viejo. Sin una
+// cifra de fuerza comparable que proyectar, sigue siendo una lectura de CONSTANCIA, ahora en
+// DÍAS con entrenamiento (`fechasDeEntreno`: los completados de Fitness y las fechas de la
+// calistenia de antes, cada día una vez): los últimos 14 frente a los 14 anteriores.
+// 🚨 Y no afirma un ritmo sin datos que lo sostengan (la media semanal de la FIT F31):
+//   · menos de 4 días con entreno en total → `pocos_dias`;
+//   · si el primero cae dentro de las 4 semanas, la quincena anterior no está completa y
+//     compararla diría «subiendo» solo por haber empezado → `historial_corto`;
+//   · ninguno en las 4 semanas → `sin_actividad_reciente` (antes decía «estable» con 0 y 0).
+export const DIAS_MINIMOS_CONSTANCIA = 4;
 
-  const hoy = todayISO();
-  const cutoffReciente = new Date(hoy + 'T00:00:00'); cutoffReciente.setDate(cutoffReciente.getDate() - 13);
-  const cutoffRecienteISO = fechaLocalISO(cutoffReciente);
-  const cutoffAnterior = new Date(hoy + 'T00:00:00'); cutoffAnterior.setDate(cutoffAnterior.getDate() - 27);
-  const cutoffAnteriorISO = fechaLocalISO(cutoffAnterior);
+export function prediccionConstanciaEntreno({ fitness = null, calistenia = null } = {}, hoy = todayISO()) {
+  /* 🐛 Fase 1C — un día con fecha futura (reloj adelantado, importación) no es un día entrenado
+     todavía: no cuenta para el mínimo ni para el principio del historial. */
+  const pasados = [...fechasDeEntreno({ fitness, calistenia }).todas].filter((f) => f <= hoy).sort();
+  const todas = new Set(pasados);
+  const primera = pasados.length ? pasados[0] : null;
+  if (todas.size < DIAS_MINIMOS_CONSTANCIA) return { suficientesDatos: false, motivo: 'pocos_dias', diasConEntreno: todas.size };
 
-  const recientes = sesiones.filter((s) => s.fecha >= cutoffRecienteISO).length;
-  const anteriores = sesiones.filter((s) => s.fecha >= cutoffAnteriorISO && s.fecha < cutoffRecienteISO).length;
+  const inicioReciente = addDays(hoy, -13);
+  const inicioAnterior = addDays(hoy, -27);
+  if (primera > inicioAnterior) return { suficientesDatos: false, motivo: 'historial_corto', diasConEntreno: todas.size, desde: primera };
+
+  const dias = [...todas];
+  const recientes = dias.filter((f) => f >= inicioReciente && f <= hoy).length;
+  const anteriores = dias.filter((f) => f >= inicioAnterior && f < inicioReciente).length;
+  if (recientes + anteriores === 0) return { suficientesDatos: false, motivo: 'sin_actividad_reciente', diasConEntreno: todas.size };
+
   const tendencia = recientes > anteriores ? 'subiendo' : recientes < anteriores ? 'bajando' : 'estable';
-
-  return { suficientesDatos: true, skill: nombreSkill, sesionesRecientes: recientes, sesionesAnteriores: anteriores, tendencia };
+  return { suficientesDatos: true, diasRecientes: recientes, diasAnteriores: anteriores, tendencia, diasConEntreno: todas.size };
 }
 
 // --- 5. Ahorro: media mensual de (ingresos - gastos) sobre los últimos meses con movimientos ---

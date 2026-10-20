@@ -12,7 +12,7 @@
 // de acento), 'vacio' (el módulo todavía no tiene nada que mostrar hoy — punto apagado, del
 // color del borde), 'info' (módulos de solo lectura/configuración sin un "dato propio" que
 // pueda estar vacío o no — Estadísticas, Predicciones, Logros, Ajustes — sin punto).
-import { calcularDuracion, formatHoras, diasHasta, todayISO, addDays } from './helpers';
+import { calcularDuracion, formatHoras, diasHasta, todayISO, addDays, FECHA_NO_DISPONIBLE } from './helpers';
 import { ESTADOS_ANIMO } from '../tokens';
 import { resumenDelDia, eventosFuturos } from './calendario';
 import { eventosDerivados } from './calendarioIntegracion';
@@ -26,16 +26,22 @@ import { totalBiblioteca } from './biblioteca.js';
    pantalla de Josué (EH F62). */
 import { calidadDe } from './sueno.js';
 import { resumenNumeros } from './numeros';
+/* 🐛 Fase 1B (CX-14) — «hace N días» cuenta días de calendario (`diasDesde` de Salud), y
+   (CX-12) el entrenamiento sale del historial de Fitness, no de la calistenia de antes. */
+import { diasDesde } from './salud';
+import { historialPorReciente } from './historial';
+import { nombrePorDefecto } from './finalizacion';
 
 function ultimoPorFecha(lista) {
   if (!lista || lista.length === 0) return null;
   return [...lista].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))[0];
 }
 
-function diasDesde(fechaISO) {
-  if (!fechaISO) return null;
-  return Math.max(0, Math.round((Date.now() - new Date(`${fechaISO}T00:00:00`).getTime()) / 86400000));
-}
+/* 🐛 Fase 1B (CX-14) — aquí vivía un `diasDesde` que restaba la medianoche del registro a
+   `Date.now()` y redondeaba: algo apuntado HOY salía «hace 1 día» a partir de mediodía, y lo de
+   ayer por la tarde, «hace 2». Un registro guarda su DÍA local (sin hora), así que la distancia
+   es de fecha a fecha: `diasDesde(fecha, hoy)` de `salud.js`, con `hoy` como parámetro. Y sin
+   fecha válida no se inventa una distancia («hace null días»): se dice que no está. */
 
 function plural(n, singular, pluralForm) {
   return n === 1 ? singular : pluralForm;
@@ -45,13 +51,13 @@ function plural(n, singular, pluralForm) {
 // nutricion, calistenia, futbol, estudios, productividad, objetivos, diario, biblioteca,
 // bibliotecaArchivos, economia, negocio, relacion, fe, bienestar) — se le pasa tal cual, sin
 // transformarlo antes, para no duplicar cálculos que App.jsx ya tiene en otro sitio.
-export function calcularResumenModulo(id, s) {
+export function calcularResumenModulo(id, s, hoyISO = todayISO()) {
   switch (id) {
     case 'salud': {
       const ultima = ultimoPorFecha(s.salud?.medidas);
       if (!ultima || !ultima.peso) return { linea1: 'Sin registros todavía', linea2: 'Toca para añadir tu primera medida', estado: 'vacio' };
-      const dias = diasDesde(ultima.fecha);
-      return { linea1: `Peso: ${ultima.peso} kg`, linea2: dias === 0 ? 'Último registro hoy' : `Último registro hace ${dias} ${plural(dias, 'día', 'días')}`, estado: 'activo' };
+      const dias = diasDesde(ultima.fecha, hoyISO);
+      return { linea1: `Peso: ${ultima.peso} kg`, linea2: dias === null ? FECHA_NO_DISPONIBLE : dias === 0 ? 'Último registro hoy' : `Último registro hace ${dias} ${plural(dias, 'día', 'días')}`, estado: 'activo' };
     }
     case 'sueno': {
       const ultimo = ultimoPorFecha(s.sueno);
@@ -69,15 +75,21 @@ export function calcularResumenModulo(id, s) {
       return { linea1: `${Math.round(kcal)} kcal hoy`, linea2: `${Math.round(prote)} g proteína`, estado: 'activo' };
     }
     case 'entreno': {
-      const sesiones = Object.values(s.calistenia || {}).flatMap((sk) => sk.sesiones || []);
-      const ultima = ultimoPorFecha(sesiones);
-      const activas = Object.values(s.calistenia || {}).filter((sk) => sk.nivel > 0).length;
-      const partidos = (s.futbol || []).length;
-      if (!ultima && partidos === 0) return { linea1: 'Sin sesiones todavía', linea2: 'Toca para registrar un entreno', estado: 'vacio' };
-      const dias = ultima ? diasDesde(ultima.fecha) : null;
+      /* 🐛 Fase 1B (CX-12) — contaba «habilidades activas» y la última sesión de la calistenia,
+         que ya no se puede registrar: para quien entrena en Fitness decía «Sin sesiones todavía».
+         Ahora es el último entrenamiento COMPLETADO de Fitness (`historialPorReciente`, F10/F31:
+         por fecha y, el mismo día, por hora), con el nombre que le da su resumen (F8). La
+         calistenia y los partidos guardados no se tocan: siguen en la papelera, la exportación
+         y el Calendario. */
+      /* 🐛 Fase 1C — un entrenamiento con fecha FUTURA (el reloj del móvil adelantado, o una
+         fecha mal importada) no es «el último»: salía como «Último entrenamiento hoy» porque
+         `diasDesde` no baja de 0. El último es el más reciente que no está por llegar. */
+      const ultimo = historialPorReciente(s.fitness).find((x) => x.fecha <= hoyISO) || null;
+      if (!ultimo) return { linea1: 'Sin entrenamientos en Fitness', linea2: 'Toca para empezar uno', estado: 'vacio' };
+      const dias = diasDesde(ultimo.fecha, hoyISO);
       return {
-        linea1: activas > 0 ? `${activas} ${plural(activas, 'habilidad activa', 'habilidades activas')}` : `${partidos} ${plural(partidos, 'partido registrado', 'partidos registrados')}`,
-        linea2: dias !== null ? (dias === 0 ? 'Última sesión hoy' : `Última sesión hace ${dias} ${plural(dias, 'día', 'días')}`) : 'Toca para ver el detalle',
+        linea1: nombrePorDefecto(ultimo),
+        linea2: dias === null ? FECHA_NO_DISPONIBLE : dias === 0 ? 'Último entrenamiento hoy' : `Último entrenamiento hace ${dias} ${plural(dias, 'día', 'días')}`,
         estado: 'activo',
       };
     }
@@ -132,9 +144,9 @@ export function calcularResumenModulo(id, s) {
     case 'diario': {
       const ultima = ultimoPorFecha(s.diario?.entradas);
       if (!ultima) return { linea1: 'Sin entradas todavía', linea2: 'Toca para escribir hoy', estado: 'vacio' };
-      const dias = diasDesde(ultima.fecha);
+      const dias = diasDesde(ultima.fecha, hoyISO);
       const estadoAnimo = ESTADOS_ANIMO.find((e) => e.valor === ultima.animo);
-      return { linea1: dias === 0 ? 'Última entrada hoy' : `Última entrada hace ${dias} ${plural(dias, 'día', 'días')}`, linea2: estadoAnimo ? `Estado: ${estadoAnimo.label}` : ' ', estado: 'activo' };
+      return { linea1: dias === null ? FECHA_NO_DISPONIBLE : dias === 0 ? 'Última entrada hoy' : `Última entrada hace ${dias} ${plural(dias, 'día', 'días')}`, linea2: estadoAnimo ? `Estado: ${estadoAnimo.label}` : ' ', estado: 'activo' };
     }
     case 'biblioteca': {
       /* E3 F16 (BL F1) — la Biblioteca son seis mini-apps, así que el resumen las
@@ -230,8 +242,8 @@ export function calcularResumenModulo(id, s) {
     case 'fe': {
       const ultimoServicio = ultimoPorFecha(s.fe?.servicio);
       if (!ultimoServicio) return { linea1: 'Sin registros todavía', linea2: 'Toca para registrar tu servicio', estado: 'vacio' };
-      const dias = diasDesde(ultimoServicio.fecha);
-      return { linea1: `Último servicio: ${ultimoServicio.tipo}`, linea2: dias === 0 ? 'Hoy' : `Hace ${dias} ${plural(dias, 'día', 'días')}`, estado: 'activo' };
+      const dias = diasDesde(ultimoServicio.fecha, hoyISO);
+      return { linea1: `Último servicio: ${ultimoServicio.tipo}`, linea2: dias === null ? FECHA_NO_DISPONIBLE : dias === 0 ? 'Hoy' : `Hace ${dias} ${plural(dias, 'día', 'días')}`, estado: 'activo' };
     }
     case 'bienestar': {
       const hoy = todayISO();

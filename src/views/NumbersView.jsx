@@ -79,13 +79,13 @@ export default function NumbersView(props) {
         {abierta === 'estadisticas' && (
           <StatsView
             sueno={props.sueno} estudios={props.estudios} diario={props.diario}
-            calistenia={props.calistenia} accent={accent}
+            calistenia={props.calistenia} fitness={props.fitness} accent={accent}
           />
         )}
         {abierta === 'predicciones' && (
           <PredictionsView
             objetivos={props.objetivos} productividad={props.productividad} salud={props.salud}
-            calistenia={props.calistenia} economia={props.economia} estudios={props.estudios}
+            calistenia={props.calistenia} fitness={props.fitness} economia={props.economia} estudios={props.estudios}
             accent={accent}
           />
         )}
@@ -93,7 +93,7 @@ export default function NumbersView(props) {
           <AchievementsView
             productividad={props.productividad} diario={props.diario} objetivos={props.objetivos}
             bienestar={props.bienestar} fe={props.fe} nutricion={props.nutricion} salud={props.salud}
-            calistenia={props.calistenia} economia={props.economia} sueno={props.sueno}
+            calistenia={props.calistenia} fitness={props.fitness} economia={props.economia} sueno={props.sueno}
             accent={accent}
           />
         )}

@@ -1,4 +1,5 @@
 import { todayISO, addDays, fechaValida, FECHA_NO_DISPONIBLE } from './helpers';
+import { ESTADO_DEL_HISTORIAL, sesionesDelHistorial } from './sesionesCompletadas';
 import { ejerciciosDeSesion, filasDeSeries, duracionCreible } from './entrenamiento';
 import { resumenDeSesion, fechaLarga, volumenDeSesion } from './finalizacion';
 import { resumenPlanificado, resumenRealizado, cabeceraEnSesion } from './entrenamientoUx';
@@ -44,11 +45,10 @@ const esISO = (v) => /^\d{4}-\d{2}-\d{2}$/.test(texto(v));
  *  guardar, ni descartadas. ⚠️ Y una parcial SÍ entra (apartado 4: *"20
  *  planificadas, 16 realizadas: la sesión aparece igualmente"*): lo que decide
  *  es que él la guardó, no cuántas series hizo. */
-export const ESTADO_DEL_HISTORIAL = 'completada';
-
-export function sesionesDelHistorial(fitness) {
-  return lista((fitness || {}).sesiones).filter((s) => s && s.id && s.estado === ESTADO_DEL_HISTORIAL);
-}
+/* 🔓 Fase 1B — la regla vive en `sesionesCompletadas.js`, una hoja del árbol
+   de imports, para que la lean Inicio, el hub, la puntuación, Estadísticas y
+   Predicciones sin un ciclo; aquí se reexporta para quien ya la importaba. */
+export { ESTADO_DEL_HISTORIAL, sesionesDelHistorial };
 
 /** 🔓 FIT F31 → F32 — las sesiones agrupadas por su día y, dentro de él, **en el
  *  orden en que las hizo**, no en el que estén guardadas: *«Core y Push»* si

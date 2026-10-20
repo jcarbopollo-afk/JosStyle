@@ -5636,6 +5636,138 @@ Object.assign(almacen, antes_p4);
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 
+/* ── 🐛 FASE 1B · DATOS Y MÉTRICAS (CX-09, CX-11, CX-12, CX-14, CX-15) ─────────
+   Lo que la Fase 1 encontró y la 1B corrige, mirado en la aplicación de verdad:
+   Inicio y Bienestar enseñan el último entrenamiento de Fitness (no la calistenia
+   de antes), la puntuación lo da por hecho, Estadísticas cuenta días y no
+   asignaturas y lee Fitness, Predicciones mide la constancia en días, y algo de
+   HOY dice «hoy» a cualquier hora. Se siembra todo y se devuelve al terminar. */
+console.log('\n── F1B · Datos y métricas: Fitness, días y fechas ──');
+const erroresAntes_f1b = errores.length;
+const antes_f1b = { fitness: almacen.fitness, calistenia: almacen.calistenia, futbol: almacen.futbol, diario: almacen.diario, sueno: almacen.sueno, estudios: almacen.estudios };
+const sesion_f1b = (id, n, nombre, reps = 8) => {
+  const fecha = DN(n);
+  const inicio = new Date(`${fecha}T18:00:00`).getTime();
+  return {
+    id, nombre, fecha, estado: 'completada', iniciadaEn: inicio, terminadaEn: inicio + 50 * 60000,
+    guardadaEn: inicio + 51 * 60000, pausadoMs: 0, actual: 0, visibilidad: 'privado', notas: '', entorno: 'gym',
+    origen: { tipo: 'plantilla', id: null, ejercicios: [{ id: `${id}-e`, exerciseId: 'dominada-prona', orden: 0, modo: 'reps', notas: '', descanso: 90, sustituyeA: null,
+      linea: { series: 1, tipoCarga: 'corporal' },
+      series: [{ id: `${id}-s`, origen: 'planificada', estado: 'hecha', modo: 'reps', plan: { reps: 8, repsHasta: null, duracion: null, peso: null }, hecho: { reps, peso: null, duracion: null } }] }] },
+  };
+};
+const DIAS_ENTRENO_F1B = [0, 1, 3, 5, 8, 10];
+almacen.fitness = {
+  ...(almacen.fitness || {}),
+  /* 🔓 Fase 1C — el de hoy hace 9 repeticiones y los de antes 8: un récord de verdad («Primer PR»). */
+  sesiones: DIAS_ENTRENO_F1B.map((n) => sesion_f1b(`f1b-${n}`, n, n === 0 ? 'Core F1B' : 'Tirón F1B', n === 0 ? 9 : 8)),
+};
+/* La calistenia de antes, con una sesión hace 30 días y un nivel: lo viejo NO puede salir en la tarjeta. */
+almacen.calistenia = { Planche: { nivel: 40, progresion: [], prs: [], sesiones: [{ id: 'c-f1b', fecha: DN(30) }] } };
+almacen.futbol = [];
+/* Trece días de Diario: ánimo 5 los días con entrenamiento y 2 los demás. */
+almacen.diario = { entradas: Array.from({ length: 13 }, (_, n) => ({ id: `d-f1b-${n}`, fecha: DN(n), animo: DIAS_ENTRENO_F1B.includes(n) ? 5 : 2, comoMeSiento: '', queHeAprendido: '', queMejorareManana: '' })) };
+/* Sueño y estudio (CX-11): dos noches largas —una con TRES asignaturas de 1 h— y dos cortas. */
+almacen.sueno = [
+  { id: 's-f1b-6', fecha: DN(6), horaDormir: '23:00', horaDespertar: '07:30', calidad: 4 },
+  { id: 's-f1b-7', fecha: DN(7), horaDormir: '23:00', horaDespertar: '07:30', calidad: 4 },
+  { id: 's-f1b-9', fecha: DN(9), horaDormir: '02:00', horaDespertar: '07:30', calidad: 2 },
+  { id: 's-f1b-11', fecha: DN(11), horaDormir: '02:00', horaDespertar: '07:30', calidad: 2 },
+];
+almacen.estudios = { ...(almacen.estudios || {}), horas: [
+  { id: 'h-f1b-1', asignaturaId: 'mat', fecha: DN(6), horas: 1 }, { id: 'h-f1b-2', asignaturaId: 'bio', fecha: DN(6), horas: 1 }, { id: 'h-f1b-3', asignaturaId: 'his', fecha: DN(6), horas: 1 },
+  { id: 'h-f1b-4', asignaturaId: 'mat', fecha: DN(7), horas: 3 },
+  { id: 'h-f1b-5', asignaturaId: 'mat', fecha: DN(9), horas: 2 }, { id: 'h-f1b-6', asignaturaId: 'bio', fecha: DN(11), horas: 2 },
+] };
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+/* CX-12 + CX-14 · Inicio: la tarjeta «Entreno». */
+const inicio_f1b = await esperarTexto(/Core F1B/);
+ok(/Core F1B/.test(inicio_f1b) && /Último entrenamiento hoy/.test(inicio_f1b),
+  '🚨 F1B · Inicio — la tarjeta «Entreno» dice el último entrenamiento de Fitness y que fue HOY, sea la hora que sea (CX-12, CX-14)');
+ok(!/Planche: 40%/.test(inicio_f1b), '🐛 F1B · Inicio — …y ya no la habilidad de calistenia congelada');
+/* La puntuación del día da el entrenamiento por hecho. */
+await page.waitForSelector('[data-puntuacion-cabecera]', { timeout: 5000 }).catch(() => {});
+await page.click('[data-puntuacion-cabecera]').catch(() => {});
+await page.waitForTimeout(500);
+const area_f1b = await page.evaluate(() => [...document.querySelectorAll('[data-puntuacion-desglose] li')].map((li) => li.innerText.trim()).find((t) => /Entrenamiento/.test(t)) || null);
+ok(area_f1b && /^✓/.test(area_f1b), `🚨 F1B · la puntuación da el entrenamiento de HOY por hecho, aunque haya calistenia vieja guardada (CX-12) — ${JSON.stringify(area_f1b)}`);
+await page.click('[data-puntuacion-cabecera]').catch(() => {});
+await page.waitForTimeout(300);
+
+/* CX-12 · Bienestar: la tarjeta de Fitness del hub. */
+ok(await pulsar('Bienestar'), 'F1B — se abre Bienestar');
+const hub_f1b = await esperarTexto(/Core F1B/);
+ok(/Core F1B/.test(hub_f1b) && /Último entrenamiento hoy/.test(hub_f1b) && !/habilidad activa/.test(hub_f1b),
+  '🚨 F1B · Bienestar — la tarjeta de Fitness lee el último entrenamiento, no «habilidades activas» (CX-12)');
+
+/* CX-09, CX-11 y CX-15 · Progreso → Estadísticas. */
+ok(await pulsar('Gestión') && await pulsar('Progreso'), 'F1B — Gestión → Progreso');
+const prog_f1b = await esperarTexto(/Estad[ií]sticas/i);
+ok(/3 de 3 con datos|Correlaciones entre lo que registras/.test(prog_f1b), 'F1B · Progreso reconoce los datos de Estadísticas (CX-15)');
+ok(await pulsar('Estadísticas'), 'F1B — → Estadísticas');
+const stats_f1b = await esperarTexto(/Entrenar y ánimo/);
+ok(/Entrenar y ánimo/.test(stats_f1b) && !/Entrenar calistenia/.test(stats_f1b), '🚨 F1B · la tarjeta se llama «Entrenar y ánimo» (CX-09)');
+/* 🔓 Fase 1C — solo se comparan las semanas (lunes a domingo) con algún entrenamiento registrado,
+   así que cuántos días «sin» hay depende de en qué día de la semana caiga hoy: se CALCULA del
+   escenario, nunca se escribe a mano (la lección de la F31: una cifra fija sería una bomba de
+   relojería que solo pasa ciertos días). */
+const lunes_f1b = (iso) => { const d = new Date(`${iso}T00:00:00`); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.toLocaleDateString('sv-SE'); };
+const semanas_f1b = new Set([...DIAS_ENTRENO_F1B, 30].map((n) => lunes_f1b(DN(n))));
+const diarioN_f1b = Array.from({ length: 13 }, (_, n) => n);
+const sinEsperado_f1b = diarioN_f1b.filter((n) => !DIAS_ENTRENO_F1B.includes(n) && semanas_f1b.has(lunes_f1b(DN(n)))).length;
+const fueraEsperado_f1b = 13 - DIAS_ENTRENO_F1B.length - sinEsperado_f1b;
+ok(/Días con entrenamiento \(6\)/.test(stats_f1b) && new RegExp(`Días sin entrenamiento \\(${sinEsperado_f1b}\\)`).test(stats_f1b),
+  `🚨 F1B · cuenta los seis días con entrenamiento de Fitness y los ${sinEsperado_f1b} sin él de las semanas registradas (antes: «0 días con sesión») (CX-09, 1C)`);
+ok(/Solo compara las semanas en las que registraste algún entrenamiento/.test(stats_f1b)
+  && (fueraEsperado_f1b === 0 ? !/se quedan fuera por eso/.test(stats_f1b) : new RegExp(`${fueraEsperado_f1b} d[ií]as? de Diario se quedan? fuera por eso`).test(stats_f1b)),
+  `🚨 F1C · dice qué semanas compara y cuántos días deja fuera (${fueraEsperado_f1b}) (CX-09)`);
+ok(/5 \/5 de ánimo medio/.test(stats_f1b) && /2 \/5 de ánimo medio/.test(stats_f1b), '…con el ánimo de cada grupo: 5 y 2');
+ok(/días de calistenia que registraste antes/.test(stats_f1b), '…y dice que cuenta también la calistenia de antes');
+ok(/Noches con 7h\+ de sueño \(2 días\)/.test(stats_f1b) && /3 h de estudio de media/.test(stats_f1b),
+  '🚨 F1B · tres asignaturas el mismo día son UN día y 3 h (antes «3 días» y 1,5 h) (CX-11)');
+
+/* CX-12 · Predicciones: la constancia de entreno, en días. */
+ok(await pulsar('Progreso'), 'F1B — de vuelta a Progreso');
+await esperarTexto(/Predicciones/i);
+ok(await pulsar('Predicciones'), 'F1B — → Predicciones');
+const pred_f1b = await esperarTexto(/Constancia de entreno/);
+ok(/6 días con entrenamiento en los últimos 14/.test(pred_f1b) && /frente a 0 en los 14 anteriores/.test(pred_f1b) && /subiendo/.test(pred_f1b),
+  '🚨 F1B · Predicciones mide la constancia en días con entrenamiento de Fitness (CX-12)');
+ok(!/alguna habilidad/.test(pred_f1b), '…y ya no pide «sesiones en alguna habilidad», que no se pueden registrar');
+
+/* 🔓 Fase 1C · Logros: «Primer PR» se consigue superando una marca en Fitness (8 → 9 hoy). */
+ok(await pulsar('Progreso'), 'F1C — de vuelta a Progreso');
+await esperarTexto(/Logros/i);
+ok(await pulsar('Logros'), 'F1C — → Logros');
+const logros_f1c = await esperarTexto(/insignias conseguidas/);
+const pr_f1c = await page.evaluate(() => {
+  const titulo = [...document.querySelectorAll('p')].find((p) => p.innerText.trim() === 'Primer PR');
+  if (!titulo) return null;
+  let card = titulo; while (card && !(card.style && card.style.opacity)) card = card.parentElement;
+  return { opacidad: card ? card.style.opacity : null, texto: card ? card.innerText : '' };
+});
+ok(pr_f1c && pr_f1c.opacidad === '1' && /Supera tu mejor marca en un ejercicio de Fitness/.test(pr_f1c.texto),
+  `🚨 F1C · «Primer PR» CONSEGUIDO con un récord de Fitness (antes era imposible sin la calistenia de antes) — ${JSON.stringify(pr_f1c)}`);
+ok(/de 12 insignias conseguidas/.test(logros_f1c) && !/récord personal de calistenia/.test(logros_f1c),
+  '…el total sigue siendo 12, y ninguna pide algo de la calistenia que ya no se puede registrar');
+
+/* Nada se ha escrito: son lecturas. */
+const cal_f1b = almacen.calistenia && almacen.calistenia.Planche;
+ok(cal_f1b && cal_f1b.nivel === 40 && Array.isArray(cal_f1b.sesiones) && cal_f1b.sesiones.length === 1 && cal_f1b.sesiones[0].fecha === DN(30),
+  '🔒 F1B — la calistenia guardada sigue ahí, con su nivel y su sesión: no se borra ni se migra nada');
+const ancho_f1b = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth, vista: window.innerWidth }));
+ok(ancho_f1b.doc <= ancho_f1b.vista, `F1B — nada se sale de lado (${ancho_f1b.doc} ≤ ${ancho_f1b.vista})`);
+await page.setViewportSize({ width: 1280, height: 720 });
+
+const nuevos_f1b = errores.slice(erroresAntes_f1b);
+ok(nuevos_f1b.length === 0, `F1B — ni un error de JavaScript${nuevos_f1b.length ? `: ${nuevos_f1b.join(' | ').slice(0, 300)}` : ''}`);
+Object.assign(almacen, antes_f1b);
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
 /* ── 👤 INICIO · LA FOTO DE PERFIL Y LA FILA «+ AÑADIR» (2026-10-18) ──────────
    La foto de perfil, a la derecha del saludo: el MISMO círculo y la MISMA foto que
    la cabecera de Ajustes. Y «+ Añadir», como una fila entera, compacta y con el

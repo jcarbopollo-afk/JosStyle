@@ -91,9 +91,10 @@ function MapaVidaTab({ objetivos, accent }) {
   );
 }
 
-export default function AchievementsView({ productividad, diario, objetivos, bienestar, fe, nutricion, salud, calistenia, economia, sueno, accent }) {
+export default function AchievementsView({ productividad, diario, objetivos, bienestar, fe, nutricion, salud, calistenia, fitness, economia, sueno, accent }) {
   const [tab, setTab] = useState('logros');
-  const logros = calcularLogros({ productividad, diario, objetivos, bienestar, fe, nutricion, salud, calistenia, economia, sueno });
+  /* 🔓 Fase 1C — `fitness`: «Primer PR» también se consigue superando una marca en Fitness. */
+  const logros = calcularLogros({ productividad, diario, objetivos, bienestar, fe, nutricion, salud, calistenia, fitness, economia, sueno });
 
   return (
     <div className="space-y-4 pb-4">
