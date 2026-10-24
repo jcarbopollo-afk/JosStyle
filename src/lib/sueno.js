@@ -33,7 +33,7 @@
    almacenamiento"*. Está declarado abajo en `NO_SE_GUARDA` con su motivo, y la
    duración se sirve igual a quien la pida, con `duracionDe()`. */
 
-import { calcularDuracion, uid, todayISO } from './helpers';
+import { calcularDuracion, minutosEntreHoras, uid, todayISO, fechaValida } from './helpers';
 /* ⚠️ *"8 h 30 min"* del apartado 1 ya estaba escrito: `formatearDuracionLarga`
    nació en el Pomodoro (E3 F25) y es genérica —recibe milisegundos y devuelve
    horas y minutos—. Escribir una segunda daría el mismo texto de otra forma en
@@ -121,13 +121,15 @@ export const MAX_SIESTA_MIN = 240;
    4 · EL REGISTRO
    ══════════════════════════════════════════════════════════════════════════ */
 
+/* 🐛 v3.161.3 — estas dos constantes eran el valor con el que el normalizador RELLENABA una hora que
+   faltaba o no era válida, y con el que nacía el formulario: una noche sin horas salía como «23:00 →
+   07:00 · 8 h», una duración que nadie apuntó. Ya no rellenan nada (se quedan exportadas por si una
+   pantalla quiere PROPONERLAS, nunca para guardarlas sin que él las elija). */
 export const HORA_DORMIR_DEFECTO = '23:00';
 export const HORA_DESPERTAR_DEFECTO = '07:00';
 
-const hora = (v, porDefecto) => {
-  if (typeof v !== 'string') return porDefecto;
-  return /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : porDefecto;
-};
+/** Una hora «HH:MM» válida, o `null` (falta o no es una hora): nunca un valor por defecto. */
+const hora = (v) => (typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : null);
 
 export function crearRegistroSueno({ fecha, horaDormir, horaDespertar, calidad, interrupciones, siestaAyer, siestaMinutos } = {}) {
   return normalizarRegistro({
@@ -141,26 +143,57 @@ export function crearRegistroSueno({ fecha, horaDormir, horaDespertar, calidad, 
    guardado antes tiene `siesta` en minutos —un número— y no tiene `siestaAyer`.
    Se convierte, **sin reescribir el campo viejo**: quien lo lea todavía (la
    exportación, por ejemplo) lo sigue encontrando. Y **un `siesta: 0` NO es un
-   sí**: era «no hice siesta», que es exactamente lo que ahora dice `false`. */
+   sí**: era «no hice siesta», que es exactamente lo que ahora dice `false`.
+
+   🐛 v3.161.3 — **TRES ESTADOS PARA LA SIESTA, Y NINGÚN VALOR INVENTADO**:
+   · `siestaAyer`: `true` (dijo que sí), `false` (dijo que no) o `null` (no lo contestó). Antes un
+     registro sin respuesta —ni `siestaAyer` ni `siesta`— salía como `false`, «no hice siesta».
+     ⚠️ Lo guardado entre la E3 F31 y la v3.161.3 sin contestar se guardó ya como `false` (el
+     formulario hacía `=== true`): no se puede distinguir de un «no» y se queda como está.
+   · `siestaMinutos`: un entero si dijo que sí y apuntó los minutos; `0` si dijo que no; `null` si
+     no se sabe (sin contestar, o «sí» sin minutos). Antes un «sí» sin minutos guardaba 0.
+   · Las horas: `null` si faltan o no son horas. Antes se rellenaban con 23:00 / 07:00. */
 export function normalizarRegistro(r) {
   if (!r || typeof r !== 'object') return null;
-  const minutosViejos = Number.isFinite(Number(r.siesta)) ? Math.max(0, Math.round(Number(r.siesta))) : 0;
-  const siestaAyer = typeof r.siestaAyer === 'boolean' ? r.siestaAyer : minutosViejos > 0;
-  const minutos = enteroEn(r.siestaMinutos != null ? r.siestaMinutos : minutosViejos, 0, MAX_SIESTA_MIN) ?? 0;
+  const minutosViejos = r.siesta === null || r.siesta === undefined || r.siesta === '' || !Number.isFinite(Number(r.siesta))
+    ? null
+    : Math.max(0, Math.round(Number(r.siesta)));
+  const siestaAyer = typeof r.siestaAyer === 'boolean'
+    ? r.siestaAyer
+    : (minutosViejos === null ? null : minutosViejos > 0);
+  const minutos = enteroEn(r.siestaMinutos != null && r.siestaMinutos !== '' ? r.siestaMinutos : minutosViejos, 0, MAX_SIESTA_MIN);
 
   return {
     ...r,
     id: typeof r.id === 'string' && r.id ? r.id : uid(),
     fecha: typeof r.fecha === 'string' && r.fecha ? r.fecha : todayISO(),
-    horaDormir: hora(r.horaDormir, HORA_DORMIR_DEFECTO),
-    horaDespertar: hora(r.horaDespertar, HORA_DESPERTAR_DEFECTO),
+    horaDormir: hora(r.horaDormir),
+    horaDespertar: hora(r.horaDespertar),
     calidad: enteroEn(r.calidad, MIN_CALIDAD, MAX_CALIDAD),
-    interrupciones: enteroEn(r.interrupciones, 0, MAX_INTERRUPCIONES) ?? 0,
+    /* 🐛 v3.161.2 — una pregunta sin contestar es `null`, no 0. Con `?? 0` una noche en la que no
+       tocó ningún botón se guardaba como «no me desperté», y el asistente contaba esas noches como
+       noches sin interrupciones. Un 0 que él eligió sigue siendo 0. ⚠️ Lo guardado antes con 0 no
+       se puede distinguir de un 0 elegido: se queda como está (no se inventa en ningún sentido). */
+    interrupciones: enteroEn(r.interrupciones, 0, MAX_INTERRUPCIONES),
     siestaAyer,
     /* Sin siesta no hay minutos que guardar: un «45» colgando de un «no» sería
-       un dato que contradice a su propia pregunta. */
-    siestaMinutos: siestaAyer ? minutos : 0,
+       un dato que contradice a su propia pregunta. Sin saber si hubo siesta, ni 0 ni 45: `null`. */
+    siestaMinutos: siestaAyer === true ? (minutos && minutos > 0 ? minutos : null) : (siestaAyer === false ? 0 : null),
   };
+}
+
+/** ¿Tiene esta noche algo que él contestara? (una noche sin nada no se guarda). */
+export function nocheTieneAlgo(r) {
+  if (!r) return false;
+  return !!(hora(r.horaDormir) || hora(r.horaDespertar)) || r.calidad != null || Number.isInteger(r.interrupciones) || typeof r.siestaAyer === 'boolean';
+}
+
+/** Qué le falta a una noche para calcular su duración: `[]`, `['dormir']`, `['despertar']` o las dos. */
+export function horasQueFaltan(r) {
+  const faltan = [];
+  if (!r || !hora(r.horaDormir)) faltan.push('dormir');
+  if (!r || !hora(r.horaDespertar)) faltan.push('despertar');
+  return faltan;
 }
 
 export function normalizarSueno(lista) {
@@ -187,17 +220,60 @@ export const NO_SE_GUARDA = [
 /** Horas decimales, como siempre — es lo que espera la gráfica. */
 export const duracionDe = (r) => (r ? calcularDuracion(r.horaDormir, r.horaDespertar) : null);
 
-/** *"8 h 30 min"*, el formato literal del apartado 1. `null` si no se puede. */
-export function textoDuracion(r) {
-  const h = duracionDe(r);
-  if (h === null || h === undefined) return null;
-  return formatearDuracionLarga(h * 3600000);
+/* 🐛 Integración de los chatbots (v3.161.2) — la pantalla decía «7 h 48 min» de una noche de
+   23:30 a 07:15 (7 h 45 min): el texto salía de las horas decimales redondeadas a una décima.
+   El texto, la media y el chatbot salen ahora de los MINUTOS exactos (`minutosEntreHoras`, en
+   helpers.js); las horas decimales siguen siendo para la gráfica. */
+/** Minutos exactos de la noche, o `null` si falta una hora o no es una hora. */
+export const minutosDeNoche = (r) => (r ? minutosEntreHoras(r.horaDormir, r.horaDespertar) : null);
+
+/** *«7 h 45 min»*, de unos minutos exactos. `'0 min'` para cero; `null` si no hay dato. */
+export function textoMinutos(minutos) {
+  if (minutos === null || minutos === undefined || !Number.isFinite(minutos)) return null;
+  return formatearDuracionLarga(minutos * 60000) || '0 min';
 }
 
+/** *"8 h 30 min"*, el formato literal del apartado 1. `null` si no se puede. */
+export function textoDuracion(r) {
+  return textoMinutos(minutosDeNoche(r));
+}
+
+/** La media de minutos exactos, redondeada al minuto. `null` sin ninguna noche con duración. */
+export function mediaDeMinutos(lista) {
+  const minutos = (Array.isArray(lista) ? lista : []).map(minutosDeNoche).filter((m) => m !== null && m !== undefined);
+  if (!minutos.length) return null;
+  return Math.round(minutos.reduce((a, m) => a + m, 0) / minutos.length);
+}
+
+/** La media en horas decimales (una décima), calculada sobre los minutos exactos. */
 export function mediaDeHoras(lista) {
-  const horas = (Array.isArray(lista) ? lista : []).map(duracionDe).filter((h) => h !== null && h !== undefined);
-  if (!horas.length) return null;
-  return Math.round((horas.reduce((a, h) => a + h, 0) / horas.length) * 10) / 10;
+  const m = mediaDeMinutos(lista);
+  return m === null ? null : Math.round((m / 60) * 10) / 10;
+}
+
+/* 🐛 v3.161.3 — LAS ÚLTIMAS NOCHES SON LAS DE FECHA MÁS RECIENTE, NO LAS ÚLTIMAS GUARDADAS. La lista de
+   la pantalla hacía `[...sueno].reverse()` y el panel «Analizar mi sueño» `sueno.slice(-7)`: apuntar hoy
+   una noche de la semana pasada la ponía la primera, como si fuera la de anoche. La fecha de un registro
+   es la de la MAÑANA en que terminó la noche (no cuándo se creó ni se editó). Con dos registros del mismo
+   día va primero el último guardado (como la gráfica, `indicePorFecha`), y los que no tienen una fecha
+   válida van al final, en el orden en que llegaron. */
+/** Las noches de la más reciente a la más antigua por su fecha. No quita ninguna. */
+export function nochesPorFechaReciente(lista) {
+  return (Array.isArray(lista) ? lista : [])
+    .map((r, i) => ({ r, i }))
+    .filter(({ r }) => r && typeof r === 'object')
+    .sort((a, b) => {
+      const fa = fechaValida(a.r.fecha) ? a.r.fecha : '';
+      const fb = fechaValida(b.r.fecha) ? b.r.fecha : '';
+      if (fa !== fb) return fa < fb ? 1 : -1;
+      return b.i - a.i;
+    })
+    .map(({ r }) => r);
+}
+
+/** La noche más reciente que ya ha pasado (fecha válida y no posterior a `hoy`), o `null`. */
+export function ultimaNoche(lista, hoy = todayISO()) {
+  return nochesPorFechaReciente(lista).find((r) => fechaValida(r.fecha) && r.fecha <= hoy) || null;
 }
 
 /** La línea de una noche en la lista: duración, horas, cara y lo que hubo. */
@@ -213,7 +289,9 @@ export function resumenNoche(r) {
        undefined». Lo que viene del disco pasa por `normalizarRegistro`, que las
        rellena, así que en la aplicación no llegaba a verse; pero esta función la
        llama quien tenga un registro, normalizado o no. */
-    horas: r.horaDormir && r.horaDespertar ? `${r.horaDormir} → ${r.horaDespertar}` : '—',
+    /* v3.161.3 — una noche con una sola hora enseña la que tiene y «¿?» en la que falta, nunca una
+       inventada; sin ninguna, «—». */
+    horas: r.horaDormir || r.horaDespertar ? `${r.horaDormir || '¿?'} → ${r.horaDespertar || '¿?'}` : '—',
     calidad: cal,
     extras: extras.length ? extras.join(' · ') : null,
   };
@@ -299,6 +377,26 @@ import { DIAS_SEMANA, diaDeFecha } from './horario';
 import { addDays } from './helpers';
 
 export const DIAS_VENTANA = 7;
+
+/* ⚠️ v3.161.2 — LAS REGLAS DE CALIDAD DE DATOS PARA ANALIZAR «TUS ÚLTIMAS NOCHES» (asistente de Sueño).
+   No había ninguna para «registros muy separados» o «poco recientes», así que se declaran aquí, en un solo
+   sitio, con su motivo; las demás YA existían y se reutilizan tal cual:
+   · `noches`: se leen las últimas 7 noches REGISTRADAS, la misma ventana que la gráfica (`DIAS_VENTANA`).
+   · `minimoParaMedia`: con una sola noche no hay media (lo que ya decía el asistente desde la Fase 2).
+   · `minimoFiable`: por debajo de 3 noches la respuesta va marcada «pocos datos» (la convención de todo el
+     asistente de Sueño: `confianza: … < 3 ? 'pocos_datos'`).
+   · `diasReciente`: si la última noche registrada es de hace más de una ventana (7 días), describe cómo
+     dormía entonces, no ahora, y se dice.
+   · `diasSeparadas`: si las noches leídas abarcan más de dos ventanas (14 días), más de la mitad de los días
+     de en medio no tienen registro: no son noches seguidas, y se dice.
+   Cambiar un número aquí cambia el análisis y su prueba (`test-integracion-chatbots`). */
+export const CALIDAD_ANALISIS_SUENO = Object.freeze({
+  noches: DIAS_VENTANA,
+  minimoParaMedia: 2,
+  minimoFiable: 3,
+  diasReciente: DIAS_VENTANA,
+  diasSeparadas: DIAS_VENTANA * 2,
+});
 
 /* Las etiquetas del apartado 9: *"L 24 · M 25 · X 26 · J 27…"*. Fechas de
    verdad, nunca *"1 2 3 4 5 6 7"*, que no dice de qué días habla. */
@@ -403,10 +501,21 @@ export function mediaDeVentana(v) {
   return mediaDeHoras((v?.puntos || []).map((p) => p.registro).filter(Boolean));
 }
 
+/** La misma media, en minutos exactos: es la que se lee en la pantalla («Media 7 h 45 min»). */
+export function mediaMinutosDeVentana(v) {
+  return mediaDeMinutos((v?.puntos || []).map((p) => p.registro).filter(Boolean));
+}
+
 /* ⚠️ *"Los días sin registro no generen datos falsos"* (criterio 19), dicho en
    la propia pantalla: cuántos huecos hay en esta ventana. */
 export function huecosDeVentana(v) {
   return (v?.puntos || []).filter((p) => p.sinRegistro).length;
+}
+
+/* v3.161.3 — una noche registrada sin las dos horas no es un hueco (sí hay registro) pero tampoco tiene
+   duración: la gráfica la pinta como un hueco y la media no la cuenta. Se dice cuántas son. */
+export function nochesSinHorasDeVentana(v) {
+  return (v?.puntos || []).filter((p) => p.registro && p.horas === null).length;
 }
 
 /* 🚨 **Lo que esta fase NO toca** (apartados 6, 7 y 18). El análisis largo que

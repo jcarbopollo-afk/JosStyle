@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
 import { useAnimacionDeGrafica } from '../components/motion';
-import { Moon, Sun, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Moon, Sun, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import { COLORS } from '../tokens';
-import { formatHoras, formatFecha, hexToRgba } from '../lib/helpers';
+import { formatFecha, hexToRgba } from '../lib/helpers';
 import {
   CALIDADES, PREGUNTA_CALIDAD, PREGUNTA_INTERRUPCIONES, PREGUNTA_SIESTA,
-  INTERRUPCIONES, MAX_SIESTA_MIN, HORA_DORMIR_DEFECTO, HORA_DESPERTAR_DEFECTO,
+  INTERRUPCIONES, MAX_SIESTA_MIN, nocheTieneAlgo, horasQueFaltan, nochesPorFechaReciente,
   crearRegistroSueno, calidadDe, valorDeCalidad, textoDuracion, resumenNoche,
   /* Entrega 3 · F32 (SU F2) — la ventana móvil de 7 días de CALENDARIO. */
   DIAS_VENTANA, ventanaDeDias, puedeRetroceder, puedeAvanzar, tituloDeVentana,
-  TITULO_ACTUAL, mediaDeVentana, huecosDeVentana,
+  TITULO_ACTUAL, mediaMinutosDeVentana, textoMinutos, huecosDeVentana, nochesSinHorasDeVentana,
 } from '../lib/sueno';
-import { Card, ListCard, ListRow, BotonBorrar, SectionTitle, TextInput, PrimaryButton, EmptyHint, AIPanel } from '../components/ui';
+import { Card, ListCard, ListRow, BotonBorrar, SectionTitle, TextInput, PrimaryButton, EmptyHint } from '../components/ui';
 import { dominioEstable } from '../lib/datosMotion';
 
 /* Entrega 3 · Fase 31 (SU F1) — «Sueño: registro simple y experiencia premium».
@@ -75,13 +75,14 @@ function Opcion({ activa, onClick, accent, ancha = false, children, etiqueta }) 
 
 function FormularioNoche({ accent, onGuardar, onCancelar }) {
   const [form, setForm] = useState({
-    horaDormir: HORA_DORMIR_DEFECTO,
-    horaDespertar: HORA_DESPERTAR_DEFECTO,
     /* 🚨 **Ninguna respuesta viene puesta.** Elegir por él una cara, un número de
        interrupciones o un «sí» a la siesta sería guardar algo que no ha dicho —
-       es lo que HT F3, EH F28 y la E3 F19 llevan repitiendo. Solo las horas
-       traen un valor de partida, porque son un selector de reloj: se ve desde el
-       primer momento y él lo mueve. */
+       es lo que HT F3, EH F28 y la E3 F19 llevan repitiendo.
+       🐛 v3.161.3 — **y tampoco las horas.** Venían a 23:00 y 07:00 «porque son un reloj», y si no las
+       tocaba se guardaba una noche de 8 h que no había dicho. Empiezan vacías; sin las dos, la noche se
+       guarda con lo demás que conteste y su duración queda sin calcular (nunca a cero). */
+    horaDormir: '',
+    horaDespertar: '',
     calidadId: null,
     interrupciones: null,
     siestaAyer: null,
@@ -89,16 +90,26 @@ function FormularioNoche({ accent, onGuardar, onCancelar }) {
   });
 
   const duracion = textoDuracion(form);
+  const [aviso, setAviso] = useState('');
+  const faltan = horasQueFaltan(form);
+  const unaSolaHora = faltan.length === 1;
 
   const guardar = () => {
-    onGuardar(crearRegistroSueno({
+    /* v3.161.3 — la siesta se guarda tal cual: `true`, `false` o `null` si no la contestó (antes
+       `=== true` convertía «sin contestar» en «no»). */
+    const registro = crearRegistroSueno({
       horaDormir: form.horaDormir,
       horaDespertar: form.horaDespertar,
       calidad: valorDeCalidad(form.calidadId),
       interrupciones: form.interrupciones,
-      siestaAyer: form.siestaAyer === true,
-      siestaMinutos: form.siestaAyer === true ? form.siestaMinutos : 0,
-    }));
+      siestaAyer: form.siestaAyer,
+      siestaMinutos: form.siestaAyer === true ? form.siestaMinutos : null,
+    });
+    if (!nocheTieneAlgo(registro)) {
+      setAviso('Apunta al menos una cosa de esta noche: las horas, cómo dormiste, los despertares o la siesta.');
+      return;
+    }
+    onGuardar(registro);
   };
 
   return (
@@ -121,6 +132,12 @@ function FormularioNoche({ accent, onGuardar, onCancelar }) {
             <p className="text-xl font-extrabold" style={{ color: accent, fontFamily: "'Manrope', sans-serif" }}>{duracion || '—'}</p>
             <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>Duración</p>
           </div>
+          {/* v3.161.3 — con una sola hora se guarda igual, y se dice que sin la otra no hay duración. */}
+          {unaSolaHora && (
+            <p role="status" className="text-xs" style={{ color: COLORS.textMuted }}>
+              {faltan[0] === 'dormir' ? 'Falta la hora de dormir' : 'Falta la hora de despertar'}: sin ella no se puede calcular la duración de esta noche.
+            </p>
+          )}
         </BloqueRegistro>
 
         {/* ¿Cómo has dormido? — apartado 2 */}
@@ -165,8 +182,9 @@ function FormularioNoche({ accent, onGuardar, onCancelar }) {
         <BloqueRegistro icono={Sun} titulo="Ayer" accent={accent}>
           <p className="text-xs -mt-1 mb-1" style={{ color: COLORS.textMuted }}>{PREGUNTA_SIESTA}</p>
           <div className="flex gap-2">
-            <Opcion ancha activa={form.siestaAyer === false} onClick={() => setForm({ ...form, siestaAyer: false, siestaMinutos: '' })} accent={accent} etiqueta="No dormí siesta">No</Opcion>
-            <Opcion ancha activa={form.siestaAyer === true} onClick={() => setForm({ ...form, siestaAyer: true })} accent={accent} etiqueta="Sí dormí siesta">Sí</Opcion>
+            {/* v3.161.3 — tocar otra vez la elegida la quita (vuelve a «sin contestar»), como las demás. */}
+            <Opcion ancha activa={form.siestaAyer === false} onClick={() => setForm({ ...form, siestaAyer: form.siestaAyer === false ? null : false, siestaMinutos: '' })} accent={accent} etiqueta="No dormí siesta">No</Opcion>
+            <Opcion ancha activa={form.siestaAyer === true} onClick={() => setForm({ ...form, siestaAyer: form.siestaAyer === true ? null : true, siestaMinutos: form.siestaAyer === true ? '' : form.siestaMinutos })} accent={accent} etiqueta="Sí dormí siesta">Sí</Opcion>
           </div>
           {/* ⚠️ Los minutos SOLO si dijo que sí (apartado 4): *"si selecciona sí,
               permitir posteriormente introducir la duración"*. La interfaz se
@@ -183,6 +201,7 @@ function FormularioNoche({ accent, onGuardar, onCancelar }) {
           )}
         </BloqueRegistro>
 
+        {aviso && <p role="alert" className="text-xs" style={{ color: COLORS.textMuted }}>{aviso}</p>}
         <div className="flex gap-2">
           <div className="flex-1"><PrimaryButton accent={accent} onClick={guardar}>Guardar noche</PrimaryButton></div>
           <button onClick={onCancelar} className="toque-44 px-4 rounded-xl text-sm font-semibold" style={{ color: COLORS.textMuted, border: `1px solid ${COLORS.border}` }}>
@@ -194,7 +213,7 @@ function FormularioNoche({ accent, onGuardar, onCancelar }) {
   );
 }
 
-export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFocoConsumido }) {
+export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFocoConsumido, onAnalizar = null }) {
   // MS F4 — la gráfica obedece al modo, a la velocidad y a «Reducir movimiento» (antes animaba
   // 1,5 s por su cuenta): `useAnimacionDeGrafica`. Arriba del todo, antes de cualquier `return`.
   const animGrafica = useAnimacionDeGrafica();
@@ -220,15 +239,18 @@ export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFoco
   /* MS F17, apartados 31 y 32 — un eje que no baila: de 0 a un múltiplo de dos horas, nunca por debajo
      de 10. Mover la ventana una semana interpola la línea sin cambiar la escala que la lee. */
   const dominioSueno = dominioEstable(chartData.map((p) => p.horas), { desdeCero: true, paso: 2, alMenos: 10 });
-  const media = mediaDeVentana(ventana);
+  /* La media se lee en horas y minutos exactos, la misma cuenta que el asistente (v3.161.2). */
+  const media = mediaMinutosDeVentana(ventana);
   const huecos = huecosDeVentana(ventana);
+  const sinHoras = nochesSinHorasDeVentana(ventana);
   const atras = puedeRetroceder(sueno, { desplazamiento, dias: VENTANA_GRAFICA });
   const adelante = puedeAvanzar(desplazamiento);
 
   /* ⚠️ Las noches de la lista de abajo siguen siendo las últimas REGISTRADAS: la
      ventana es de la gráfica, no del historial (apartado 12 — mover la ventana no
-     esconde nada del resto de la aplicación). */
-  const ultimos = sueno.slice(-VENTANA_GRAFICA);
+     esconde nada del resto de la aplicación). 🐛 v3.161.3 — y «últimas» por su FECHA, no por el orden
+     en que se guardaron (`[...sueno].reverse()` ponía primera una noche vieja apuntada hoy). */
+  const ultimas = nochesPorFechaReciente(sueno).slice(0, 6);
 
   const handleGuardar = (registro) => {
     onAdd(registro);
@@ -298,13 +320,18 @@ export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFoco
             <span>
               {ventana.puntos.some((p) => p.esHoy) ? 'HOY es el último punto' : `${ventana.inicio.slice(8)} → ${ventana.fin.slice(8)}`}
             </span>
-            <span>{media === null ? 'Sin noches registradas' : `Media ${formatHoras(media)} h`}</span>
+            <span>{media === null ? 'Sin noches registradas' : `Media ${textoMinutos(media)}`}</span>
           </div>
           {/* ⚠️ *"Los días sin registro no generen datos falsos"*, dicho también
               con palabras: si hay huecos, se cuentan. */}
           {huecos > 0 && (
             <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
               {huecos === 1 ? '1 noche sin registrar en este periodo' : `${huecos} noches sin registrar en este periodo`}
+            </p>
+          )}
+          {sinHoras > 0 && (
+            <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+              {sinHoras === 1 ? '1 noche sin las dos horas: no cuenta en la media' : `${sinHoras} noches sin las dos horas: no cuentan en la media`}
             </p>
           )}
           {!ventana.esActual && (
@@ -323,7 +350,7 @@ export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFoco
         ? <EmptyHint text="Todavía no has registrado ninguna noche." />
         : (
           <ListCard>
-            {[...sueno].reverse().slice(0, 6).map((e, i, arr) => {
+            {ultimas.map((e, i, arr) => {
               const r = resumenNoche(e);
               return (
                 <ListRow key={e.id} last={i === arr.length - 1}>
@@ -346,11 +373,18 @@ export default function SleepView({ sueno, onAdd, onDelete, accent, foco, onFoco
           </ListCard>
         )}
 
-      <AIPanel
-        label="Analizar mi sueño"
-        accent={accent}
-        buildPrompt={() => `Últimos registros de sueño de Josué (JSON): ${JSON.stringify(ultimos)}. Si hay suficientes datos, detecta un patrón simple; si no, dilo abiertamente. Da una recomendación breve.`}
-      />
+      {/* 🔁 v3.161.3 — «Analizar mi sueño» ya no es un panel de IA que decía «próximamente»: abre el
+          asistente de Sueño con esa pregunta hecha. La primera respuesta sale de sus noches de verdad
+          (las últimas registradas, con lo que falta) y la conversación sigue desde ahí. Sin IA (DA-09). */}
+      {onAnalizar && (
+        <button type="button" onClick={onAnalizar}
+          className="w-full rounded-2xl p-4 flex items-center gap-2 text-sm font-semibold text-left active:scale-[0.98]"
+          style={{ color: accent, background: hexToRgba(accent, 0.08), border: `1px solid ${hexToRgba(accent, 0.25)}` }}>
+          <MessageCircle size={16} aria-hidden="true" />
+          <span className="flex-1">Analizar mi sueño</span>
+          <span className="text-xs font-normal" style={{ color: COLORS.textMuted }}>Con el asistente</span>
+        </button>
+      )}
     </div>
   );
 }

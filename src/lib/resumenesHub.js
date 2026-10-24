@@ -12,7 +12,7 @@
 // de acento), 'vacio' (el módulo todavía no tiene nada que mostrar hoy — punto apagado, del
 // color del borde), 'info' (módulos de solo lectura/configuración sin un "dato propio" que
 // pueda estar vacío o no — Estadísticas, Predicciones, Logros, Ajustes — sin punto).
-import { calcularDuracion, formatHoras, diasHasta, todayISO, addDays, FECHA_NO_DISPONIBLE } from './helpers';
+import { diasHasta, todayISO, addDays, FECHA_NO_DISPONIBLE } from './helpers';
 import { ESTADOS_ANIMO } from '../tokens';
 import { resumenDelDia, eventosFuturos } from './calendario';
 import { eventosDerivados } from './calendarioIntegracion';
@@ -24,7 +24,7 @@ import { totalBiblioteca } from './biblioteca.js';
 /* Entrega 3 · F31 (SU F1) — la calidad se enseña con su cara, que es la respuesta
    que dio, y **puede no haberla**: `Calidad null/5` es una palabra técnica en la
    pantalla de Josué (EH F62). */
-import { calidadDe } from './sueno.js';
+import { calidadDe, ultimaNoche, textoDuracion } from './sueno.js';
 import { resumenNumeros } from './numeros';
 /* 🐛 Fase 1B (CX-14) — «hace N días» cuenta días de calendario (`diasDesde` de Salud), y
    (CX-12) el entrenamiento sale del historial de Fitness, no de la calistenia de antes. */
@@ -60,11 +60,13 @@ export function calcularResumenModulo(id, s, hoyISO = todayISO()) {
       return { linea1: `Peso: ${ultima.peso} kg`, linea2: dias === null ? FECHA_NO_DISPONIBLE : dias === 0 ? 'Último registro hoy' : `Último registro hace ${dias} ${plural(dias, 'día', 'días')}`, estado: 'activo' };
     }
     case 'sueno': {
-      const ultimo = ultimoPorFecha(s.sueno);
+      /* v3.161.3 — la última noche por su FECHA (y que ya haya pasado), y sin las dos horas se dice:
+         ni «— h dormidas» ni una duración inventada. */
+      const ultimo = ultimaNoche(s.sueno, hoyISO);
       if (!ultimo) return { linea1: 'Sin registros todavía', linea2: 'Toca para registrar cómo dormiste', estado: 'vacio' };
-      const horas = calcularDuracion(ultimo.horaDormir, ultimo.horaDespertar);
+      const texto = textoDuracion(ultimo);
       const cal = calidadDe(ultimo.calidad);
-      return { linea1: `${formatHoras(horas)} h dormidas`, linea2: cal ? `${cal.emoji} ${cal.nombre}` : 'Sin calidad anotada', estado: 'activo' };
+      return { linea1: texto ? `${texto} dormidas` : 'Sin las dos horas de la última noche', linea2: cal ? `${cal.emoji} ${cal.nombre}` : 'Sin calidad anotada', estado: 'activo' };
     }
     case 'nutricion': {
       const hoy = todayISO();

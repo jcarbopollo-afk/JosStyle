@@ -150,9 +150,12 @@ ok(/calidadId: null/.test(VISTA) && /interrupciones: null/.test(VISTA) && /siest
   '🚨 NINGUNA RESPUESTA VIENE ELEGIDA: poner una guardaría algo que él no ha dicho (HT F3, EH F28)');
 /* ⚠️ La vista usa las CONSTANTES, no los literales, así que se busca el nombre:
    una prueba que buscara "23:00" saltaría con el código mejor escrito. */
-ok(VISTA.includes('HORA_DORMIR_DEFECTO') && VISTA.includes('HORA_DESPERTAR_DEFECTO')
+/* 🔓 v3.161.3 — SE DA LA VUELTA: las horas venían puestas (23:00 → 07:00) y una noche guardada sin tocarlas
+   salía con 8 h que nadie apuntó. Ahora el formulario empieza vacío y una hora no se rellena nunca; las
+   constantes siguen exportadas (alguien de fuera puede leerlas), pero la pantalla no las usa. */
+ok(!VISTA.includes('HORA_DORMIR_DEFECTO') && !VISTA.includes('HORA_DESPERTAR_DEFECTO')
   && HORA_DORMIR_DEFECTO === '23:00' && HORA_DESPERTAR_DEFECTO === '07:00',
-  '⚠️ salvo las horas, que son un reloj y él mueve');
+  '🔓 ninguna hora viene puesta: ni las horas, que antes llegaban con 23:00 → 07:00');
 ok(VISTA.includes("form.siestaAyer === true &&"),
   '🚨 y los minutos de la siesta SOLO salen si dijo que sí (apartado 4)');
 ok(VISTA.includes('aria-pressed'),
@@ -163,12 +166,14 @@ console.log('\n── 8. 🚨 Lo que ya funcionaba sigue ahí (apartados 8 y 10)
 ok(VISTA.includes('LineChart') && VISTA.includes('CartesianGrid') && VISTA.includes('recharts'),
   '🚨 LA GRÁFICA ES LA MISMA: el apartado 8 dice que está bien planteada');
 ok(VISTA.includes('ventanaDeDias'), '⚠️ alimentada por la ventana, que a su vez usa `calcularDuracion` de siempre');
-ok(VISTA.includes('AIPanel') && VISTA.includes('Analizar mi sueño'), '⚠️ el panel de IA sigue');
+/* 🔓 v3.161.3 — autorizado por Josué: «Analizar mi sueño» ya no es un panel de IA «próximamente», abre el
+   asistente de Sueño con la conversación empezada (sin IA ni red). */
+ok(!VISTA.includes('AIPanel') && VISTA.includes('Analizar mi sueño') && VISTA.includes('onAnalizar'), '🔓 «Analizar mi sueño» abre el asistente (ya no es un panel de IA)');
 ok(VISTA.includes('BotonBorrar') && VISTA.includes('onDelete'), '⚠️ y se puede seguir borrando una noche');
 /* 🐛 E3 F32 — la media dejó la cabecera y vive dentro de la tarjeta de la
    gráfica: allí es la de la ventana que está mirando, y en la cabecera cambiaba
    al retroceder una semana. Sigue estando, y sigue saliendo de `mediaDeHoras`. */
-ok(VISTA.includes('mediaDeVentana') && VISTA.includes('Media '), '⚠️ y la media sigue, ahora dentro de la gráfica');
+ok(VISTA.includes('mediaMinutosDeVentana') && VISTA.includes('Media '), '⚠️ y la media sigue, ahora dentro de la gráfica (en minutos exactos desde la v3.161.2)');
 ok(VISTA.includes("foco?.accion === 'registrar'"),
   '⚠️ y la acción rápida «+ Sueño» del Dashboard sigue abriendo este formulario, sin uno nuevo');
 /* 🚨 Y la ventana de la gráfica NO se toca: es la fase siguiente. */

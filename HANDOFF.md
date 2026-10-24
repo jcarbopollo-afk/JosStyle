@@ -2,6 +2,40 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (v3.161.3 — Sueño: datos incompletos sin inventar y «Analizar mi sueño» como conversación; sin commit, push ni despliegue):**
+> La siesta sin contestar ya no es «no» (`null`), las horas ya no vienen puestas ni se rellenan (una noche sin las dos horas no
+> tiene duración y no entra en las cuentas de duración, lo demás sí), «la última noche» es la de fecha más reciente en la lista,
+> Inicio, el hub y el asistente, y el botón «Analizar mi sueño» abre el asistente de Sueño con la pregunta contestada; lo que se
+> pregunte después mira las mismas noches. Nuevo en el asistente: noches incompletas, por qué una media es fiable o no, la mejor
+> y la peor noche y «compáralo con lo de antes». Detalle: `docs/15_asistentes/ESPECIFICACION_CHATBOTS.md` §20.
+>
+> **📅 ACTUALIZACIÓN ANTERIOR (v3.161.2 — Integración de los chatbots y calidad de los datos de Sueño; sin commit, push ni despliegue):**
+> La duración de una noche es una sola cuenta en minutos exactos (`minutosEntreHoras`): la pantalla de Sueño dice ya **7 h 45 min**
+> (y «Media 7 h 45 min»), igual que el chat. Los despertares sin contestar se guardan como `null` y el asistente los dice y no los
+> cuenta. Nuevo en el asistente de Sueño: «¿Cómo han ido mis últimas noches?» (las últimas 7 registradas, con lo que falta:
+> pocas, separadas o poco recientes). Un botón de una aclaración antigua ya no se aplica a la pregunta de ahora (sale apagado).
+> Los botones de IA «próximamente» se investigaron uno a uno y **no se tocaron** (decide Josué): tabla, riesgos (siesta sin
+> contestar = «no», horas que faltan = 23:00/07:00) y pruebas del iPhone en `docs/15_asistentes/ESPECIFICACION_CHATBOTS.md` §19.
+
+> **📅 ACTUALIZACIÓN (v3.161.1 — Chatbots: los 10 defectos de la auditoría técnica, corregidos; sin commit ni push):**
+> Elegir «un día» con un rango ya no contesta el lunes en silencio, dos fechas en una pregunta dan dos respuestas, «¿cómo
+> cambia…?» / «¿cuánto sube…?» ya no reciben «no puedo apuntar», «¿qué temas tengo que estudiar?» va sin el aviso de consejos,
+> dos asignaturas con el mismo nombre se distinguen por su área, «¿comí más que ayer?» compara los dos días, los botones de las
+> aclaraciones miden 44 px, la duración de una noche es exacta en el chat (7 h 45, no 7 h 48; **la pantalla de Sueño sigue
+> redondeando**), «semanas seguidas» y «???» ya contesta. Riesgos investigados y no corregidos (despertares sin contestar
+> guardados como 0, botones de aclaraciones antiguas) y lo que falta en el iPhone: `docs/15_asistentes/ESPECIFICACION_CHATBOTS.md` §18.
+
+> **📅 ACTUALIZACIÓN (v3.161.0 — Asistentes, Fase 2: chatbots deterministas; sin commit ni push, por orden de Josué):**
+> Sueño, Fitness, Nutrición, Estudios y Productividad tienen un botón **«Asistente»** junto a «← Volver» que abre una
+> conversación: se le pregunta con palabras normales («¿cuánto dormí ayer?», «¿y la semana pasada?», «¿cómo voy en
+> dominadas?») y contesta **con sus propios datos y los cálculos de esa pantalla**, diciendo de dónde sale cada cifra.
+> **No es una IA** (DA-09): reglas, sin red y sin claves. Solo lectura, nada se guarda (la conversación se pierde al
+> recargar y se vacía al cambiar de usuario), cada asistente solo ve su módulo, y no da causas, consejos ni predicciones.
+> Imagen personal está excluida y los 12 paneles de IA siguen igual. La especificación, la auditoría (23 hallazgos) y la
+> implementación (5 más, el serio: una pregunta de un día con un rango contestaba el primer día) están en
+> `docs/15_asistentes/ESPECIFICACION_CHATBOTS.md`. **Falta verlo en el iPhone** (el teclado con la hoja abierta y
+> VoiceOver) y que Josué diga si se sube a `main`. Siguen abiertas P-01 (b), P-04…P-07, P-10 y CX-17.
+
 > **📅 ACTUALIZACIÓN (v3.160.0 — Asistentes, Fase 1C: correcciones tras la auditoría; sin commit ni push, por orden de Josué):**
 > Una auditoría adversarial de la 1 y la 1B encontró cuatro cosas que seguían diciendo algo falso o imposible, y están
 > corregidas: «Entrenar y ánimo» ya no convierte **dejar de apuntar** en días sin entreno (compara solo las semanas con

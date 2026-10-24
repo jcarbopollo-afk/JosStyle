@@ -241,6 +241,11 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
        personal: lo caza `rendimiento`, por el `rendimiento.js` de la EH F44,
        como a `rendimientoFitness`. **Undécima** exclusión a mano. */
     && f !== 'rendimientoMotion'
+    /* ⚠️ Y `motorConversacion` es el motor de los **chatbots deterministas** (Fase 2
+       de los asistentes), no de Imagen personal —que además está excluida de ese
+       sistema entero—: lo caza `motor`, como a `motorRangos`. **Duodécima**
+       exclusión a mano, por el mismo motivo de siempre. */
+    && f !== 'motorConversacion'
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],

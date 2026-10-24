@@ -39,15 +39,28 @@ export function calcularEdad(fechaNacimiento, hoy = new Date()) {
 // (reading 'split')" a las CUATRO pantallas que llaman a esta función (Hoy, Sueño,
 // Estadísticas y las tarjetas de hub), dejándolas en blanco. Quien la llama ya trataba
 // el caso "sin datos", así que devolver null encaja con lo que esperan.
-export function calcularDuracion(horaDormir, horaDespertar) {
-  if (typeof horaDormir !== 'string' || typeof horaDespertar !== 'string') return null;
+/* 🐛 Integración de los chatbots (v3.161.2) — LA DURACIÓN EXACTA VIVE AQUÍ, EN MINUTOS.
+   «23:30 → 07:15» son 7 h 45 min, y la pantalla de Sueño decía «7 h 48 min» porque pintaba las
+   horas decimales redondeadas a una décima (7,8 h). Ahora hay UNA cuenta, en minutos enteros:
+   `minutosEntreHoras` la hace y `calcularDuracion` la convierte a horas decimales para quien las
+   pide (la gráfica, el Dashboard, el hub, las correlaciones, la exportación). Un texto «7 h 45 min»
+   sale SIEMPRE de los minutos, nunca de las horas redondeadas.
+   Una hora que no es una hora («25:99», «7:5», «») no da duración: `null`, nunca un número. Cruza
+   la medianoche cuando la de despertar no es posterior (la misma hora = 24 h, como siempre). */
+export function minutosEntreHoras(horaDormir, horaDespertar) {
+  if (!horaValida(horaDormir) || !horaValida(horaDespertar)) return null;
   const [h1, m1] = horaDormir.split(':').map(Number);
   const [h2, m2] = horaDespertar.split(':').map(Number);
-  if ([h1, m1, h2, m2].some((n) => !Number.isFinite(n))) return null;
-  let start = h1 * 60 + m1;
-  let end = h2 * 60 + m2;
-  if (end <= start) end += 24 * 60;
-  return Math.round(((end - start) / 60) * 10) / 10;
+  const inicio = h1 * 60 + m1;
+  let fin = h2 * 60 + m2;
+  if (fin <= inicio) fin += 24 * 60;
+  return fin - inicio;
+}
+
+export function calcularDuracion(horaDormir, horaDespertar) {
+  const minutos = minutosEntreHoras(horaDormir, horaDespertar);
+  if (minutos === null) return null;
+  return Math.round((minutos / 60) * 10) / 10;
 }
 
 // Presentación de un resultado de `calcularDuracion`. Existe para que un registro de sueño

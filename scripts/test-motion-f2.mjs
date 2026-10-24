@@ -165,7 +165,17 @@ ok(posHook > 0 && primerReturn > 0 && posHook < primerReturn, '🚨 REGLA 4: el 
    cuando la pantalla crece desde su tarjeta, no lleva además la entrada desde la derecha. */
 /* MS F12 — y con su nombre para VoiceOver (`role="region"` y `aria-label`). */
 ok(/<div key=\{tab\} ref=\{pantallaRef\} tabIndex=\{-1\} role="region" aria-label=\{nombrePantalla\} data-navegacion=\{tipoNav\} data-continuidad=\{desdeTarjeta \? 'desde-tarjeta' : undefined\} className=\{`outline-none \$\{desdeTarjeta \? '' : claseDeNavegacion\(tipoNav\)\}`\.trim\(\)\}>/.test(app), 'TODAS las pantallas van en el mismo contenedor, con su clase, su clave y su ref (y la F7 no le pone dos entradas a la vez)');
-ok(/if \(!enModulo \|\| !puedeVolverNav\(pilaNav\)\) return contenedor\(protegido\);/.test(app), '…también Inicio y los hubs, que antes aparecían de golpe');
+/* 🔓 Fase 2 de los asistentes — en un módulo con asistente y sin «← Volver» (abierto sin historial), la
+   fila del botón va ENCIMA de la pantalla, así que esa rama ya no es `return contenedor(protegido);` a
+   secas. Lo que se protege no cambia: la rama de Inicio y los hubs devuelve `contenedor(…)` con
+   `protegido` dentro, nunca la pantalla suelta. */
+const ramaSinVolverDe = (src) => (src.match(/if \(!enModulo \|\| !puedeVolverNav\(pilaNav\)\)\s*\{?\s*return ([^;]+);/) || [])[1] || '';
+const pasaPorContenedor = (rama) => /^contenedor\(/.test(rama) && /\bprotegido\b/.test(rama);
+const ramaSinVolver = ramaSinVolverDe(app);
+ok(pasaPorContenedor(ramaSinVolver), `…también Inicio y los hubs, que antes aparecían de golpe — ${JSON.stringify(ramaSinVolver.slice(0, 120))}`);
+ok(!pasaPorContenedor(ramaSinVolverDe('if (!enModulo || !puedeVolverNav(pilaNav)) return protegido;'))
+  && pasaPorContenedor(ramaSinVolverDe('if (!enModulo || !puedeVolverNav(pilaNav)) return contenedor(protegido);')),
+  '…y la comprobación se pondría roja con un `return protegido;` suelto (y aceptaría la forma de antes)');
 ok(!/<div key=\{tab\} className="module-enter">/.test(app), '…y ya no hay un `module-enter` puesto a pelo');
 ok(/<AreaSegura clave=\{tab\} nombre=\{nombrePantalla\}[^>]*texto="Las demás pantallas y la barra de abajo siguen funcionando/.test(app), '🐛 un límite de error por pantalla (apartado 18): un fallo al pintar no deja la aplicación en blanco');
 ok(/texto = TEXTO_FITNESS/.test(SEGURA) && /\{texto\}/.test(SEGURA), '…`AreaSegura` admite su texto, y en Fitness sigue diciendo lo de siempre');

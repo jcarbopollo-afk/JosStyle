@@ -1665,6 +1665,30 @@ else
   fallo "Una pantalla de la Fase 1C no enseña lo que debe"; grep '✗' /tmp/jc_f1c_vista.log
 fi
 
+# Fase 2 (asistentes) — los chatbots deterministas: el núcleo de comprensión (normalizar, fechas,
+# intenciones, contexto, aclaraciones, límites) y los cinco asistentes de la categoría 1 (Sueño,
+# Fitness, Nutrición, Estudios, Productividad). Comprueba las cifras contra las funciones de cada
+# módulo, la lista blanca de datos, que ningún archivo del chat alcance la IA generativa ni la red,
+# y que Imagen personal y los 12 paneles de IA siguen sin tocar (DA-09, DA-12).
+if node --import ./scripts/resolver-vite.mjs scripts/test-motor-conversacion.mjs >/tmp/jc_chat_motor.log 2>&1; then
+  ok "Chatbots: el núcleo conversacional determinista (Fase 2) — $(grep -c '✓' /tmp/jc_chat_motor.log) comprobaciones"
+else
+  fallo "Falla el núcleo de los chatbots (comprensión, fechas, contexto o límites)"; grep '✗' /tmp/jc_chat_motor.log
+fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-asistentes-chat.mjs >/tmp/jc_chat_asist.log 2>&1; then
+  ok "Chatbots: los cinco asistentes de la categoría 1 (Fase 2) — $(grep -c '✓' /tmp/jc_chat_asist.log) comprobaciones"
+else
+  fallo "Falla un asistente (una cifra, la privacidad, un límite o la ausencia de IA generativa)"; grep '✗' /tmp/jc_chat_asist.log
+fi
+# v3.161.2 — integración: la duración del sueño en minutos exactos en todas partes, los despertares sin
+# contestar como null, el análisis de las últimas noches registradas y los botones de aclaración atados
+# a su pregunta.
+if node --import ./scripts/resolver-vite.mjs scripts/test-integracion-chatbots.mjs >/tmp/jc_chat_integ.log 2>&1; then
+  ok "Chatbots: integración (duración exacta, despertares null, últimas noches, botones caducados) — $(grep -c '✓' /tmp/jc_chat_integ.log) comprobaciones"
+else
+  fallo "Falla la integración de los chatbots (duración, nulos de Sueño, últimas noches o botones de aclaración)"; grep '✗' /tmp/jc_chat_integ.log
+fi
+
 # Ajustes · Perfil — la foto de perfil y el nombre de los saludos.
 if node --import ./scripts/resolver-vite.mjs scripts/test-foto-perfil.mjs >/tmp/jc_fotoperfil.log 2>&1; then
   ok "Ajustes: foto de perfil y saludos — $(grep -c '✓' /tmp/jc_fotoperfil.log) comprobaciones"

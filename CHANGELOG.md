@@ -1,5 +1,172 @@
 # CHANGELOG.md
 
+## v3.161.3 — Sueño: lo que no se sabe no se inventa, y «Analizar mi sueño» abre una conversación
+
+> Encargo de Josué del 2026-10-24 (*«Corregir definitivamente la interpretación de los datos incompletos del sueño y revisar la
+> integración del botón «Analizar mi sueño»»*). **Sin commit, push ni despliegue.** Sin IA generativa, claves, red ni costes; sin
+> tocar Imagen personal, los otros cuatro asistentes ni los demás botones «próximamente». Detalle en
+> `docs/15_asistentes/ESPECIFICACION_CHATBOTS.md` §20.
+
+### 🐛 Corregido
+- **La siesta sin contestar se guardaba como «no».** Ahora es `null` (sí `true`, no `false`) en el formulario, la carga, la
+  exportación y el asistente («Días con siesta: 1 de 2» contando solo las contestadas). Lo guardado con el campo viejo `siesta`
+  se sigue leyendo.
+- **Las horas se inventaban.** El formulario traía 23:00 → 07:00 puestas y la carga rellenaba la que faltara: una noche sin tocar
+  las horas salía con 8 h. Ahora empiezan vacías, una hora imposible se queda sin hora, una noche sin las dos horas no tiene
+  duración (ni 0 ni 8 h) y no entra en medias, extremos ni comparaciones; lo demás que apuntó (cara, despertares, siesta) sí.
+  El formulario avisa con una sola hora y no guarda una noche sin nada.
+- **«La última noche» era la última guardada.** La lista de Sueño, la tarjeta de Inicio, el resumen del hub y el análisis eligen
+  por la fecha de la noche (`nochesPorFechaReciente`, `ultimaNoche`).
+
+### ✨ Cambiado
+- **«Analizar mi sueño» ya no es un panel de IA «próximamente»: abre el asistente de Sueño con la pregunta hecha** y contestada
+  con las últimas 7 noches registradas por fecha. Lo que se pregunte después mira las mismas noches (`periodoUsado`) y da las
+  mismas cifras. Nuevo en el asistente: qué noches están incompletas, por qué una media es fiable o no (sin el límite de
+  «causa»), la mejor y la peor noche (por cómo dijo que durmió y por duración) y «compáralo con lo de antes».
+
+### 🧪 Pruebas
+- `test-integracion-chatbots` **136** (+74, §5 A–D: siestas, horas, orden por fecha y bordes de los umbrales, la conversación).
+- `test-sueno` y `test-sueno-grafica`: tres comprobaciones **dadas la vuelta** (las horas por defecto y el panel de IA).
+- Banco de renderizado: «SleepView · noches incompletas y «Analizar mi sueño»». Recorrido: «E3 F31» rellena las horas a mano
+  y comprueba el aviso sin datos; «CHAT F2» toca «Analizar mi sueño» y sigue la conversación.
+
+## v3.161.2 — Integración de los chatbots: la duración del sueño, los despertares sin contestar, las últimas noches y los botones caducados
+
+> Encargo de Josué del 2026-10-24 (*«FASE: INTEGRACIÓN CORRECTA DE LOS CHATBOTS, CALIDAD DE LOS DATOS DE SUEÑO Y PREPARACIÓN PARA
+> PUBLICACIÓN»*). **Sin commit, push ni despliegue** hasta que él lo revise, haga las pruebas en el iPhone y lo autorice. Ni
+> Imagen personal, ni los 12 paneles de IA, ni dependencias, ni red. Detalle en `docs/15_asistentes/ESPECIFICACION_CHATBOTS.md` §19.
+
+### 🐛 Corregido
+- **La duración de una noche era dos cuentas.** La pantalla de Sueño decía **7 h 48 min** de 23:30 → 07:15 (redondeaba a una
+  décima de hora) y el chat, 7 h 45 min. Ahora hay **una sola cuenta, en minutos exactos** (`minutosEntreHoras`, `helpers.js`):
+  `calcularDuracion` (la gráfica, Inicio, el hub, las correlaciones, la exportación) sale de ella en horas decimales, y el texto,
+  la media de la pantalla («Media 7 h 45 min», antes «Media 7.8 h») y el asistente salen de los minutos (`minutosDeNoche`,
+  `textoDuracion`, `mediaDeMinutos` en `sueno.js`; el asistente ya no tiene una copia). Una hora imposible («25:00», «7:5») ya no
+  da una duración: `null`.
+- **Los despertares sin contestar se guardaban como 0** (`?? 0` en `normalizarRegistro`): una noche sin tocar ningún botón
+  decía «no me desperté». Ahora es `null` en el guardado, la carga, la exportación («interrupciones sin contestar») y el
+  asistente («Te despertaste: sin contestar»; «1 de 3» contando solo las noches en las que lo contestó, y dice cuántas faltan).
+  Un 0 elegido sigue siendo 0, y la noche sigue valiendo para la duración y la calidad. ⚠️ Lo guardado antes con 0 no se puede
+  distinguir de un 0 elegido y se queda como está.
+- **Un botón de una aclaración antigua se aplicaba a la pregunta de ahora.** Cada opción lleva la respuesta que la creó
+  (`origen`); la hoja la manda al tocarla y el núcleo solo la ejecuta si esa aclaración sigue pendiente. Si no, contesta «Ese botón
+  era de una pregunta anterior» sin consultar nada, y la hoja enseña esos botones apagados con su motivo.
+
+### ✨ Nuevo (dentro del asistente de Sueño)
+- **«¿Cómo han ido mis últimas noches?»** (capacidad `ultimas`, también «analiza mi sueño»): las últimas 7 noches REGISTRADAS
+  —no los últimos días del calendario— con su media exacta, la más larga y la más corta, cómo dijo que durmió y los despertares
+  contestados. No rellena huecos, no saca tendencias ni causas, y dice lo que falta: con una noche no hay media; con menos de 3,
+  «dice poco»; si la última es de hace más de 7 días, que describe cómo dormía entonces; si abarcan más de 14 días, que están muy
+  separadas. Las reglas viven en `CALIDAD_ANALISIS_SUENO` (`sueno.js`), con su motivo.
+
+### 🔎 Investigado y NO cambiado (necesita su decisión)
+- **Los botones de IA que dicen «Estamos preparando algo nuevo»** (12 paneles + 4 sueltos): la tabla, módulo por módulo, está en
+  el §19.4 de la especificación. «Analizar mi sueño» y «Analizar mi semana» (Nutrición) ya tienen una respuesta sin IA (el
+  asistente de Sueño y el «🧠 Análisis nutricional» de la misma pantalla), pero tocar esos paneles exige su permiso.
+- **La siesta sin contestar se guarda como «no»** (`form.siestaAyer === true`), el mismo fallo que los despertares; y **una hora
+  que falta se rellena con 23:00 / 07:00** al cargar. Los dos son del módulo de Sueño y quedan como propuesta.
+
+### 🧪 Pruebas
+- `test-integracion-chatbots` **62** (nueva, en `verificar.sh`): duración normal, con cambio de día, minutos exactos, incompleta e
+  imposible; nulos de punta a punta; las últimas noches con 0, 1, 2, 7, huecos, separadas y poco recientes; botones caducados.
+- `test-asistentes-chat` **225**: dos comprobaciones que guardaban los fallos como verdad («la pantalla sigue en 6 h 12 min» y «Sueño
+  guarda 0 despertares») **se dieron la vuelta**; el escenario de despertares tiene ahora una noche sin contestar. `test-sueno`: la
+  media de la vista es `mediaMinutosDeVentana`. Banco de renderizado: un caso de botones caducados. Recorrido «CHAT F2»: la media
+  de Sueño en minutos y los botones apagados tras contestar.
+
+## v3.161.1 — Chatbots: los 10 defectos de la auditoría técnica, corregidos
+
+> Encargo de Josué del 2026-10-24 (*«FASE: CORRECCIÓN DE DEFECTOS CONFIRMADOS EN LOS CINCO CHATBOTS»*), sobre la auditoría
+> técnica de solo lectura del mismo día. **Sin commit ni push** (lo dijo él). Solo el código de los chatbots, su núcleo y sus
+> pruebas: ni otros módulos, ni Imagen personal, ni los 12 paneles de IA, ni dependencias, ni red. Detalle en
+> `docs/15_asistentes/ESPECIFICACION_CHATBOTS.md` §18.
+
+### 🐛 Corregido (los diez se reprodujeron antes de tocar nada)
+- **D1** · Elegir «un día» en una aclaración con un rango («desayuno esta semana») contestaba el lunes y decía «No tienes nada
+  registrado» habiendo datos esa semana: ahora pregunta qué día, como el resto (`capacidadParaPeriodo` en la rama de la opción).
+- **D2** · «¿Cuánto dormí el lunes y el martes?» contestaba solo el lunes: ahora una respuesta por fecha (hasta tres, y lo dice).
+- **D3** · «¿Cómo cambia mi media?» y «¿Cuánto sube mi press?» recibían «no puedo apuntar ni cambiar nada»: un verbo que se
+  escribe igual que la orden ya no cuenta si va detrás de una palabra de pregunta (`esOrdenDeEscritura`). Las órdenes siguen
+  recibiendo la negativa.
+- **D4** · «¿Qué temas tengo que estudiar?» llevaba delante «no doy consejos»: «tengo que» y «debo» no avisan cuando lo que se
+  pregunta está apuntado (temas, exámenes, el plan, los hábitos o rutinas de hoy). «Debería» o «¿qué tengo que comer?» sí.
+- **D5** · Dos asignaturas con el mismo nombre: los botones dicen el área («Lenguaje · Bachillerato» / «Lenguaje · Música»), cada
+  uno abre la suya, ya no se elige sola la que tiene historial y React no recibe claves repetidas.
+- **D6** · «¿Comí más que ayer?» compara hoy con ayer (o los días que nombre), y si a uno le falta registro lo dice sin comparar.
+- **D7** · Los botones de las aclaraciones miden 44 px de alto; el botón «Asistente» conserva su aspecto y tiene la zona de toque
+  de 44 px. Medido en Chromium; falta el iPhone.
+- **D8** · 23:30 → 07:15 son **7 h 45 min**, no 7 h 48: el chat dice la duración de una noche en minutos exactos. ⚠️ **La pantalla
+  de Sueño sigue diciendo 7 h 48 min** (redondea a décimas de hora): cambiarla es otro módulo, queda como propuesta.
+- **D9** · «Llevas 4 semanas seguid**as**» (y seguida, seguido, seguidos).
+- **D10** · «???» ya no vacía la caja sin contestar: pide la pregunta con palabras, y la aclaración que hubiera sigue en pie.
+- **Y uno de la misma familia, hallado al corregir:** «¿Duermo más esta semana que la pasada?» se tomaba por una predicción
+  («que la pasada» casaba con «que pasará»). Ahora compara.
+
+### 🔎 Investigado y NO corregido (riesgos; propuestas en el §18.1)
+- **Sueño guarda 0 despertares cuando no se contestan** (`crearRegistroSueno`): el chat no puede distinguirlo. Es del módulo de
+  Sueño.
+- **Un botón de una aclaración antigua** se aplica a la última pregunta, no a la suya.
+- **Palabras muy largas** en las respuestas (sin `break-words`) y **el teclado de iOS**: sin medir; el teclado, solo en el iPhone.
+
+### 🧪 Pruebas
+- `test-asistentes-chat` **225** (antes 160): sección 12 nueva con cada defecto, y cinco comprobaciones que esperaban «6 h 12 min»
+  —el defecto D8 escrito como verdad— **se dieron la vuelta**. `test-motor-conversacion` 97. Recorrido «CHAT F2»: la duración
+  exacta, los botones de 44 px, la zona de toque del botón «Asistente» y «???», en Chromium.
+
+## v3.161.0 — Fase 2: chatbots deterministas para Sueño, Fitness, Nutrición, Estudios y Productividad
+
+> Encargo de Josué del 2026-10-20 (*«JOS STYLE — FASE 2»*, tres prompts: especificación, auditoría adversarial e
+> implementación), y *«Dale bro sigue»*. Un chatbot por módulo que contesta en lenguaje normal **con los datos de ese
+> módulo y los motores que ya existen**: ni IA generativa, ni red, ni claves (DA-09). Solo lectura. **Sin commit ni push**
+> (lo dijo él). Sin tocar Imagen personal ni los 12 paneles de IA, sin dependencias, sin migraciones, sin Supabase.
+> Decisión **DA-12**; especificación y auditoría en `docs/15_asistentes/ESPECIFICACION_CHATBOTS.md` (§1–§16) y la
+> implementación en su §17.
+
+### ✨ Lo nuevo
+- **Un botón «Asistente»** junto a «← Volver» en Sueño, Fitness, Nutrición, Estudios y Productividad (los de la categoría
+  1). Abre una hoja con la conversación: preguntas escritas con sus palabras (erratas, coloquial, sin acentos), fechas
+  relativas («anoche», «el lunes», «la semana pasada», «el 3 de octubre»), varias preguntas en un mensaje, seguimientos
+  («¿y ayer?»), correcciones («no, me refería a…») y aclaraciones con botones cuando algo es ambiguo («dominadas» →
+  ¿cuáles?). Cada respuesta dice **de dónde sale** y separa **datos, cálculos y lecturas**; con pocos datos lo dice.
+- **Lo que sabe cada uno:** Sueño (una noche, la media, la calidad, las noches extremas, los horarios, los despertares,
+  comparar y qué noches hay registradas), Fitness (el último entrenamiento, un día, cuántos, qué toca según el plan, el
+  progreso y el récord de un ejercicio, los objetivos), Nutrición (lo de un día, la media, las comidas, el agua, la
+  constancia y los días extremos), Estudios (próximos exámenes y entregas, cuándo es uno, horas, notas, temas y
+  asignaturas) y Productividad (hábitos, rachas, pomodoros, metas, objetivos y rutinas). **Cada cifra sale de la función
+  de su pantalla** (`textoDuracion`, `resumenDeSesion`, `promediosDelPeriodo`, `fechasAcademicas`, `estadisticasHabito`…).
+- **Lo que no hace, y lo dice:** no apunta ni borra nada, no da causas, consejos, diagnósticos ni predicciones (con una
+  premisa falsa, el límite va con el dato real), no inventa lo que JosStyle no registra (pasos, calorías quemadas), no lee
+  otros módulos («eso es de Economía») y no se presenta como una IA.
+
+### 🔒 Privacidad
+- **Cada asistente recibe solo sus claves** (`datosParaAsistente`, una copia congelada) y ninguna de Relación, Diario,
+  Imagen personal, perfil, Salud o Economía. La conversación vive **solo en memoria**: se pierde al recargar y **se vacía
+  al cambiar de usuario** (H-01, el P0 de la auditoría). No se guarda nada en `app_data` ni en el dispositivo.
+- **Ni una línea de IA generativa ni de red alcanzable** desde los archivos del chat: la suite recorre sus imports
+  (ni `ai.js`, ni `supabase.js`, ni `fetch`, ni claves) y además sabotea `fetch` mientras conversa.
+
+### 🐛 Lo que destapó la implementación (§17.1)
+- **H-25 · Una pregunta de un día con un rango contestaba el primer día:** «¿cuánto dormí ayer?» → «¿y la semana pasada?»
+  daba la noche del lunes. Ahora pasa a la capacidad hermana (`siRango`: la media) o pregunta **qué día**, con botones.
+- **H-26 / H-27 · Dos falsos positivos del léxico:** «¿cuántas horas dormí?» casaba con «hora de dormir» (sin la
+  duración) y «dormir» con «dormiré» (se contestaba como una predicción). Expresiones exactas.
+- **H-24 · El campo de texto no importa `ui.jsx`**: arrastraba `ai.js` a lo que alcanza el chat.
+- **H-28 · Dos comprobaciones de otras fases** que leían el código con los nombres de antes (la auditoría final de Imagen
+  personal y la MS F2): la primera, con su exclusión a mano; la segunda, **ampliada** sin dejar de proteger lo suyo.
+
+### 🧪 Pruebas
+- `scripts/test-motor-conversacion.mjs` (97) y `scripts/test-asistentes-chat.mjs` (160: corpus de 100 variantes al 100 %,
+  los 15 escenarios de la auditoría, datos vacíos/corruptos/sin cargar/extremos, privacidad, Imagen personal y los 12
+  paneles intactos), los casos del chat en el banco de renderizado y la sección **«CHAT F2»** del recorrido en Chromium
+  (38). Registradas en `verificar.sh`.
+- ⚠️ **Sin probar en el iPhone (R1):** el teclado de iOS con la hoja abierta y VoiceOver leyendo la conversación.
+
+### ⏸ Lo que queda para Josué
+- Subir esto a `main`. Y lo de siempre: **P-01 (b)** asistente general, **P-04** proactividad, **P-05** escribir desde el
+  chat, **P-06** cruces entre módulos, **P-07** historial guardado, **P-10** y **CX-17**. Los módulos de la categoría 2
+  (Organización, Economía, Salud, Diario, Relación, Cumpleaños, Biblioteca, Armario, Progreso, Inicio) esperan su
+  decisión; Imagen personal está excluida.
+
 ## v3.160.0 — Fase 1C: correcciones finales tras la auditoría adversarial
 
 > Encargo de Josué del 2026-10-20 (*«FASE 1C — CORRECCIONES FINALES TRAS AUDITORÍA ADVERSARIAL»*): corregir lo que una

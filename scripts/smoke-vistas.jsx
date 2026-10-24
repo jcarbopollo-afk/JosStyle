@@ -19,6 +19,10 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { textoRoto } from '../src/lib/robustezFitness.js';
 import { MissingImage, MissingData } from '../src/components/estadosFitness.jsx';
+/* Fase 2 · Chatbots — la hoja del asistente, sin portal (la conversación y sus respuestas). */
+import { ConversacionAsistente, RespuestaAsistente, BotonAsistente, conversacionVacia } from '../src/components/asistenteChat.jsx';
+import { responderMensaje } from '../src/lib/motorConversacion.js';
+import { ASISTENTES, datosParaAsistente, DOMINIOS_AJENOS } from '../src/lib/asistentesModulos.js';
 
 import DashboardView from '../src/views/DashboardView.jsx';
 import SleepView from '../src/views/SleepView.jsx';
@@ -821,7 +825,36 @@ const AREAS_PRUEBA = [
   { id: 'area-mas', label: 'Más', modulos: ['relacion'] },
 ];
 
+/* Fase 2 · Chatbots — una conversación de verdad con cada asistente, sobre el estado del caso. */
+const HOY_CHAT = '2026-10-23';
+function conversacionDe(asistente, estado, mensajes) {
+  let conv = conversacionVacia('u');
+  for (const m of mensajes) {
+    const r = responderMensaje(asistente, m, { datos: datosParaAsistente(asistente, estado || {}), hoy: HOY_CHAT, contexto: conv.contexto, ajenos: DOMINIOS_AJENOS });
+    conv = { ...conv, contexto: r.contexto, mensajes: [...conv.mensajes, { id: `yo-${r.contexto.turno}`, rol: 'yo', texto: m }, ...r.respuestas.map((x) => ({ id: `as-${x.id}`, rol: 'asistente', respuesta: x }))] };
+  }
+  return conv;
+}
+const CASOS_CHAT = ASISTENTES.flatMap((a) => [
+  [`Asistente ${a.nombre} (vacío)`, ConversacionAsistente, () => ({ asistente: a, conversacion: conversacionVacia('u'), onEnviar: noop, onNavegar: noop, accent })],
+  [`Asistente ${a.nombre} (conversación)`, ConversacionAsistente, (estado) => ({
+    asistente: a, accent, onEnviar: noop, onNavegar: noop,
+    conversacion: conversacionDe(a, estado, [...a.capacidades.map((c) => c.ejemplo), 'hola', 'eres una ia?', 'apunta esto', 'cuanto gaste', 'asdf', 'por que?']),
+  })],
+]);
+
 const CASOS = [
+  ...CASOS_CHAT,
+  ['BotonAsistente', BotonAsistente, () => ({ asistente: ASISTENTES[0], onAbrir: noop, accent })],
+  ['RespuestaAsistente (aclaración y acción)', RespuestaAsistente, () => ({
+    accent, onOpcion: noop, onNavegar: noop,
+    respuesta: { asistente: 'x', capacidad: 'c', tipo: 'aclaracion', bloques: [{ tipo: 'texto', texto: '¿Cuál?' }, { tipo: 'cifra', etiqueta: 'Media', valor: '7 h', naturaleza: 'calculo', detalle: 'de 3 noches' }, { tipo: 'lista', items: ['a', 'b'] }, { tipo: 'nota', texto: 'nota' }], fuente: 'Prueba', confianza: 'pocos_datos', opciones: [{ texto: 'Uno', mensaje: 'Uno' }], acciones: [{ tipo: 'navegar', destino: 'nutricion', texto: 'Abrir Nutrición' }] },
+  })],
+  /* v3.161.2 — una aclaración de una pregunta anterior: sus botones salen apagados y se dice por qué. */
+  ['RespuestaAsistente (aclaración de una pregunta anterior)', RespuestaAsistente, () => ({
+    accent, onOpcion: noop, onNavegar: noop, pendienteId: '3-0',
+    respuesta: { id: '1-0', asistente: 'x', capacidad: 'c', tipo: 'aclaracion', bloques: [{ tipo: 'texto', texto: '¿Cuál?' }], fuente: null, confianza: null, opciones: [{ texto: 'Uno', mensaje: 'Uno', origen: '1-0' }, { texto: 'Dos', mensaje: 'Dos', origen: '1-0' }], acciones: [] },
+  })],
   /* E3 F16 (BL F1) — la Biblioteca como lanzador. El lanzador con datos y sin
      ellos, cada plaquita, la cabecera de una mini-app, un estado vacío y los
      cuatro formularios: nada de esto se pintaba antes de esta fase, porque
@@ -1141,6 +1174,17 @@ const CASOS = [
       id: `h${i}`, fecha: addDays(HOY, -(39 - i)), horaDormir: '23:00', horaDespertar: '07:00', calidad: 4,
     })),
     onAdd: noop, onDelete: noop, accent,
+  })],
+  /* v3.161.3 — noches incompletas (una hora, una hora imposible, la siesta sin contestar) guardadas fuera de
+     orden, y el botón «Analizar mi sueño» que abre el asistente. */
+  ['SleepView · noches incompletas y «Analizar mi sueño»', SleepView, () => ({
+    sueno: [
+      { id: 'i1', fecha: HOY, horaDormir: '23:00', calidad: 4 },
+      { id: 'i2', fecha: addDays(HOY, -3), horaDormir: '23:30', horaDespertar: '07:15', calidad: 5, siestaAyer: true },
+      { id: 'i3', fecha: addDays(HOY, -1), horaDormir: '25:00', horaDespertar: '07:00', interrupciones: 1 },
+      { id: 'i4', fecha: addDays(HOY, -2), calidad: 1 },
+    ],
+    onAdd: noop, onDelete: noop, accent, onAnalizar: noop,
   })],
   ['FinanceView', FinanceView, (e) => ({ economia: e.economia, onAdd: noop, onDelete: noop, onUpdate: noop, accent })],
   ['ObjectivesView', ObjectivesView, (e) => ({ objetivos: e.objetivos, onAdd: noop, onToggle: noop, onDelete: noop, onRevisar: noop, accent })],

@@ -218,6 +218,12 @@ import { ICONOS_PERSONALIZABLES_MAP } from './views/PersonalizationView'; // el 
 // `useEffect` de cada miniatura volvería a dispararse sin parar.
 const firmarFotoFondo = (path) => urlFirmada(path, getSignedFondoUrl);
 import { desenfoque } from './lib/profundidad';
+/* Fase 2 · Chatbots — los asistentes por reglas (sin IA, DA-09). App.jsx solo pone el botón, guarda
+   la conversación EN MEMORIA y le da a cada asistente SUS datos (`datosParaAsistente`). */
+import { asistenteDeModulo, datosParaAsistente, DOMINIOS_AJENOS } from './lib/asistentesModulos';
+import { TEXTO_ANALIZAR_SUENO } from './lib/asistenteSueno';
+import { BotonAsistente, HojaAsistente } from './components/asistenteChat';
+import { conversarCon } from './lib/motorConversacion';
 
 // Con Salud y Nutrición ya son 7 secciones — demasiadas para una sola barra inferior cómoda.
 // A partir de la Fase 4: 4 accesos rápidos + "Más", que lista el resto. Cada módulo nuevo futuro
@@ -600,6 +606,10 @@ export default function App() {
   // porque un logro conseguido NO se revoca al corregir el historial (apartado 28).
   const [gamificacion, setGamificacion] = useState(GAMIFICACION_INICIAL);
   const [dashboardFoco, setDashboardFoco] = useState(null);
+  /* Fase 2 · Chatbots — qué asistente está abierto y las conversaciones, una por módulo. 🚨 En memoria
+     y nada más (P-07): ni `app_data` ni `localStorage`; se vacían al cambiar de usuario (H-01). */
+  const [asistenteAbierto, setAsistenteAbierto] = useState(null);
+  const [conversaciones, setConversaciones] = useState({});
   // BI Fase 4 · apartado 11 — de dónde vino Josué al abrir algo desde el buscador.
 
   useEffect(() => {
@@ -625,6 +635,9 @@ export default function App() {
   const [salida, setSalida] = useState(null);
   useEffect(() => {
     setLoaded(false);
+    /* Fase 2 · Chatbots (H-01) — las conversaciones llevan cifras de la cuenta: fuera al cambiar de usuario. */
+    setAsistenteAbierto(null);
+    setConversaciones({});
     const id = session?.user?.id || null;
     if (!session) {
       // Y de paso, fuera de memoria lo más privado.
@@ -1133,6 +1146,22 @@ export default function App() {
      hook que ya usa la jarra de agua (P2): un solo aviso a la medianoche siguiente y una
      comprobación al volver, sin intervalos. */
   const diaDeHoy = useHoyISO();
+  /* v3.161.3 — abrir el asistente de un módulo con una primera pregunta ya hecha («Analizar mi sueño»): se
+     contesta con SUS datos, igual que si la hubiera escrito en la hoja, y la conversación sigue desde ahí.
+     No es una función de IA: es el mismo núcleo determinista (DA-09). */
+  const abrirAsistenteCon = (modulo, texto) => {
+    const asistente = asistenteDeModulo(modulo);
+    if (!asistente) return;
+    const usuario = session?.user?.id || null;
+    setConversaciones((x) => ({
+      ...x,
+      [asistente.id]: conversarCon(asistente, x[asistente.id], texto, {
+        usuario, hoy: diaDeHoy, sinCargar: clavesSinCargar(), ajenos: DOMINIOS_AJENOS,
+        datos: datosParaAsistente(asistente, { sueno, fitness, nutricion, estudios, productividad, objetivos }),
+      }),
+    }));
+    setAsistenteAbierto(modulo);
+  };
   const resumenesTodos = useMemo(() => Object.fromEntries(
     MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, fitness, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop }, diaDeHoy)])
   ), [sueno, calistenia, futbol, fitness, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop, diaDeHoy]);
@@ -2937,7 +2966,7 @@ export default function App() {
           />
         );
       case 'sueno':
-        return <SleepView sueno={sueno} onAdd={addSueno} onDelete={deleteRegistroSueno} accent={accent} foco={focoPara('sueno')} onFocoConsumido={consumirFoco} />;
+        return <SleepView sueno={sueno} onAdd={addSueno} onDelete={deleteRegistroSueno} accent={accent} foco={focoPara('sueno')} onFocoConsumido={consumirFoco} onAnalizar={asistenteDeModulo('sueno') ? () => abrirAsistenteCon('sueno', TEXTO_ANALIZAR_SUENO) : null} />;
       case 'entreno':
         /* FIT F1 — la misma entrada de siempre, con Fitness por fuera. (Las props de
            calistenia, fútbol y vídeos se quitaron el 2026-10-19 con su bloque.)
@@ -3648,7 +3677,16 @@ export default function App() {
         </div>
       </>
     );
-    if (!enModulo || !puedeVolverNav(pilaNav)) return contenedor(protegido);
+    /* Fase 2 · Chatbots — el botón del asistente va en la fila de «← Volver», solo en los módulos que
+       tienen uno (categoría 1) y nunca con la pantalla tras el PIN sin desbloquear. Los demás módulos se
+       quedan exactamente como estaban. */
+    const asistenteDelModulo = enModulo && !necesitaPin ? asistenteDeModulo(tab) : null;
+    const botonAsistente = asistenteDelModulo
+      ? <BotonAsistente asistente={asistenteDelModulo} accent={accent} onAbrir={() => setAsistenteAbierto(tab)} />
+      : null;
+    if (!enModulo || !puedeVolverNav(pilaNav)) {
+      return contenedor(botonAsistente ? <><div className="flex justify-end">{botonAsistente}</div>{protegido}</> : protegido);
+    }
     /* 🚨 NAVO F1 — AQUÍ ESTABA EL FALLO QUE REPORTÓ JOSUÉ, Y ERA UNA LÍNEA:
 
            const destinoVuelta = vueltaValida ? vueltaValida.desde : areaActual.id;
@@ -3674,17 +3712,20 @@ export default function App() {
       : (AREAS_NAV.find((a) => a.id === desde.id)?.label
         || MORE_NAV.find((m) => m.id === desde.id)?.label
         || 'Atrás');
+    /* Fase N4 — pasa de texto suelto a una píldora "glass" (fondo tenue + borde apenas
+       visible), coherente con el resto del lenguaje visual del hub del que viene. */
+    const botonVolver = (
+      <button
+        onClick={volverAtras}
+        className="back-bar inline-flex items-center gap-1.5 mb-4 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold active:opacity-60"
+        style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
+      >
+        <ArrowLeft size={16} /> {etiquetaVuelta}
+      </button>
+    );
     return contenedor(
       <>
-        {/* Fase N4 — pasa de texto suelto a una píldora "glass" (fondo tenue + borde apenas
-            visible), coherente con el resto del lenguaje visual del hub del que viene. */}
-        <button
-          onClick={volverAtras}
-          className="back-bar inline-flex items-center gap-1.5 mb-4 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold active:opacity-60"
-          style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
-        >
-          <ArrowLeft size={16} /> {etiquetaVuelta}
-        </button>
+        {botonAsistente ? <div className="flex items-start justify-between gap-2">{botonVolver}{botonAsistente}</div> : botonVolver}
         {protegido}
       </>
     );
@@ -3825,6 +3866,25 @@ export default function App() {
           indice={indiceBusqueda} onIr={irAResultado}
           recientes={entradasRecientes} onRecordar={recordarBusqueda}
           onLimpiarRecientes={() => guardarRecientes([])}
+        />
+      )}
+
+      {/* Fase 2 · Chatbots — la hoja del asistente del módulo abierto. Solo recibe SUS claves, en el
+          momento de preguntar (`datosParaAsistente`), y la conversación vive aquí, en memoria. */}
+      {asistenteAbierto && asistenteAbierto === tab && asistenteDeModulo(tab) && (
+        <HojaAsistente
+          abierto
+          asistente={asistenteDeModulo(tab)}
+          conversacion={conversaciones[asistenteDeModulo(tab).id]}
+          usuario={session?.user?.id || null}
+          onCambiar={(c) => setConversaciones((x) => ({ ...x, [asistenteDeModulo(tab).id]: c }))}
+          leerDatos={() => datosParaAsistente(asistenteDeModulo(tab), { sueno, fitness, nutricion, estudios, productividad, objetivos })}
+          leerSinCargar={clavesSinCargar}
+          hoy={diaDeHoy}
+          ajenos={DOMINIOS_AJENOS}
+          onCerrar={() => setAsistenteAbierto(null)}
+          onNavegar={(modulo) => { setAsistenteAbierto(null); navegarDesdeHoy(modulo); }}
+          accent={accent}
         />
       )}
 

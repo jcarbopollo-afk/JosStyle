@@ -44,15 +44,16 @@ export function buildExportRows({ sueno, calistenia, futbol, economia, salud, nu
     rows.push({
       modulo: 'Sueño',
       fecha: e.fecha,
-      detalle: `Dormir ${e.horaDormir} - Despertar ${e.horaDespertar}`,
+      /* v3.161.3 — una hora que falta se dice («sin anotar»), nunca «null» ni una inventada. */
+      detalle: `Dormir ${e.horaDormir || 'sin anotar'} - Despertar ${e.horaDespertar || 'sin anotar'}`,
       valor: `${formatHoras(calcularDuracion(e.horaDormir, e.horaDespertar))} h`,
       /* Entrega 3 · F31 (SU F1) — la siesta dejó de ser «un número de minutos» y
          pasó a ser una pregunta de sí o no con sus minutos aparte. Leer `e.siesta`
          a secas escribía **«siesta undefinedmin»** en el CSV de toda noche nueva.
          Y una calidad sin contestar se dice, no se escribe como «null/5». */
       extra: `calidad ${e.calidad == null ? 'sin contestar' : `${e.calidad}/5`}, `
-        + `interrupciones ${e.interrupciones ?? 0}, `
-        + `siesta ${e.siestaAyer ? `${e.siestaMinutos || 0} min` : 'no'}`,
+        + `interrupciones ${e.interrupciones == null ? 'sin contestar' : e.interrupciones}, `
+        + `siesta ${e.siestaAyer === true ? (e.siestaMinutos > 0 ? `${e.siestaMinutos} min` : 'sí (sin minutos)') : e.siestaAyer === false ? 'no' : 'sin contestar'}`,
     })
   );
   Object.entries(calistenia).forEach(([skill, d]) => {

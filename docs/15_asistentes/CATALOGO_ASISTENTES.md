@@ -6,6 +6,11 @@
 > están comprobados (firma y forma en [`INVENTARIO.md`](INVENTARIO.md) §7). **Faltan sus resultados,
 > acciones y permisos, que son de la Fase 2.** Nada de lo marcado 📝 existe.
 >
+> 💬 **Fase 2 (2026-10-23, sin commit ni push):** los cinco de la categoría 1 —**ASIS-SUE, ASIS-FIT,
+> ASIS-NUT, ASIS-EST y ASIS-PRO**— ya existen como **chatbots deterministas** de solo lectura, con sus
+> capacidades, permisos y pruebas en [`ESPECIFICACION_CHATBOTS.md`](ESPECIFICACION_CHATBOTS.md) §8.1 y
+> §17. Los demás siguen 📝 con lo que les falta (§4 de la especificación).
+>
 > 🚨 **DA-09:** ningún asistente de este catálogo usa inferencia generativa, claves de IA ni
 > `api/ask-ai.js`; tampoco los conversacionales del Pro. Lo de la sección 1 es lo que **ya existe**
 > y se queda como está (CX-05).
@@ -108,15 +113,15 @@ acciones y permisos.
 
 | ID | Módulo | Datos (`app_data`) | Motores verificados (Fase 1) | Antes de construirlo | Exclusiones | Estado |
 |---|---|---|---|---|---|---|
-| ASIS-NUT | Nutrición | `nutricion` | `analizarNutricion`, `estadisticasNutricion`, `objetivoDeAgua` (V2, P) | Nada | Ni objetivos calóricos estrictos (regla 7) ni comidas ni peso fuera | 📝 |
-| ASIS-FIT | Fitness | `fitness`, `saludFotos` | historial, actividad, progresión, rangos, centro de progreso (V2, P) | Nada | Fotos tras `fotos_privadas` (C-35) | 📝 |
-| ASIS-SUE | Sueño | `sueno` | `ventanaDeDias` (V2); correlaciones (🟡) | **No hay motor de patrones de sueño**; CX-11 | — | 📝 |
-| ASIS-EST | Estudios | `estudios` | `fechasAcademicas` (V2, P); `prediccionNotas` (sin suite) | CX-11 | — | 📝 |
-| ASIS-PRO | Productividad | `productividad`, `objetivos`, `rachas` | `integracionPR` (V2, P), `rachas` (P) | Suite para `predicciones` | — | 📝 |
+| ASIS-NUT | Nutrición | `nutricion` | `analizarNutricion`, `estadisticasNutricion`, `objetivoDeAgua` (V2, P) | Nada | Ni objetivos calóricos estrictos (regla 7) ni comidas ni peso fuera | ✅ chatbot (F2): `asistenteNutricion.js` — lee `nutricion` |
+| ASIS-FIT | Fitness | `fitness`, `saludFotos` | historial, actividad, progresión, rangos, centro de progreso (V2, P) | Nada | Fotos tras `fotos_privadas` (C-35) | ✅ chatbot (F2): `asistenteFitness.js` — lee solo `fitness` (sin fotos) |
+| ASIS-SUE | Sueño | `sueno` | `ventanaDeDias` (V2); correlaciones (🟡) | **No hay motor de patrones de sueño**; CX-11 | — | ✅ chatbot (F2): `asistenteSueno.js` — lee `sueno` |
+| ASIS-EST | Estudios | `estudios` | `fechasAcademicas` (V2, P); `prediccionNotas` (sin suite) | CX-11 | — | ✅ chatbot (F2): `asistenteEstudios.js` — lee `estudios` |
+| ASIS-PRO | Productividad | `productividad`, `objetivos`, `rachas` | `integracionPR` (V2, P), `rachas` (P) | Suite para `predicciones` | — | ✅ chatbot (F2): `asistenteProductividad.js` — lee `productividad` (sin `.tareas`) y `objetivos`; `rachas` fuera (H-12) |
 | ASIS-HOR | Horario | `horarioTop` | `analiticaHorario.informe` (V2, P), `automatizaciones` | Nada | Notas privadas de una actividad (HT F5/F9) | 📝 |
 | ASIS-CAL | Calendario / Hoy | `calendario`, tareas | `estadisticasPlan` (V2, P), `centroDelDia`, `puntuacionDelDia` (V3, P) | CX-12, CX-14 | Relación solo con PIN desbloqueado | 📝 |
 | ASIS-ECO | Economía | `economia` | `panelHucha` (V2, P); `prediccionAhorro` (sin suite) | Sacar el saldo de la vista a una función | — | 📝 |
-| ASIS-IMG | Imagen personal | `estiloHombre`, `armario` | `motorRecomendaciones`, ideas, progreso (P); **6 librerías sin conectar** | CX-13: decidir si se integran (congelado a funciones nuevas) | Tipo de piel y sensibilidad nunca; permiso apagado por defecto | 📝 — el que más inteligencia tiene, la mitad sin conectar |
+| ASIS-IMG | Imagen personal | `estiloHombre`, `armario` | `motorRecomendaciones`, ideas, progreso (P); **6 librerías sin conectar** | CX-13: decidir si se integran (congelado a funciones nuevas) | Tipo de piel y sensibilidad nunca; permiso apagado por defecto | 📝 — el que más inteligencia tiene, la mitad sin conectar · **excluido de los chatbots** por orden de Josué (CB-13) |
 | ASIS-ARM | Armario | `armario` | `armarioInteligencia` (P) | Nada | — | 📝 |
 | ASIS-SAL | Salud física | `salud`, `perfil` | `salud.estadoActual` (V2), `evolucionPeso`, `lesionesDe` | Revisar `prediccionPeso` contra la regla 7 | Nada de diagnósticos ni objetivos de peso | 📝 |
 | ASIS-FE | Fe | `fe` | **Ninguno** | Crear motor | `AVISO_DOCTRINAL` obligatorio | 📝 |

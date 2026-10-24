@@ -3673,7 +3673,23 @@ ok(/Tu noche/i.test(form_su), '🚨 EL REGISTRO SON CUATRO BLOQUES: 🌙 Tu noch
 ok(/¿Cómo has dormido\?/i.test(form_su), '⚠️ …¿Cómo has dormido?…');
 ok(/Durante la noche/i.test(form_su), '⚠️ …🌙 Durante la noche…');
 ok(/Ayer/i.test(form_su), '⚠️ …y ☀️ Ayer');
-ok(/8 h/.test(form_su),
+/* 🔓 v3.161.3 — el formulario ya NO trae 23:00 → 07:00 puestas: una noche guardada sin tocarlas salía
+   con 8 h que nadie apuntó. Empieza sin horas y sin duración, guardar sin nada lo dice, y la duración
+   aparece en cuanto él escribe las dos horas. */
+ok(!/8 h/.test(form_su.split('¿Cómo has dormido?')[0]) && (await page.$$eval('input[type="time"]', (xs) => xs.map((x) => x.value))).every((v) => v === ''),
+  '🔓 v3.161.3 — las horas empiezan vacías (antes 23:00 → 07:00 y 8 h que nadie apuntó)');
+const escriturasVacio_su = guardado.filter((g) => g && g.key === 'sueno').length;
+ok(await pulsar('Guardar noche'), 'se intenta guardar sin contestar nada');
+const vacio_su = await esperarTexto(/Apunta al menos una cosa/i);
+ok(/Apunta al menos una cosa/i.test(vacio_su) && guardado.filter((g) => g && g.key === 'sueno').length === escriturasVacio_su,
+  '🔓 v3.161.3 — una noche sin nada no se guarda: lo dice y no escribe');
+const horas_su = await page.$$('input[type="time"]');
+await horas_su[0].fill('23:00');
+const unaHora_su = await esperarTexto(/Falta la hora de despertar/i);
+ok(/Falta la hora de despertar/i.test(unaHora_su), '🔓 v3.161.3 — con una sola hora dice cuál falta (y que sin ella no hay duración)');
+await horas_su[1].fill('07:00');
+const conHoras_su = await esperarTexto(/8 h/);
+ok(/8 h/.test(conHoras_su),
   '🚨 Y LA DURACIÓN SE VE MIENTRAS ELIGE, sin haber guardado nada todavía (apartado 1)');
 ok(/De maravilla/i.test(form_su) && /Fatal/i.test(form_su),
   '🚨 la calidad son TRES CARAS con su palabra, no un número que escribir');
@@ -3697,6 +3713,7 @@ ok(nueva_su && nueva_su.calidad === 5,
   '🚨 Y POR DENTRO SE GUARDA UN 5, no el nombre de la cara: la escala 1-5 es la que leen las otras pantallas');
 ok(nueva_su && nueva_su.interrupciones === 2, '⚠️ con sus interrupciones');
 ok(nueva_su && nueva_su.siestaAyer === true, '⚠️ y la siesta como un sí, no como un número de minutos');
+ok(nueva_su && nueva_su.horaDormir === '23:00' && nueva_su.horaDespertar === '07:00', '🔓 v3.161.3 — con las horas que ÉL escribió');
 ok(nueva_su && !('duracion' in nueva_su),
   '🚨 Y SIN NINGÚN CAMPO DE DURACIÓN: se calcula de las dos horas, no se copia (apartado 10)');
 /* 🚨 Y la noche vieja SIGUE ESTANDO: migrar no es perder. */
@@ -5765,6 +5782,235 @@ await page.setViewportSize({ width: 1280, height: 720 });
 const nuevos_f1b = errores.slice(erroresAntes_f1b);
 ok(nuevos_f1b.length === 0, `F1B — ni un error de JavaScript${nuevos_f1b.length ? `: ${nuevos_f1b.join(' | ').slice(0, 300)}` : ''}`);
 Object.assign(almacen, antes_f1b);
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+
+/* ── 💬 CHAT F2 · LOS ASISTENTES DETERMINISTAS (Fase 2 de los asistentes) ──────
+   El asistente de un módulo, tocado como lo tocaría él: el botón «Asistente» en la fila
+   de «← Volver», la hoja que se abre, una pregunta escrita con sus cifras, un seguimiento
+   («¿y anteayer?», «¿y la semana pasada?»), una aclaración resuelta con un botón, una orden
+   de escribir que se niega, otro módulo que se nombra, Escape, y lo que NO pasa: ni una
+   escritura, ni una petición a la IA, ni un botón en los módulos sin asistente, ni una
+   pestaña de más. Las cifras esperadas salen de las funciones de la aplicación
+   (`textoDuracion`), nunca escritas a mano. */
+console.log('\n── CHAT F2 · Los asistentes deterministas ──');
+const erroresAntes_chat = errores.length;
+const antes_chat = { sueno: almacen.sueno, fitness: almacen.fitness };
+almacen.sueno = [
+  { id: 'chat-s1', fecha: DN(1), horaDormir: '23:30', horaDespertar: '07:15', calidad: 4 },
+  { id: 'chat-s2', fecha: DN(2), horaDormir: '00:30', horaDespertar: '07:00', calidad: 2 },
+];
+/* Sin entrenamientos: así la aclaración de «dominadas» no depende de lo que hayan dejado otras secciones. */
+almacen.fitness = { ...(almacen.fitness || {}), sesiones: [] };
+const peticiones_chat = [];
+const oirPeticion_chat = (req) => peticiones_chat.push(`${req.method()} ${req.url()}`);
+const escriturasDe_chat = () => guardado.filter((g) => g && (g.key === 'sueno' || g.key === 'fitness')).length;
+const hoja_chat = () => page.evaluate(() => {
+  const d = [...document.querySelectorAll('[role="dialog"]')].find((x) => /^Asistente de /.test(x.getAttribute('aria-label') || '') && !x.closest('[data-capa-saliendo]'));
+  if (!d) return null;
+  const log = d.querySelector('[role="log"]');
+  const campo = d.querySelector('input[aria-label="Escribe tu pregunta"]');
+  const r = campo ? campo.getBoundingClientRect() : null;
+  return {
+    nombre: d.getAttribute('aria-label'), enBody: d.parentElement === document.body,
+    foco: d.contains(document.activeElement), texto: log ? log.innerText : '', todo: d.innerText,
+    mensajes: log ? log.children.length : 0, campoAbajo: r ? Math.round(r.bottom) : null, alto: window.innerHeight,
+  };
+});
+const preguntar_chat = async (texto, espera) => {
+  await page.fill('[role="dialog"] input[aria-label="Escribe tu pregunta"]', texto);
+  await page.press('[role="dialog"] input[aria-label="Escribe tu pregunta"]', 'Enter');
+  const hasta = Date.now() + 6000;
+  let h = await hoja_chat();
+  while (h && !espera.test(h.texto) && Date.now() < hasta) { await page.waitForTimeout(150); h = await hoja_chat(); }
+  return h;
+};
+const botonDe_chat = (modulo) => page.evaluate((m) => {
+  const b = [...document.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === `Abrir el asistente de ${m}` && x.offsetParent);
+  return b ? { texto: b.innerText.trim() } : null;
+}, modulo);
+const algunBoton_chat = () => page.evaluate(() => [...document.querySelectorAll('button')].some((x) => /^Abrir el asistente de /.test(x.getAttribute('aria-label') || '') && x.offsetParent));
+/* D8 — la duración de una noche, en minutos exactos de las dos horas (23:30 → 07:15 son 7 h 45 min). Antes se
+   esperaba `textoDuracion` de sueno.js, que redondea a décimas de hora (7 h 48 min): se dio la vuelta. */
+const duraciones_chat = await page.evaluate(async (s) => {
+  const { formatearDuracionLarga } = await import('/src/lib/pomodoro.js');
+  const min = (h) => { const [a, b] = String(h).split(':').map(Number); return a * 60 + b; };
+  return s.map((r) => { let m = min(r.horaDespertar) - min(r.horaDormir); if (m <= 0) m += 1440; return formatearDuracionLarga(m * 60000); });
+}, almacen.sueno);
+
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2200);
+ok(await pulsar('Bienestar') && await pulsar('Sueño'), 'CHAT F2 — Bienestar → Sueño');
+await esperarTexto(/Asistente/);
+/* v3.161.2 — la media de la pantalla de Sueño, en horas y minutos exactos (la misma cuenta que el asistente). */
+const media_chat = await page.evaluate(() => { const m = document.body.innerText.match(/Media [^\n]*/); return m ? m[0] : null; });
+ok(!media_chat || (/^Media (\d+ h( \d+ min)?|\d+ min)$/.test(media_chat.trim()) && !/\d[.,]\d/.test(media_chat)),
+  `🐛 v3.161.2 · la media de Sueño se lee en horas y minutos exactos, no en décimas (${JSON.stringify(media_chat)})`);
+const boton_chat = await botonDe_chat('Sueño');
+ok(boton_chat && /Asistente/.test(boton_chat.texto), `🚨 CHAT F2 · Sueño tiene su botón «Asistente», con su nombre para VoiceOver (${JSON.stringify(boton_chat)})`);
+/* D7 — medido en Chromium (NO en un iPhone): se ve igual de alto que «← Volver» (unos 32 px), pero tocar en
+   un cuadro de 44 px alrededor de su centro le sigue dando a él (`toque-44` es un cuadrado de 44 × 44
+   centrado en el botón; por los lados ya mide más). Se mira a 21 px del centro, arriba y abajo. */
+const zona_chat = await page.evaluate(() => {
+  const b = document.querySelector('button[aria-label="Abrir el asistente de Sueño"]');
+  if (!b) return null;
+  const r = b.getBoundingClientRect();
+  const x = r.left + r.width / 2;
+  const y = r.top + r.height / 2;
+  const da = (yy) => { const el = document.elementFromPoint(x, yy); return !!el && (el === b || b.contains(el)); };
+  return { alto: Math.round(r.height), ancho: Math.round(r.width), arriba: da(y - 21), abajo: da(y + 21) };
+});
+ok(zona_chat && zona_chat.ancho >= 44 && zona_chat.arriba && zona_chat.abajo, `🐛 CHAT F2 · D7 — el botón «Asistente» responde en un cuadro de 44 px alrededor de su centro (${JSON.stringify(zona_chat)}, en Chromium)`);
+const barra_chat = await page.evaluate(() => { const nav = document.querySelector('nav'); return nav ? [...nav.querySelectorAll('button')].map((b) => b.innerText.trim()).filter(Boolean) : []; });
+ok(barra_chat.length === 5, `⚠️ CHAT F2 — la barra de abajo sigue con sus cinco pestañas (${barra_chat.join(' · ')}) (regla 10)`);
+
+/* Las escrituras se cuentan SOLO con la hoja abierta: navegar entre pantallas no es conversar. */
+let escriturasEnChat_chat = 0;
+let escriturasAntes_chat = escriturasDe_chat();
+page.on('request', oirPeticion_chat);
+/* Con un clic de verdad (`page.click`): `pulsar()` hace `element.click()`, que no le da el foco al botón, y
+   entonces no habría a dónde devolverlo al cerrar (la lección de la FIT F40). */
+ok(await page.click('button[aria-label="Abrir el asistente de Sueño"]').then(() => true, () => false), 'CHAT F2 — se abre el asistente');
+await page.waitForTimeout(400);
+let h_chat = await hoja_chat();
+ok(h_chat && h_chat.nombre === 'Asistente de Sueño' && h_chat.enBody, `🚨 CHAT F2 · la hoja sale como portal sobre el body (regla 3) — ${JSON.stringify(h_chat && { nombre: h_chat.nombre, enBody: h_chat.enBody })}`);
+ok(h_chat && h_chat.foco, '…con el foco dentro (useDialogoAccesible)');
+ok(h_chat && /No es una IA y no guarda nada/.test(h_chat.todo) && /Prueba con:/.test(h_chat.todo), '…que dice que no es una IA ni guarda nada, y propone preguntas de ejemplo');
+
+h_chat = await preguntar_chat('¿cuántas horas dormí ayer?', new RegExp(duraciones_chat[0]));
+ok(h_chat && h_chat.texto.includes(duraciones_chat[0]) && /23:30 → 07:15/.test(h_chat.texto) && /terminó ayer/.test(h_chat.texto),
+  `🚨 CHAT F2 · «¿cuántas horas dormí ayer?» → ${duraciones_chat[0]} (minutos exactos, D8), con su horario y su fecha — ${JSON.stringify((h_chat && h_chat.texto || '').slice(-220))}`);
+ok(h_chat && /Sueño · el registro de esa noche/.test(h_chat.texto), '…y dice de dónde sale');
+h_chat = await preguntar_chat('¿y anteayer?', new RegExp(duraciones_chat[1]));
+ok(h_chat && h_chat.texto.includes(duraciones_chat[1]) && /Fatal/.test(h_chat.texto), `🚨 CHAT F2 · seguimiento: «¿y anteayer?» → ${duraciones_chat[1]} y la cara que puso`);
+h_chat = await preguntar_chat('¿y la semana pasada?', /semana pasada/);
+ok(h_chat && /No tienes noches registradas la semana pasada/.test(h_chat.texto) && !/terminó el lunes/.test(h_chat.texto.split('¿y la semana pasada?').pop()),
+  '🐛 CHAT F2 · «¿y la semana pasada?» tras una noche → la media de esa semana (sin noches), no la noche de su lunes (H-25)');
+h_chat = await preguntar_chat('apúntame que dormí 8 horas', /no puedo apuntar/);
+ok(h_chat && /no puedo apuntar, cambiar ni borrar nada/.test(h_chat.texto), '🚨 CHAT F2 · una orden de escribir se niega y dice dónde se hace');
+/* D10 — un mensaje solo de signos se contesta (antes la caja se vaciaba y no aparecía nada). */
+h_chat = await preguntar_chat('???', /ninguna palabra/);
+ok(h_chat && /No he visto ninguna palabra/.test(h_chat.texto), '🐛 CHAT F2 · D10 — «???» recibe respuesta: pide la pregunta con palabras');
+ok(await page.evaluate(() => { const c = document.querySelector('[role="dialog"] input[aria-label="Escribe tu pregunta"]'); return !!c && c.value === ''; }), '…y la caja queda vacía para escribir');
+h_chat = await preguntar_chat('¿cuánto gasté este mes?', /Eso es de Economía/);
+ok(h_chat && /Eso es de Economía/.test(h_chat.texto) && /todavía no tiene asistente/.test(h_chat.texto), '…y lo de otro módulo se nombra, sin leer nada suyo');
+ok(h_chat && h_chat.campoAbajo !== null && h_chat.campoAbajo <= h_chat.alto, `…el campo de escribir sigue a la vista con la conversación larga (${h_chat && h_chat.campoAbajo} ≤ ${h_chat && h_chat.alto})`);
+const ancho_chat = await page.evaluate(() => ({ doc: document.documentElement.scrollWidth, vista: window.innerWidth }));
+ok(ancho_chat.doc <= ancho_chat.vista, `CHAT F2 — con la hoja abierta nada se sale de lado (${ancho_chat.doc} ≤ ${ancho_chat.vista})`);
+const mensajes_chat = h_chat ? h_chat.mensajes : 0;
+
+await page.keyboard.press('Escape');
+await esperarSinCopias();
+await page.waitForTimeout(300);
+ok(!(await hoja_chat()), 'CHAT F2 — Escape la cierra');
+ok(await page.evaluate(() => (document.activeElement && document.activeElement.getAttribute('aria-label')) === 'Abrir el asistente de Sueño'),
+  '…y el foco vuelve al botón que la abrió');
+ok(await pulsar('Abrir el asistente de Sueño'), 'CHAT F2 — se vuelve a abrir');
+await page.waitForTimeout(400);
+h_chat = await hoja_chat();
+ok(h_chat && h_chat.mensajes === mensajes_chat, `…y la conversación sigue ahí mientras no se recargue (en memoria: ${h_chat && h_chat.mensajes} de ${mensajes_chat})`);
+ok(await pulsar('Empezar una conversación nueva'), 'CHAT F2 — «Empezar una conversación nueva»');
+await page.waitForTimeout(300);
+h_chat = await hoja_chat();
+ok(h_chat && h_chat.mensajes === 0 && /Prueba con:/.test(h_chat.todo), '…la deja vacía, con las preguntas de ejemplo');
+ok(await pulsar('Cerrar el asistente'), 'CHAT F2 — se cierra con su botón');
+await esperarSinCopias();
+
+/* 💬 v3.161.3 — «Analizar mi sueño» (el botón de la pantalla de Sueño) abre el asistente con la conversación
+   empezada: su pregunta, la respuesta con las noches de verdad y un seguimiento que mira las MISMAS noches.
+   La media esperada sale de las funciones de la aplicación. */
+const esperado_an = await page.evaluate(async (s) => {
+  const m = await import('/src/lib/sueno.js');
+  return m.textoMinutos(m.mediaDeMinutos(s));
+}, almacen.sueno);
+ok(await pulsar('Analizar mi sueño'), 'v3.161.3 — se toca «Analizar mi sueño»');
+await page.waitForTimeout(500);
+let h_an = await hoja_chat();
+const hasta_an = Date.now() + 6000;
+while ((!h_an || !/últimas 2 noches registradas/.test(h_an.texto)) && Date.now() < hasta_an) { await page.waitForTimeout(150); h_an = await hoja_chat(); }
+ok(h_an && h_an.nombre === 'Asistente de Sueño' && /Analizar mi sueño/.test(h_an.texto) && /últimas 2 noches registradas/.test(h_an.texto),
+  `🚨 v3.161.3 · «Analizar mi sueño» abre el asistente con su pregunta hecha y contestada con las noches registradas — ${JSON.stringify((h_an && h_an.texto || '').slice(0, 200))}`);
+ok(h_an && new RegExp(`Media\\s*:?\\s*${esperado_an}`).test(h_an.texto) && /Con solo 2 noches con las dos horas, esta media dice poco/.test(h_an.texto),
+  `🚨 v3.161.3 · la primera respuesta usa sus datos (media ${esperado_an}) y dice que con dos noches dice poco`);
+ok(h_an && !/próximamente|IA libre|Premium/i.test(h_an.todo), '…y no es un panel de IA «próximamente»');
+h_an = await preguntar_chat('¿cuánto he dormido de media?', /En esos mismos días/);
+ok(h_an && /En esos mismos días/.test(h_an.texto) && h_an.texto.split('¿cuánto he dormido de media?').pop().includes(esperado_an),
+  `🚨 v3.161.3 · el seguimiento mira las mismas noches y da la misma media (${esperado_an})`);
+h_an = await preguntar_chat('¿y la peor?', /dormiste peor/);
+ok(h_an && /dormiste peor\s*:?\s*terminó [^\n:]+: 😫 Fatal/.test(h_an.texto), '🚨 v3.161.3 · «¿y la peor?» sigue la conversación (la noche que dijo Fatal)');
+ok(await pulsar('Cerrar el asistente'), 'v3.161.3 — se cierra');
+await esperarSinCopias();
+page.off('request', oirPeticion_chat);
+escriturasEnChat_chat += escriturasDe_chat() - escriturasAntes_chat;
+
+/* Fitness: una aclaración que se resuelve tocando un botón. */
+ok(await pulsar('Bienestar') && await pulsar('Fitness'), 'CHAT F2 — Bienestar → Fitness');
+await esperarTexto(/Asistente/);
+escriturasAntes_chat = escriturasDe_chat();
+page.on('request', oirPeticion_chat);
+ok(await pulsar('Abrir el asistente de Fitness'), 'CHAT F2 — se abre el asistente de Fitness');
+await page.waitForTimeout(400);
+h_chat = await preguntar_chat('¿cómo voy en dominadas?', /¿Cuál de estos\?/);
+const opciones_chat = await page.evaluate(() => {
+  const d = [...document.querySelectorAll('[role="dialog"]')].find((x) => x.getAttribute('aria-label') === 'Asistente de Fitness');
+  const log = d && d.querySelector('[role="log"]');
+  const ultima = log && log.lastElementChild;
+  return ultima ? [...ultima.querySelectorAll('button')].map((b) => b.innerText.trim()).filter(Boolean) : [];
+});
+ok(/¿Cuál de estos\?/.test(h_chat && h_chat.texto || '') && opciones_chat.length >= 2 && opciones_chat.length <= 4 && opciones_chat.every((o) => /Dominada/i.test(o)),
+  `🚨 CHAT F2 · «¿cómo voy en dominadas?» pregunta cuáles, con botones (${opciones_chat.join(' · ')})`);
+/* D7 — medido en Chromium (NO en un iPhone): las opciones miden al menos 44 px de alto. */
+const altos_chat = await page.evaluate(() => {
+  const d = [...document.querySelectorAll('[role="dialog"]')].find((x) => x.getAttribute('aria-label') === 'Asistente de Fitness');
+  const ultima = d && d.querySelector('[role="log"]') && d.querySelector('[role="log"]').lastElementChild;
+  return ultima ? [...ultima.querySelectorAll('button')].map((b) => Math.round(b.getBoundingClientRect().height)) : [];
+});
+ok(altos_chat.length >= 2 && altos_chat.every((a) => a >= 44), `🐛 CHAT F2 · D7 — los botones de una aclaración miden 44 px o más de alto (${altos_chat.join(', ')} px, en Chromium)`);
+const elegida_chat = opciones_chat[0] || '';
+ok(!!elegida_chat && await pulsar(elegida_chat), `CHAT F2 — se toca «${elegida_chat}»`);
+const hastaOp_chat = Date.now() + 6000;
+h_chat = await hoja_chat();
+while (h_chat && !/Todavía no has registrado/.test(h_chat.texto) && Date.now() < hastaOp_chat) { await page.waitForTimeout(150); h_chat = await hoja_chat(); }
+ok(h_chat && h_chat.texto.includes(`Todavía no has registrado ${elegida_chat}`), `🚨 CHAT F2 · …y contesta de ESE ejercicio, sin inventarle datos: «Todavía no has registrado ${elegida_chat}…»`);
+/* v3.161.2 — un botón de una aclaración ya contestada no se puede volver a usar: sale apagado y se dice. */
+const caducados_chat = await page.evaluate(() => {
+  const d = [...document.querySelectorAll('[role="dialog"]')].find((x) => x.getAttribute('aria-label') === 'Asistente de Fitness');
+  const bs = d ? [...d.querySelectorAll('[role="log"] button')].filter((b) => /Dominada/i.test(b.innerText)) : [];
+  return { total: bs.length, apagados: bs.filter((b) => b.disabled && /de una pregunta anterior/.test(b.getAttribute('aria-label') || '')).length, aviso: !!d && /Estas opciones eran de una pregunta anterior/.test(d.innerText) };
+});
+ok(caducados_chat.total >= 2 && caducados_chat.apagados === caducados_chat.total && caducados_chat.aviso,
+  `🐛 v3.161.2 · contestada la aclaración, sus botones quedan apagados y se dice por qué (${JSON.stringify(caducados_chat)})`);
+h_chat = await preguntar_chat('¿cómo voy en dominadas?', /¿Cuál de estos\?[\s\S]*¿Cuál de estos\?/);
+const vigentes_chat = await page.evaluate(() => {
+  const d = [...document.querySelectorAll('[role="dialog"]')].find((x) => x.getAttribute('aria-label') === 'Asistente de Fitness');
+  const ultima = d && d.querySelector('[role="log"]') && d.querySelector('[role="log"]').lastElementChild;
+  return ultima ? [...ultima.querySelectorAll('button')].filter((b) => /Dominada/i.test(b.innerText)).map((b) => b.disabled) : [];
+});
+ok(vigentes_chat.length >= 2 && vigentes_chat.every((x) => x === false), `v3.161.2 · …y los de la pregunta nueva sí se pueden tocar (${vigentes_chat.length})`);
+await page.keyboard.press('Escape');
+await esperarSinCopias();
+page.off('request', oirPeticion_chat);
+escriturasEnChat_chat += escriturasDe_chat() - escriturasAntes_chat;
+
+/* Lo que NO pasa. */
+ok(escriturasEnChat_chat === 0, `🔒 CHAT F2 — ni una escritura de Sueño ni de Fitness con la hoja abierta (${escriturasEnChat_chat})`);
+ok(JSON.stringify(almacen.sueno.map((r) => r.id)) === JSON.stringify(['chat-s1', 'chat-s2']), '…y lo guardado sigue igual');
+const raras_chat = peticiones_chat.filter((p) => /\/api\/|anthropic|openai/i.test(p) || !/^GET /.test(p));
+ok(raras_chat.length === 0, `🚨 CHAT F2 — ni una petición a la IA ni una escritura de red mientras conversa (DA-09)${raras_chat.length ? `: ${raras_chat.slice(0, 3).join(' | ')}` : ''}`);
+
+/* Los módulos sin asistente se quedan como estaban. */
+ok(await pulsar('Gestión') && await pulsar('Economía'), 'CHAT F2 — Gestión → Economía');
+await esperarTexto(/Economía/);
+ok(!(await algunBoton_chat()), 'CHAT F2 · Economía no tiene botón de asistente (categoría 2: espera su decisión)');
+ok(await pulsar('Bienestar') && await pulsar('Imagen personal'), 'CHAT F2 — Bienestar → Imagen personal');
+await page.waitForTimeout(600);
+ok(!(await algunBoton_chat()), '🔒 CHAT F2 · Imagen personal no tiene asistente ni botón (excluida por orden de Josué)');
+
+const nuevos_chat = errores.slice(erroresAntes_chat);
+ok(nuevos_chat.length === 0, `CHAT F2 — ni un error de JavaScript${nuevos_chat.length ? `: ${nuevos_chat.join(' | ').slice(0, 300)}` : ''}`);
+Object.assign(almacen, antes_chat);
+await page.setViewportSize({ width: 1280, height: 720 });
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 

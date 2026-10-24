@@ -40,9 +40,15 @@ y la **IA generativa libre**.
 **Fuera del alcance ahora (DA-02, DA-05):** pagos, suscripciones, bloqueos por plan, listas de
 cuentas autorizadas, la IA libre y cualquier reestructuración para el público.
 
-## 2. Arquitectura prevista (propuesta, pendiente de la Fase 2)
+## 2. Arquitectura prevista
 
-Tres capas, de abajo arriba. **Solo la capa 1 existe hoy.**
+> 🔎 **Fase 2 (2026-10-23):** la arquitectura de la capa 2 para los **chatbots** está especificada en
+> [`15_asistentes/ESPECIFICACION_CHATBOTS.md`](15_asistentes/ESPECIFICACION_CHATBOTS.md) (contratos,
+> comprensión, contexto, respuestas, matriz de candidatos, pruebas y plan). Esta sección se queda como
+> el mapa de las tres capas. ✅ **Y la capa 2 ya existe para cinco módulos** (Sueño, Fitness, Nutrición,
+> Estudios y Productividad; v3.161.0, en local, sin commit ni push): su §17.
+
+Tres capas, de abajo arriba. **La capa 1 existe entera; la 2, solo en esos cinco chatbots (Fase 2).**
 
 | Capa | Qué es | Depende de una API generativa | Estado |
 |---|---|---|---|
@@ -153,6 +159,7 @@ Todas en [`15_asistentes/DECISIONES.md`](15_asistentes/DECISIONES.md). Resumen:
 | [`15_asistentes/CATALOGO_ASISTENTES.md`](15_asistentes/CATALOGO_ASISTENTES.md) | Cada asistente (existente o propuesto): módulo, datos, motores, permisos, estado y pruebas |
 | [`15_asistentes/CATALOGO_PATRONES.md`](15_asistentes/CATALOGO_PATRONES.md) | La plantilla de 15 campos, el método para descubrir patrones y las fichas (con IDs `PAT-…`) |
 | [`15_asistentes/DECISIONES.md`](15_asistentes/DECISIONES.md) | Decisiones `DA-…`, preguntas abiertas `P-…` y contradicciones `CX-…` |
+| [`15_asistentes/ESPECIFICACION_CHATBOTS.md`](15_asistentes/ESPECIFICACION_CHATBOTS.md) | **Fase 2:** la especificación maestra de los chatbots deterministas (matriz de candidatos, arquitectura, contratos, comprensión, contexto, respuestas, privacidad, UX, pruebas, plan y decisiones CB-…), su auditoría adversarial (§16) y la implementación del primer lote (§17) |
 | [`15_asistentes/SEGUIMIENTO.md`](15_asistentes/SEGUIMIENTO.md) | Dónde va el trabajo, qué se hizo, qué toca y cómo retomarlo |
 | `docs/01` §10, `docs/02` R10 | AXION y AXION Lite (no se duplican aquí) |
 | `docs/03` | Contradicciones globales del proyecto (C-…, DEP-…) |
@@ -166,7 +173,7 @@ Todas en [`15_asistentes/DECISIONES.md`](15_asistentes/DECISIONES.md). Resumen:
 | **1** | Inventario completo: cada módulo, sus claves de datos, sus motores con firma y lo que devuelven, sus pruebas y sus permisos | 0 | ✅ Completada 2026-10-19 ([inventario](15_asistentes/INVENTARIO.md)) |
 | **1b** | Arreglos de los datos que darían los asistentes: CX-09, CX-11, CX-12 (tarjetas con calistenia), CX-14, CX-15 y una suite para `correlaciones.js` y `predicciones.js` | 1 + **autorización de Josué** (dada el 2026-10-19) | ✅ **Hecha (v3.159.0, 2026-10-19)**, sin commit ni push por orden de Josué. «Primer PR» se conserva y la IA no se toca (DA-10, DA-09). Nuevo: CX-17 (de Josué) |
 | **1c** | Correcciones tras la auditoría adversarial de 1 + 1b: CX-09 con el registro interrumpido, ánimo estricto e ids; «Primer PR» alcanzable; Imagen personal «Tu entrenamiento» con Fitness (CX-18); fechas futuras y cambio de día (CX-19) | 1b + **orden de Josué** (2026-10-20) | ✅ **Hecha (v3.160.0, 2026-10-20)**, sin commit ni push por orden de Josué (DA-11). Ni la IA ni las 6 librerías de Imagen personal se tocan |
-| **2** | Arquitectura de los asistentes (capa 2, **sin inferencia**, DA-09): contrato asistente ↔ motor, formato de respuesta, dónde se pinta, cómo conviven con los `AIPanel` que se quedan | 1 + respuestas a P-01, P-02, P-04…P-07 | ⬜ Pendiente |
+| **2** | Chatbots deterministas (capa 2, **sin inferencia**, DA-09): especificación (Prompt 1), auditoría adversarial (Prompt 2) e implementación del primer lote (Prompt 3) | 1 + las tres órdenes de Josué (2026-10-20) | ✅ **Hecha en local (v3.161.0), sin commit ni push**: Sueño, Fitness, Nutrición, Estudios y Productividad tienen su chatbot ([`ESPECIFICACION_CHATBOTS.md`](15_asistentes/ESPECIFICACION_CHATBOTS.md) §17). P-04…P-07 siguen abiertas: se construyó sin ellas (DA-12) |
 | **3** | Catálogo exhaustivo de patrones **por módulo** (fichas de 15 campos) | 1, 2 | ⬜ Pendiente |
 | **4** | Patrones transversales y cruces autorizados | 3 + P-06 | ⬜ Pendiente |
 | **5** | Preguntas, intenciones y respuestas (plantillas) | 3, 4 + P-02, P-09 | ⬜ Pendiente |

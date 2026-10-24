@@ -161,8 +161,9 @@ const cEst = correlacionSuenoEstudio(H, [{ fecha: '2026-08-24', horas: 2 }, { fe
 ok(cEst && typeof cEst === 'object', '🚨 la correlación sueño ↔ estudio sigue funcionando con estos registros');
 const cAni = correlacionSuenoAnimo(H, [{ fecha: '2026-08-24', animo: 4 }, { fecha: '2026-08-28', animo: 3 }]);
 ok(cAni && typeof cAni === 'object', '🚨 y la de sueño ↔ ánimo también');
-ok(VISTA.includes('AIPanel') && VISTA.includes('Analizar mi sueño'),
-  '⚠️ y el panel de IA de la propia pantalla sigue ahí');
+/* 🔓 v3.161.3 — el botón sigue en la pantalla, pero abre el asistente de Sueño (autorizado por Josué). */
+ok(!VISTA.includes('AIPanel') && VISTA.includes('Analizar mi sueño') && VISTA.includes('onAnalizar'),
+  '🔓 y «Analizar mi sueño» sigue en la pantalla, ahora abriendo el asistente');
 ok(NO_EN_SU2.length >= 6 && NO_EN_SU2.every((n) => n.que && n.porque),
   'y lo que esta fase NO hace está declarado con su motivo');
 ok(NO_EN_SU2.some((n) => /mensual|30 días/i.test(n.que)),

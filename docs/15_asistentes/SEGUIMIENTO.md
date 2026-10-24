@@ -8,12 +8,12 @@
 
 ## Estado en una línea
 
-**Última fase terminada: Fase 1C — correcciones finales tras la auditoría adversarial (2026-10-20,
-v3.160.0, sin commit ni push por orden de Josué).** CX-09 (el registro interrumpido ya no fabrica una
-diferencia), CX-12 («Primer PR» se puede conseguir), CX-18 (Imagen personal lee Fitness) y CX-19 (fechas
-futuras y cambio de día) corregidos; decisión **DA-11**. Antes, la **Fase 1B** (v3.159.0, DA-10). Abierta
-para Josué: **CX-17**. La **Fase 2** sigue bloqueada por **P-01, P-02 y P-04…P-07** (P-03 ya está
-contestada: solo reglas, **DA-09**).
+**Fase 2 — chatbots deterministas: hecha en local (2026-10-23, v3.161.0), sin commit ni push; y sus 10 defectos de la auditoría
+técnica, corregidos (2026-10-24, v3.161.1, también sin commit: [`ESPECIFICACION_CHATBOTS.md`](ESPECIFICACION_CHATBOTS.md) §18); y la integración —duración del sueño exacta en todas partes, despertares sin contestar como `null`, «tus últimas noches» y botones de aclaración atados a su pregunta— (2026-10-24, v3.161.2, sin commit: §19); y Sueño sin datos inventados —siesta y horas sin contestar como `null`, noches por fecha— con «Analizar mi sueño» abriendo el asistente (2026-10-24, v3.161.3, sin commit: §20).** Hechos el
+**Prompt 1** (especificación: [`ESPECIFICACION_CHATBOTS.md`](ESPECIFICACION_CHATBOTS.md), DA-12), el **Prompt 2** (auditoría, §16)
+y el **Prompt 3** (los cinco chatbots de la categoría 1 construidos y probados, §17). Subirlos a `main` lo decide Josué. Antes,
+las Fases 1, 1B y 1C, publicadas en `main` (`43cca4c`, v3.160.0). Abiertas para Josué: **CX-17** y
+**P-01 (b), P-04…P-07, P-10** (los chatbots se construyen sin lo que preguntan).
 
 ## Cómo retomar en una sesión nueva
 
@@ -220,10 +220,49 @@ la Fase 2, y decidir el sitio de los paneles de IA existentes (CX-05).
 **Criterio de cierre de la Fase 1** (cumplido): ninguna fila del catálogo de asistentes con «por
 localizar» o «por verificar»; cada motor con su firma comprobada; el seguimiento actualizado.
 
+### Fase 2 · Prompt 1 — Especificación maestra de los chatbots · ✅ 2026-10-23
+
+**Hecho (con evidencia):** estado de Git comprobado (rama de trabajo, HEAD `43cca4c` = `main`, árbol
+limpio, v3.160.0, stash intacto); lectura de los motores del primer lote (`sueno.js`, `historial.js`,
+`progresion.js`, `tuPlan.js`, `objetivosProgreso.js`, `nutricion.js`, `estadisticasNutricion.js`,
+`aguaNutricion.js`, `objetivosNutricion.js`, `fechasAcademicas.js`, `asignaturas.js`, `habitos.js`,
+`pomodoro.js`, `integracionPR.js`), de las piezas de lenguaje del buscador (`indiceBusqueda.js`) y de
+la hoja conforme al Motion System (`quickAdd.jsx`). Escrita
+[`ESPECIFICACION_CHATBOTS.md`](ESPECIFICACION_CHATBOTS.md) (15 secciones, matriz de 19 candidatos,
+decisiones CB-01…CB-18) y anotada **DA-12**; P-02 contestada (c) y P-08 inferida.
+
+**No hecho (a propósito):** ni código, ni pruebas (fase documental), ni commit, ni push.
+
+### Fase 2 · Prompt 2 — Auditoría adversarial de la especificación · ✅ 2026-10-23
+
+**Hecho:** contrastados con el código los puntos de riesgo (carga fallida, cambio de usuario, nombres
+exportados, forma de las notas, botones de Estudios, quién importa `supabase.js`/`ai.js`). **23
+hallazgos (P0 1 · P1 7 · P2 10 · P3 5)**, todos corregidos en la especificación (§16, decisiones
+CB-19…CB-22). El más grave (P0): la conversación tenía que vaciarse al cambiar de usuario.
+
+**No hecho (a propósito):** ni código, ni commit, ni push. Los 15 escenarios están descritos; se
+ejecutan en el Prompt 3.
+
+### Fase 2 · Prompt 3 — Implementación del primer lote · ✅ 2026-10-23 (sin commit ni push)
+
+**Hecho (con evidencia):** el núcleo (`fechasConversacion.js`, `motorConversacion.js`), los cinco
+asistentes (`asistenteSueno.js`, `asistenteFitness.js`, `asistenteNutricion.js`, `asistenteEstudios.js`,
+`asistenteProductividad.js`), el registro con la lista blanca (`asistentesModulos.js`), la hoja
+(`asistenteChat.jsx`) y su entrada en `App.jsx` (botón «Asistente» en la fila de «← Volver», estado en
+memoria, vaciado al cambiar de usuario). Pruebas: `test-motor-conversacion.mjs` **97 ✓**,
+`test-asistentes-chat.mjs` **160 ✓** (corpus de 100 variantes al 100 %, los 15 escenarios de la
+auditoría, datos vacíos/corruptos/sin cargar/extremos, privacidad, ni una línea de IA generativa ni de
+red alcanzable, los 12 paneles sin tocar), la sección **«CHAT F2»** del recorrido en Chromium **38 ✓** y
+sus casos en el banco de renderizado. La implementación destapó cinco hallazgos más (H-24…H-28, §17.1),
+todos corregidos; el más serio, H-25: una pregunta de un día con un rango contestaba el primer día.
+
+**No hecho (a propósito):** commit, push y todo lo pendiente de Josué (§13 de la especificación).
+**Sin probar en el iPhone (R1):** el teclado de iOS con la hoja abierta y VoiceOver en la conversación.
+
 ## Dependencias y bloqueos
 
 - ~~**Fase 1b** depende de la autorización de Josué~~ ✅ hecha (v3.159.0) y corregida en la **Fase 1C** (v3.160.0): «Primer PR» se conserva y además se puede conseguir con Fitness (DA-11). Subirlas a `main` depende de Josué.
-- **Fase 2** depende de las respuestas a P-01, P-02 y P-04…P-07 (P-03 contestada: DA-09).
+- **Fase 2**: ✅ construida en local (v3.161.0, sin commit ni push; subirla la decide Josué). **P-04…P-07 y P-01 (b) siguen abiertas**: los chatbots funcionan sin lo que preguntan, y los módulos de la categoría 2 esperan su decisión (§4 de la especificación).
 - **Fase 4** depende de P-06 (cruces y privacidad).
 - **IA libre** depende de DA-05/DA-01 (al final), de la conversación de diseño de AXION (`docs/02`
   R10) y de que Josué vuelva a pasar el texto literal de AXION (CX-07).
@@ -236,7 +275,45 @@ localizar» o «por verificar»; cada motor con su firma comprobada; el seguimie
 | `docs/15_ASISTENTES_MAESTRO.md` | 2026-10-19 (F0) | 2026-10-19 (F1: DA-09, recuento, estado) |
 | `docs/15_asistentes/INVENTARIO.md` | 2026-10-19 (F1) | 2026-10-19 (F1) |
 | `docs/15_asistentes/INVENTARIO_ANEXO_LIBRERIAS.md` | 2026-10-19 (F1, generado) | 2026-10-19 (F1) |
-| `docs/15_asistentes/CATALOGO_ASISTENTES.md` | 2026-10-19 (F0) | 2026-10-19 (F1: §1–§3 verificadas) |
+| `docs/15_asistentes/CATALOGO_ASISTENTES.md` | 2026-10-19 (F0) | 2026-10-23 (F2·P3: los cinco de la categoría 1, ✅) |
 | `docs/15_asistentes/CATALOGO_PATRONES.md` | 2026-10-19 (F0) | 2026-10-19 (F1: PAT-X-001/002/003) |
 | `docs/15_asistentes/DECISIONES.md` | 2026-10-19 (F0) | 2026-10-19 (F1: DA-09, P-03, CX-09…CX-15) |
-| `docs/15_asistentes/SEGUIMIENTO.md` | 2026-10-19 (F0) | 2026-10-19 (F1) |
+| `docs/15_asistentes/ESPECIFICACION_CHATBOTS.md` | 2026-10-23 (F2·P1) | 2026-10-24 (integración: §19) |
+| `docs/15_asistentes/SEGUIMIENTO.md` | 2026-10-19 (F0) | 2026-10-23 (F2) |
+
+### Integración de los chatbots y calidad de los datos de Sueño · ✅ 2026-10-24 (v3.161.2, sin commit, push ni despliegue)
+
+**Hecho (con evidencia):** la duración de una noche sale de una sola cuenta en minutos exactos (`minutosEntreHoras`) en la
+pantalla, la media, la exportación y el asistente; los despertares sin contestar son `null` de punta a punta; el asistente de
+Sueño contesta «¿Cómo han ido mis últimas noches?» (capacidad `ultimas`, reglas en `CALIDAD_ANALISIS_SUENO`); y un botón de
+aclaración solo vale mientras su pregunta está pendiente. Detalle en [`ESPECIFICACION_CHATBOTS.md`](ESPECIFICACION_CHATBOTS.md)
+§19. Pruebas: `test-integracion-chatbots` 62 ✓ (nueva), `test-asistentes-chat` 225 ✓ (dos comprobaciones que guardaban los
+fallos se dieron la vuelta), `test-sueno` y `test-sueno-grafica` ✓, banco de renderizado y la sección «CHAT F2» del recorrido.
+
+**No hecho, a propósito:** los botones de IA que dicen «próximamente» (§19.4, tabla módulo por módulo) no se han tocado: dos
+(Sueño y Nutrición) ya tienen respuesta sin IA, pero cambiar los paneles lo decide Josué. Riesgos que quedan en §19.6 (la siesta
+sin contestar se guarda como «no», las horas que faltan se rellenan con 23:00 / 07:00). Pendiente en el iPhone: §19.7.
+
+### Corrección de los defectos de la auditoría técnica de los chatbots · ✅ 2026-10-24 (v3.161.1, sin commit ni push)
+
+**Hecho (con evidencia):** los 10 defectos confirmados (D1–D10) se reprodujeron con una sonda en memoria antes de tocar nada y se
+corrigieron en `motorConversacion.js`, los cinco `asistente*.js` y `asistenteChat.jsx`; más uno de la misma familia hallado al
+corregir («que la pasada» se tomaba por una predicción). Detalle, causas y propuestas en
+[`ESPECIFICACION_CHATBOTS.md`](ESPECIFICACION_CHATBOTS.md) §18. Pruebas: `test-asistentes-chat` 225 ✓ (sección 12 nueva; cinco
+comprobaciones que esperaban «6 h 12 min» se dieron la vuelta), `test-motor-conversacion` 97 ✓, banco de renderizado y la
+sección «CHAT F2» del recorrido en Chromium (duración exacta, botones de 44 px, zona de toque, «???»).
+
+**No hecho, a propósito:** los riesgos (§18.1) se investigaron sin corregirlos —Sueño guarda 0 despertares sin contestar, los
+botones de una aclaración antigua se aplican a la última pregunta, palabras largas sin `break-words`, el teclado de iOS— y la
+duración de la **pantalla** de Sueño sigue redondeando a décimas de hora (es otro módulo). Pendiente en el iPhone: §18.2.
+
+
+
+### Sueño: datos incompletos y «Analizar mi sueño» · ✅ 2026-10-24 (v3.161.3, sin commit, push ni despliegue)
+- [x] Siesta tri-estado (`true` / `false` / `null`) en formulario, carga, exportación y asistente; lo viejo se sigue leyendo.
+- [x] Horas sin valores por defecto; noche sin las dos horas = sin duración, fuera de medias, extremos y comparaciones.
+- [x] Noches elegidas por fecha en la lista, Inicio, el hub y el asistente.
+- [x] «Analizar mi sueño» abre el asistente con la pregunta contestada; seguimiento sobre las mismas noches (`periodoUsado`).
+- [x] Capacidades `incompletas`, `fiabilidad`, mejor/peor en `extremos`, «compáralo con lo de antes».
+- [x] Pruebas A–D en `test-integracion-chatbots` (136), banco de renderizado y recorrido «E3 F31» / «CHAT F2».
+- [ ] Probar en el iPhone (§20.6).

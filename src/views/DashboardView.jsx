@@ -26,7 +26,7 @@ import { resumenParaHoy } from '../lib/integracionPR';
    misma pantalla y solo lo vio Chromium. Con la constante importada, el próximo
    renombrado llega solo. */
 import { imcDe, NOMBRE_MODULO as NOMBRE_SALUD } from '../lib/salud';
-import { calidadDe } from '../lib/sueno';
+import { calidadDe, ultimaNoche } from '../lib/sueno';
 import { ResumenRachaHoy } from './RachasView';
 import { resumenDelDia, eventosDelDia } from '../lib/calendario';
 import { puntuacionDelDia, mensajePuntuacion } from '../lib/puntuacion';
@@ -596,7 +596,9 @@ export default function DashboardView({
   const saludo = hora < 6 ? 'Buenas noches' : hora < 12 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
   const fechaHoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
-  const ultimoSueno = sueno[sueno.length - 1];
+  /* 🐛 v3.161.3 — la última noche por su FECHA, no la última guardada: apuntar hoy una noche de la semana
+     pasada la ponía en Inicio como si fuera la de anoche (y el aviso de «dormiste poco» saltaba por ella). */
+  const ultimoSueno = ultimaNoche(sueno);
   const habilidadesActivas = Object.values(calistenia).filter((s) => s.nivel > 0).length;
 
   // Puntuación del día — ver src/lib/puntuacion.js para el porqué del cambio. Resumido: la
@@ -762,7 +764,7 @@ export default function DashboardView({
             <DashboardModuleCard
               icon={Moon} accent={accent} titulo="Sueño"
               vacio={!ultimoSueno}
-              valor={ultimoSueno ? `${formatHoras(calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar))} h` : undefined}
+              valor={ultimoSueno ? (calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar) === null ? 'Sin horas' : `${formatHoras(calcularDuracion(ultimoSueno.horaDormir, ultimoSueno.horaDespertar))} h`) : undefined}
               /* Entrega 3 · F31 (SU F1) — la cara que eligió, no el número; y si esa
                  noche no contestó la calidad, se dice, nunca «Calidad null/5». */
               sub={ultimoSueno

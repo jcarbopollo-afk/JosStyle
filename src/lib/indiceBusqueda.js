@@ -103,6 +103,13 @@ function margenErratas(q) {
   return 2;
 }
 
+/* Fase 2 · Chatbots — los asistentes por reglas (`motorConversacion.js`) toleran las mismas
+   erratas que el buscador, así que usan ESTAS dos funciones, no una copia. Se exportan con
+   nombre propio porque `distancia` ya es otra cosa en `motion.js` (un nombre, un significado,
+   FIT F36). El buscador no cambia: sigue llamando a las de siempre. */
+export const distanciaErratas = distancia;
+export const margenDeErratas = margenErratas;
+
 // Palabras con las que Josué buscaría cada módulo sin acordarse de su nombre
 // exacto. Es lo único que no se puede derivar: "dinero" no aparece en ningún
 // sitio del código, pero es como se busca Economía.
