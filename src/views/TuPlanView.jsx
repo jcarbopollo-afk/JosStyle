@@ -34,11 +34,11 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  ChevronRight, Dumbbell, Plus, Repeat, Calendar, X, Play,
+  ChevronRight, Dumbbell, Plus, Repeat, Calendar, X, Play, CheckCircle2,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { acentoLegible } from '../lib/acabadoFitness';
-import { hexToRgba } from '../lib/helpers';
+import { hexToRgba, todayISO } from '../lib/helpers';
 import { Card, SectionTitle, GhostBtn, PrimaryButton } from '../components/ui';
 import { iconoDeGrupo } from '../components/iconosFitness';
 import {
@@ -108,7 +108,7 @@ export function PlanPerdido({ accent, onExplorar }) {
    *"Hoy · Push · 6 ejercicios · ≈ 55 min"*, con sus músculos y su posición en
    la semana. ⚠️ El «fondo/imagen» del apartado 6 es **el grupo que más pesa**,
    derivado: ni una imagen inventada (la lección de la F5). */
-export function TarjetaProximo({ proximo, accent, onVer, onEmpezar = null }) {
+export function TarjetaProximo({ proximo, accent, onVer, onEmpezar = null, onCompletar = null }) {
   if (!proximo) return null;
   const Icono = iconoDeGrupo(null);
   return (
@@ -148,13 +148,15 @@ export function TarjetaProximo({ proximo, accent, onVer, onEmpezar = null }) {
           existe**, así que el primario es **Empezar entrenamiento**, que es el
           camino que pide su apartado 1: *"Tu Plan → entrenamiento → Empezar
           entrenamiento"*. Ver el detalle sigue estando, de secundario. */}
-      {(onVer || onEmpezar) && (
+      {(onVer || onEmpezar || onCompletar) && (
         <div className="mt-3 pt-3 flex gap-2 flex-wrap" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           {onEmpezar && (
             <PrimaryButton accent={accent} icon={Play} onClick={onEmpezar}>
               Empezar entrenamiento
             </PrimaryButton>
           )}
+          {/* 2026-10-26 — la otra forma de «empezar»: ya lo hizo fuera de la aplicación. */}
+          {onCompletar && <GhostBtn icon={CheckCircle2} onClick={onCompletar}>Completar entrenamiento</GhostBtn>}
           {onVer && (
             onEmpezar
               ? <GhostBtn icon={ChevronRight} onClick={onVer}>Ver entrenamiento</GhostBtn>
@@ -198,7 +200,7 @@ export function DescansoHoy({ accent }) {
 /* ── La sesión de un día (apartado 9) ──────────────────────────────────────
    ⚠️ Las filas son las de `lineasDeDia()`, las mismas que pinta la biblioteca:
    *"Reutilizar el detalle creado para planes/plantillas."* */
-export function SesionDelDia({ sesion, accent, onCerrar = null, onEmpezar = null }) {
+export function SesionDelDia({ sesion, accent, onCerrar = null, onEmpezar = null, onCompletar = null }) {
   if (!sesion) return null;
   return (
     <Card style={{ border: `1px solid ${accent}` }}>
@@ -253,11 +255,15 @@ export function SesionDelDia({ sesion, accent, onCerrar = null, onEmpezar = null
 
       {/* 🔓 FIT F7 — desde el detalle también se empieza: es el camino literal
           del apartado 1, *"Tu Plan → entrenamiento → Empezar entrenamiento"*. */}
-      {onEmpezar && (
-        <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
-          <PrimaryButton accent={accent} icon={Play} onClick={onEmpezar}>
-            Empezar entrenamiento
-          </PrimaryButton>
+      {(onEmpezar || onCompletar) && (
+        <div className="mt-3 pt-3 flex gap-2 flex-wrap" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+          {onEmpezar && (
+            <PrimaryButton accent={accent} icon={Play} onClick={onEmpezar}>
+              Empezar entrenamiento
+            </PrimaryButton>
+          )}
+          {/* 2026-10-26 — o apuntarlo como hecho, si ya lo hizo (también un día pasado de la semana). */}
+          {onCompletar && <GhostBtn icon={CheckCircle2} onClick={onCompletar}>Completar entrenamiento</GhostBtn>}
         </div>
       )}
     </Card>
@@ -273,6 +279,8 @@ export default function TuPlanView({
   fitness = {}, accent, hoy,
   onExplorar = null, onCrear = null, onVerPlantillas = null, onCambiarPlan = null,
   onQuitar = null, onEmpezar = null,
+  /* 2026-10-26 — «Completar entrenamiento»: el índice del día del plan y la fecha que se propone. */
+  onCompletar = null,
   /* 🔓 FIT F32 — abrir una sesión hecha (su detalle del Historial, apartado 37)
      y arreglar un plan que no se puede repartir (apartado 23). */
   onVerSesion = null, onEditarPlan = null,
@@ -376,6 +384,11 @@ export default function TuPlanView({
   const empezarDia = (d) => (onEmpezar && d && d.planificado && d.planificado.indice !== null
     ? () => onEmpezar(d.planificado.indice)
     : null);
+  /* 2026-10-26 — completar un día del plan: el de hoy o uno pasado de la semana; uno futuro no se ofrece. */
+  const hoyVista = hoy || todayISO();
+  const completarDia = (d) => (onCompletar && d && d.planificado && d.planificado.indice !== null && d.fecha <= hoyVista
+    ? () => onCompletar(d.planificado.indice, d.fecha)
+    : null);
   const irASemana = (lunes) => { setSemanaVista(lunes); setDiaElegido(null); };
 
   return (
@@ -405,6 +418,7 @@ export default function TuPlanView({
             accent={accent}
             onVer={() => setRutinaDelProximo(!rutinaDelProximo)}
             onEmpezar={onEmpezar ? () => onEmpezar(proximo.indice) : null}
+            onCompletar={onCompletar ? () => onCompletar(proximo.indice, null) : null}
           />
           {/* La sesión abierta, justo debajo de lo que la abrió. */}
           {rutinaProximo && (
@@ -414,6 +428,7 @@ export default function TuPlanView({
                 accent={accent}
                 onCerrar={() => setRutinaDelProximo(false)}
                 onEmpezar={onEmpezar ? () => onEmpezar(proximo.indice) : null}
+                onCompletar={onCompletar ? () => onCompletar(proximo.indice, null) : null}
               />
             </div>
           )}
@@ -460,6 +475,7 @@ export default function TuPlanView({
                       accent={accent}
                       onCerrar={() => setDiaElegido(null)}
                       onEmpezar={diaSel.acciones.empezar ? empezarDia(diaSel) : null}
+                      onCompletar={completarDia(diaSel)}
                     />
                   ) : null}
                 />

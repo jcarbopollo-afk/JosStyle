@@ -553,6 +553,7 @@ export function crearWorkoutSession({
   pausadoMs = 0, actual = 0,
   visibilidad = 'privado', media = null, diaDePlan = null, guardadaEn = null,
   descanso = null, descansoAuto = true, entorno = '', pesoCorporal = null,
+  registradaAMano = false,
 } = {}) {
   return {
     id: uid(),
@@ -638,6 +639,12 @@ export function crearWorkoutSession({
        snapshot al empezar (F7) y cada marca usa el suyo. Una sesión de antes no
        lo tiene (`null`) y usa el del perfil, que es lo único que se sabe. */
     pesoCorporal: pesoCorporalValido(pesoCorporal),
+    /* ═══ «Completar entrenamiento» (2026-10-26) ═══════════════════════════
+       Un entrenamiento que hizo fuera de la aplicación y apuntó después: completado, en su fecha real,
+       SIN series (no se inventa ni una repetición ni un peso). Este campo es lo que lo distingue de una
+       sesión con datos registrados. Va aquí, en el modelo, por la regla 5: lo que este normalizador no
+       conozca se lo lleva el siguiente guardado. Lo guardado antes no lo tiene, y sale `false`. */
+    registradaAMano: registradaAMano === true,
   };
 }
 

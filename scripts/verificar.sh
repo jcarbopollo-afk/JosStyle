@@ -1133,6 +1133,16 @@ else
   fallo "Falla Tu Plan"; grep '✗' /tmp/jc_tuplan.log
 fi
 
+# 2026-10-26 — «Completar entrenamiento»: apuntar uno hecho fuera de la aplicación,
+# hoy o un día pasado (nunca futuro), sin series ni pesos inventados, contado en su
+# fecha por el historial, la actividad, Tu Plan y los días con entrenamiento, sin
+# tocar las rachas, y sin duplicados al repetir el toque.
+if node --import ./scripts/resolver-vite.mjs scripts/test-completar-entrenamiento.mjs >/tmp/jc_completar.log 2>&1; then
+  ok "Completar entrenamiento — $(grep -c '✓' /tmp/jc_completar.log) comprobaciones"
+else
+  fallo "Falla Completar entrenamiento"; grep '✗' /tmp/jc_completar.log
+fi
+
 # FIT F7 — el motor de entrenamiento en vivo. Lo que más se vigila: que el
 # cronómetro salga de MARCAS DE TIEMPO (hay una comprobación que simula bloquear
 # el móvil diez minutos), que planificado y realizado no se pisen, que una serie

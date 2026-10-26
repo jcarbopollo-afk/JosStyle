@@ -154,7 +154,7 @@ ok(SUPERFICIES.every((s) => /COLORS\./.test(s.token)), '…y todas son de `COLOR
 console.log('\n── 4. Hojas, filtros y capas: de un sitio (apartados 21, 38, 39, 42 y 64) ──');
 {
   const conHoja = Object.entries(archivos).filter(([, src]) => /\bHOJA\.(?:velo|veloConfirmacion|visor)\b/.test(src)).map(([p]) => p.split('/').pop());
-  ok(conHoja.length === 7, `Siete archivos dibujan su hoja con \`HOJA\`: ${conHoja.join(', ')}`);
+  ok(conHoja.length === 8 && conHoja.includes('completarEntrenamiento.jsx'), `Ocho archivos dibujan su hoja con \`HOJA\` (desde el 2026-10-26, también «Completar entrenamiento»): ${conHoja.join(', ')}`);
   ok(HOJA.fondoVelo === CAPAS.veloHoja && Object.values(archivos).every((src) => !/rgba\(0,\s*0,\s*0,\s*0\.(?:5|6)\)/.test(sinComentarios(src))),
     '🐛 Un velo, no cuatro: ni un «0,5» ni un «0,6» escrito a mano');
   ok(/sm:rounded-3xl/.test(HOJA.caja) && /sm:items-center/.test(HOJA.velo) && /hoja-movil/.test(HOJA.caja) && /dialogo-caja/.test(HOJA.caja),

@@ -148,7 +148,7 @@ export const ARCHIVOS_FITNESS = [
   'src/components/actividadEntrenamiento.jsx', 'src/components/planificacionSemanal.jsx',
   'src/components/colaClasificacion.jsx', 'src/components/estadosFitness.jsx',
   /* FIT F42 — el botón de cerrar que comparten todas las hojas. */
-  'src/components/piezasFitness.jsx',
+  'src/components/piezasFitness.jsx', 'src/components/completarEntrenamiento.jsx',
 ];
 
 /* ═══════════════════════════════════════════════════════════════════════════

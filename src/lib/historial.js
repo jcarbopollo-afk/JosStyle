@@ -242,6 +242,9 @@ export function fichaDeHistorial(sesion, { fitness = {}, propios = [], planes = 
   const parcial = r.seriesPlanificadas > 0 && r.seriesCompletadas < r.seriesPlanificadas;
   const entorno = entornoDeSesion(sesion, fitness, planes);
   const n = r.ejerciciosHechos;
+  /* «Completar entrenamiento» — apuntado después, sin series: se dice eso, no «0 series», que se
+     leería como un entrenamiento vacío. */
+  const aMano = sesion.registradaAMano === true;
   return {
     id: sesion.id,
     nombre: r.nombre,
@@ -252,21 +255,27 @@ export function fichaDeHistorial(sesion, { fitness = {}, propios = [], planes = 
     duracionMs: duracionConocida(sesion) ? r.duracionMs : 0,
     momento: momento(sesion),
     ejercicios: n,
-    ejerciciosTexto: `${n} ${n === 1 ? 'ejercicio' : 'ejercicios'}`,
+    ejerciciosTexto: aMano ? SIN_DETALLES_A_MANO : `${n} ${n === 1 ? 'ejercicio' : 'ejercicios'}`,
+    aMano,
     series: r.seriesCompletadas,
     seriesPlanificadas: r.seriesPlanificadas,
     /* 🚨 Apartado 7 — *"16/20 series"* si fue parcial, sin tono negativo: es
        información, no un reproche. Completa, solo *"18 series"*. */
     parcial,
-    seriesTexto: parcial
+    seriesTexto: aMano ? COMPLETADO_A_MANO : (parcial
       ? `${r.seriesCompletadas}/${r.seriesPlanificadas} series`
-      : `${r.seriesCompletadas} ${r.seriesCompletadas === 1 ? 'serie' : 'series'}`,
+      : `${r.seriesCompletadas} ${r.seriesCompletadas === 1 ? 'serie' : 'series'}`),
     entorno,
     entornoNombre: nombreEntorno(entorno),
     plan: relacionConPlan(sesion, fitness),
     textoBusqueda: normalizarBusqueda(`${r.nombre} ${texto(sesion.descripcion)}`),
   };
 }
+
+/* «Completar entrenamiento» — cómo se lee una sesión apuntada después, sin series. */
+export const COMPLETADO_A_MANO = 'Completado sin series registradas';
+export const SIN_DETALLES_A_MANO = 'Sin detalles';
+export const NOTA_A_MANO = 'Lo completaste sin hacerlo en la aplicación: no tiene series, pesos ni tiempos apuntados, así que no cuenta para tu progreso ni tus marcas.';
 
 export const HISTORIAL_VACIO = {
   titulo: 'Aún no tienes entrenamientos',
@@ -451,8 +460,10 @@ export function detalleDeSesion(sesion, { fitness = {}, propios = [], planes = C
     inicio: r.inicio,
     fin: r.fin,
     duracion: duracionConocida(sesion) ? r.duracion : '',
-    ejerciciosTexto: `${r.ejerciciosHechos} de ${r.ejercicios.length} ${r.ejercicios.length === 1 ? 'ejercicio' : 'ejercicios'}`,
-    seriesTexto: r.seriesTexto,
+    ejerciciosTexto: sesion.registradaAMano === true ? SIN_DETALLES_A_MANO : `${r.ejerciciosHechos} de ${r.ejercicios.length} ${r.ejercicios.length === 1 ? 'ejercicio' : 'ejercicios'}`,
+    seriesTexto: sesion.registradaAMano === true ? COMPLETADO_A_MANO : r.seriesTexto,
+    aMano: sesion.registradaAMano === true,
+    notaAMano: sesion.registradaAMano === true ? NOTA_A_MANO : '',
     /* 🚨 Apartado 26 — solo cuando es matemáticamente válido. Es el de la F8,
        que ya deja fuera el peso corporal y los isométricos, y dice de cuántas
        series sale para que el número no parezca el total. */

@@ -1,5 +1,36 @@
 # CHANGELOG.md
 
+## Sin versión — Fitness: «Completar entrenamiento» (2026-10-26)
+
+> Ciclo de corrección de Fitness que pidió Josué: al lado de «Empezar entrenamiento», **«Completar entrenamiento»** para apuntar
+> uno que ya hizo fuera de la aplicación. **Sin cambiar la versión, solo en la rama de trabajo** (sin `main`, merge ni despliegue).
+
+### ✨ Nuevo
+- **«Completar entrenamiento»** en Tu Plan (la tarjeta del próximo y el día elegido, solo si es hoy o un día pasado), en el
+  detalle de una plantilla y en el Historial (también vacío). Se elige el entrenamiento (viene elegido el de donde se abrió), el
+  día (hoy por defecto; uno pasado sí, uno futuro no), se confirma y se guarda como completado **en su fecha real**.
+  Lógica en `src/lib/completarEntrenamiento.js`, la hoja en `src/components/completarEntrenamiento.jsx`.
+- 🚨 **Registra que lo hizo, no cómo**: la sesión no lleva series, pesos, tiempos ni marcas (`origen.ejercicios` vacío, sin
+  inicio ni fin) y lleva `registradaAMano: true` (campo nuevo de `crearWorkoutSession`, regla 5). El historial dice
+  «Completado sin series registradas» y su detalle explica que no cuenta para el progreso ni las marcas.
+- Cuenta donde cuentan los entrenamientos completados: el Historial, la actividad de Progreso, la semana de Tu Plan
+  («Completado», enlazado por ids con su día) y los días con entrenamiento de fuera de Fitness. **Las rachas no cambian**: la
+  de entrenamiento se sigue marcando en Rachas u Hoy.
+- 🚨 **Duplicados**: el mismo entrenamiento (mismo plan y día del plan, o la misma plantilla) el mismo día se bloquea y se dice,
+  y también si está empezado sin terminar; dos entrenamientos distintos el mismo día, sí.
+
+### ⚠️ Limitaciones
+- El Calendario general no enseña las sesiones de Fitness (ni las de antes): se ven en el calendario de actividad de Progreso.
+- Sin probar en el iPhone: el selector de fecha nativo y VoiceOver en la hoja.
+
+### 🧪 Pruebas
+- `scripts/test-completar-entrenamiento.mjs` (64 comprobaciones, en `verificar.sh`), cuatro casos del banco de renderizado y la
+  sección «COMPLETAR ENTRENAMIENTO» del recorrido de Chromium. `test-robustez-fitness` cuenta ocho archivos con hoja.
+- 🐛 **Una bomba de relojería por la fecha en el recorrido** (no es de esta función, pero salió en su pasada, un lunes): la
+  comprobación del chat de Sueño «¿y la semana pasada?» daba por hecho que las noches sembradas (ayer y anteayer) no caían
+  en la semana pasada, y los lunes y martes sí caen. El asistente estaba bien; ahora lo esperado se calcula de las fechas.
+  Y `test-acabado-fitness` cuenta ocho archivos con `HOJA`.
+
 ## v3.161.3 — Sueño: lo que no se sabe no se inventa, y «Analizar mi sueño» abre una conversación
 
 > Encargo de Josué del 2026-10-24 (*«Corregir definitivamente la interpretación de los datos incompletos del sueño y revisar la

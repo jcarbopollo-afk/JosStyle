@@ -24,7 +24,7 @@ import React, { useState, useMemo } from 'react';
 import { useScrollAlVolver } from '../components/scrollAlVolver';
 import {
   ChevronLeft, ChevronRight, Search, SlidersHorizontal, X,
-  Clock, Calendar, Dumbbell, Layers, Weight, Check, Minus, Trash2, Play, StickyNote,
+  Clock, Calendar, Dumbbell, Layers, Weight, Check, Minus, Trash2, Play, StickyNote, CheckCircle2,
 } from 'lucide-react';
 import { ChevronDespliegue } from '../components/motion';
 import { COLORS } from '../tokens';
@@ -186,7 +186,7 @@ export function TarjetaHistorial({ ficha, agrupado, accent, onAbrir }) {
 }
 
 /* ── El estado vacío (apartado 9) ──────────────────────────────────────── */
-export function HistorialVacio({ accent, onEmpezar }) {
+export function HistorialVacio({ accent, onEmpezar, onCompletar = null }) {
   return (
     <Card>
       <div className="py-4 text-center">
@@ -203,6 +203,12 @@ export function HistorialVacio({ accent, onEmpezar }) {
         {onEmpezar && (
           <div className="mt-4 max-w-xs mx-auto">
             <PrimaryButton accent={accent} icon={Play} onClick={onEmpezar}>{HISTORIAL_VACIO.cta}</PrimaryButton>
+          </div>
+        )}
+        {/* 2026-10-26 — si ya entrenó fuera de la aplicación, lo apunta aquí. */}
+        {onCompletar && (
+          <div className="mt-2 max-w-xs mx-auto">
+            <GhostBtn icon={CheckCircle2} onClick={onCompletar}>Completar entrenamiento</GhostBtn>
           </div>
         )}
       </div>
@@ -389,7 +395,8 @@ export function DetalleSesionHistorial({
       )}
 
       <div className="space-y-2">
-        {d.ejercicios.length === 0 && <EmptyHint text="Este entrenamiento no tiene ejercicios registrados." />}
+        {/* «Completar entrenamiento» — apuntado después: se dice que no tiene series, y por qué no cuenta para el progreso. */}
+        {d.ejercicios.length === 0 && <EmptyHint text={d.aMano ? d.notaAMano : 'Este entrenamiento no tiene ejercicios registrados.'} />}
         {d.ejercicios.map((e) => (
           <EjercicioHistorial
             key={e.id}
@@ -441,6 +448,8 @@ export function DetalleSesionHistorial({
    ═══════════════════════════════════════════════════════════════════════════ */
 export default function HistorialView({
   fitness, propios = [], accent, onVolver, onEmpezar = null, onEliminar = null,
+  /* 2026-10-26 — apuntar un entrenamiento que hizo fuera de la aplicación (también de otro día). */
+  onCompletar = null,
   /* 🔓 FIT F36, apartados 13 y 14 — desde una sesión, al ejercicio: su progreso,
      su objetivo y su rango (el detalle de la F29). Existía la puerta en
      `DetalleSesionHistorial` y aquí no se le pasaba, así que el botón no salía. */
@@ -524,7 +533,7 @@ export default function HistorialView({
       <h2 className="text-2xl font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Historial</h2>
 
       {consulta.vacio ? (
-        <HistorialVacio accent={accent} onEmpezar={onEmpezar} />
+        <HistorialVacio accent={accent} onEmpezar={onEmpezar} onCompletar={onCompletar} />
       ) : (
         <>
           <FiltrosHistorial
