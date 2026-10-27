@@ -5884,19 +5884,74 @@ ok(h_chat && h_chat.texto.includes(duraciones_chat[0]) && /23:30 → 07:15/.test
 ok(h_chat && /Sueño · el registro de esa noche/.test(h_chat.texto), '…y dice de dónde sale');
 h_chat = await preguntar_chat('¿y anteayer?', new RegExp(duraciones_chat[1]));
 ok(h_chat && h_chat.texto.includes(duraciones_chat[1]) && /Fatal/.test(h_chat.texto), `🚨 CHAT F2 · seguimiento: «¿y anteayer?» → ${duraciones_chat[1]} y la cara que puso`);
-/* 🐛 2026-10-26 — lo esperado se CALCULA de las noches sembradas (ayer y anteayer): un lunes o un martes caen en la
-   semana pasada y entonces hay media; el resto de días, no hay noches. Antes se daba por hecho que no las había, y
-   la comprobación salía roja los lunes y los martes con el asistente bien (la bomba de relojería por la fecha). */
-const hoyISO_chat = new Date().toLocaleDateString('sv-SE');
-const diaISO_chat = (n) => { const d = new Date(`${hoyISO_chat}T12:00:00`); d.setDate(d.getDate() + n); return d.toLocaleDateString('sv-SE'); };
-const lunes_chat = diaISO_chat(-((new Date(`${hoyISO_chat}T12:00:00`).getDay() + 6) % 7));
-const enSemanaPasada_chat = (almacen.sueno || []).filter((r) => r.fecha >= diaISO_chat(-((new Date(`${hoyISO_chat}T12:00:00`).getDay() + 6) % 7) - 7) && r.fecha < lunes_chat).length;
+/* 🐛 H-25 — «¿y la semana pasada?» después de una noche: la pregunta de UN día pasa a su hermana de rango (`siRango`)
+   y contesta la MEDIA de esa semana, nunca la noche de su lunes. Lo esperado se CALCULA de las noches sembradas (ayer y
+   anteayer), del periodo que la propia aplicación llama «la semana pasada» (`interpretarFechas`) y de su media
+   (`mediaDeMinutos`), así que vale cualquier día: un lunes caen las dos en esa semana (media de 2), un martes una (su
+   duración y «no hay media que calcular») y el resto ninguna. La versión del 2026-10-26 esperaba «has dormido de
+   media» con cualquier número de noches y salía roja los martes con el asistente bien.
+   Cada noche se reconoce por su FECHA, escrita como la escribe el asistente (`etiquetaDeDia`, con el mismo «hoy»), y
+   nunca por su duración: dos noches pueden durar lo mismo y «7 h» está dentro de «7 h 45 min». */
 h_chat = await preguntar_chat('¿y la semana pasada?', /semana pasada/);
+const semana_chat = await page.evaluate(async (sembradas) => {
+  const { interpretarFechas, etiquetaDeDia, fechasDelRango } = await import('/src/lib/fechasConversacion.js');
+  const { mediaDeMinutos } = await import('/src/lib/sueno.js');
+  const { formatearDuracionLarga } = await import('/src/lib/pomodoro.js');
+  const { todayISO } = await import('/src/lib/helpers.js');
+  const hoy = todayISO();
+  const p = interpretarFechas('la semana pasada', hoy)[0];
+  const conHoras = sembradas.filter((r) => r.fecha >= p.desde && r.fecha <= p.hasta && r.horaDormir && r.horaDespertar);
+  const m = conHoras.length >= 2 ? mediaDeMinutos(conHoras) : null;
+  return {
+    desde: p.desde, hasta: p.hasta, etiqueta: p.etiqueta, dias: fechasDelRango(p.desde, p.hasta).length,
+    media: m === null ? null : formatearDuracionLarga(m * 60000), etiquetasDia: sembradas.map((r) => etiquetaDeDia(r.fecha, hoy)),
+  };
+}, almacen.sueno);
+/* Lo que falla de la respuesta (vacío si es la buena). `duraciones[i]` y `semana.etiquetasDia[i]` son de `sembradas[i]`.
+   Las frases se buscan enteras, con su puntuación, porque cada una está dentro de un solo elemento de la hoja. */
+const fallosSemanaPasada_chat = (texto, semana, sembradas, duraciones) => {
+  const fallos = [];
+  const noches = sembradas.map((r, i) => ({ ...r, duracion: duraciones[i], dia: semana.etiquetasDia[i], dentro: r.fecha >= semana.desde && r.fecha <= semana.hasta }));
+  const dentro = noches.filter((r) => r.dentro);
+  const conHoras = dentro.filter((r) => r.horaDormir && r.horaDespertar);
+  const noche = (n, x) => `${n} ${n === 1 ? `noche ${x}` : `noches ${x}s`}`;
+  const terminoEl = (dia) => new RegExp(`terminó ${dia.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=[,.;)]|$)`);
+  let resto = texto;
+  const exige = (frase, motivo) => { if (texto.includes(frase)) resto = resto.split(frase).join(' '); else fallos.push(motivo); };
+  if (!texto.toLowerCase().includes(semana.etiqueta.toLowerCase())) fallos.push(`no nombra el periodo («${semana.etiqueta}»)`);
+  if (/¿Qué día/.test(texto)) fallos.push('pregunta qué día en vez de contestar la semana');
+  if (!dentro.length) {
+    exige(`No tienes noches registradas ${semana.etiqueta}.`, 'no dice que esa semana no tiene noches');
+    /* La nota «La última que tienes es la que terminó …» nombra a propósito una noche de fuera: se permite, pero tiene
+       que ser una de las sembradas. */
+    const ultima = resto.match(/La última que tienes es la que terminó ([^.]+)\./);
+    if (ultima) { if (noches.some((r) => r.dia === ultima[1])) resto = resto.replace(ultima[0], ' '); else fallos.push(`la nota de la última noche nombra una que no existe («${ultima[1]}»)`); }
+    if (/has dormido de media|solo una noche tiene las dos horas|ninguna tiene las dos horas/.test(texto)) fallos.push('da datos de una semana que no tiene noches');
+  } else if (conHoras.length !== dentro.length || !conHoras.length) {
+    fallos.push('escenario no previsto: noches de esa semana sin las dos horas');
+  } else if (conHoras.length === 1) {
+    exige(`solo una noche tiene las dos horas: la que terminó ${conHoras[0].dia}, con ${conHoras[0].duracion}.`, `con una sola noche no dice cuál es (${conHoras[0].dia}) ni su duración (${conHoras[0].duracion})`);
+    exige('Con una sola duración no hay media que calcular.', 'con una sola noche no dice que no hay media');
+    exige(`Sueño · ${noche(1, 'registrada')} ${semana.etiqueta}`, 'no dice que esa semana tiene 1 noche registrada');
+    if (/has dormido de media/.test(texto)) fallos.push('da una media con una sola noche');
+  } else {
+    exige(`has dormido de media ${semana.media} por noche.`, `no da la media de sus ${conHoras.length} noches (${semana.media})`);
+    exige(`de ${conHoras.length} noches con las dos horas`, `no dice que la media es de ${conHoras.length} noches`);
+    exige(`${dentro.length} de ${semana.dias}`, `no dice ${dentro.length} de ${semana.dias} noches registradas`);
+    exige(`Sueño · ${noche(dentro.length, 'registrada')} ${semana.etiqueta}`, `no dice que esa semana tiene ${dentro.length} noches registradas`);
+    if (/solo una noche tiene las dos horas|No tienes noches registradas/.test(texto)) fallos.push('contradice el número de noches');
+  }
+  /* Lo que queda fuera de las frases esperadas no puede nombrar ninguna noche de fuera de esa semana, ni la noche de su
+     lunes (el fallo original de H-25: contestaba esa noche en vez de la semana). */
+  for (const r of noches) if (!r.dentro && terminoEl(r.dia).test(resto)) fallos.push(`usa la noche que terminó ${r.dia}, que no es de esa semana`);
+  if (/terminó el lunes/.test(resto)) fallos.push('contesta la noche de su lunes');
+  return fallos;
+};
 const respuestaSemana_chat = h_chat ? h_chat.texto.split('¿y la semana pasada?').pop() : '';
-ok(h_chat && (enSemanaPasada_chat === 0
-  ? /No tienes noches registradas la semana pasada/.test(respuestaSemana_chat)
-  : /has dormido de media/.test(respuestaSemana_chat)) && !/terminó el lunes/.test(respuestaSemana_chat),
-  `🐛 CHAT F2 · «¿y la semana pasada?» tras una noche → la media de esa semana (${enSemanaPasada_chat ? `${enSemanaPasada_chat} noche(s)` : 'sin noches'}), no la noche de su lunes (H-25) — ${JSON.stringify(respuestaSemana_chat.slice(0, 600))}`);
+const enSemanaPasada_chat = (almacen.sueno || []).filter((r) => r.fecha >= semana_chat.desde && r.fecha <= semana_chat.hasta).length;
+const fallosH25_chat = h_chat ? fallosSemanaPasada_chat(respuestaSemana_chat, semana_chat, almacen.sueno, duraciones_chat) : ['no hay hoja del chat'];
+ok(fallosH25_chat.length === 0,
+  `🐛 CHAT F2 · «¿y la semana pasada?» tras una noche → la media de esa semana (${enSemanaPasada_chat ? `${enSemanaPasada_chat} noche(s)` : 'sin noches'}), no la noche de su lunes (H-25)${fallosH25_chat.length ? ` — ${fallosH25_chat.join('; ')}` : ''} — ${JSON.stringify(respuestaSemana_chat.slice(0, 600))}`);
 h_chat = await preguntar_chat('apúntame que dormí 8 horas', /no puedo apuntar/);
 ok(h_chat && /no puedo apuntar, cambiar ni borrar nada/.test(h_chat.texto), '🚨 CHAT F2 · una orden de escribir se niega y dice dónde se hace');
 /* D10 — un mensaje solo de signos se contesta (antes la caja se vaciaba y no aparecía nada). */

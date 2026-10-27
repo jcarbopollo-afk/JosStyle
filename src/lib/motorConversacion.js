@@ -67,7 +67,9 @@ export function normalizarMensaje(entrada) {
   const tokens = normalizar(conCortes)
     .split(' ')
     .filter(Boolean)
-    .flatMap((t) => (ABREVIATURAS[t] ? ABREVIATURAS[t].split(' ') : [t]));
+    /* 🐛 Solo las claves PROPIAS de la tabla: con `ABREVIATURAS[t]` a secas, «constructor» y «__proto__» encontraban
+       lo que hereda cualquier objeto y la conversación lanzaba un TypeError. */
+    .flatMap((t) => (Object.prototype.hasOwnProperty.call(ABREVIATURAS, t) ? ABREVIATURAS[t].split(' ') : [t]));
   /* Sin cortes al principio ni al final, ni dos seguidos. */
   const limpios = [];
   for (const t of tokens) {

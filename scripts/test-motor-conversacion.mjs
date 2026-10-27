@@ -207,5 +207,19 @@ ok(!Object.keys(ASIS).some((k) => k.startsWith('__')), 'Responder no toca el reg
 ok(bLista(Array.from({ length: 20 }, (_, i) => `x${i}`)).items.length === MAX_ITEMS_LISTA + 1, `Una lista larga se corta a ${MAX_ITEMS_LISTA} + «y N más» (H-18)`);
 ok(incumpleHonestidad('Dormiste menos porque entrenaste').includes('porque') && incumpleHonestidad('Dormiste 7 h').length === 0, 'El detector de causas, consejos y predicciones caza un «porque» y deja pasar un dato');
 
+/* ── Palabras que son propiedades heredadas («constructor», «__proto__») ──
+   🐛 `normalizarMensaje` buscaba cada palabra en la tabla de abreviaturas sin mirar si la clave era suya: «constructor»
+   y «__proto__» encontraban lo que hereda cualquier objeto y la conversación lanzaba un TypeError. */
+console.log('\n── Palabras que son propiedades heredadas («constructor», «__proto__») ──');
+{
+  const sinLanzar = (fn) => { try { fn(); return true; } catch { return false; } };
+  ok(sinLanzar(() => normalizarMensaje('constructor')) && normalizarMensaje('constructor').tokens.join(' ') === 'constructor', '«constructor» se normaliza como una palabra más (antes: TypeError)');
+  ok(sinLanzar(() => normalizarMensaje('__proto__')) && sinLanzar(() => normalizarMensaje('¿qué significa constructor?')), '…y «__proto__» o una frase con «constructor», tampoco lanzan');
+  ok(['hasownproperty', 'tostring', 'valueof', 'isprototypeof'].every((w) => normalizarMensaje(w).tokens.join(' ') === w), 'Otras propiedades heredadas se quedan como palabras');
+  ok(normalizarMensaje('q tal xq tb').tokens.join(' ') === 'que tal porque tambien', '…y las abreviaturas de verdad se siguen expandiendo');
+  const rc = sinLanzar(() => responderMensaje(ASIS, 'constructor', { datos: {}, hoy: HOY })) && responderMensaje(ASIS, 'constructor', { datos: {}, hoy: HOY }).respuestas;
+  ok(Array.isArray(rc) && rc.length === 1 && rc[0].capacidad === 'no_entendido', '«constructor» a secas: no entendido (con ejemplos), no un error');
+}
+
 console.log(`\n${fallos === 0 ? '\x1b[32m' : '\x1b[31m'}${total - fallos}/${total} comprobaciones\x1b[0m`);
 process.exit(fallos ? 1 : 0);

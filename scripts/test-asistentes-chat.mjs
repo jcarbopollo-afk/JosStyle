@@ -868,5 +868,17 @@ console.log('\n── 12. Correcciones de la auditoría (D1–D10) ──');
   ok(corpus12.every((x) => !incumpleHonestidad(textoDeRespuesta(x)).length), 'Ninguna respuesta de esta sección incumple las palabras prohibidas (§8)');
 }
 
+/* ── Palabras que son propiedades heredadas («constructor», «__proto__») ──
+   🐛 «constructor» (y «__proto__») hacían lanzar un TypeError al normalizar el mensaje, en los cinco asistentes. */
+console.log('\n── Palabras que son propiedades heredadas («constructor», «__proto__») ──');
+{
+  const unaC = (a, m) => { try { return responderMensaje(a, m, { datos: datosParaAsistente(a, ESTADO), hoy: HOY, contexto: nuevaConversacion('u-prueba'), ajenos: DOMINIOS_AJENOS, ahora: 1000 }).respuestas; } catch (e) { return [{ capacidad: `LANZA ${e.constructor.name}`, tipo: 'error', bloques: [], opciones: [] }]; } };
+  ok(ASISTENTES.every((a) => ['constructor', '¿Qué significa constructor?', '__proto__'].every((m) => !/^LANZA/.test(caps(unaC(a, m))))), '«constructor», «¿Qué significa constructor?» y «__proto__»: ningún asistente lanza');
+  ok(!/^LANZA/.test(caps(unaC(ASISTENTE_FITNESS, '¿Cómo uso el constructor de rutinas?'))), 'Fitness: una pregunta con el nombre de su pantalla «constructor» no lanza');
+  ok(caps(unaC(ASISTENTE_SUENO, '¿Cuánto dormí ayer?')) === 'noche' && caps(unaC(ASISTENTE_FITNESS, '¿Cuántos entrenamientos llevo esta semana?')) === 'cuantos'
+    && caps(unaC(ASISTENTE_NUTRICION, '¿Qué comí ayer?')) === 'comidas' && caps(unaC(ASISTENTE_ESTUDIOS, '¿Cuándo es el examen de biología?')) === 'cuando'
+    && caps(unaC(ASISTENTE_PRODUCTIVIDAD, '¿Qué hábitos me tocan hoy?')) === 'habitos', 'Una pregunta normal en cada uno de los cinco sigue igual');
+}
+
 console.log(`\n${fallos === 0 ? '\x1b[32m' : '\x1b[31m'}${total - fallos}/${total} comprobaciones\x1b[0m`);
 process.exit(fallos ? 1 : 0);
