@@ -76,7 +76,9 @@ export const ERRATAS_FECHA = Object.freeze({
    «mes» y «año» no: son tan cortas que cualquier errata es otra palabra («hay», «mas»). Y las que se parecen
    a una de ellas sin ser una errata («semanas», «manzana», «vienes») no cuentan. */
 const PALABRAS_DE_FECHA = ['ayer', 'anteayer', 'anoche', 'manana', 'semana', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
-const NO_SON_FECHA = new Set(['semanas', 'semanal', 'mananas', 'manzana', 'partes', 'vienes', 'lunas', 'sabados', 'domingos']);
+/* ⟦Paso 4 de la recuperación⟧ «noche», «mates», «sacado» y «sobado» se añadieron al ver que el vocabulario de la propia
+   aplicación las daba por erratas de «anoche», «martes» y «sábado». La lista no es la original (que no se conserva). */
+const NO_SON_FECHA = new Set(['semanas', 'semanal', 'mananas', 'manzana', 'partes', 'vienes', 'lunas', 'sabados', 'domingos', 'noche', 'mates', 'sacado', 'sobado']);
 
 /* Una palabra suelta: si es una errata de fecha de la lista, la fecha; si no, la misma palabra. Se aplica
    palabra a palabra al normalizar, ANTES de leer fechas, así que «ayr» se entiende como «ayer» en todas
@@ -285,6 +287,18 @@ const NO_ENTIDAD = new Set([...RELLENO, 'como', 'voy', 'va', 'cuanto', 'cuanta',
 const piezasDeNombre = (nombre) => normalizar(nombre).split(' ').filter((t) => t && !RELLENO.has(t));
 /* Fase 2.1 (A9) — dos candidatas que casan con LAS MISMAS palabras del mensaje: lo dicho encaja igual con las dos. */
 const mismasPalabras = (a, b) => a.tramos.length === b.tramos.length && a.tramos.every((i) => b.tramos.includes(i));
+/* ⟦Paso 4 de la recuperación, no es código original⟧ Si después de lo casado el mensaje sigue nombrando algo (una
+   palabra que no es relleno, ni fecha, ni de las que nunca son un nombre), la única candidata no es segura:
+   «racha de leer la biblia» con solo «Leer 30 minutos» no habla de «Leer 30 minutos». */
+const nombraAlgoMas = (tokens, tramos, ocupados) => {
+  for (let i = Math.max(...tramos) + 1; i < tokens.length; i += 1) {
+    const t = tokens[i];
+    if (t === '¦' || ocupados.has(i)) return false;
+    if (RELLENO.has(t)) continue;
+    return !NO_ENTIDAD.has(t) && !/^\d+$/.test(t);
+  }
+  return false;
+};
 
 
 /**
@@ -343,7 +357,7 @@ export function resolverEntidad(tokens, entidades, ocupados = new Set()) {
   if (unica) return { estado: 'unica', entidad: p1.e, candidatas: [p1.e], tramos: p1.tramos };
   /* Fase 2.1 (A9) — una sola que encaja: si lo que la nombra es una palabra entera de su nombre, es ella;
      si no (solo el principio de una palabra), se pregunta «¿Te refieres a…?» con esa sola opción. */
-  if (puntuadas.length === 1 && p1.propia) return { estado: 'unica', entidad: p1.e, candidatas: [p1.e], tramos: p1.tramos };
+  if (puntuadas.length === 1 && p1.propia && !nombraAlgoMas(tokens, p1.tramos, ocupados)) return { estado: 'unica', entidad: p1.e, candidatas: [p1.e], tramos: p1.tramos };
   const empatadas = puntuadas.filter((x) => x.cobertura === p1.cobertura && x.casadas === p1.casadas)
     .sort((a, b) => (b.e.reciente || 0) - (a.e.reciente || 0) || a.e.nombre.localeCompare(b.e.nombre));
   /* H-10 — entre las que empatan, si solo UNA tiene historia, es esa: «press banca» con la de barra
@@ -828,11 +842,10 @@ function aclaracionDeEntidad(asistente, capacidad, args) {
   const candidatas = args.ambigua.candidatas;
   const opciones = opcionesDeEntidades(candidatas, capacidad, args.periodo);
   const total = args.ambigua.total || opciones.length;
-  const bloques = [bTexto(opciones.length === 1 && total === 1
-    ? `¿Te refieres a «${opciones[0].texto}»?`
-    : total > opciones.length
+  /* Fase 2.1 (A9) — con una sola candidata que sigue sin ser segura, se pregunta por ella, no «¿cuál de estos?». */
+  const bloques = [bTexto(total > opciones.length
     ? `Hay ${total} que encajan. ¿Cuál de estos? (los que más has usado últimamente)`
-    : '¿Cuál de estos?')];
+    : opciones.length === 1 ? `¿Te refieres a «${opciones[0].texto}»?` : '¿Cuál de estos?')];
   const repetido = nombreRepetido(candidatas);
   if (repetido) bloques.push(bNota(`Hay más de una que se llama «${repetido}»; al lado de cada una te digo cuál es.`));
   return {
@@ -853,20 +866,23 @@ function faltaEntidad(asistente, capacidad, args, disponibles) {
     opciones: opcionesDeEntidades(lista, capacidad, args.periodo),
   };
 }
-/* Fase 2.1 (A2) — lo que nombró no está entre los suyos: se dice, y se ofrece lo que sí hay. Nunca se contesta
-   sobre otra entidad —la de antes o la última que salió— como si fuera la que pidió. */
+
+/* Fase 2.1 (A2) — lo que se nombró y no está entre sus cosas. Si la pregunta no tiene sentido sin ello
+   (el examen DE una asignatura), se pregunta por las que sí hay; si solo acotaba (las horas, los próximos),
+   se contesta sin acotar y se dice. Nunca se sustituye por la del contexto. */
+const pluralDe = (n) => (/[aeiou]$/.test(n) ? `${n}s` : `${n}es`);
 function noEncontrada(asistente, capacidad, args, disponibles) {
   const nombre = capacidad.entidad.nombre || 'elemento';
   const lista = (disponibles[capacidad.entidad.tipo] || []).slice().sort((a, b) => (b.reciente || 0) - (a.reciente || 0)).slice(0, MAX_OPCIONES);
-  const dicho = `No encuentro «${args.desconocida}» entre tus ${pluralDe(nombre)}.`;
-  if (!lista.length) return respuestaFija(asistente, capacidad.id, [bTexto(dicho)], { tipo: 'respuesta' });
+  const frase = `No encuentro «${args.desconocida}» entre tus ${pluralDe(nombre)}.`;
+  if (!lista.length) return respuestaFija(asistente, capacidad.id, [bTexto(frase), bNota(capacidad.entidad.vacio || `Todavía no tienes ningún ${nombre} con datos.`)], { tipo: 'respuesta' });
   return {
     asistente: asistente.id, capacidad: capacidad.id, tipo: 'aclaracion',
-    bloques: [bTexto(`${dicho} ¿Es alguno de estos?`)], fuente: null, confianza: null, acciones: [],
+    bloques: [bTexto(`${frase} ¿Es alguno de estos?`)], fuente: null, confianza: null, acciones: [],
     opciones: opcionesDeEntidades(lista, capacidad, args.periodo),
   };
 }
-const pluralDe = (nombre) => (/[aeiouáéíóú]$/i.test(nombre) ? `${nombre}s` : `${nombre}es`);
+
 function ejecutarConArgs(asistente, capacidad, args, datos, sinCargar, disponibles = {}) {
   const faltan = (asistente.lee || []).filter((k) => sinCargar.includes(k));
   if (faltan.length) {

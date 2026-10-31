@@ -256,6 +256,11 @@ console.log('\n── 8. Fase 2.1 · Motor honesto: ni otra fecha, ni otra entid
   ok(mencionSinResolver(normalizarMensaje('record de remo').tokens, new Set([0])).texto === 'remo', 'A2 · mencionSinResolver encuentra lo nombrado tras «de»');
   ok(mencionSinResolver(normalizarMensaje('como voy en general').tokens) === null, 'A2 · negativa: «en general» no es el nombre de nada');
   ok(mencionSinResolver(normalizarMensaje('horas de sueno').tokens, new Set([0, 2])) === null, 'A2 · negativa: lo ya entendido (un concepto) no es una mención');
+  /* ⟦Paso 4 de la recuperación⟧ El texto original de `noEncontrada` apareció en una lectura de las 11:20:37: sin ningún
+     elemento de ese tipo, además de no encontrarlo dice que todavía no tiene ninguno. La reconstrucción no lo decía. */
+  const sinNinguno = responderMensaje({ ...ASIS3, entidades: () => ({ ejercicio: [] }) }, 'como voy en remo', { datos: {}, hoy: HOY, contexto: nuevaConversacion('u2'), ahora: 1000 }).respuestas[0];
+  ok(sinNinguno.tipo === 'respuesta' && /No encuentro «remo» entre tus ejercicios\./.test(textoDeRespuesta(sinNinguno)) && /Todavía no tienes ningún ejercicio con datos\./.test(textoDeRespuesta(sinNinguno)),
+    'A2 · sin ningún ejercicio: no lo encuentra y dice que todavía no tiene ninguno (no ofrece botones vacíos)');
 
   /* A3 — una capacidad que no va por fechas lo dice si le dan una. */
   nueva3();
@@ -274,6 +279,10 @@ console.log('\n── 8. Fase 2.1 · Motor honesto: ni otra fecha, ni otra entid
   ok(et3(r)[0] === `noche:${HOY}..${HOY}:-` && /No he entendido «ayet» como una fecha/.test(notas3(r[0])), 'A7 · «ayet» no se adivina: contesta sobre hoy y lo dice');
   ok(palabrasParecidasAFecha(normalizarMensaje('que tal la semana').tokens).length === 0, 'A7 · negativa: una fecha bien escrita no es una errata');
   ok(palabrasParecidasAFecha(normalizarMensaje('hay mas partes').tokens).length === 0, 'A7 · negativa: «hay», «mas» y «partes» no se toman por fechas');
+  /* ⟦Paso 4 de la recuperación⟧ 🐛 Palabras del propio vocabulario de la aplicación que el detector tomaba por erratas de
+     fecha (a una letra de «anoche», «martes» y «sábado»): «¿qué comí por la noche?» decía «No he entendido «noche»…». */
+  ok(['noche', 'mates', 'sacado', 'sobado'].every((w) => palabrasParecidasAFecha([w]).length === 0), 'A7 · negativa: «noche», «mates», «sacado» y «sobado» son palabras, no erratas de fecha');
+  ok(palabrasParecidasAFecha(['ayet']).length === 1 && palabrasParecidasAFecha(['juebes']).length === 1, 'A7 · …y una errata de verdad se sigue avisando');
   ok(palabrasParecidasAFecha(normalizarMensaje('el sabdo no').tokens).length === 0 && normalizarMensaje('el sabdo').tokens.includes('sabado'), 'A7 · lo que está en la lista ya llega corregido');
   nueva3();
   r = p3('cuanto dormi ayet');
@@ -296,6 +305,13 @@ console.log('\n── 8. Fase 2.1 · Motor honesto: ni otra fecha, ni otra entid
   const DPL = [{ tipo: 'ejercicio', id: 'dpl', nombre: 'Dominadas pronas lastradas' }];
   const una = ent9('como voy en domi', DPL);
   ok(una.estado === 'ambigua' && una.candidatas.length === 1, 'A9 · una sola candidata nombrada solo por el principio de una palabra («domi»): no se da por hecha');
+  /* ⟦Paso 4 de la recuperación⟧ 🐛 La regla reconstruida daba por segura la única candidata aunque el mensaje siguiera
+     nombrando algo más: «racha de leer la biblia» con solo «Leer 30 minutos» contestaba de «Leer 30 minutos». */
+  const L30 = [HAB[0]];
+  ok(ent9('racha de leer la biblia', L30).estado === 'ambigua' && ent9('racha de leer la biblia', L30).candidatas.length === 1,
+    'A9 · «leer la biblia» con solo «Leer 30 minutos»: el mensaje nombra algo más («biblia»), así que no se da por hecha');
+  ok(ent9('racha de leer esta semana', L30).estado === 'unica' && ent9('como voy con leer', L30).estado === 'unica',
+    'A9 · …pero «leer» seguido de una fecha o de nada sigue siendo «Leer 30 minutos»');
   ok(ent9('como voy en dominadas', DPL).estado === 'unica' && ent9('como voy en dominadas', DPL).entidad.id === 'dpl', 'A9 · …pero nombrada con una palabra ENTERA de su nombre («dominadas»), aunque sea un tercio del nombre, es ella');
   ok(ent9('bio', [{ tipo: 'asignatura', id: 'b', nombre: 'Biología' }]).estado === 'unica', 'A9 · negativa: el principio de un nombre de UNA palabra («bio» → Biología) sigue siendo ella (como antes)');
   nueva3();
@@ -744,6 +760,34 @@ console.log('\n── 11. Fase 2.3 · B1 · Comparador común: diferencia, porce
   ok(/1 entrenamiento la semana del 12 al 18 de octubre y 0 entrenamientos la semana del 5 al 11 de octubre/.test(textoDeRespuesta(r[0])) && /No calculo un porcentaje: la semana del 5 al 11 de octubre el valor es 0 y no hay de dónde partir\./.test(textoDeRespuesta(r[0])), 'B1 · 15 · «¿y la anterior?» desplaza las dos semanas y el comparador dice la referencia 0 sin porcentaje');
   r = p6('compáralo con lo de antes');
   ok(r[0].capacidad === 'comparacion_que_periodo', 'B1 · 15 · «compáralo con lo de antes» tras comparar sigue preguntando (B0)');
+}
+
+/* ── 12 · Paso 4 de la recuperación: lo que la auditoría de B0–B2 encontró sin prueba ── */
+console.log('\n── 12. Paso 4 · Auditoría de B0–B2: comprobaciones que faltaban ──');
+{
+  /* ⟦Paso 4⟧ Deshaciendo cada parche por separado, dos cambios de B0–B2 no ponían ninguna prueba en rojo. */
+  const ESTA12 = periodoPorDefecto('estaSemana', HOY);
+  const cmp12 = capa('cmp', {
+    senales: { comparar: 5 }, necesita: [['comparar']], periodo: 'ambos', dosPeriodos: true, porDefecto: 'estaSemana', prioridad: 1,
+    ejecutar: (datos, args) => {
+      const a = args.periodo || ESTA12;
+      const b = args.segundoPeriodo || periodoPrevio(a, HOY);
+      return { bloques: [{ tipo: 'texto', texto: `cmp:${a.desde}..${a.hasta}|${b.desde}..${b.hasta}` }], fuente: 'prueba', periodosComparados: [a, b] };
+    },
+  });
+  const pregunta12 = (asis) => { let c = nuevaConversacion('u12'); return (t) => { const r = responderMensaje(asis, t, { datos: {}, hoy: HOY, contexto: c, ahora: 1000 }); c = r.contexto; return r.respuestas; }; };
+  const texto12 = (r) => r.map((x) => { const b = x.bloques.find((y) => y.tipo === 'texto'); return b ? b.texto : x.capacidad; });
+  /* B0 · 006/007 — una comparación (una pareja) no es «el» periodo del que se habla: con otra pregunta, «la semana
+     anterior» no se calcula desde una de las dos en silencio; se pregunta anterior a cuál (diseño de B0·007). */
+  const p12 = pregunta12({ ...ASIS, capacidades: [...ASIS.capacidades, cmp12] });
+  p12('compara la semana pasada con la anterior');
+  const amb12 = p12('media de sueño la semana anterior');
+  ok(amb12[0].capacidad === 'referencia_ambigua' && amb12[0].opciones.map((o) => `${o.plan.periodo.desde}..${o.plan.periodo.hasta}`).join('|') === '2026-10-05..2026-10-11|2026-09-28..2026-10-04',
+    'B0 (006) · tras comparar dos semanas, «la semana anterior» con otra pregunta: «¿anterior a cuál?», un botón por cada semana de la pareja');
+  /* B2 · 029 — sin dos periodos que comparar, «¿qué quieres comparar?» sigue diciendo que la diferencia no se calcula. */
+  const r12 = pregunta12(ASIS)('compara esta semana con el 31 de febrero');
+  ok(r12[0].capacidad === 'comparar_que' && /Todavía no calculo la diferencia/.test(textoDeRespuesta(r12[0])),
+    'B2 (029) · con un solo periodo válido, la pregunta de qué comparar avisa de que la diferencia no se calcula');
 }
 
 console.log(`\n${fallos === 0 ? '\x1b[32m' : '\x1b[31m'}${total - fallos}/${total} comprobaciones\x1b[0m`);

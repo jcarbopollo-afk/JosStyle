@@ -933,6 +933,11 @@ console.log('\n── 13. Fase 2.1 · Fechas, entidades y preguntas honestas (lo
   ok(caps(r) === 'comidas' && /Tostadas/.test(txt(r)) && !/Avena/.test(txt(r)), 'A7 · Nutrición: «qué comí ayr» → lo de ayer');
   r = charla(ASISTENTE_SUENO)('cuanto dormi ayet');
   ok(caps(r) === 'noche' && /No he entendido «ayet» como una fecha/.test(notas(r[0])) && txt(r).includes(textoDuracion(SUENO[0])), 'A7 · Sueño: «ayet» no se adivina: contesta hoy y lo dice');
+  /* ⟦Paso 4 de la recuperación⟧ 🐛 «noche» se tomaba por una errata de «anoche». */
+  r = charla(ASISTENTE_NUTRICION)('¿Qué comí por la noche?');
+  ok(caps(r) === 'comidas' && !/No he entendido/.test(notas(r[0])), 'A7 · Nutrición: «por la noche» no es una fecha mal escrita');
+  r = charla(ASISTENTE_PRODUCTIVIDAD)('¿Cuántos pomodoros hice por la noche?');
+  ok(caps(r) === 'pomodoro' && !/No he entendido/.test(notas(r[0])), 'A7 · Productividad: igual');
   r = charla(ASISTENTE_PRODUCTIVIDAD)('cuantos pomodoros hice el mes pasado');
   ok(caps(r) === 'pomodoro' && !notas(r[0]).includes('No he entendido'), 'A7 · negativa: «mes» y «pasado» no son erratas de nada');
 
@@ -955,6 +960,9 @@ console.log('\n── 13. Fase 2.1 · Fechas, entidades y preguntas honestas (lo
   ok(caps(r) === 'racha' && /Leer 30 minutos/.test(txt(r)) && !/Leer la Biblia/.test(txt(r)), 'A9 · …y con el otro nombre entero, el otro');
   r = charla(ASISTENTE_PRODUCTIVIDAD)('¿Cuál es mi racha de leer?');
   ok(caps(r) === 'racha' && /Leer 30 minutos/.test(txt(r)), 'A9 · con un solo hábito que se llame así, «leer» es él (no se pregunta por preguntar)');
+  /* ⟦Paso 4 de la recuperación⟧ 🐛 Con un solo hábito «Leer 30 minutos», «racha de leer la biblia» contestaba de él sin decirlo. */
+  r = charla(ASISTENTE_PRODUCTIVIDAD)('¿Cuál es mi racha de leer la biblia?');
+  ok(r[0].tipo === 'aclaracion' && /^¿Te refieres a «Leer 30 minutos»\?/.test(textoDeRespuesta(r[0])) && !/Llevas/.test(txt(r)), 'A9 · «racha de leer la biblia» sin ese hábito: pregunta «¿Te refieres a «Leer 30 minutos»?», no contesta de él por su cuenta');
   r = charla(ASISTENTE_ESTUDIOS)('¿Cuándo es el examen de física?');
   ok(caps(r) === 'cuando' && /Física y Química/.test(txt(r)), 'A9 · Estudios: «física» es una palabra entera de «Física y Química»: es ella');
 
@@ -1357,6 +1365,30 @@ console.log('\n── 16. Fase 2.3 · B2 · Métricas de Fitness y Productividad
   const malas = corpus16.filter((x) => incumpleHonestidad(textoDeRespuesta(x)).length || /\b(mejor|peor)\b/i.test(textoDeRespuesta(x).replace(/no dice si es bueno o malo/g, '')));
   if (malas.length) console.log('      ', malas.map((x) => `[${x.capacidad}] ${textoDeRespuesta(x)} → ${incumpleHonestidad(textoDeRespuesta(x)).join(',')}`).join('\n       '));
   ok(!malas.length, 'B2 · nada incumple las palabras prohibidas, y nunca «mejor» ni «peor»');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   17 · Paso 4 de la recuperación: lo que la auditoría de B0–B2 encontró sin prueba
+   ══════════════════════════════════════════════════════════════════════════ */
+console.log('\n── 17. Paso 4 · Auditoría de B0–B2: comprobaciones que faltaban ──');
+{
+  /* B0 · 002 — comparar un día consigo mismo no es una comparación: no se guarda como pareja. */
+  let ctx17 = nuevaConversacion('u-prueba');
+  const r17 = responderMensaje(ASISTENTE_NUTRICION, 'Compara hoy con hoy', { datos: datosParaAsistente(ASISTENTE_NUTRICION, ESTADO), hoy: HOY, contexto: ctx17, ajenos: DOMINIOS_AJENOS, ahora: 1000 });
+  ctx17 = r17.contexto;
+  const it17 = ctx17.ultimaRespuesta && ctx17.ultimaRespuesta.items && ctx17.ultimaRespuesta.items[0];
+  ok(caps(r17.respuestas) === 'comparar_dias' && /mismo día/.test(txt(r17.respuestas)) && !!it17 && !it17.segundo,
+    'B0 (002) · «compara hoy con hoy»: dice que es el mismo día y no lo guarda como una pareja que desplazar');
+  /* B0 · 006 — después de comparar dos semanas, la pareja no es «el periodo» del que se habla: «compáralo con el mes
+     pasado» no toma en silencio una de las dos (esta semana) para compararla con septiembre. */
+  let ctxF = nuevaConversacion('u-prueba');
+  const f17 = (m) => { const r = responderMensaje(ASISTENTE_FITNESS, m, { datos: datosParaAsistente(ASISTENTE_FITNESS, ESTADO), hoy: HOY, contexto: ctxF, ajenos: DOMINIOS_AJENOS, ahora: 1000 }); ctxF = r.contexto; return r.respuestas; };
+  f17('¿Cuántos entrenamientos llevo esta semana?');
+  f17('Compáralo con la semana pasada');
+  const rf17 = f17('Compáralo con el mes pasado');
+  const itF = ctxF.ultimaRespuesta && ctxF.ultimaRespuesta.items[0];
+  ok(caps(rf17) === 'cuantos' && /septiembre/.test(txt(rf17)) && !/No puedo comparar/.test(txt(rf17)) && !!itF && itF.periodo.desde === '2026-09-01' && !itF.segundo,
+    'B0 (006) · tras comparar dos semanas, «compáralo con el mes pasado» no compara septiembre con una de las dos semanas elegida por su cuenta');
 }
 
 console.log(`\n${fallos === 0 ? '\x1b[32m' : '\x1b[31m'}${total - fallos}/${total} comprobaciones\x1b[0m`);
