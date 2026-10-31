@@ -60,7 +60,7 @@ export const CAPAS_FITNESS = Object.freeze([
     que: 'Lo que decide: una sola fuente por pregunta (apartados 8-13).',
     archivos: [
       'src/lib/rangos.js', 'src/lib/motorRangos.js', 'src/lib/progresion.js', 'src/lib/objetivosProgreso.js',
-      'src/lib/tuPlan.js', 'src/lib/planificacionSemanal.js', 'src/lib/actividadEntrenamiento.js',
+      'src/lib/tuPlan.js', 'src/lib/completarEntrenamiento.js', 'src/lib/planificacionSemanal.js', 'src/lib/actividadEntrenamiento.js',
       'src/lib/sustitucion.js', 'src/lib/clasificacion.js', 'src/lib/colaClasificacion.js',
       'src/lib/constructor.js', 'src/lib/plantillas.js', 'src/lib/entrenamiento.js', 'src/lib/finalizacion.js',
     ],
@@ -113,7 +113,7 @@ export const CAPAS_FITNESS = Object.freeze([
       'src/components/siguienteRango.jsx', 'src/components/explicacionRango.jsx', 'src/components/contribucionMuscular.jsx',
       'src/components/resumenRangos.jsx', 'src/components/areaSegura.jsx', 'src/components/actividadEntrenamiento.jsx',
       'src/components/planificacionSemanal.jsx', 'src/components/colaClasificacion.jsx', 'src/components/estadosFitness.jsx',
-      'src/components/piezasFitness.jsx', 'src/components/iconosFitness.jsx', 'src/components/diagnosticoCatalogo.jsx',
+      'src/components/piezasFitness.jsx', 'src/components/completarEntrenamiento.jsx', 'src/components/iconosFitness.jsx', 'src/components/diagnosticoCatalogo.jsx',
     ],
   },
 ]);

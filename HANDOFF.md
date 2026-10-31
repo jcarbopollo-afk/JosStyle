@@ -2,6 +2,13 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (2026-10-31 — Chatbots, Fase 2.x integrada en la rama local `claude/chatbots-fase-2x`; sin push, sin `main`, sin despliegue y sin cambio de versión):**
+> Las Fases 2.1 y 2.2, B0, B1, B2, las correcciones del paso 4 de la recuperación y E2 están en la rama local
+> `claude/chatbots-fase-2x`, creada desde `14f225c` (la rama `claude/jc-fitness-spec-analysis-oe8iyz`, con C, H-25 y «Completar
+> entrenamiento»), en seis commits, uno por etapa. `main` sigue en `ea7bc4a`. Publicar la rama y llevarla a `main` lo decide
+> Josué. Pendiente: los dos riesgos abiertos de B0, B3–B7 y la línea base del corpus. Detalle:
+> `docs/15_asistentes/ESPECIFICACION_FASE_2X.md`, `CORPUS_FASE_2X.md` y `PROCEDENCIA_PASO15.md`.
+>
 > **📅 ACTUALIZACIÓN (v3.161.3 — Sueño: datos incompletos sin inventar y «Analizar mi sueño» como conversación; sin commit, push ni despliegue):**
 > La siesta sin contestar ya no es «no» (`null`), las horas ya no vienen puestas ni se rellenan (una noche sin las dos horas no
 > tiene duración y no entra en las cuentas de duración, lo demás sí), «la última noche» es la de fecha más reciente en la lista,

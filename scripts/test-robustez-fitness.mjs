@@ -250,7 +250,8 @@ console.log('\n── 6 · El teclado en los diálogos (apartados 36-38) ──'
   ok(/pila\[pila\.length - 1\] !== token/.test(hook),
     '⚠️ …y con dos abiertos solo manda el de arriba: un Escape no los cierra todos');
   const velos = Object.entries(archivos).filter(([, src]) => etiquetasJsx(src, 'div').some(({ tag }) => /className=(?:"|\{`)fixed inset-0\b/.test(tag)));
-  ok(velos.length === 7, `Las hojas de Fitness están en ${velos.length} archivos (ocho hojas: dos en la clasificación)`);
+  ok(velos.length === 8 && velos.some(([p]) => p === 'src/components/completarEntrenamiento.jsx'),
+    `Las hojas de Fitness están en ${velos.length} archivos (nueve hojas: dos en la clasificación, y desde el 2026-10-26 la de «Completar entrenamiento»)`);
   ok(velos.every(([, src]) => /useDialogoAccesible\(/.test(src)), '🚨 …y todos usan el diálogo accesible');
   ok(/role="dialog"[\s\S]{0,40}aria-modal="true"[\s\S]{0,40}aria-label="Historial del rango"/.test(leer('src/components/historialRango.jsx')),
     '🐛 El historial de un rango era la única hoja sin `role`, sin `aria-modal` y sin nombre');

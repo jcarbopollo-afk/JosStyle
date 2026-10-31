@@ -53,6 +53,7 @@ import PlantillasView from './PlantillasView';
 import BibliotecaPlanesView from './BibliotecaPlanesView';
 /* FIT F6 — «Tu Plan», el centro de control, renderizado entero aquí dentro. */
 import TuPlanView from './TuPlanView';
+import { CompletarEntrenamiento } from '../components/completarEntrenamiento';
 /* FIT F7 — el entrenamiento en vivo, que es PANTALLA ENTERA (como el
    constructor): con las pestañas debajo se podría uno ir a Rangos en mitad de
    una serie, que es la puerta de atrás por la que se pierde el trabajo. */
@@ -322,6 +323,21 @@ export function AreaEntrenamiento({
   const [dentro, setDentro] = useState((arranque && arranque.dentro) || null);
   /* 🔓 FIT F32 — la sesión hecha que se ha abierto desde Tu Plan. */
   const [sesionAbierta, setSesionAbierta] = useState((arranque && arranque.sesionAbierta) || null);
+  /* 2026-10-26 — «Completar entrenamiento»: la hoja abierta y con qué viene elegido
+     (`{ indiceDelPlan }` o `{ plantillaId }`, y el día si se abrió desde uno). Estado de pantalla. */
+  const [completar, setCompletar] = useState(null);
+  /* ⚠️ El guardado no lleva aviso de éxito: la propia hoja dice que ha quedado registrado (F37,
+     apartado 25). Si falla, el aviso de siempre sale igual y la hoja lo dice. */
+  const hojaCompletar = completar && onGuardarFitness ? (
+    <CompletarEntrenamiento
+      fitness={fitness || {}}
+      preseleccion={completar}
+      accent={accent}
+      onGuardar={(next) => onGuardarFitness(next)}
+      onCerrar={() => setCompletar(null)}
+    />
+  ) : null;
+  const abrirCompletar = onGuardarFitness ? (preseleccion = {}) => setCompletar(preseleccion || {}) : null;
   /* 🔓 FIT F43 — de qué ficha de la biblioteca sale cada puerta, para volver a
      ella: el progreso, un objetivo, uno nuevo o su clasificación. */
   const desdeFicha = (desde) => {
@@ -402,6 +418,7 @@ export function AreaEntrenamiento({
       }
     };
     return (
+      <>
       <HistorialView
         fitness={fitness || {}}
         propios={propios}
@@ -409,6 +426,7 @@ export function AreaEntrenamiento({
         onVolver={historialVuelveA ? () => onVolverAArea(historialVuelveA.area) : () => setDentro(null)}
         volverTexto={historialVuelveA ? historialVuelveA.texto : 'Entrenamiento'}
         onEmpezar={empezarDesdeHistorial}
+        onCompletar={abrirCompletar ? () => abrirCompletar({}) : null}
         onEliminar={onEliminarSesion}
         sesionInicial={(arranque && arranque.sesion) || null}
         /* 🔓 FIT F43 — desde una sesión al progreso de un ejercicio, y volver a
@@ -419,6 +437,8 @@ export function AreaEntrenamiento({
           texto: (desde && desde.nombre) || 'Historial',
         }) : null}
       />
+      {hojaCompletar}
+      </>
     );
   }
 
@@ -487,6 +507,7 @@ export function AreaEntrenamiento({
      duplicar y eliminar. */
   if (dentro === 'plantillas') {
     return (
+      <>
       <PlantillasView
         plantillas={plantillas}
         propios={propios}
@@ -500,7 +521,10 @@ export function AreaEntrenamiento({
         } : null}
         onEliminar={onEliminarPlantilla ? (p) => onEliminarPlantilla(p.id) : null}
         onEmpezar={onEmpezarSesion ? empezarDePlantilla : null}
+        onCompletar={abrirCompletar ? (p) => abrirCompletar({ plantillaId: p && p.id }) : null}
       />
+      {hojaCompletar}
+      </>
     );
   }
 
@@ -596,6 +620,7 @@ export function AreaEntrenamiento({
         onCrear={onAbrirConstructor ? () => onAbrirConstructor(null) : null}
         onQuitar={onGuardarFitness ? () => onGuardarFitness(quitarPlanActivo(fitness || {})) : null}
         onEmpezar={onEmpezarSesion ? empezarDelPlan : null}
+        onCompletar={abrirCompletar ? (indice, fecha) => abrirCompletar({ indiceDelPlan: indice, fecha: fecha || null }) : null}
         onVerSesion={(id) => setSesionAbierta(id)}
         /* 🔓 FIT F32, apartado 23 — «Editar plan»: una plantilla suya se abre en
            el constructor; un plan de la biblioteca no se edita, así que se
@@ -652,6 +677,7 @@ export function AreaEntrenamiento({
           ))}
         </div>
       </div>
+      {hojaCompletar}
     </div>
   );
 }

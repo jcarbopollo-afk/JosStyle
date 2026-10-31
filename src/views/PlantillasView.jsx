@@ -20,7 +20,7 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  ArrowLeft, Search, X, MoreHorizontal, Pencil, Copy, Trash2, Plus, ArrowUpDown, Play,
+  ArrowLeft, Search, X, MoreHorizontal, Pencil, Copy, Trash2, Plus, ArrowUpDown, Play, CheckCircle2,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { PastillaFiltro as Pastilla } from '../components/piezasFitness';
@@ -152,7 +152,7 @@ export function ConfirmarEliminarPlantilla({ plantilla, onCancelar, onEliminar }
    de verdad**, así que el botón aparece: era una espera, no una exclusión. */
 export function DetallePlantilla({
   plantilla, propios = [], accent, hoy, onVolver, onEditar, onDuplicar, onEliminar,
-  onEmpezar = null,
+  onEmpezar = null, onCompletar = null,
 }) {
   const ficha = fichaDePlantilla(plantilla, propios, hoy);
   if (!ficha) {
@@ -201,6 +201,8 @@ export function DetallePlantilla({
               Empezar entrenamiento
             </PrimaryButton>
           )}
+          {/* 2026-10-26 — o apuntarla como hecha, si ya la hizo fuera de la aplicación. */}
+          {onCompletar && <GhostBtn icon={CheckCircle2} onClick={onCompletar}>Completar entrenamiento</GhostBtn>}
           <GhostBtn icon={Pencil} onClick={onEditar}>Editar</GhostBtn>
           <GhostBtn icon={Copy} onClick={onDuplicar}>Duplicar</GhostBtn>
           <GhostBtn icon={Trash2} onClick={onEliminar}>Eliminar</GhostBtn>
@@ -298,7 +300,7 @@ export function DetallePlantilla({
 export default function PlantillasView({
   plantillas = [], propios = [], accent, hoy,
   onVolver = null, onCrear = null, onEditar = null, onDuplicar = null, onEliminar = null,
-  onEmpezar = null,
+  onEmpezar = null, onCompletar = null,
 }) {
   const [consulta, setConsulta] = useState('');
   const [entorno, setEntorno] = useState(FILTRO_TODOS);
@@ -328,6 +330,7 @@ export default function PlantillasView({
         onDuplicar={() => { onDuplicar && onDuplicar(enPantalla); setAbierta(null); }}
         onEliminar={() => { setBorrando(enPantalla); setAbierta(null); }}
         onEmpezar={onEmpezar && enPantalla ? () => onEmpezar(enPantalla) : null}
+        onCompletar={onCompletar && enPantalla ? () => onCompletar(enPantalla) : null}
       />
     );
   }

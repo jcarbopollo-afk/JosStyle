@@ -359,6 +359,16 @@ import PlantillasView, { TarjetaPlantilla, DetallePlantilla, ConfirmarEliminarPl
 import BibliotecaPlanesView, { TarjetaPlan, DetallePlan, ConfirmarCambioDePlan } from '../src/views/BibliotecaPlanesView.jsx';
 import { CATALOGO_PLANES as PLANES_F5, planPorId as planPorIdF5, usarPlan as usarPlanF5, personalizarPreset as personalizarF5 } from '../src/lib/planes.js';
 import TuPlanView, { SinPlan, PlanPerdido, TarjetaProximo, DescansoHoy, SesionDelDia } from '../src/views/TuPlanView.jsx';
+import { opcionesParaCompletar as opcionesCE, registrarEntrenamientoHecho as registrarCE } from '../src/lib/completarEntrenamiento.js';
+/* Un plan activo con su primer día completado a mano hoy (y lanza si no se puede: un escenario
+   vacío pintaría «bien» sin probar nada). */
+function fitnessCompletadoAManoCE() {
+  const hoyCE = new Date().toLocaleDateString('sv-SE');
+  const f = usarPlanF5({}, 'ppl-estetico', { hoy: hoyCE }).fitness;
+  const r = registrarCE(f, { opcion: opcionesCE(f)[0], fecha: hoyCE, hoy: hoyCE });
+  if (!r.ok) throw new Error(`Escenario de Completar entrenamiento: ${r.mensaje}`);
+  return r.fitness;
+}
 /* FIT F32 — la planificación semanal. ⚠️ `SemanaCompacta` (F6) se retiró: la
    sustituye `TrainingWeekView`, y sus dos casos pasaron a ser de ella. */
 import {
@@ -4372,6 +4382,10 @@ const CASOS = [
   })],
   /* 🔓 FIT F31, apartado 31 — con sesiones esta semana: «Esta semana» sale
      debajo de los días, con la función central de la actividad. */
+  ['TuPlanView (con Completar entrenamiento)', TuPlanView, () => ({
+    fitness: fitnessCompletadoAManoCE(), accent, hoy: HOY,
+    onExplorar: noop, onCrear: noop, onVerPlantillas: noop, onCambiarPlan: noop, onEmpezar: noop, onCompletar: noop, onVerSesion: noop,
+  })],
   ['TuPlanView (con la semana en marcha)', TuPlanView, () => ({
     fitness: fitnessF31(), accent, hoy: HOY_F31,
     onExplorar: noop, onCrear: noop, onVerPlantillas: noop, onCambiarPlan: noop,
@@ -4556,6 +4570,16 @@ const CASOS = [
     ficha: fichaF10(historialF10(fitnessConHistorialF10())[0]), agrupado: false, accent, onAbrir: noop,
   })],
   ['HistorialVacio', HistorialVacio, () => ({ accent, onEmpezar: noop })],
+  /* 2026-10-26 — «Completar entrenamiento»: el vacío también lo ofrece, y una sesión
+     completada a mano se pinta en la lista y en su detalle sin series ni duración. */
+  ['HistorialVacio (con Completar)', HistorialVacio, () => ({ accent, onEmpezar: noop, onCompletar: noop })],
+  ['HistorialView (con uno completado a mano)', HistorialView, () => ({
+    fitness: fitnessCompletadoAManoCE(), propios: [], accent, onVolver: noop, onEmpezar: noop, onCompletar: noop, onEliminar: noop,
+  })],
+  ['DetalleSesionHistorial (completado a mano)', DetalleSesionHistorial, () => {
+    const f = fitnessCompletadoAManoCE();
+    return { detalle: detalleF10(historialF10(f)[0], { fitness: f }), accent, onVolver: noop, onEliminar: noop };
+  }],
   ['EjercicioHistorial', EjercicioHistorial, () => ({
     ejercicio: detalleF10(historialF10(fitnessConHistorialF10())[0]).ejercicios[0], accent, abierto: true, onAlternar: noop,
   })],
@@ -4788,6 +4812,28 @@ for (const [nombre, Componente, props] of CASOS) {
       console.error(`  ✗ ${nombre} (${etiqueta}) → ${e.message}`);
       fallos++;
     }
+  }
+}
+
+/* Fase 2.3 · B0 — dos aclaraciones del MISMO turno siguen vivas: en la hoja ninguno de sus botones sale
+   apagado; las de una pregunta anterior, sí. Se pinta la conversación entera, para que lo que se mire sea
+   el camino de verdad: `contexto.pendiente.aclaraciones` → la hoja → cada botón. */
+{
+  const aclaracion = (id) => ({ id, asistente: 'estudios', capacidad: 'c', tipo: 'aclaracion', bloques: [{ tipo: 'texto', texto: '¿De qué asignatura?' }], fuente: null, confianza: null,
+    opciones: [{ texto: 'Matemáticas', mensaje: 'Matemáticas', origen: id }, { texto: 'Biología', mensaje: 'Biología', origen: id }], acciones: [] });
+  const conv = (vivas) => ({ usuario: 'u', contexto: { ...conversacionVacia('u').contexto, turno: 2, pendiente: vivas.length ? { id: vivas[vivas.length - 1], opciones: [], aclaraciones: vivas.map((id) => ({ id, opciones: [] })) } : null },
+    mensajes: [{ id: 'yo-1', rol: 'yo', texto: 'pregunta vieja' }, { id: 'as-0-0', rol: 'asistente', respuesta: aclaracion('0-0') },
+      { id: 'yo-2', rol: 'yo', texto: '¿Cuándo es el examen y qué temas me quedan?' }, { id: 'as-1-0', rol: 'asistente', respuesta: aclaracion('1-0') }, { id: 'as-1-1', rol: 'asistente', respuesta: aclaracion('1-1') }] });
+  const apagados = (html) => (html.match(/<button[^>]*disabled=""/g) || []).length;
+  const pinta = (vivas) => renderToString(React.createElement(ConversacionAsistente, { asistente: ASISTENTES.find((a) => a.id === 'estudios'), conversacion: conv(vivas), onEnviar: noop, onNavegar: noop, accent }));
+  const casos = [
+    ['las dos del mismo turno vivas: solo se apagan los de la pregunta anterior', pinta(['1-0', '1-1']), 2],
+    ['solo una viva (como antes de B0): se apagan también los de la otra', pinta(['1-1']), 4],
+    ['ninguna viva: todos apagados', pinta([]), 6],
+  ];
+  for (const [nombre, html, esperado] of casos) {
+    if (apagados(html) === esperado) console.log(`  ✓ Hoja del asistente · B0.3 · ${nombre}`);
+    else { console.error(`  ✗ Hoja del asistente · B0.3 · ${nombre} → ${apagados(html)} botones apagados, se esperaban ${esperado}`); fallos++; }
   }
 }
 

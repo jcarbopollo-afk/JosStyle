@@ -442,17 +442,24 @@ function comparar(datos, { periodo, segundoPeriodo, origenPeriodo, periodoAnteri
   } else { a = estaSemana; b = semanaPasada; }
   const ea = a.etiqueta || etiquetaDeRango(a.desde, a.hasta, hoy);
   const eb = b.etiqueta || etiquetaDeRango(b.desde, b.hasta, hoy);
+  /* 🐛 Fase 2.3 · B0 — lo comparado son DOS periodos, y así se devuelven (`periodosComparados`). Antes se
+     devolvía su unión como un solo periodo (v3.161.3), y «compáralo con lo de antes» o «¿y la anterior?»
+     trabajaban sobre un bloque de 12 días que nadie había pedido, o comparaban dos periodos solapados. */
+  const periodosComparados = [
+    { desde: a.desde, hasta: a.hasta, tipo: a.desde === a.hasta ? 'dia' : 'rango', etiqueta: ea },
+    { desde: b.desde, hasta: b.hasta, tipo: b.desde === b.hasta ? 'dia' : 'rango', etiqueta: eb },
+  ];
   const pa = delPeriodo(noches, a);
   const pb = delPeriodo(noches, b);
   if (!pa.registros.length || !pb.registros.length) {
     const falta = !pa.registros.length ? ea : eb;
-    return { sinDatos: true, bloques: [bTexto(`No puedo comparar: ${falta} no tiene ninguna noche registrada.`)], fuente: 'Sueño · tus registros' };
+    return { sinDatos: true, bloques: [bTexto(`No puedo comparar: ${falta} no tiene ninguna noche registrada.`)], fuente: 'Sueño · tus registros', periodosComparados };
   }
   const ca = pa.registros.filter(tieneDuracion);
   const cb = pb.registros.filter(tieneDuracion);
   if (!ca.length || !cb.length) {
     const falta = !ca.length ? ea : eb;
-    return { sinDatos: true, bloques: [bTexto(`No puedo comparar: ${falta} no tiene ninguna noche con las dos horas, así que no sé cuánto dormiste.`)], fuente: 'Sueño · tus registros' };
+    return { sinDatos: true, bloques: [bTexto(`No puedo comparar: ${falta} no tiene ninguna noche con las dos horas, así que no sé cuánto dormiste.`)], fuente: 'Sueño · tus registros', periodosComparados };
   }
   const solapan = a.desde <= b.hasta && b.desde <= a.hasta;
   const ma = mediaDeMinutos(ca);
@@ -463,12 +470,9 @@ function comparar(datos, { periodo, segundoPeriodo, origenPeriodo, periodoAnteri
     : `${mayuscula(ea)} has dormido de media ${textoMinutos(Math.abs(dif))} ${dif > 0 ? 'más' : 'menos'} que ${eb}.`;
   const pocos = ca.length < 2 || cb.length < 2;
   const sinHoras = pa.registros.length - ca.length + pb.registros.length - cb.length;
-  /* v3.161.3 — lo que se ha comparado son LOS DOS periodos: la siguiente pregunta («¿qué noches no tienen
-     datos completos?») mira los dos, no solo el que vino en el mensaje. */
-  const periodoUsado = { desde: a.desde < b.desde ? a.desde : b.desde, hasta: a.hasta > b.hasta ? a.hasta : b.hasta, tipo: 'rango' };
   return {
     confianza: pocos ? 'pocos_datos' : 'normal',
-    periodoUsado,
+    periodosComparados,
     bloques: [
       bTexto(frase),
       bCifra(mayuscula(ea), minutosTexto(ma), 'calculo', `media de ${plural(ca.length, 'noche', 'noches')} con las dos horas`),
@@ -627,6 +631,7 @@ function fiabilidad(datos, { periodo, origenPeriodo, hoy }) {
    El registro del asistente
    ══════════════════════════════════════════════════════════════════════════ */
 
+/* ⟦Procedencia · paso 15⟧ P7: el «=a medias» del léxico `incompleto` es EDITADO (paso 2); del archivo, ORIGINAL VERIFICADO lo leído antes de B y lo de B0, PROVISIONAL el resto. Ver PROCEDENCIA_PASO15.md. */
 export const ASISTENTE_SUENO = {
   id: 'sueno',
   modulo: 'sueno',
@@ -648,7 +653,7 @@ export const ASISTENTE_SUENO = {
     siesta: ['siesta', 'siestas'],
     habitual: ['duermo', '=suelo dormir', 'normalmente', 'ultimamente', 'estos dias', 'por lo general'],
     ultimas: ['ultimas noches', 'mis ultimas noches', 'ultimas noches registradas', 'ultimos registros', 'analiza*', 'analisis', 'analizar mi sueno', 'analizame', 'ultimamente'],
-    incompleto: ['incomplet*', 'datos completos', 'completas', 'sin completar', 'a medias', 'sin horas', 'sin hora', 'falta la hora', 'faltan horas', 'faltan datos', 'les falta', 'no tienen datos', 'sin contestar', 'no conteste'],
+    incompleto: ['incomplet*', 'datos completos', 'completas', 'sin completar', '=a medias', 'sin horas', 'sin hora', 'falta la hora', 'faltan horas', 'faltan datos', 'les falta', 'no tienen datos', 'sin contestar', 'no conteste'],
     fiable: ['fiable', 'fiables', 'fiabilidad', '=fiarme', '=fiar', 'de confianza', 'precisa', 'preciso', 'limitacion*', 'no puedes calcular', 'no puedes sacar', 'no puedes darme', 'pocos datos', 'suficientes datos', 'datos suficientes', 'te faltan datos'],
     registro: ['registr*', 'apuntad*', 'cuantas noches', 'sin registrar', 'huecos', 'dias sin', 'olvide apuntar', 'tengo apuntad*'],
   },

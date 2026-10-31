@@ -1,5 +1,120 @@
 # CHANGELOG.md
 
+## Sin versión — Chatbots, Fase 2.x (2.1, 2.2, B0, B1, B2, paso 4 y E2) integrada en la rama local `claude/chatbots-fase-2x` (2026-10-31)
+
+> Integración controlada autorizada por Josué, en una rama **nueva y local** creada desde `14f225c` (nunca desde `main`), en seis
+> commits, uno por etapa, cada uno con sus comprobaciones en verde. **Sin push, sin `main`, sin despliegue y sin cambio de
+> versión.** Especificación: `docs/15_asistentes/ESPECIFICACION_FASE_2X.md`; corpus: `CORPUS_FASE_2X.md`.
+
+### ✨ Qué entra
+- **2.1** — motor honesto: A1 (una fecha no pasa a otra pregunta de otro tiempo), A2 (una entidad que no existe se dice y no se
+  sustituye), A3 (fecha que no se puede filtrar), A7 (erratas de fecha de una lista cerrada), A8 (duplicadas) y A9 (una opción
+  solo si la nombra una palabra entera).
+- **2.2** — contexto: «la anterior», unidades sobreentendidas, continuidad con solo la entidad, comparar sin tema (P1–P7).
+- **B0** — una comparación se guarda como pareja de periodos; «¿y la anterior?» mueve los dos (opción A); varias aclaraciones del
+  mismo turno siguen vivas, cada botón con su origen. Tras comparar, una pregunta de un solo periodo pregunta de cuál de los dos
+  (opción 4a, sin botón «los dos juntos»).
+- **B1** — comparador común de métricas: diferencia, porcentaje solo con referencia > 0 (D1), totales con fechas y días (D3), sin
+  datos no es cero, lenguaje neutral.
+- **B2** — métricas de Fitness (`entrenamientos`, `dias_entreno`) y Productividad (`pomodoros`, `enfoque`).
+- **Correcciones del paso 4** — texto original de `noEncontrada` y compañía; A2/A9 con «Leer la Biblia»; A7 sin falsas erratas.
+- **E2** — clasificar las menciones: entidad, desconocida, circunstancia («en casa», «con mi amigo») o no filtrable; una
+  desconocida nunca se hereda.
+- **Pruebas** de regresión de entidades (paso 15), de las cinco ramas internas (paso 18) y de las cuatro comprobaciones de B0 con
+  Sueño (paso 19).
+- **Procedencia**: `PROCEDENCIA_PASO15.md` y las 14 marcas `⟦Procedencia · paso 15⟧` (aceptadas por Josué), actualizado con los
+  pasos 18 y 19 y los rangos desplazados.
+
+### 🧪 Comprobado en cada etapa (las tres suites del chat, `test-imports`, build y banco de renderizado)
+| Etapa | Commit | Motor | Asistentes | Integración |
+|---|---|---|---|---|
+| 2.1/2.2 | `a88534c` | 188 | 294 | 136 |
+| B0 | `9e90439` | 239 | 323 | 136 |
+| B1 | `097f260` | 282 | 325 | 136 |
+| B2 | `08885a9` | 282 | 357 | 136 |
+| Paso 4 | `2fb6f06` | 289 | 362 | 136 |
+| Paso 15 + E2 + pasos 18 y 19 + documentación | (este) | 363 | 441 | 136 |
+
+En todas: C (`14f225c`), H-25 y «Completar entrenamiento» (`4531909`) intactos; sin los arreglos A y B del paso 5.
+
+**`verificar.sh` completo antes del último commit:** «TODO CORRECTO», salida 0 — build sin errores, 4163 casos de renderizado,
+3854 comprobaciones en Chromium, «Completar entrenamiento» 64 y las suites del chat 363 / 441 / 136.
+
+### ⚠️ Lo que sigue abierto
+- Los **dos riesgos de B0**: «lo de antes» tras comparar y preguntar por otro periodo, y «¿y el mes anterior?» tras comparar
+  semanas. Fijados como comportamiento actual en las pruebas del paso 19.
+- **B3–B7** sin empezar (Nutrición, Estudios, Sueño en el comparador, extras —D2 incluida— y cierre con el corpus).
+- El **corpus** de 130 preguntas: preguntas originales recuperadas; su línea base es reconstruida y no es todavía una prueba
+  permanente.
+- Las **etapas 1–5** son intermedias: no deben llegar solas a `main`.
+- Sin probar en el iPhone: la hoja del chat, los botones y VoiceOver.
+
+## Sin versión — Sueño: una comparación se recuerda como dos periodos, no como su unión (B0, paso 19, 2026-10-31)
+
+> Auditoría y cierre del cambio B0 en las comparaciones de Sueño. **Sin cambiar la versión, sin commit, push ni despliegue.**
+> Decisión de Josué: B0 se conserva tal cual (opción 4a, se pregunta de cuál de los dos periodos, sin botón «los dos juntos»), y
+> «¿y el mes anterior?» queda como cuestión funcional aparte. Detalle en `docs/15_asistentes/ESPECIFICACION_CHATBOTS.md` §20.4
+> (punto 5) y §20.5.
+
+### 🐛 Corregido (B0)
+- `comparar` (`asistenteSueno.js`) devolvía `periodoUsado` = los dos periodos juntos, y el núcleo lo guardaba como periodo de la
+  conversación. Lo que seguía contestaba sobre ese bloque: «¿y la anterior?» → «los 12 días anteriores» (o «los 53» tras comparar
+  una semana con un mes), «compáralo con lo de antes» → dos periodos solapados, «¿y la calidad?» → del 12 al 23 sin avisar.
+- Ahora devuelve `periodosComparados` (los dos) y `recordar` (`motorConversacion.js`) guarda la comparación como pareja sin tocar
+  `ctx.periodo` ni `periodoAnterior`: una pregunta de un solo periodo pregunta de cuál de los dos (`comparacion_que_periodo`),
+  «¿y la anterior?» mueve los dos un paso atrás o, con unidades distintas, pregunta (`referencia_pareja`). La primera respuesta
+  de cualquier comparación es la misma que antes.
+
+### 🧪 Comprobado (sonda fuera del proyecto, con el asistente real de Sueño)
+- Al caducar la pareja (6 turnos o 30 minutos), el periodo de antes de la comparación también ha caducado: sale el de por defecto.
+- «¿Y respecto a la semana pasada?» tras comparar: esta semana con la pasada. «¿Y el mes anterior?»: esta semana con septiembre
+  tras comparar semanas, septiembre con agosto tras comparar meses.
+- Esta semana con el mes pasado, el mes pasado con esta semana y ayer con la semana pasada → «¿y la anterior?» →
+  `referencia_pareja`, y su botón de ejemplo funciona.
+- Botones de origen: cada botón contesta su periodo; uno de una pregunta ya contestada o superada da `opcion_caducada`; con dos
+  aclaraciones en el mismo turno cada botón va a la suya y la otra sigue viva; también se contesta escribiendo.
+- `test-motor-conversacion` 363/363, `test-asistentes-chat` 402/402, `test-integracion-chatbots` 136/136, sin cambios de código.
+- **Ya son pruebas permanentes**: un bloque «Paso 19» al final de la sección 15 de `scripts/test-asistentes-chat.mjs` (39
+  comprobaciones, 402 → 441) con el asistente de Sueño de verdad. Se ponen rojas si se rompe B0 a propósito (cinco mutaciones en
+  una copia desechable: sin pareja, el límite de turnos, una aclaración contestada que sigue viva, unidades distintas que se
+  desplazan y una comparación que pisa `ctx.periodo`).
+
+### ⚠️ Pendiente
+- Tras comparar y preguntar por otro periodo («¿cuánto dormí ayer?»), «compáralo con lo de antes» usa el periodo de antes de la
+  comparación (B0 no lo toca), no la comparación. No solapa (antes: ayer contra «del 12 al 23»), pero puede no ser lo que quería.
+- «¿Y el mes anterior?» después de comparar semanas: lo decide Josué.
+
+## Sin versión — Fitness: «Completar entrenamiento» (2026-10-26)
+
+> Ciclo de corrección de Fitness que pidió Josué: al lado de «Empezar entrenamiento», **«Completar entrenamiento»** para apuntar
+> uno que ya hizo fuera de la aplicación. **Sin cambiar la versión, solo en la rama de trabajo** (sin `main`, merge ni despliegue).
+
+### ✨ Nuevo
+- **«Completar entrenamiento»** en Tu Plan (la tarjeta del próximo y el día elegido, solo si es hoy o un día pasado), en el
+  detalle de una plantilla y en el Historial (también vacío). Se elige el entrenamiento (viene elegido el de donde se abrió), el
+  día (hoy por defecto; uno pasado sí, uno futuro no), se confirma y se guarda como completado **en su fecha real**.
+  Lógica en `src/lib/completarEntrenamiento.js`, la hoja en `src/components/completarEntrenamiento.jsx`.
+- 🚨 **Registra que lo hizo, no cómo**: la sesión no lleva series, pesos, tiempos ni marcas (`origen.ejercicios` vacío, sin
+  inicio ni fin) y lleva `registradaAMano: true` (campo nuevo de `crearWorkoutSession`, regla 5). El historial dice
+  «Completado sin series registradas» y su detalle explica que no cuenta para el progreso ni las marcas.
+- Cuenta donde cuentan los entrenamientos completados: el Historial, la actividad de Progreso, la semana de Tu Plan
+  («Completado», enlazado por ids con su día) y los días con entrenamiento de fuera de Fitness. **Las rachas no cambian**: la
+  de entrenamiento se sigue marcando en Rachas u Hoy.
+- 🚨 **Duplicados**: el mismo entrenamiento (mismo plan y día del plan, o la misma plantilla) el mismo día se bloquea y se dice,
+  y también si está empezado sin terminar; dos entrenamientos distintos el mismo día, sí.
+
+### ⚠️ Limitaciones
+- El Calendario general no enseña las sesiones de Fitness (ni las de antes): se ven en el calendario de actividad de Progreso.
+- Sin probar en el iPhone: el selector de fecha nativo y VoiceOver en la hoja.
+
+### 🧪 Pruebas
+- `scripts/test-completar-entrenamiento.mjs` (64 comprobaciones, en `verificar.sh`), cuatro casos del banco de renderizado y la
+  sección «COMPLETAR ENTRENAMIENTO» del recorrido de Chromium. `test-robustez-fitness` cuenta ocho archivos con hoja.
+- 🐛 **Una bomba de relojería por la fecha en el recorrido** (no es de esta función, pero salió en su pasada, un lunes): la
+  comprobación del chat de Sueño «¿y la semana pasada?» daba por hecho que las noches sembradas (ayer y anteayer) no caían
+  en la semana pasada, y los lunes y martes sí caen. El asistente estaba bien; ahora lo esperado se calcula de las fechas.
+  Y `test-acabado-fitness` cuenta ocho archivos con `HOJA`.
+
 ## v3.161.3 — Sueño: lo que no se sabe no se inventa, y «Analizar mi sueño» abre una conversación
 
 > Encargo de Josué del 2026-10-24 (*«Corregir definitivamente la interpretación de los datos incompletos del sueño y revisar la

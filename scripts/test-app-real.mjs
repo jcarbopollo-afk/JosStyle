@@ -5884,9 +5884,74 @@ ok(h_chat && h_chat.texto.includes(duraciones_chat[0]) && /23:30 → 07:15/.test
 ok(h_chat && /Sueño · el registro de esa noche/.test(h_chat.texto), '…y dice de dónde sale');
 h_chat = await preguntar_chat('¿y anteayer?', new RegExp(duraciones_chat[1]));
 ok(h_chat && h_chat.texto.includes(duraciones_chat[1]) && /Fatal/.test(h_chat.texto), `🚨 CHAT F2 · seguimiento: «¿y anteayer?» → ${duraciones_chat[1]} y la cara que puso`);
+/* 🐛 H-25 — «¿y la semana pasada?» después de una noche: la pregunta de UN día pasa a su hermana de rango (`siRango`)
+   y contesta la MEDIA de esa semana, nunca la noche de su lunes. Lo esperado se CALCULA de las noches sembradas (ayer y
+   anteayer), del periodo que la propia aplicación llama «la semana pasada» (`interpretarFechas`) y de su media
+   (`mediaDeMinutos`), así que vale cualquier día: un lunes caen las dos en esa semana (media de 2), un martes una (su
+   duración y «no hay media que calcular») y el resto ninguna. La versión del 2026-10-26 esperaba «has dormido de
+   media» con cualquier número de noches y salía roja los martes con el asistente bien.
+   Cada noche se reconoce por su FECHA, escrita como la escribe el asistente (`etiquetaDeDia`, con el mismo «hoy»), y
+   nunca por su duración: dos noches pueden durar lo mismo y «7 h» está dentro de «7 h 45 min». */
 h_chat = await preguntar_chat('¿y la semana pasada?', /semana pasada/);
-ok(h_chat && /No tienes noches registradas la semana pasada/.test(h_chat.texto) && !/terminó el lunes/.test(h_chat.texto.split('¿y la semana pasada?').pop()),
-  '🐛 CHAT F2 · «¿y la semana pasada?» tras una noche → la media de esa semana (sin noches), no la noche de su lunes (H-25)');
+const semana_chat = await page.evaluate(async (sembradas) => {
+  const { interpretarFechas, etiquetaDeDia, fechasDelRango } = await import('/src/lib/fechasConversacion.js');
+  const { mediaDeMinutos } = await import('/src/lib/sueno.js');
+  const { formatearDuracionLarga } = await import('/src/lib/pomodoro.js');
+  const { todayISO } = await import('/src/lib/helpers.js');
+  const hoy = todayISO();
+  const p = interpretarFechas('la semana pasada', hoy)[0];
+  const conHoras = sembradas.filter((r) => r.fecha >= p.desde && r.fecha <= p.hasta && r.horaDormir && r.horaDespertar);
+  const m = conHoras.length >= 2 ? mediaDeMinutos(conHoras) : null;
+  return {
+    desde: p.desde, hasta: p.hasta, etiqueta: p.etiqueta, dias: fechasDelRango(p.desde, p.hasta).length,
+    media: m === null ? null : formatearDuracionLarga(m * 60000), etiquetasDia: sembradas.map((r) => etiquetaDeDia(r.fecha, hoy)),
+  };
+}, almacen.sueno);
+/* Lo que falla de la respuesta (vacío si es la buena). `duraciones[i]` y `semana.etiquetasDia[i]` son de `sembradas[i]`.
+   Las frases se buscan enteras, con su puntuación, porque cada una está dentro de un solo elemento de la hoja. */
+const fallosSemanaPasada_chat = (texto, semana, sembradas, duraciones) => {
+  const fallos = [];
+  const noches = sembradas.map((r, i) => ({ ...r, duracion: duraciones[i], dia: semana.etiquetasDia[i], dentro: r.fecha >= semana.desde && r.fecha <= semana.hasta }));
+  const dentro = noches.filter((r) => r.dentro);
+  const conHoras = dentro.filter((r) => r.horaDormir && r.horaDespertar);
+  const noche = (n, x) => `${n} ${n === 1 ? `noche ${x}` : `noches ${x}s`}`;
+  const terminoEl = (dia) => new RegExp(`terminó ${dia.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=[,.;)]|$)`);
+  let resto = texto;
+  const exige = (frase, motivo) => { if (texto.includes(frase)) resto = resto.split(frase).join(' '); else fallos.push(motivo); };
+  if (!texto.toLowerCase().includes(semana.etiqueta.toLowerCase())) fallos.push(`no nombra el periodo («${semana.etiqueta}»)`);
+  if (/¿Qué día/.test(texto)) fallos.push('pregunta qué día en vez de contestar la semana');
+  if (!dentro.length) {
+    exige(`No tienes noches registradas ${semana.etiqueta}.`, 'no dice que esa semana no tiene noches');
+    /* La nota «La última que tienes es la que terminó …» nombra a propósito una noche de fuera: se permite, pero tiene
+       que ser una de las sembradas. */
+    const ultima = resto.match(/La última que tienes es la que terminó ([^.]+)\./);
+    if (ultima) { if (noches.some((r) => r.dia === ultima[1])) resto = resto.replace(ultima[0], ' '); else fallos.push(`la nota de la última noche nombra una que no existe («${ultima[1]}»)`); }
+    if (/has dormido de media|solo una noche tiene las dos horas|ninguna tiene las dos horas/.test(texto)) fallos.push('da datos de una semana que no tiene noches');
+  } else if (conHoras.length !== dentro.length || !conHoras.length) {
+    fallos.push('escenario no previsto: noches de esa semana sin las dos horas');
+  } else if (conHoras.length === 1) {
+    exige(`solo una noche tiene las dos horas: la que terminó ${conHoras[0].dia}, con ${conHoras[0].duracion}.`, `con una sola noche no dice cuál es (${conHoras[0].dia}) ni su duración (${conHoras[0].duracion})`);
+    exige('Con una sola duración no hay media que calcular.', 'con una sola noche no dice que no hay media');
+    exige(`Sueño · ${noche(1, 'registrada')} ${semana.etiqueta}`, 'no dice que esa semana tiene 1 noche registrada');
+    if (/has dormido de media/.test(texto)) fallos.push('da una media con una sola noche');
+  } else {
+    exige(`has dormido de media ${semana.media} por noche.`, `no da la media de sus ${conHoras.length} noches (${semana.media})`);
+    exige(`de ${conHoras.length} noches con las dos horas`, `no dice que la media es de ${conHoras.length} noches`);
+    exige(`${dentro.length} de ${semana.dias}`, `no dice ${dentro.length} de ${semana.dias} noches registradas`);
+    exige(`Sueño · ${noche(dentro.length, 'registrada')} ${semana.etiqueta}`, `no dice que esa semana tiene ${dentro.length} noches registradas`);
+    if (/solo una noche tiene las dos horas|No tienes noches registradas/.test(texto)) fallos.push('contradice el número de noches');
+  }
+  /* Lo que queda fuera de las frases esperadas no puede nombrar ninguna noche de fuera de esa semana, ni la noche de su
+     lunes (el fallo original de H-25: contestaba esa noche en vez de la semana). */
+  for (const r of noches) if (!r.dentro && terminoEl(r.dia).test(resto)) fallos.push(`usa la noche que terminó ${r.dia}, que no es de esa semana`);
+  if (/terminó el lunes/.test(resto)) fallos.push('contesta la noche de su lunes');
+  return fallos;
+};
+const respuestaSemana_chat = h_chat ? h_chat.texto.split('¿y la semana pasada?').pop() : '';
+const enSemanaPasada_chat = (almacen.sueno || []).filter((r) => r.fecha >= semana_chat.desde && r.fecha <= semana_chat.hasta).length;
+const fallosH25_chat = h_chat ? fallosSemanaPasada_chat(respuestaSemana_chat, semana_chat, almacen.sueno, duraciones_chat) : ['no hay hoja del chat'];
+ok(fallosH25_chat.length === 0,
+  `🐛 CHAT F2 · «¿y la semana pasada?» tras una noche → la media de esa semana (${enSemanaPasada_chat ? `${enSemanaPasada_chat} noche(s)` : 'sin noches'}), no la noche de su lunes (H-25)${fallosH25_chat.length ? ` — ${fallosH25_chat.join('; ')}` : ''} — ${JSON.stringify(respuestaSemana_chat.slice(0, 600))}`);
 h_chat = await preguntar_chat('apúntame que dormí 8 horas', /no puedo apuntar/);
 ok(h_chat && /no puedo apuntar, cambiar ni borrar nada/.test(h_chat.texto), '🚨 CHAT F2 · una orden de escribir se niega y dice dónde se hace');
 /* D10 — un mensaje solo de signos se contesta (antes la caja se vaciaba y no aparecía nada). */
@@ -13043,6 +13108,111 @@ const nuevos_fit45 = errores.slice(erroresAntes_fit45);
 ok(nuevos_fit45.length === 0, `🚨 FIT F45 — y ni un error en la consola en todo el release${nuevos_fit45.length ? `: ${nuevos_fit45.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
 almacen.fitness = fitnessDeAntes_fit45;
 almacen.saludFotos = fotosDeAntes_fit45;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COMPLETAR ENTRENAMIENTO — apuntar uno hecho fuera de la aplicación (2026-10-26)
+   ══════════════════════════════════════════════════════════════════════════
+   Al lado de «Empezar entrenamiento», en Tu Plan y en el Historial: hoy, ayer
+   (un día pasado), un día futuro rechazado, el mismo dos veces bloqueado, el
+   historial que lo dice sin series, y el estado vacío que no cambia nada. Las
+   fechas se calculan de hoy: pasa igual cualquier día de la semana. */
+console.log('\n── COMPLETAR ENTRENAMIENTO · registrar uno hecho fuera de la aplicación ──');
+const fitnessDeAntes_ce = almacen.fitness;
+const erroresAntes_ce = errores.length;
+const hoy_ce = new Date().toLocaleDateString('sv-SE');
+const diaISO_ce = (n) => { const d = new Date(`${hoy_ce}T12:00:00`); d.setDate(d.getDate() + n); return d.toLocaleDateString('sv-SE'); };
+const ayer_ce = diaISO_ce(-1);
+const manana_ce = diaISO_ce(1);
+const lunes_ce = diaISO_ce(-((new Date(`${hoy_ce}T12:00:00`).getDay() + 6) % 7));
+almacen.fitness = {
+  ...(fitnessDeAntes_ce || {}),
+  sesiones: [], plantillas: [], objetivos: [], planesAnteriores: [], cuarentena: [],
+  planActivo: { planId: 'ppl-estetico', origen: 'preset', desde: lunes_ce },
+};
+const sesiones_ce = () => ((almacen.fitness || {}).sesiones || []).filter((x) => x && x.estado === 'completada');
+const escriturasFitness_ce = () => guardado.filter((g) => g && g.key === 'fitness').length;
+const enDialogo_ce = () => page.evaluate(() => { const d = [...document.querySelectorAll('[role="dialog"]')].pop(); return d ? d.innerText : ''; });
+const esperarDialogo_ce = async (patron, tope = 6000) => {
+  const hasta = Date.now() + tope;
+  let t = await enDialogo_ce();
+  while (!patron.test(t) && Date.now() < hasta) { await page.waitForTimeout(150); t = await enDialogo_ce(); }
+  return t;
+};
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+
+/* 1 · Desde Tu Plan, hoy. */
+ok(await aFitness_fit39() && /Empezar entrenamiento/.test(await esperarTexto(/Empezar entrenamiento/)), 'Completar — Tu Plan sigue ofreciendo «Empezar entrenamiento»');
+ok(/Completar entrenamiento/.test(await ver()), '…y a su lado «Completar entrenamiento»');
+ok(await pulsar('Completar entrenamiento') && /¿Qué entrenamiento hiciste\?/.test(await esperarDialogo_ce(/Qué entrenamiento hiciste/)), '…que abre la hoja');
+const elegido_ce = await page.evaluate(() => { const b = [...document.querySelectorAll('[role="dialog"] button[aria-pressed="true"]')].pop(); return b ? b.innerText.split('\n')[0] : ''; });
+ok(!!elegido_ce, `…con el entrenamiento de esa tarjeta ya elegido («${elegido_ce}»)`);
+const fechaCampo_ce = await page.evaluate(() => { const i = document.querySelector('[role="dialog"] input[type="date"]'); return i ? [i.value, i.max] : null; });
+ok(fechaCampo_ce && fechaCampo_ce[0] === hoy_ce && fechaCampo_ce[1] === hoy_ce, '…con el día de hoy puesto, y ningún día futuro elegible en el campo');
+const antes_ce = escriturasFitness_ce();
+ok(await pulsar('Continuar') && new RegExp(`¿Completar «${elegido_ce}» hoy\\?`).test(await esperarDialogo_ce(/Completar «/)), 'Se pide confirmación antes de guardar');
+ok(escriturasFitness_ce() === antes_ce, '…y hasta confirmar no se ha guardado nada');
+ok(await pulsar('Completar entrenamiento') && /Entrenamiento registrado/.test(await esperarDialogo_ce(/Entrenamiento registrado/)), 'Al confirmar: «Entrenamiento registrado»');
+const hecha_ce = sesiones_ce().find((x) => x.fecha === hoy_ce && x.nombre === elegido_ce);
+ok(!!hecha_ce && hecha_ce.registradaAMano === true, '…y en la cuenta: completado hoy, marcado como hecho a mano');
+ok(hecha_ce && (hecha_ce.origen?.ejercicios || []).length === 0 && !hecha_ce.iniciadaEn && !hecha_ce.terminadaEn, '…sin series, pesos ni tiempos inventados');
+ok(await pulsar('Hecho'), '…y se cierra');
+await page.waitForTimeout(400);
+
+/* 2 · El mismo, el mismo día: bloqueado. ⚠️ Al completar el de hoy, la tarjeta de Tu Plan pasa
+   al SIGUIENTE entrenamiento (hoy ya está hecho), así que el mismo se elige por su nombre. */
+const antesDup_ce = sesiones_ce().length;
+ok(await pulsar('Completar entrenamiento') && await esperarDialogo_ce(/Qué entrenamiento/), 'Completar — se vuelve a abrir');
+const otro_ce = await page.evaluate((e) => {
+  const b = [...document.querySelectorAll('[role="dialog"] button[aria-pressed]')].map((x) => x.innerText.split('\n')[0]).find((n) => n && n !== e);
+  return b || '';
+}, elegido_ce);
+ok(await pulsar(elegido_ce) && await pulsar('Continuar'), `…se elige otra vez «${elegido_ce}», hoy`);
+ok(/ya está completado hoy/.test(await esperarDialogo_ce(/ya está completado/)), '…se bloquea y se dice: «ya está completado hoy»');
+ok(sesiones_ce().length === antesDup_ce, '…sin guardar otro');
+
+/* 3 · Un día futuro, rechazado aunque se escriba a mano. */
+ok(await escribirCampo('¿Qué día?', manana_ce), 'Completar — se escribe mañana a mano');
+await page.waitForTimeout(200);
+ok(await pulsar('Continuar') && /todavía no ha llegado/.test(await esperarDialogo_ce(/todavía no ha llegado/)), '…y se rechaza: «Ese día todavía no ha llegado»');
+ok(sesiones_ce().length === antesDup_ce, '…sin guardar nada');
+
+/* 4 · Ayer: se guarda en su día. */
+ok(await escribirCampo('¿Qué día?', ayer_ce), 'Completar — ayer');
+await page.waitForTimeout(200);
+ok(await pulsar('Continuar') && new RegExp(`«${elegido_ce}» ayer\\?`).test(await esperarDialogo_ce(/ayer\?/)), '…la confirmación dice «ayer»');
+ok(await pulsar('Completar entrenamiento') && /Entrenamiento registrado/.test(await esperarDialogo_ce(/Entrenamiento registrado/)), '…y se registra');
+ok(sesiones_ce().some((x) => x.fecha === ayer_ce && x.registradaAMano), '…en la cuenta con la fecha de AYER, no la de hoy');
+ok(await pulsar('Hecho'), '…y se cierra');
+
+/* 4b · Otro entrenamiento DISTINTO el mismo día: sí. */
+ok(!!otro_ce && await pulsar('Completar entrenamiento') && await esperarDialogo_ce(/Qué entrenamiento/) && await pulsar(otro_ce), `Completar — otro distinto hoy («${otro_ce}»)`);
+ok(await pulsar('Continuar') && await esperarDialogo_ce(/Completar «/) && await pulsar('Completar entrenamiento') && /Entrenamiento registrado/.test(await esperarDialogo_ce(/Entrenamiento registrado/)), '…se registra');
+ok(sesiones_ce().filter((x) => x.fecha === hoy_ce).length === 2, '…y hoy hay dos entrenamientos distintos');
+ok(await pulsar('Hecho'), '…y se cierra');
+
+/* 5 · El historial: los dos, sin series, y el detalle lo explica. */
+ok(await pulsar('Abrir Historial') && /Completado sin series registradas/.test(await esperarTexto(/Completado sin series registradas/)), 'Completar — el Historial los enseña: «Completado sin series registradas»');
+const tarjetas_ce = await page.evaluate(() => (document.body.innerText.match(/Completado sin series registradas/g) || []).length);
+ok(tarjetas_ce === 3, `…los tres (${tarjetas_ce})`);
+ok(await pulsarQueEmpiece_fit10(`Abrir ${elegido_ce}`) && /no cuenta para tu progreso/.test(await esperarTexto(/no cuenta para tu progreso/)), '…y el detalle explica que no tiene datos ni cuenta para el progreso');
+ok(!/NaN|undefined|null/.test(await ver()), '…sin nada roto a la vista');
+
+/* 6 · El estado vacío: se ve, se vuelve y no cambia nada. */
+almacen.fitness = { ...(fitnessDeAntes_ce || {}), sesiones: [], plantillas: [], objetivos: [], planActivo: null, planesAnteriores: [], cuarentena: [] };
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+ok(await aFitness_fit39() && await pulsar('Abrir Historial') && /Completar entrenamiento/.test(await esperarTexto(/Completar entrenamiento/)), 'Completar — el Historial vacío también lo ofrece');
+const antesVacio_ce = escriturasFitness_ce();
+ok(await pulsar('Completar entrenamiento') && /No tienes entrenamientos para elegir/.test(await esperarDialogo_ce(/No tienes entrenamientos/)), '…sin plan ni plantillas, la hoja lo dice');
+ok(await pulsar('Volver') && !(await enDialogo_ce()).includes('No tienes entrenamientos'), '…y «Volver» la cierra');
+ok(escriturasFitness_ce() === antesVacio_ce, '…sin haber guardado nada');
+
+const nuevos_ce = errores.slice(erroresAntes_ce);
+ok(nuevos_ce.length === 0, `Completar — ni un error en la consola${nuevos_ce.length ? `: ${nuevos_ce.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
+almacen.fitness = fitnessDeAntes_ce;
+await page.setViewportSize({ width: 1280, height: 900 });
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

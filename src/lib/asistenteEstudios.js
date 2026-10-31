@@ -211,11 +211,23 @@ function entidades(datos) {
 
 const conTipos = (trozo) => ({ tipos: tiposPedidos(trozo) });
 
+/* ⟦E2 · paso 17, NUEVO⟧ Nombres de asignatura habituales (ESO y Bachillerato). Solo sirven para una cosa: si
+   aparecen en la pregunta y NO son una de sus asignaturas, son con seguridad una asignatura que no tiene
+   («¿y en inglés?»), no una circunstancia. Si la tiene, la resuelve antes `resolverEntidad` y esta lista ni se
+   mira. Ampliarla es añadir un nombre; no decide nada más. */
+export const VOCABULARIO_ASIGNATURAS = Object.freeze(['inglés', 'francés', 'alemán', 'italiano', 'portugués', 'chino', 'latín', 'griego',
+  'lengua', 'literatura', 'castellano', 'valenciano', 'catalán', 'euskera', 'gallego', 'matemáticas', 'mates', 'física', 'química', 'biología',
+  'geología', 'ciencias', 'naturales', 'sociales', 'tecnología', 'informática', 'programación', 'robótica', 'dibujo', 'plástica', 'música',
+  'filosofía', 'historia', 'geografía', 'economía', 'empresa', 'religión', 'valores', 'ética', 'psicología', 'sociología', 'arte', 'artes',
+  'anatomía', 'estadística', 'educación física']);
+
+/* ⟦Procedencia · paso 15⟧ P7: el léxico `agenda` y su uso en `proximos` son EDITADO (paso 2, por el resumen de las 11:11); el resto del archivo, PROVISIONAL. Ver PROCEDENCIA_PASO15.md. */
 export const ASISTENTE_ESTUDIOS = {
   id: 'estudios',
   modulo: 'estudios',
   nombre: 'Estudios',
   lee: ['estudios'],
+  vocabulario: { asignatura: VOCABULARIO_ASIGNATURAS },
   saludo: '¡Hola! Pregúntame por tus exámenes y entregas, las horas que has estudiado, tus notas o los temas de una asignatura.',
   lexico: {
     examen: ['examen', 'examenes', 'control', 'controles', 'prueba', 'parcial', 'global', 'recuperacion'],
@@ -227,9 +239,12 @@ export const ASISTENTE_ESTUDIOS = {
     asignatura: ['asignatura', 'asignaturas', 'materia', 'materias'],
     pendiente: ['pendiente', 'pendientes', 'me quedan', 'me falta', 'me faltan', 'sin estudiar'],
     horas: ['horas', 'hora', 'tiempo'],
+    /* Fase 2.2 — «¿tengo algo esta semana?»: preguntar por la agenda sin decir «examen» ni «entrega».
+       Sin «que hay», que es un saludo (LEXICO_COMUN). */
+    agenda: ['tengo algo', 'hay algo', '=que tengo', 'algo pendiente', 'tengo pendiente', 'tengo cosas'],
   },
   capacidades: [
-    { id: 'proximos', titulo: 'Tus próximos exámenes y entregas', ejemplo: '¿Qué exámenes tengo próximamente?', senales: { examen: 2, entrega: 2, evento: 2, proximo: 3, cuando: 1 }, necesita: [['examen', 'entrega', 'evento', 'proximo']], entidad: { tipo: 'asignatura', obligatoria: false, nombre: 'asignatura' }, periodo: 'ambos', tiempo: 'futuro', porDefecto: 'proximos60', prioridad: 2, cubreObligacion: true, argumentos: conTipos, ejecutar: proximos },
+    { id: 'proximos', titulo: 'Tus próximos exámenes y entregas', ejemplo: '¿Qué exámenes tengo próximamente?', senales: { examen: 2, entrega: 2, evento: 2, proximo: 3, cuando: 1, agenda: 2 }, necesita: [['examen', 'entrega', 'evento', 'proximo', 'agenda']], entidad: { tipo: 'asignatura', obligatoria: false, nombre: 'asignatura' }, periodo: 'ambos', tiempo: 'futuro', porDefecto: 'proximos60', prioridad: 2, cubreObligacion: true, argumentos: conTipos, ejecutar: proximos },
     { id: 'cuando', titulo: 'Cuándo es el examen de una asignatura', ejemplo: '¿Cuándo es el examen de biología?', senales: { cuando: 3, examen: 2, entrega: 2, evento: 1, proximo: 1 }, necesita: [['cuando', 'examen', 'entrega', 'evento', 'proximo']], entidad: { tipo: 'asignatura', obligatoria: true, nombre: 'asignatura', vacio: 'Todavía no tienes asignaturas.' }, periodo: null, tiempo: 'futuro', prioridad: 1, cubreObligacion: true, argumentos: conTipos, ejecutar: cuando },
     { id: 'horas', titulo: 'Las horas que has estudiado', ejemplo: '¿Cuántas horas he estudiado esta semana?', senales: { estudiar: 3, horas: 2, cuanto: 1 }, necesita: [['estudiar']], entidad: { tipo: 'asignatura', obligatoria: false, nombre: 'asignatura' }, periodo: 'rango', porDefecto: 'estaSemana', prioridad: 2, ejecutar: horas },
     { id: 'notas', titulo: 'Tus notas de exámenes', ejemplo: '¿Qué notas he sacado?', senales: { nota: 4, examen: 1 }, necesita: [['nota']], entidad: { tipo: 'asignatura', obligatoria: false, nombre: 'asignatura' }, periodo: null, prioridad: 1, ejecutar: notas },
