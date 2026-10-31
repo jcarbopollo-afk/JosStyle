@@ -9,7 +9,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { responderMensaje, nuevaConversacion, textoDeRespuesta, incumpleHonestidad, normalizarMensaje, esOrdenDeEscritura, textosDeOpciones } from '../src/lib/motorConversacion.js';
+import { responderMensaje, nuevaConversacion, textoDeRespuesta, incumpleHonestidad, normalizarMensaje, esOrdenDeEscritura, textosDeOpciones, conversarCon, TEXTO_SIN_DIFERENCIA } from '../src/lib/motorConversacion.js';
 import { ASISTENTES, asistenteDeModulo, datosParaAsistente, DOMINIOS_AJENOS, MATRIZ_CANDIDATOS, CLAVES_QUE_NINGUN_ASISTENTE_LEE } from '../src/lib/asistentesModulos.js';
 import { ASISTENTE_SUENO, nochesDeSueno, minutosDeLaNoche } from '../src/lib/asistenteSueno.js';
 import { ASISTENTE_FITNESS } from '../src/lib/asistenteFitness.js';
@@ -866,6 +866,240 @@ console.log('\n── 12. Correcciones de la auditoría (D1–D10) ──');
     'v3.161.2 · Sueño guarda null cuando no se contestan los despertares, y 0 cuando él elige 0');
 
   ok(corpus12.every((x) => !incumpleHonestidad(textoDeRespuesta(x)).length), 'Ninguna respuesta de esta sección incumple las palabras prohibidas (§8)');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   13 · FASE 2.1 · El motor honesto en los cinco asistentes ⟦RECONSTRUIDO en el paso 2 de la recuperación⟧
+   ══════════════════════════════════════════════════════════════════════════ */
+console.log('\n── 13. Fase 2.1 · Fechas, entidades y preguntas honestas (los cinco asistentes) ──');
+{
+  const corpus13 = [];
+  /* Un usuario con dos hábitos que empiezan igual («Leer 30 minutos» y «Leer la Biblia»): el caso de A9. */
+  const PROD2 = { ...PRODUCTIVIDAD, habitos: [leer30, habito('Leer la Biblia', [0, 2]), agua] };
+  const ESTADO2 = { ...ESTADO, productividad: PROD2 };
+  const charla = (asistente) => {
+    let ctx = nuevaConversacion('u-prueba');
+    let estado = ESTADO;
+    const f = (mensaje, extra = {}) => {
+      const r = responderMensaje(asistente, mensaje, { datos: datosParaAsistente(asistente, estado), hoy: HOY, contexto: ctx, ajenos: DOMINIOS_AJENOS, ahora: 1000, ...extra });
+      ctx = r.contexto;
+      corpus13.push(...r.respuestas);
+      ultimoVisto = r.respuestas.map((x) => `[${x.capacidad}] ${textoDeRespuesta(x)}`).join(' | ');
+      return r.respuestas;
+    };
+    f.ctx = () => ctx;
+    f.con = (otro) => { estado = otro; return f; };
+    f.pulsar = (resp, i) => (resp && resp.opciones && resp.opciones[i] ? f(resp.opciones[i].mensaje, { opcion: { origen: resp.opciones[i].origen, indice: i } }) : [{ capacidad: 'sin_boton', tipo: 'error', bloques: [], opciones: [] }]);
+    return f;
+  };
+  const notas = (x) => x.bloques.filter((b) => b.tipo === 'nota').map((b) => b.texto).join(' ');
+
+  /* A1 — una fecha dicha para una pregunta no se le pega a otra que mira hacia el otro lado del tiempo. */
+  let r = charla(ASISTENTE_SUENO)('¿Cuánto dormí ayer y qué tal la calidad?');
+  ok(caps(r) === 'noche,calidad' && txt(r).includes(textoDuracion(SUENO[1])) && /ayer|22 de octubre/.test(textoDeRespuesta(r[1])), 'A1 · Sueño: dos preguntas del pasado comparten «ayer» (como antes)');
+  r = charla(ASISTENTE_ESTUDIOS)('¿Cuántas horas estudié ayer y qué exámenes tengo?');
+  ok(caps(r) === 'horas,proximos' && /La célula/.test(textoDeRespuesta(r[1])), 'A1 · Estudios: «ayer» es de las horas; los exámenes miran lo que viene, no ayer');
+  r = charla(ASISTENTE_FITNESS)('¿Qué entrené ayer y qué me toca?');
+  ok(caps(r) === 'dia,plan' && !/ayer|22 de octubre/.test(textoDeRespuesta(r[1])), 'A1 · Fitness: «qué me toca» no se contesta sobre ayer');
+  r = charla(ASISTENTE_FITNESS)('¿Cuántos entrenamientos llevo y qué me toca mañana?');
+  ok(caps(r) === 'cuantos,plan' && /esta semana/i.test(textoDeRespuesta(r[0])) && !/mañana|24 de octubre/.test(textoDeRespuesta(r[0])), 'A1 · Fitness: «mañana» es de lo que toca; los entrenamientos que llevo no miran mañana');
+
+  /* A2 — algo que no existe no se cambia por otra cosa, ni hereda lo de antes. */
+  let h = charla(ASISTENTE_FITNESS);
+  r = h('¿Cuál es mi récord en tigre volador?');
+  ok(r[0].tipo === 'aclaracion' && /No encuentro «tigre volador» entre tus ejercicios/.test(textoDeRespuesta(r[0])), 'A2 · Fitness: un ejercicio que no existe se dice («No encuentro…»)');
+  h = charla(ASISTENTE_FITNESS);
+  h('¿Cuál es mi récord en press de banca?');
+  r = h('¿Y en tigre volador?');
+  ok(/No encuentro «tigre volador»/.test(textoDeRespuesta(r[0])) && !/62,5|60 kg/.test(txt(r)), 'A2 · Fitness: «¿y en tigre volador?» no contesta del press de banca de antes');
+  r = charla(ASISTENTE_ESTUDIOS)('¿Cuándo es el examen de latín?');
+  ok(r[0].tipo === 'aclaracion' && /No encuentro «latín» entre tus asignaturas/.test(textoDeRespuesta(r[0])) && r[0].opciones.length > 0 && !/La célula|Derivadas/.test(textoDeRespuesta(r[0])),
+    'A2 · Estudios: «el examen de latín» sin Latín: lo dice y ofrece las que hay, sin contestar de otra');
+  r = charla(ASISTENTE_PRODUCTIVIDAD)('¿Cuál es mi racha de meditar?');
+  ok(caps(r) === 'racha' && /No encuentro «meditar» entre tus hábitos, así que te lo enseño sin filtrar/.test(notas(r[0])), 'A2 · Productividad: un hábito que no existe en una pregunta que no lo exige: se dice que va sin filtrar');
+
+  /* A3 — una pregunta que no va por fechas lo dice si se le da una. */
+  r = charla(ASISTENTE_FITNESS)('¿Cuál es mi récord en press de banca la semana pasada?');
+  ok(caps(r) === 'record' && /Esto no lo puedo filtrar por fechas/.test(notas(r[0])) && /semana pasada/.test(notas(r[0])), 'A3 · Fitness: el récord no se filtra por la semana pasada, y se dice');
+  h = charla(ASISTENTE_ESTUDIOS);
+  h('¿Qué notas he sacado?');
+  r = h('¿Y ayer?');
+  ok(r[0].capacidad === 'fecha_no_aplicable' && r[0].tipo === 'aclaracion', 'A3 · Estudios: «¿y ayer?» tras las notas (que no van por fechas) no repite las notas como si fueran de ayer');
+
+  /* A7 — erratas de fecha. */
+  r = charla(ASISTENTE_SUENO)('cuanto dormi ayr');
+  ok(caps(r) === 'noche' && txt(r).includes(textoDuracion(SUENO[1])), 'A7 · Sueño: «ayr» es ayer');
+  r = charla(ASISTENTE_NUTRICION)('que comi ayr');
+  ok(caps(r) === 'comidas' && /Tostadas/.test(txt(r)) && !/Avena/.test(txt(r)), 'A7 · Nutrición: «qué comí ayr» → lo de ayer');
+  r = charla(ASISTENTE_SUENO)('cuanto dormi ayet');
+  ok(caps(r) === 'noche' && /No he entendido «ayet» como una fecha/.test(notas(r[0])) && txt(r).includes(textoDuracion(SUENO[0])), 'A7 · Sueño: «ayet» no se adivina: contesta hoy y lo dice');
+  r = charla(ASISTENTE_PRODUCTIVIDAD)('cuantos pomodoros hice el mes pasado');
+  ok(caps(r) === 'pomodoro' && !notas(r[0]).includes('No he entendido'), 'A7 · negativa: «mes» y «pasado» no son erratas de nada');
+
+  /* A8 — la misma pregunta dos veces, una respuesta. */
+  r = charla(ASISTENTE_SUENO)('¿Cuánto dormí ayer? ¿Cuánto dormí ayer?');
+  ok(caps(r) === 'noche', 'A8 · Sueño: la misma pregunta repetida se contesta una vez');
+  r = charla(ASISTENTE_NUTRICION)('¿Cuánta agua bebí ayer y cuánta agua bebí ayer?');
+  ok(caps(r) === 'agua', 'A8 · Nutrición: igual');
+
+  /* A9 — «Leer 30 minutos» y «Leer la Biblia». */
+  h = charla(ASISTENTE_PRODUCTIVIDAD).con(ESTADO2);
+  r = h('¿Cuál es mi racha de leer?');
+  ok(r[0].tipo === 'aclaracion' && r[0].opciones.map((o) => o.texto).sort().join('|') === 'Leer 30 minutos|Leer la Biblia', 'A9 · «racha de leer» con «Leer 30 minutos» y «Leer la Biblia»: pregunta cuál (antes elegía la Biblia por tener el nombre más corto)');
+  const i = r[0].opciones.findIndex((o) => o.texto === 'Leer la Biblia');
+  r = h.pulsar(r[0], i);
+  ok(caps(r) === 'racha' && /Leer la Biblia/.test(txt(r)) && !/Leer 30 minutos/.test(txt(r)), 'A9 · …el botón contesta la que eligió');
+  r = charla(ASISTENTE_PRODUCTIVIDAD).con(ESTADO2)('¿Cuál es mi racha de leer la biblia?');
+  ok(caps(r) === 'racha' && /Leer la Biblia/.test(txt(r)), 'A9 · con el nombre entero, sin preguntar');
+  r = charla(ASISTENTE_PRODUCTIVIDAD).con(ESTADO2)('¿Cuál es mi racha de leer 30 minutos?');
+  ok(caps(r) === 'racha' && /Leer 30 minutos/.test(txt(r)) && !/Leer la Biblia/.test(txt(r)), 'A9 · …y con el otro nombre entero, el otro');
+  r = charla(ASISTENTE_PRODUCTIVIDAD)('¿Cuál es mi racha de leer?');
+  ok(caps(r) === 'racha' && /Leer 30 minutos/.test(txt(r)), 'A9 · con un solo hábito que se llame así, «leer» es él (no se pregunta por preguntar)');
+  r = charla(ASISTENTE_ESTUDIOS)('¿Cuándo es el examen de física?');
+  ok(caps(r) === 'cuando' && /Física y Química/.test(txt(r)), 'A9 · Estudios: «física» es una palabra entera de «Física y Química»: es ella');
+
+  ok(corpus13.every((x) => !incumpleHonestidad(textoDeRespuesta(x)).length), 'Ninguna respuesta de esta sección incumple las palabras prohibidas (§8)');
+  ok(corpus13.every((x) => !/HUECO|undefined|NaN|null/.test(textoDeRespuesta(x))), 'Ninguna respuesta de esta sección enseña nada roto');
+}
+/* ══════════════════════════════════════════════════════════════════════════
+   14 · FASE 2.2 · Contexto conversacional en los cinco asistentes ⟦cabecera RECONSTRUIDA salvo la línea de abajo⟧
+   «¿y la anterior?» con el periodo anterior del calendario, unidades sobreentendidas, continuidad,
+   comparaciones sin capacidad de comparar y el vocabulario nuevo de Estudios y Sueño. Se mira la capacidad,
+   y lo que se nombra. */
+console.log('\n── 14. Fase 2.2 · Contexto conversacional (los cinco asistentes) ──');
+{
+  const corpus14 = [];
+  const charla = (asistente) => {
+    let ctx = nuevaConversacion('u-prueba');
+    const f = (mensaje, extra = {}) => {
+      const r = responderMensaje(asistente, mensaje, { datos: datosParaAsistente(asistente, ESTADO), hoy: HOY, contexto: ctx, ajenos: DOMINIOS_AJENOS, ahora: 1000, ...extra });
+      ctx = r.contexto;
+      corpus14.push(...r.respuestas);
+      ultimoVisto = r.respuestas.map((x) => `[${x.capacidad}] ${textoDeRespuesta(x)}`).join(' | ');
+      return r.respuestas;
+    };
+    f.ctx = () => ctx;
+    return f;
+  };
+  const notas = (x) => x.bloques.filter((b) => b.tipo === 'nota').map((b) => b.texto).join(' ');
+  const periodoCtx = (h) => { const u = h.ctx().ultimaRespuesta; return u && u.items[0] && u.items[0].periodo ? `${u.items[0].periodo.desde}..${u.items[0].periodo.hasta}` : null; };
+
+  /* ⟦RECONSTRUIDO en el paso 2 de la recuperación (líneas 1036–1058 del original, perdidas)⟧ */
+  /* P7 — el vocabulario de Estudios: «¿tengo algo…?», «¿hay algo…?», «¿qué tengo pendiente?». */
+  let r = charla(ASISTENTE_ESTUDIOS)('¿Tengo algo esta semana?');
+  ok(caps(r) === 'proximos' && /Trabajo de la guerra/.test(txt(r)) && !/La célula/.test(txt(r)), 'P7 · Estudios: «¿tengo algo esta semana?» → lo de esta semana (el trabajo del domingo; el examen del martes ya es la que viene)');
+  r = charla(ASISTENTE_ESTUDIOS)('¿Hay algo pendiente?');
+  ok(caps(r) === 'proximos', 'P7 · Estudios: «¿hay algo pendiente?» → lo próximo');
+  r = charla(ASISTENTE_ESTUDIOS)('¿Qué tengo esta semana?');
+  ok(caps(r) === 'proximos', 'P7 · Estudios: «¿qué tengo esta semana?» → lo próximo');
+  r = charla(ASISTENTE_ESTUDIOS)('¿Qué hay?');
+  ok(caps(r) !== 'proximos', 'P7 · negativa: «¿qué hay?» es un saludo, no una pregunta por los exámenes');
+  /* P2 — «¿y la anterior?» en Sueño: el día (o la semana) anterior del calendario, con su fecha. */
+  let h = charla(ASISTENTE_SUENO);
+  h('¿Cuánto dormí ayer?');
+  r = h('¿Y la anterior?');
+  ok(caps(r) === 'noche' && txt(r).includes(textoDuracion(SUENO[2])), 'P2 · Sueño: «¿cuánto dormí ayer?» → «¿y la anterior?» → la noche del 21');
+  r = h('¿Y la anterior a esa?');
+  ok(caps(r) === 'noche' && /20 de octubre/.test(txt(r)) && !txt(r).includes(textoDuracion(SUENO[2])), 'P2 · …«la anterior a esa» es el 20 (sin registro: lo dice, no repite el 21)');
+  h = charla(ASISTENTE_SUENO);
+  h('¿Cuál es mi media de sueño esta semana?');
+  r = h('¿Y la anterior?');
+  ok(caps(r) === 'media' && /del 12 al 18 de octubre/.test(txt(r)), 'P2 · Sueño: la media de esta semana → «¿y la anterior?» → la semana del 12 al 18 entera');
+  ok(periodoCtx(h) === '2026-10-12..2026-10-18', 'P2 · …y es lo que queda como último periodo contestado');
+  r = charla(ASISTENTE_SUENO)('¿Y a la media de esta semana?');
+  ok(caps(r) === 'media', 'P7 · Sueño: «la media» es la media (antes: «noches incompletas», por «a medias»)');
+  r = charla(ASISTENTE_SUENO)('¿Qué noches tengo a medias?');
+  ok(caps(r) === 'incompletas', 'P7 · …y «a medias» sigue siendo noches incompletas');
+  r = charla(ASISTENTE_SUENO)('Compara esta semana con la pasada');
+  ok(caps(r) === 'comparar' && /del 12 al 18 de octubre/.test(txt(r)), 'Sueño · su comparación real compara con la semana pasada entera (el 12–18), ya que «la pasada» se entiende');
+  ok(r.length === 1 && !notas(r[0]).includes(TEXTO_SIN_DIFERENCIA), 'Sueño · …y es UNA comparación de verdad: no lleva la nota de «cada periodo por separado»');
+  /* P2 y P3 en Nutrición: el periodo anterior, también un mes; y comparar periodos no inventa una diferencia. */
+  h = charla(ASISTENTE_NUTRICION);
+  h('¿Cuál es mi media de calorías esta semana?');
+  r = h('¿Y la anterior?');
+  ok(caps(r) === 'media' && /del 12 al 18 de octubre/.test(txt(r)), 'P2 · Nutrición: la media de esta semana → «¿y la anterior?» → la semana del 12 al 18');
+  h = charla(ASISTENTE_NUTRICION);
+  h('¿Cuál es mi media de calorías este mes?');
+  r = h('¿Y el anterior?');
+  ok(caps(r) === 'media' && /septiembre/.test(txt(r)), 'P2 · Nutrición: «este mes» → «¿y el anterior?» → septiembre');
+  h = charla(ASISTENTE_NUTRICION);
+  h('¿Qué comí ayer?');
+  r = h('¿Y la anterior?');
+  ok(caps(r) === 'comidas' && /21 de octubre/.test(txt(r)) && !/Tostadas|Pasta/.test(txt(r)), 'P2 · Nutrición: lo que comí ayer → «¿y la anterior?» → el 21 (sin registro: lo dice, no repite ayer)');
+  r = charla(ASISTENTE_NUTRICION)('¿Cuál es mi media de calorías este mes y el pasado?');
+  ok(caps(r) === 'media,media' && /septiembre/.test(textoDeRespuesta(r[1])), 'P3 · Nutrición: «este mes y el pasado» → los dos meses');
+  r = charla(ASISTENTE_NUTRICION)('Compara las calorías de esta semana con las de la anterior');
+  ok(!/ kcal más| kcal menos|más que|menos que/.test(txt(r)), 'Nutrición · comparar dos semanas no se inventa una diferencia (los días sueltos son lo único que compara)');
+  r = charla(ASISTENTE_SUENO)('¿Cuánto dormí el lunes y el martes?');
+  ok(caps(r) === 'noche,noche' && /19 de octubre/.test(textoDeRespuesta(r[0])) && /20 de octubre/.test(textoDeRespuesta(r[1])), 'Sueño · dos días en una pregunta: dos respuestas, cada una con su fecha');
+  h = charla(ASISTENTE_FITNESS);
+  r = h('Compara esta semana con la pasada');
+  ok(r[0].capacidad === 'comparar_que' && r[0].opciones.map((o) => o.texto).join('|') === 'Cuántos entrenamientos llevas', 'Fitness · «compara esta semana con la pasada» sin tema: pregunta qué, con lo que puede (antes: «No lo he entendido»)');
+  r = h('Cuántos entrenamientos llevas');
+  ok(caps(r) === 'cuantos,cuantos' && notas(r[0]).includes(TEXTO_SIN_DIFERENCIA) && /3 entrenamientos/.test(textoDeRespuesta(r[0])) && /1 entrenamiento/.test(textoDeRespuesta(r[1])), 'Fitness · …y contesta las dos semanas por separado, diciendo que no calcula la diferencia');
+  r = charla(ASISTENTE_FITNESS)('Compara mis entrenos de esta semana con la pasada');
+  ok(caps(r) === 'cuantos,cuantos' && notas(r[0]).includes(TEXTO_SIN_DIFERENCIA), 'Fitness · con el tema dicho: las dos semanas (antes: «la pasada» se perdía)');
+  h = charla(ASISTENTE_FITNESS);
+  h('¿Cuántas veces he entrenado esta semana?');
+  r = h('Compáralo con la semana pasada');
+  ok(caps(r) === 'cuantos,cuantos' && /^Todavía no calculo/.test(textoDeRespuesta(r[0])) && /Esta semana/.test(textoDeRespuesta(r[0])) && /semana pasada/.test(textoDeRespuesta(r[1])), 'Fitness · «compáralo con la semana pasada» suma la nueva semana sin quitar la que se miraba');
+  r = charla(ASISTENTE_FITNESS)('Compara cómo voy en press de banca esta semana con la pasada');
+  ok(caps(r) === 'ejercicio' && /no lo puedo filtrar por fechas/.test(txt(r)), 'Fitness · negativa: una pregunta de progreso con sus palabras no se convierte en «¿qué quieres comparar?»');
+  /* ⟦RECONSTRUIDO en el paso 2 de la recuperación (líneas 1097–1129 del original, perdidas)⟧ */
+  h = charla(ASISTENTE_FITNESS);
+  h('¿Cuántos entrenamientos llevo esta semana?');
+  r = h('¿Y la anterior?');
+  ok(caps(r) === 'cuantos' && /1 entrenamiento/.test(txt(r)) && /del 12 al 18 de octubre/.test(txt(r)), 'P2 · Fitness: los entrenamientos de esta semana → «¿y la anterior?» → la del 12 al 18 (1 entrenamiento)');
+  h = charla(ASISTENTE_FITNESS);
+  h('¿Cuál es mi récord en press de banca?');
+  r = h('¿Y en dominadas pronas?');
+  ok(caps(r) === 'record' && /Dominadas pronas/.test(txt(r)), 'P4 · Fitness: tras el récord del press de banca, «¿y en dominadas pronas?» sigue siendo el récord');
+  r = h('¿Cómo voy en dominadas pronas?');
+  ok(caps(r) === 'ejercicio', 'P4 · …y «¿cómo voy en dominadas pronas?», dicho con palabras, es el progreso');
+  r = charla(ASISTENTE_FITNESS)('¿Y en dominadas pronas?');
+  ok(caps(r) !== 'record', 'P4 · negativa: sin un récord antes, nombrar un ejercicio no es preguntar por su récord');
+  h = charla(ASISTENTE_FITNESS);
+  h('¿Qué me toca hoy?');
+  r = h('¿Y la anterior?');
+  ok(r[0].capacidad === 'referencia_pasada', 'P2 · Fitness: lo que toca mira lo que viene; «¿y la anterior?» no tiene sentido y se dice');
+  h = charla(ASISTENTE_ESTUDIOS);
+  h('¿Cuántas horas estudié esta semana?');
+  r = h('¿Y la anterior?');
+  ok(caps(r) === 'horas' && /del 12 al 18 de octubre/.test(txt(r)), 'P2 · Estudios: las horas de esta semana → «¿y la anterior?» → la semana del 12 al 18');
+  h = charla(ASISTENTE_ESTUDIOS);
+  h('¿Cuándo es el examen de biología?');
+  r = h('¿Y la anterior?');
+  ok(r[0].capacidad === 'referencia_sin_periodo', 'P2 · Estudios: «cuándo es el examen» no va por fechas: no tiene anterior, y se dice');
+  /* Lo mismo en los cinco: sin nada antes, «¿y la anterior?» pregunta a qué; nunca se elige por él. */
+  ok(ASISTENTES.every((a) => charla(a)('¿Y la anterior?')[0].capacidad === 'referencia_sin_contexto'), 'Consistencia · los cinco contestan igual a «¿y la anterior?» sin contexto');
+  ok(ASISTENTES.every((a) => { const x = charla(a); x('hola'); return x('¿Y la anterior?')[0].capacidad === 'referencia_sin_contexto'; }), 'Consistencia · …también si lo último fue un saludo');
+  /* Una aclaración no se contradice: sus botones existen, son distintos y no repiten la pregunta. */
+  const aclaraciones = corpus14.filter((x) => x.tipo === 'aclaracion' && x.capacidad !== 'referencia_sin_contexto');
+  ok(aclaraciones.length > 0 && aclaraciones.every((x) => x.opciones.length > 0 && new Set(x.opciones.map((o) => o.texto)).size === x.opciones.length), 'Aclaraciones · todas ofrecen botones, sin dos iguales');
+  ok(corpus14.filter((x) => x.capacidad === 'referencia_ambigua').every((x) => x.opciones.every((o) => o.plan && o.plan.periodo)), 'Aclaraciones · «¿anterior a cuál?»: cada botón lleva su periodo');
+  r = charla(ASISTENTE_PRODUCTIVIDAD)('¿Cuántos pomodoros hice ayer?');
+  ok(caps(r) === 'pomodoro' && /Pomodoros completados: 1|1 pomodoro/.test(txt(r)), 'Productividad · ayer: un pomodoro completado');
+  r = charla(ASISTENTE_PRODUCTIVIDAD)('¿Cuántos pomodoros he hecho este mes y el pasado?');
+  ok(caps(r) === 'pomodoro,pomodoro' && /Este mes/.test(textoDeRespuesta(r[0])) && /septiembre/.test(textoDeRespuesta(r[1])), 'Productividad · «este mes y el pasado» → los dos meses (antes: septiembre se perdía)');
+  h = charla(ASISTENTE_PRODUCTIVIDAD);
+  r = h('Pomodoros el pasado');
+  ok(r[0].capacidad === 'referencia_sin_unidad' && r[0].opciones.length === 3, 'Productividad · «el pasado» sin unidad: se pregunta cuál');
+  h = charla(ASISTENTE_PRODUCTIVIDAD);
+  h('¿Qué hábitos me tocan hoy?');
+  r = h('¿Y la anterior?');
+  ok(caps(r) === 'habitos' && /^Ayer/.test(textoDeRespuesta(r[0])), 'Productividad · «¿y la anterior?» tras los hábitos de hoy → los de ayer');
+  h = charla(ASISTENTE_PRODUCTIVIDAD);
+  h('¿Cuál es mi racha?');
+  ok(h('¿Y la anterior?')[0].capacidad === 'referencia_sin_periodo', 'Productividad · una racha no tiene «periodo anterior»');
+
+  /* Aislamiento entre módulos y usuarios: cada asistente tiene su conversación; otro usuario empieza de cero. */
+  const conv = conversarCon(ASISTENTE_SUENO, null, '¿Cuánto dormí ayer?', { usuario: 'ana', datos: datosParaAsistente(ASISTENTE_SUENO, ESTADO), hoy: HOY, ajenos: DOMINIOS_AJENOS });
+  const deOtro = conversarCon(ASISTENTE_SUENO, conv, '¿Y la anterior?', { usuario: 'luis', datos: datosParaAsistente(ASISTENTE_SUENO, ESTADO), hoy: HOY, ajenos: DOMINIOS_AJENOS });
+  ok(deOtro.mensajes.length === 2 && deOtro.mensajes[1].respuesta.capacidad === 'referencia_sin_contexto', 'Aislamiento · otro usuario no hereda la conversación de Sueño');
+  r = charla(ASISTENTE_FITNESS)('¿Y la anterior?');
+  ok(r[0].capacidad === 'referencia_sin_contexto', 'Aislamiento · la conversación de otro módulo no cuenta (cada asistente, la suya)');
+
+  ok(corpus14.every((x) => !incumpleHonestidad(textoDeRespuesta(x)).length), 'Ninguna respuesta de esta sección incumple las palabras prohibidas (§8)');
 }
 
 /* ── Palabras que son propiedades heredadas («constructor», «__proto__») ──

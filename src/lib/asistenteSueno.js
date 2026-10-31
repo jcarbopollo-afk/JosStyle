@@ -648,7 +648,7 @@ export const ASISTENTE_SUENO = {
     siesta: ['siesta', 'siestas'],
     habitual: ['duermo', '=suelo dormir', 'normalmente', 'ultimamente', 'estos dias', 'por lo general'],
     ultimas: ['ultimas noches', 'mis ultimas noches', 'ultimas noches registradas', 'ultimos registros', 'analiza*', 'analisis', 'analizar mi sueno', 'analizame', 'ultimamente'],
-    incompleto: ['incomplet*', 'datos completos', 'completas', 'sin completar', 'a medias', 'sin horas', 'sin hora', 'falta la hora', 'faltan horas', 'faltan datos', 'les falta', 'no tienen datos', 'sin contestar', 'no conteste'],
+    incompleto: ['incomplet*', 'datos completos', 'completas', 'sin completar', '=a medias', 'sin horas', 'sin hora', 'falta la hora', 'faltan horas', 'faltan datos', 'les falta', 'no tienen datos', 'sin contestar', 'no conteste'],
     fiable: ['fiable', 'fiables', 'fiabilidad', '=fiarme', '=fiar', 'de confianza', 'precisa', 'preciso', 'limitacion*', 'no puedes calcular', 'no puedes sacar', 'no puedes darme', 'pocos datos', 'suficientes datos', 'datos suficientes', 'te faltan datos'],
     registro: ['registr*', 'apuntad*', 'cuantas noches', 'sin registrar', 'huecos', 'dias sin', 'olvide apuntar', 'tengo apuntad*'],
   },

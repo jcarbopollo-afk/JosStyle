@@ -323,6 +323,60 @@ export function periodoPorDefecto(id, hoy) {
   porDefecto: true, futura: r.hasta > hoy };
 }
 
+/**
+ * Fase 2.2 — la UNIDAD de un periodo: un día, una semana natural (de lunes a domingo, o hasta hoy si es la
+ * de ahora), un mes natural, un año natural o un rango cualquiera. «Los últimos 7 días» no es una semana:
+ * es un rango. Sirve para saber cuál es «la anterior» (`periodoPrevio`) y qué unidad se sobreentiende.
+ */
+export function unidadDePeriodo(p, hoy) {
+  if (!p || !fechaValida(p.desde) || !fechaValida(p.hasta) || p.hasta < p.desde) return null;
+  if (p.desde === p.hasta) return 'dia';
+  const [a1, m1, d1] = partes(p.desde);
+  const [a2, m2, d2] = partes(p.hasta);
+  const hastaHoy = p.hasta === hoy;
+  if (diaDeLaSemana(p.desde) === 0 && (p.hasta === addDays(p.desde, 6) || (hastaHoy && p.hasta < addDays(p.desde, 7)))) return 'semana';
+  if (d1 === 1 && a1 === a2 && m1 === m2 && (d2 === ultimoDiaDelMes(a1, m1) || hastaHoy)) return 'mes';
+  if (m1 === 1 && d1 === 1 && a1 === a2 && ((m2 === 12 && d2 === 31) || hastaHoy)) return 'ano';
+  return 'rango';
+}
+
+/**
+ * Fase 2.2 — «¿y la anterior?»: el periodo ANTERIOR DEL CALENDARIO (decisión de Josué), no el registro
+ * anterior que exista. Día → el día de antes; semana → la semana natural de antes; mes → el mes de antes;
+ * año → el año de antes; un rango cualquiera → los mismos días justo antes. Con su etiqueta, que dice las
+ * fechas: la respuesta tiene que poder leerse sin adivinar qué periodo se ha mirado.
+ */
+export function periodoPrevio(p, hoy) {
+  const unidad = unidadDePeriodo(p, hoy);
+  if (!unidad) return null;
+  let r;
+  if (unidad === 'dia') {
+    const f = addDays(p.desde, -1);
+    return { ...dia(f), unidad, etiqueta: etiquetaDeDia(f, hoy) };
+  }
+  if (unidad === 'semana') {
+    const l = addDays(p.desde, -7);
+    r = rango(l, addDays(l, 6));
+    return { ...r, unidad, etiqueta: `la semana ${etiquetaDeRango(r.desde, r.hasta, hoy)}` };
+  }
+  if (unidad === 'mes') {
+    const [a, m] = partes(p.desde);
+    const d = new Date(a, m - 2, 1);
+    const mm = rangoDeMes(d.getFullYear(), d.getMonth() + 1);
+    r = rango(mm.desde, mm.hasta);
+    const anio = d.getFullYear() !== partes(hoy)[0] ? ` de ${d.getFullYear()}` : '';
+    return { ...r, unidad, etiqueta: `el mes de ${MESES_CONVERSACION[d.getMonth()]}${anio}` };
+  }
+  if (unidad === 'ano') {
+    const a = partes(p.desde)[0] - 1;
+    r = rango(iso(a, 1, 1), iso(a, 12, 31));
+    return { ...r, unidad, etiqueta: `el año ${a}` };
+  }
+  const n = diasDelRango(p.desde, p.hasta);
+  r = rango(addDays(p.desde, -n), addDays(p.desde, -1));
+  return { ...r, unidad, etiqueta: `los ${n} días anteriores (${etiquetaDeRango(r.desde, r.hasta, hoy)})` };
+}
+
 /** El periodo anterior de la misma duración (para comparar). */
 export function periodoAnterior(p) {
   const n = diasDelRango(p.desde, p.hasta);

@@ -7,9 +7,12 @@
 import {
   normalizarMensaje, detectarConceptos, resolverEntidad, responderMensaje, nuevaConversacion,
   textoDeRespuesta, incumpleHonestidad, MAX_MENSAJE, TURNOS_CONTEXTO, MINUTOS_CONTEXTO, bLista, MAX_ITEMS_LISTA,
+  ERRATAS_FECHA, palabrasParecidasAFecha, mencionSinResolver,
+  referenciaAnterior, conversarCon, TEXTO_SIN_DIFERENCIA,
 } from '../src/lib/motorConversacion.js';
 import {
   interpretarFechas, etiquetaDeDia, etiquetaDeRango, lunesDeFecha, periodoPorDefecto, diasDelRango, fechasDelRango,
+  periodoPrevio, unidadDePeriodo,
 } from '../src/lib/fechasConversacion.js';
 import { normalizar, distanciaErratas, margenDeErratas } from '../src/lib/indiceBusqueda.js';
 
@@ -149,7 +152,11 @@ const ambE = preguntar('como voy en press');
 ok(ambE[0].tipo === 'aclaracion' && ambE[0].opciones.some((o) => o.texto === 'Press militar'), 'Un nombre ambiguo: se pregunta cuál, con botones');
 ok(preguntar('Press militar')[0].bloques[0].texto === 'ejercicio:-:pm', 'Tocar el botón (su texto) lo resuelve');
 ok(preguntar('y su record?')[0].bloques[0].texto === 'record:-:pm', 'Pronombre: «¿y su récord?» usa el ejercicio del que se hablaba');
-ok(preguntar('press militar')[0].capacidad === 'ejercicio', 'Nombrar un ejercicio a secas ya es preguntar por él');
+/* Fase 2.2 (P4, decisión 4 de Josué) — esta comprobación decía que «press militar» a secas era SIEMPRE «cómo
+   voy». Se da la vuelta, no se borra: después de «¿y su récord?», nombrar solo otro ejercicio CONTINÚA el
+   récord; sin contexto, nombrarlo a secas sigue siendo preguntar por su progreso. */
+ok(preguntar('press militar')[0].capacidad === 'record', 'Nombrar solo un ejercicio después de un récord sigue con el récord (Fase 2.2, P4)');
+ok(responderMensaje(ASIS, 'press militar', { datos: {}, hoy: HOY }).respuestas[0].capacidad === 'ejercicio', 'Sin contexto, nombrar un ejercicio a secas ya es preguntar por él');
 ok(preguntar('record')[0].bloques[0].texto === 'record:-:pm', 'La entidad sigue en el contexto…');
 for (let i = 0; i < TURNOS_CONTEXTO; i += 1) preguntar('cuanto dormi ayer');
 const sinCtx = preguntar('record');
@@ -206,6 +213,240 @@ ok(a1 === a2, 'Determinista: el mismo mensaje con los mismos datos da la misma r
 ok(!Object.keys(ASIS).some((k) => k.startsWith('__')), 'Responder no toca el registro del asistente');
 ok(bLista(Array.from({ length: 20 }, (_, i) => `x${i}`)).items.length === MAX_ITEMS_LISTA + 1, `Una lista larga se corta a ${MAX_ITEMS_LISTA} + «y N más» (H-18)`);
 ok(incumpleHonestidad('Dormiste menos porque entrenaste').includes('porque') && incumpleHonestidad('Dormiste 7 h').length === 0, 'El detector de causas, consejos y predicciones caza un «porque» y deja pasar un dato');
+
+/* ── 8 · Fase 2.1: un motor honesto ─────────────────────────────────────── */
+console.log('\n── 8. Fase 2.1 · Motor honesto: ni otra fecha, ni otra entidad, ni otra pregunta ──');
+{
+  /* ⟦RECONSTRUIDO en el paso 2 de la recuperación: el cuerpo original de esta sección se perdió⟧
+     El asistente de prueba con una pregunta sobre el FUTURO («qué me toca»), para ver que una fecha del
+     pasado dicha para otra pregunta no se le pega (A1). */
+  const ASIS3 = {
+    ...ASIS,
+    lexico: { ...ASIS.lexico, plan: ['me toca', 'mi plan'] },
+    capacidades: [...ASIS.capacidades, capa('toca', { senales: { plan: 4 }, necesita: [['plan']], periodo: 'dia', tiempo: 'futuro', porDefecto: 'hoy', prioridad: 2 })],
+  };
+  let c3 = nuevaConversacion('u3');
+  const p3 = (t) => { const r = responderMensaje(ASIS3, t, { datos: {}, hoy: HOY, contexto: c3, ahora: 1000 }); c3 = r.contexto; return r.respuestas; };
+  const nueva3 = () => { c3 = nuevaConversacion('u3'); };
+  const et3 = (r) => r.map((x) => { const b = x.bloques.find((y) => y.tipo === 'texto'); return b ? b.texto : `${x.capacidad}`; });
+  const notas3 = (x) => x.bloques.filter((b) => b.tipo === 'nota').map((b) => b.texto).join(' ');
+
+  /* A1 — la fecha de una pregunta no contamina a otra que mira hacia el otro lado del tiempo. */
+  nueva3();
+  let r = p3('cuanto dormi ayer y que me toca');
+  ok(r.length === 2 && et3(r)[0] === 'noche:2026-10-22..2026-10-22:-' && et3(r)[1] === `toca:${HOY}..${HOY}:-`,
+    'A1 · «¿cuánto dormí ayer y qué me toca?»: ayer es de la primera; «qué me toca» mira hoy, no ayer');
+  nueva3();
+  r = p3('cuanto dormi el lunes y que tal la calidad');
+  ok(r.length === 2 && et3(r)[1] === 'calidad:2026-10-19..2026-10-19:-', 'A1 · …pero si las dos miran el pasado, la única fecha sigue valiendo para las dos (no se rompe lo de antes)');
+
+  /* A2 — una entidad que no existe no se cambia por otra. */
+  nueva3();
+  r = p3('como voy en remo');
+  ok(r[0].tipo === 'aclaracion' && /No encuentro «remo» entre tus ejercicios/.test(textoDeRespuesta(r[0])) && r[0].opciones.length > 0,
+    'A2 · «¿cómo voy en remo?» sin ningún remo: lo dice y ofrece los que sí hay');
+  ok(!/ejercicio:-:/.test(et3(r).join(' ')), 'A2 · …y no contesta sobre otro ejercicio');
+  nueva3();
+  p3('como voy en press militar');
+  r = p3('y en remo?');
+  ok(/No encuentro «remo»/.test(textoDeRespuesta(r[0])) && !/:pm$/.test(et3(r)[0]), 'A2 · después de hablar del press militar, «¿y en remo?» no contesta del press militar');
+  r = p3('y su record?');
+  ok(r[0].tipo === 'aclaracion' && !/record:-:pm/.test(et3(r).join(' ')), 'A2 · …y la entidad de antes ya no se hereda: lo desconocido la borra del contexto');
+  ok(mencionSinResolver(normalizarMensaje('record de remo').tokens, new Set([0])).texto === 'remo', 'A2 · mencionSinResolver encuentra lo nombrado tras «de»');
+  ok(mencionSinResolver(normalizarMensaje('como voy en general').tokens) === null, 'A2 · negativa: «en general» no es el nombre de nada');
+  ok(mencionSinResolver(normalizarMensaje('horas de sueno').tokens, new Set([0, 2])) === null, 'A2 · negativa: lo ya entendido (un concepto) no es una mención');
+
+  /* A3 — una capacidad que no va por fechas lo dice si le dan una. */
+  nueva3();
+  r = p3('record de press militar ayer');
+  ok(r[0].capacidad === 'record' && /Esto no lo puedo filtrar por fechas/.test(notas3(r[0])), 'A3 · «récord de press militar ayer»: el récord no se filtra por fechas y se dice');
+
+  /* A7 — erratas de fecha: solo las de la lista; lo demás se avisa. */
+  ok(ERRATAS_FECHA.ayr === 'ayer' && Object.values(ERRATAS_FECHA).every((v) => ['hoy', 'ayer', 'anteayer', 'manana', 'semana', 'pasada', 'pasado', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'].includes(v)),
+    'A7 · ERRATAS_FECHA solo lleva a palabras de fecha');
+  ok(Object.keys(ERRATAS_FECHA).every((k) => !['mes', 'mas', 'hay', 'partes', 'vienes', 'manzana', 'semanas'].includes(k)), 'A7 · …y ninguna errata es una palabra de verdad');
+  nueva3();
+  ok(et3(p3('cuanto dormi ayr'))[0] === 'noche:2026-10-22..2026-10-22:-', 'A7 · «ayr» → ayer');
+  ok(et3(p3('cuanto dormi el lnes'))[0] === 'noche:2026-10-19..2026-10-19:-', 'A7 · «lnes» → el lunes');
+  nueva3();
+  r = p3('cuanto dormi ayet');
+  ok(et3(r)[0] === `noche:${HOY}..${HOY}:-` && /No he entendido «ayet» como una fecha/.test(notas3(r[0])), 'A7 · «ayet» no se adivina: contesta sobre hoy y lo dice');
+  ok(palabrasParecidasAFecha(normalizarMensaje('que tal la semana').tokens).length === 0, 'A7 · negativa: una fecha bien escrita no es una errata');
+  ok(palabrasParecidasAFecha(normalizarMensaje('hay mas partes').tokens).length === 0, 'A7 · negativa: «hay», «mas» y «partes» no se toman por fechas');
+  ok(palabrasParecidasAFecha(normalizarMensaje('el sabdo no').tokens).length === 0 && normalizarMensaje('el sabdo').tokens.includes('sabado'), 'A7 · lo que está en la lista ya llega corregido');
+  nueva3();
+  r = p3('cuanto dormi ayet');
+  ok(!/HUECO|undefined/.test(textoDeRespuesta(r[0])), 'A7 · la nota cita lo que escribió, sin nada roto');
+
+  /* A8 — dos preguntas iguales en el mismo mensaje, una sola respuesta. */
+  nueva3();
+  r = p3('cuanto dormi ayer y cuanto dormi ayer');
+  ok(r.length === 1 && et3(r)[0] === 'noche:2026-10-22..2026-10-22:-', 'A8 · la misma pregunta dos veces: una respuesta');
+  r = p3('cuanto dormi ayer y que tal la calidad ayer');
+  ok(r.length === 2, 'A8 · negativa: dos preguntas distintas siguen siendo dos');
+
+  /* A9 — una opción solo se elige si es inequívoca. */
+  const HAB = [{ tipo: 'habito', id: 'l30', nombre: 'Leer 30 minutos' }, { tipo: 'habito', id: 'lb', nombre: 'Leer la Biblia' }];
+  const ent9 = (t, lista = HAB) => resolverEntidad(normalizarMensaje(t).tokens, lista);
+  ok(ent9('como voy con leer').estado === 'ambigua' && ent9('como voy con leer').candidatas.length === 2, 'A9 · «leer» con «Leer 30 minutos» y «Leer la Biblia»: las dos, se pregunta (ya no gana el nombre corto)');
+  ok(ent9('leer la biblia').entidad?.id === 'lb' && ent9('leer 30 minutos').entidad?.id === 'l30', 'A9 · con el nombre entero, la que es');
+  ok(ent9('biblia').entidad?.id === 'lb', 'A9 · una palabra que solo tiene una: esa');
+  ok(ent9('como voy con leer', [HAB[1]]).entidad?.id === 'lb', 'A9 · una sola candidata nombrada con una palabra entera suya: se resuelve sin preguntar');
+  const DPL = [{ tipo: 'ejercicio', id: 'dpl', nombre: 'Dominadas pronas lastradas' }];
+  const una = ent9('como voy en domi', DPL);
+  ok(una.estado === 'ambigua' && una.candidatas.length === 1, 'A9 · una sola candidata nombrada solo por el principio de una palabra («domi»): no se da por hecha');
+  ok(ent9('como voy en dominadas', DPL).estado === 'unica' && ent9('como voy en dominadas', DPL).entidad.id === 'dpl', 'A9 · …pero nombrada con una palabra ENTERA de su nombre («dominadas»), aunque sea un tercio del nombre, es ella');
+  ok(ent9('bio', [{ tipo: 'asignatura', id: 'b', nombre: 'Biología' }]).estado === 'unica', 'A9 · negativa: el principio de un nombre de UNA palabra («bio» → Biología) sigue siendo ella (como antes)');
+  nueva3();
+  ok(textoDeRespuesta(p3('como voy en domi')[0]).includes('¿Cuál de estos?'), 'A9 · varias que empiezan igual: «¿Cuál de estos?», con botones');
+  const aclaracionUna = responderMensaje({ ...ASIS3, entidades: () => ({ ejercicio: DPL }) }, 'como voy en domi', { datos: {}, hoy: HOY, contexto: nuevaConversacion('u9'), ahora: 1000 }).respuestas[0];
+  ok(aclaracionUna.tipo === 'aclaracion' && textoDeRespuesta(aclaracionUna).startsWith('¿Te refieres a «Dominadas pronas lastradas»?') && aclaracionUna.opciones.length === 1,
+    'A9 · con una sola opción posible se pregunta «¿Te refieres a «Dominadas pronas lastradas»?», no «¿Cuál de estos?»');
+  const HAB2 = { ...ASIS3, entidades: () => ({ ejercicio: HAB.map((h) => ({ ...h, tipo: 'ejercicio' })) }) };
+  const leer = responderMensaje(HAB2, 'como voy con leer', { datos: {}, hoy: HOY, contexto: nuevaConversacion('u9'), ahora: 1000 }).respuestas[0];
+  ok(leer.tipo === 'aclaracion' && leer.opciones.map((o) => o.texto).sort().join('|') === 'Leer 30 minutos|Leer la Biblia', 'A9 · en la conversación, «¿cómo voy con leer?» pregunta entre «Leer 30 minutos» y «Leer la Biblia» (antes contestaba la Biblia)');
+  ok(!/^ejercicio:/.test(textoDeRespuesta(leer)), 'A9 · …y no contesta de ninguna de las dos por su cuenta');
+}
+
+/* ── 9 · Fase 2.2: contexto conversacional estructurado ───────────────────── */
+console.log('\n── 9. Fase 2.2 · Contexto: «la anterior», unidades sobreentendidas, continuidad y comparar ──');
+{
+  /* El asistente de prueba con una pregunta sobre el FUTURO, como en la sección 8. */
+  const ASIS4 = {
+    ...ASIS,
+    lexico: { ...ASIS.lexico, plan: ['me toca', 'mi plan'] },
+    capacidades: [...ASIS.capacidades, capa('toca', { senales: { plan: 4 }, necesita: [['plan']], periodo: 'dia', tiempo: 'futuro', porDefecto: 'hoy', prioridad: 2 })],
+  };
+  let c4 = nuevaConversacion('u4');
+  const p4 = (t, extra = {}) => { const r = responderMensaje(ASIS4, t, { datos: {}, hoy: HOY, contexto: c4, ahora: extra.ahora ?? 1000 }); c4 = r.contexto; return r.respuestas; };
+  const nueva = () => { c4 = nuevaConversacion('u4'); };
+  const et = (r) => r.map((x) => { const b = x.bloques.find((y) => y.tipo === 'texto'); return b ? b.texto : `${x.capacidad}`; });
+  const notas = (x) => x.bloques.filter((b) => b.tipo === 'nota').map((b) => b.texto).join(' ');
+
+  /* El lector de fechas: el periodo ANTERIOR DEL CALENDARIO (decisión 1). */
+  const fx = (t) => interpretarFechas(normalizarMensaje(t).texto, HOY)[0];
+  ok(periodoPrevio(fx('ayer'), HOY).desde === '2026-10-21', 'Calendario · día → el día anterior');
+  ok(periodoPrevio(fx('esta semana'), HOY).desde === '2026-10-12' && periodoPrevio(fx('esta semana'), HOY).hasta === '2026-10-18', 'Calendario · «esta semana» (hasta hoy) → la semana natural anterior entera');
+  ok(periodoPrevio(fx('el mes pasado'), HOY).desde === '2026-08-01' && periodoPrevio(fx('el mes pasado'), HOY).hasta === '2026-08-31', 'Calendario · un mes → el mes natural anterior (agosto tiene 31)');
+  ok(periodoPrevio(fx('este año'), HOY).desde === '2025-01-01' && periodoPrevio(fx('este año'), HOY).hasta === '2025-12-31', 'Calendario · un año → el año natural anterior');
+  ok(periodoPrevio(fx('los últimos 10 días'), HOY).desde === '2026-10-04' && periodoPrevio(fx('los últimos 10 días'), HOY).hasta === '2026-10-13', 'Calendario · un rango cualquiera → los mismos días justo antes');
+  ok(periodoPrevio({ desde: '2026-03-01', hasta: '2026-03-31' }, HOY).hasta === '2026-02-28', 'Calendario · marzo → febrero, con su último día de verdad');
+  ok(unidadDePeriodo(periodoPorDefecto('ultimos7', HOY), HOY) === 'rango' && unidadDePeriodo(periodoPorDefecto('estaSemana', HOY), HOY) === 'semana', 'Calendario · «los últimos 7 días» no es una semana natural; «esta semana» sí');
+
+  /* P2 — «la anterior», encadenada, con días, semanas, meses, años y rangos. */
+  nueva(); p4('cuanto dormi ayer');
+  let r = p4('y la anterior?');
+  ok(et(r)[0] === 'noche:2026-10-21..2026-10-21:-', 'P2 · «¿cuánto dormí ayer?» → «¿y la anterior?» → la noche del 21 (misma pregunta, día anterior)');
+  r = p4('la anterior a esa');
+  ok(et(r)[0] === 'noche:2026-10-20..2026-10-20:-', 'P2 · «la anterior a esa» encadena desde la última contestada (el 20), no desde la primera');
+  r = p4('y el periodo anterior?');
+  ok(et(r)[0] === 'noche:2026-10-19..2026-10-19:-', 'P2 · «¿y el periodo anterior?» → el 19');
+  nueva(); p4('media de sueño la semana pasada');
+  ok(et(p4('y la anterior?'))[0] === 'media:2026-10-05..2026-10-11:-', 'P2 · semana → la semana natural de antes (5–11)');
+  nueva(); p4('media de sueño este mes');
+  ok(et(p4('y el periodo anterior?'))[0] === 'media:2026-09-01..2026-09-30:-', 'P2 · «este mes» → septiembre entero');
+  nueva(); p4('media de sueño este año');
+  ok(et(p4('y la anterior?'))[0] === 'media:2025-01-01..2025-12-31:-', 'P2 · «este año» → el año 2025 entero');
+  nueva(); p4('media de sueño los ultimos 10 dias');
+  ok(et(p4('y la de antes?'))[0] === 'media:2026-10-04..2026-10-13:-', 'P2 · un rango cualquiera → los 10 días justo antes («la de antes»)');
+  nueva(); p4('cuanto dormi');
+  ok(et(p4('y la anterior?'))[0] === 'noche:2026-10-22..2026-10-22:-', 'P2 · con el periodo POR DEFECTO (hoy) también se sabe cuál es «la anterior» (decisión 6)');
+  nueva(); p4('cuanto dormi');
+  ok(et(p4('y la calidad?'))[0] === 'calidad:2026-10-17..2026-10-23:-', 'P2 · …pero ese periodo por defecto NO se hereda solo: «¿y la calidad?» usa su propio defecto (la regla de herencia no cambia)');
+  nueva(); p4('cuanto dormi la semana pasada');
+  ok(et(p4('y la pasada?'))[0] === 'media:2026-10-05..2026-10-11:-', 'P2 · «¿y la pasada?» siguiendo la conversación es la anterior a la que se miraba');
+
+  /* P2 — cuándo NO se resuelve: se pregunta o se explica. */
+  /* ⟦RECONSTRUIDO en el paso 2 de la recuperación (líneas 381–428 del original, perdidas)⟧ */
+  nueva();
+  r = p4('y la anterior?');
+  ok(r[0].capacidad === 'referencia_sin_contexto' && r[0].tipo === 'aclaracion' && /Anterior a qué/.test(textoDeRespuesta(r[0])) && r[0].opciones.length > 0,
+    'P2 · «¿y la anterior?» sin nada antes: «¿anterior a qué?», con ejemplos (no se inventa un periodo)');
+  nueva();
+  r = p4('y el pasado?');
+  ok(r[0].capacidad === 'referencia_sin_contexto' && /Qué periodo pasado/.test(textoDeRespuesta(r[0])), 'P2 · «¿y el pasado?» sin nada antes: «¿qué periodo pasado?»');
+  nueva();
+  r = p4('media de sueño el pasado');
+  ok(r[0].capacidad === 'referencia_sin_unidad' && r[0].tipo === 'aclaracion' && r[0].opciones.length === 3, 'P2 · «media de sueño el pasado» sin unidad: se pregunta cuál (día, semana o mes), sin elegirla por él');
+  ok(r[0].opciones.map((o) => `${o.plan.periodo.desde}..${o.plan.periodo.hasta}`).join('|') === '2026-10-22..2026-10-22|2026-10-12..2026-10-18|2026-09-01..2026-09-30',
+    'P2 · …las tres unidades son ayer, la semana pasada entera y el mes pasado entero');
+  ok(r[0].opciones.every((o) => o.plan.capacidad === 'media'), 'P2 · …y cada botón conserva la pregunta (la media)');
+  nueva(); p4('record de press militar');
+  r = p4('y la anterior?');
+  ok(r[0].capacidad === 'referencia_sin_periodo' && /no va por fechas/.test(textoDeRespuesta(r[0])) && !/record:/.test(et(r).join(' ')), 'P2 · tras una pregunta que no va por fechas (un récord): lo dice, no repite el récord');
+  nueva(); p4('cuanto dormi el lunes y que tal la calidad esta semana');
+  r = p4('y la anterior?');
+  ok(r[0].capacidad === 'referencia_ambigua' && r[0].tipo === 'aclaracion' && r[0].opciones.length === 2, 'P2 · después de contestar dos periodos: «¿anterior a cuál?», con un botón por periodo');
+  ok(r[0].opciones.map((o) => `${o.plan.capacidad}:${o.plan.periodo.desde}..${o.plan.periodo.hasta}`).join('|') === 'noche:2026-10-18..2026-10-18|calidad:2026-10-12..2026-10-18',
+    'P2 · …cada botón es el anterior DE SU periodo y con SU pregunta (el domingo 18 para la noche, la semana pasada para la calidad)');
+  ok(r[0].opciones.every((o) => /^[A-ZÁÉÍÓÚ].*anterior/i.test(o.texto)), 'P2 · …y dice de qué es cada uno');
+  nueva(); p4('que me toca');
+  r = p4('y la anterior?');
+  ok(r[0].capacidad === 'referencia_pasada' && /mira lo que viene/.test(textoDeRespuesta(r[0])) && !/^toca:/.test(et(r)[0]), 'P2 · «lo que me toca» mira el futuro: no tiene un «anterior» que ya pasó, y se dice');
+  nueva(); p4('cuanto dormi ayer');
+  r = p4('y la anterior?', { ahora: 1000 + (MINUTOS_CONTEXTO + 1) * 60000 });
+  ok(r[0].capacidad === 'referencia_sin_contexto', `P2 · el contexto caduca igual que antes: a los ${MINUTOS_CONTEXTO} minutos, «¿y la anterior?» ya no sabe de qué`);
+  nueva(); p4('cuanto dormi ayer');
+  for (let i = 0; i < TURNOS_CONTEXTO; i += 1) p4('hola');
+  ok(p4('y la anterior?')[0].capacidad === 'referencia_sin_contexto', `P2 · …y a los ${TURNOS_CONTEXTO} turnos`);
+
+  /* P2 — «la semana (el mes) anterior» relativa a lo que se hablaba; sin nada, la del calendario (como antes). */
+  nueva(); p4('media de sueño la semana pasada');
+  ok(et(p4('y la semana anterior?'))[0] === 'media:2026-10-05..2026-10-11:-', 'P2 · hablando de la semana pasada, «¿y la semana anterior?» es la de antes (5–11)');
+  nueva();
+  ok(et(p4('media de sueño la semana anterior'))[0] === 'media:2026-10-12..2026-10-18:-', 'P2 · sin nada antes, «la semana anterior» sigue siendo la semana pasada del calendario');
+  nueva();
+  ok(et(p4('media de sueño en septiembre y el mes anterior')).join(' | ') === 'media:2026-09-01..2026-09-30:- | media:2026-08-01..2026-08-31:-', 'P2 · «en septiembre y el mes anterior»: agosto (el anterior a septiembre, no el mes pasado del calendario)');
+
+  /* P3 — la referencia la lee `referenciaAnterior`; lo que ya es una fecha no. */
+  const ref = (t) => referenciaAnterior(normalizarMensaje(t).tokens);
+  ok(ref('y la anterior?')?.texto === 'anterior' && ref('y el pasado?')?.texto === 'el pasado' && ref('y la de antes?')?.texto === 'la de antes', 'P3 · «la anterior», «el pasado» y «la de antes» son referencias');
+  ok(ref('la semana pasada') === null && ref('pasado mañana') === null, 'P3 · negativa: «la semana pasada» y «pasado mañana» son fechas, no referencias');
+  ok(referenciaAnterior(normalizarMensaje('lo de antes').tokens) === null, 'P3 · negativa: «lo de antes» es la comparación de Sueño, no una referencia');
+  /* ⟦RECONSTRUIDO en el paso 2 de la recuperación (líneas 430–446 del original, perdidas)⟧ */
+  nueva();
+  ok(et(p4('media de sueño este mes y el pasado')).join(' | ') === 'media:2026-10-01..2026-10-23:- | media:2026-09-01..2026-09-30:-', 'P3 · «este mes y el pasado»: los dos meses, con «el pasado» = septiembre (antes se perdía)');
+  nueva();
+  ok(et(p4('cuanto dormi la semana pasada y la anterior')).join(' | ') === 'media:2026-10-12..2026-10-18:- | media:2026-10-05..2026-10-11:-', 'P3 · «la semana pasada y la anterior»: la de antes de ESA semana');
+  nueva(); r = p4('media de sueño el lunes, el martes y el anterior');
+  ok(r.some((x) => x.capacidad === 'referencia_dudosa' && x.tipo === 'aclaracion' && x.opciones.length === 2), 'P3 · «el anterior» con dos fechas al lado: no se adivina, se pregunta «¿anterior a cuál?»');
+  /* P4 — nombrar solo otra entidad sigue con la pregunta anterior; una intención dicha con palabras manda. */
+  nueva(); p4('record de press militar');
+  ok(et(p4('y dominadas pronas?'))[0] === 'record:-:dp', 'P4 · tras el récord del press militar, «¿y dominadas pronas?» sigue siendo el récord');
+  nueva(); p4('record de press militar');
+  ok(et(p4('como voy en dominadas pronas'))[0] === 'ejercicio:-:dp', 'P4 · …pero «¿cómo voy en dominadas pronas?» lo dice con palabras: el progreso');
+  nueva(); p4('record de press militar');
+  ok(et(p4('y en remo?')).every((x) => !/^record:-:/.test(x)), 'P4 · negativa: continuar la intención no hereda una entidad que no existe');
+  nueva(); p4('record de press militar');
+  r = p4('y ayer?');
+  ok(r[0].capacidad === 'fecha_no_aplicable' && !/^record:/.test(et(r)[0]), 'P4 · una fecha sola tras una pregunta sin fechas no repite la última respuesta');
+  nueva(); r = p4('compara esta semana con la pasada');
+  ok(r[0].capacidad === 'comparar_que' && r[0].tipo === 'aclaracion' && /Todavía no calculo la diferencia/.test(textoDeRespuesta(r[0]))
+    && r[0].opciones.map((o) => o.plan.capacidad).sort().join(',') === 'calidad,media', 'P5 · sin decir qué comparar: se pregunta, solo con lo que puede mirar periodos (media, calidad)');
+  r = p4('media');
+  ok(r.length === 2 && et(r).join(' | ') === 'media:2026-10-19..2026-10-23:- | media:2026-10-12..2026-10-18:-' && notas(r[0]).includes(TEXTO_SIN_DIFERENCIA), 'P5 · …el botón contesta las dos semanas por separado y dice que la diferencia no se calcula');
+  nueva(); r = p4('compara la media de sueño de esta semana con la pasada');
+  ok(r.length === 2 && notas(r[0]).includes(TEXTO_SIN_DIFERENCIA) && et(r)[1] === 'media:2026-10-12..2026-10-18:-', 'P5 · con el tema dicho: cada periodo y la nota');
+  nueva(); p4('media de sueño esta semana');
+  r = p4('compáralo con la semana pasada');
+  ok(r.length === 2 && et(r).join(' | ') === 'media:2026-10-19..2026-10-23:- | media:2026-10-12..2026-10-18:-' && notas(r[0]).includes(TEXTO_SIN_DIFERENCIA), 'P5 · «compáralo con la semana pasada» añade el periodo nuevo SIN quitar el que se miraba');
+  nueva(); r = p4('compara esta semana con el 31 de febrero');
+  ok(r[0].capacidad === 'comparar_que' && /«el 31 de febrero» no es una fecha que exista/.test(textoDeRespuesta(r[0])), 'P5 · un periodo imposible se dice, no se pierde');
+  nueva(); p4('record de press militar');
+  ok(p4('compara esta semana con la pasada')[0].capacidad === 'comparar_que', 'P5 · tras una pregunta que no va por fechas, comparar periodos pregunta qué');
+
+  /* Lo de la Fase 2.1 sigue en pie. */
+  nueva();
+  ok(et(p4('cuanto dormi y que me toca mañana')).join(' | ') === `noche:${HOY}..${HOY}:- | toca:2026-10-24..2026-10-24:-`, 'Fase 2.1 · A1 sigue: «mañana» no contamina la primera pregunta');
+  nueva(); p4('como voy en press militar');
+  ok(p4('y ayer?')[0].capacidad === 'fecha_no_aplicable', 'Fase 2.1 · A3 sigue: «¿y ayer?» tras una pregunta sin fechas se dice');
+  nueva(); p4('como voy en press militar');
+  ok(/No encuentro «remo gironda»/.test(textoDeRespuesta(p4('y en remo gironda?')[0])), 'Fase 2.1 · A2 sigue: un ejercicio que no existe no hereda el anterior');
+  ok(c4.ultimaRespuesta === undefined || c4.ultimaRespuesta === null || Array.isArray(c4.ultimaRespuesta.items), 'El contexto guarda la última respuesta como una lista corta, no como un historial');
+  const tamano = JSON.stringify(c4).length;
+  for (let i = 0; i < 30; i += 1) p4(i % 2 ? 'cuanto dormi ayer' : 'y la anterior?');
+  ok(JSON.stringify(c4).length < tamano * 3, 'El contexto no crece con la conversación (no es una memoria indefinida)');
+}
 
 /* ── Palabras que son propiedades heredadas («constructor», «__proto__») ──
    🐛 `normalizarMensaje` buscaba cada palabra en la tabla de abreviaturas sin mirar si la clave era suya: «constructor»
