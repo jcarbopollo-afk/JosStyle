@@ -82,11 +82,13 @@ function Bloque({ b }) {
   return null;
 }
 
-export function RespuestaAsistente({ respuesta, accent, onOpcion, onNavegar, pendienteId = null }) {
+export function RespuestaAsistente({ respuesta, accent, onOpcion, onNavegar, pendienteId = null, pendientesIds = null }) {
   const r = respuesta;
-  /* v3.161.2 — las opciones de una aclaración solo valen mientras esa aclaración es la pendiente; las de
-     una pregunta anterior se ven apagadas (y el núcleo tampoco las ejecutaría: `opcion.origen`). */
-  const caducada = (o) => !!o.origen && o.origen !== pendienteId;
+  /* v3.161.2 — las opciones de una aclaración solo valen mientras esa aclaración está pendiente; las de
+     una pregunta anterior se ven apagadas (y el núcleo tampoco las ejecutaría: `opcion.origen`).
+     Fase 2.3 · B0 — pueden estar pendientes varias del mismo turno (`pendientesIds`). */
+  const vivas = Array.isArray(pendientesIds) ? pendientesIds : (pendienteId ? [pendienteId] : []);
+  const caducada = (o) => !!o.origen && !vivas.includes(o.origen);
   const hayCaducadas = r.opciones.some(caducada);
   return (
     <div className="rounded-2xl p-3 space-y-2 max-w-[92%]" style={{ background: COLORS.surface2 }}>
@@ -135,7 +137,8 @@ export function ConversacionAsistente({ asistente, conversacion, onEnviar, onNav
     if (ultimo && finRef.current) desplazarHasta(finRef.current, { block: 'end' });
   }, [ultimo]);
 
-  const pendienteId = (conversacion && conversacion.contexto && conversacion.contexto.pendiente && conversacion.contexto.pendiente.id) || null;
+  const pendiente = (conversacion && conversacion.contexto && conversacion.contexto.pendiente) || null;
+  const pendientesIds = pendiente ? (Array.isArray(pendiente.aclaraciones) ? pendiente.aclaraciones.map((a) => a.id) : [pendiente.id].filter(Boolean)) : [];
 
   const enviar = (valor, opcion = null) => {
     const t = String(valor ?? '').trim();
@@ -171,7 +174,7 @@ export function ConversacionAsistente({ asistente, conversacion, onEnviar, onNav
                   <span className="sr-only">Tú: </span>{m.texto}
                 </p>
               ) : (
-                <RespuestaAsistente respuesta={m.respuesta} accent={accent} onOpcion={enviar} onNavegar={onNavegar} pendienteId={pendienteId} />
+                <RespuestaAsistente respuesta={m.respuesta} accent={accent} onOpcion={enviar} onNavegar={onNavegar} pendientesIds={pendientesIds} />
               )}
             </div>
           ))}

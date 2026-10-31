@@ -28,7 +28,7 @@
    los datos (qué bloques hay), no de sinónimos tirados a suertes. */
 
 import { normalizar, normalizarRaiz, distanciaErratas, margenDeErratas } from './indiceBusqueda';
-import { interpretarFechas, periodoPorDefecto, fechasDelRango, etiquetaDeDia, etiquetaDeRango, periodoPrevio, unidadDePeriodo } from './fechasConversacion';
+import { interpretarFechas, periodoPorDefecto, fechasDelRango, etiquetaDeDia, etiquetaDeRango, periodoPrevio, unidadDePeriodo, diasDelRango } from './fechasConversacion';
 
 /* ══════════════════════════════════════════════════════════════════════════
    1 · LÍMITES
@@ -365,6 +365,15 @@ export function nuevaConversacion(usuario = null) {
   return { usuario, turno: 0, actualizado: 0, ultima: null, periodo: null, periodoTurno: 0, entidades: {}, pendiente: null };
 }
 
+/** Fase 2.3 · B0 — las aclaraciones con botones que siguen vivas (las de un contexto anterior a B0 solo
+ *  guardaban una: `id` + `opciones`). */
+const MAX_ACLARACIONES_VIVAS = MAX_INTENCIONES;
+function aclaracionesVivas(pendiente) {
+  if (!pendiente) return [];
+  if (Array.isArray(pendiente.aclaraciones)) return pendiente.aclaraciones.filter((a) => a && a.id && Array.isArray(a.opciones));
+  return pendiente.id && Array.isArray(pendiente.opciones) ? [{ id: pendiente.id, opciones: pendiente.opciones }] : [];
+}
+
 /** Lo heredable caduca por turnos y por tiempo. */
 function contextoVigente(ctx, ahora) {
   if (!ctx) return nuevaConversacion(null);
@@ -542,7 +551,19 @@ function completarSobreentendida(e, hermanas, hoy) {
    mismo mensaje, o hablando ya de un periodo de esa unidad, es la anterior A ESA; sin nada, la del calendario
    (como hasta ahora). */
 const UNIDAD_DE_ANTERIOR = [[/\bsemana anterior\b/, 'semana'], [/\bmes anterior\b/, 'mes'], [/\bano anterior\b/, 'ano']];
-function relativizarAnteriores(e, entero, item, hoy) {
+function relativizarAnteriores(e, entero, item, hoy, par = null) {
+  /* 🐛 Fase 2.3 · B0 — «¿y la semana anterior?» justo después de comparar dos semanas (y lo mismo con meses o
+     años): es «¿y la anterior?» de esa comparación, así que pasa por la misma regla (desplazar los dos) en
+     vez de leerse como la semana pasada del calendario, que repetía la comparación. Solo si es la única
+     fecha del mensaje y no hay otra de esa unidad delante. */
+  const validas = e.fechas.filter((f) => !f.invalida);
+  if (par && validas.length === 1 && !validas[0].fija) {
+    const f = validas[0];
+    const regla = UNIDAD_DE_ANTERIOR.find(([re]) => re.test(f.texto || ''));
+    if (regla && unidadDePeriodo(par.periodo, hoy) === regla[1] && unidadDePeriodo(par.segundo, hoy) === regla[1]) {
+      return { ...e, fechas: e.fechas.filter((x) => x !== f), anterior: { indices: [], texto: f.texto } };
+    }
+  }
   let cambio = false;
   const fechas = e.fechas.map((f) => {
     if (f.invalida || f.fija) return f;
@@ -675,6 +696,17 @@ function periodoParaCapacidad(capacidad, trozo, entero, ctx, hoy) {
     if (r.length === 1 && prestada(r[0]) && (tiempo !== 'futuro' || !(delMensaje[0].hasta < hoy))) elegidas = r;
   }
   if (elegidas.length) return { periodo: elegidas[0], segundo: elegidas[1] || null, origen: 'mensaje' };
+  /* 🐛 Fase 2.3 · B0 — lo último que se contestó fue una COMPARACIÓN: sin fecha en el mensaje no hay un único
+     periodo que heredar (¿el primero?, ¿el segundo?, ¿los dos juntos?). No se elige: se pregunta
+     (`aclaracionDePareja`). Y tampoco se hereda lo que se miraba antes de la comparación. */
+  const par = comparacionVigente(ctx);
+  if (par) {
+    const tipos = [par.periodo.tipo, par.segundo.tipo];
+    const encaja = capacidad.periodo && (capacidad.tiempo || 'pasado') === 'pasado'
+      && (capacidad.dosPeriodos || capacidad.periodo === 'ambos' || tipos.includes(capacidad.periodo) || (capacidad.periodo === 'dia' && capacidad.siRango));
+    if (encaja) return { periodo: null, segundo: null, origen: 'comparacion', pareja: par };
+    return { periodo: capacidad.porDefecto ? periodoPorDefecto(capacidad.porDefecto, hoy) : null, segundo: null, origen: 'defecto' };
+  }
   if (ctx.periodo && heredable(ctx, ctx.periodoTurno) && capacidad.periodo
     && (capacidad.periodo === 'ambos' || capacidad.periodo === ctx.periodo.tipo)
     && (ctx.periodo.tiempo || 'pasado') === tiempo) {
@@ -697,6 +729,9 @@ function ejecutarCapacidad(asistente, capacidad, args, datos) {
       /* v3.161.3 — el periodo que la capacidad usó DE VERDAD (p. ej. «tus últimas noches registradas» son
          del 15 al 21), para que la siguiente pregunta lo herede y no conteste sobre otras noches. */
       periodoUsado: r.periodoUsado && r.periodoUsado.desde && r.periodoUsado.hasta ? r.periodoUsado : null,
+      /* Fase 2.3 · B0 — una capacidad que compara dice qué DOS periodos comparó de verdad: la conversación
+         los guarda como pareja (nunca su unión) para «¿y la anterior?» y «compáralo con lo de antes». */
+      periodosComparados: parejaValida(r.periodosComparados),
     };
   } catch (error) {
     registrarErrorAsistente(asistente.id, capacidad.id, error);
@@ -729,6 +764,7 @@ function argumentosPara(asistente, capacidad, trozo, entero, ctx, hoy) {
   const args = { periodo: p.periodo, segundoPeriodo: p.segundo, origenPeriodo: p.origen, hoy, conceptos: trozo.conceptos, tokens: trozo.tokens,
     /* v3.161.3 — el periodo de la pregunta anterior a la última, para «compáralo con lo de antes». */
     periodoAnterior: ctx.periodoAnterior && heredable(ctx, ctx.periodoTurno) ? ctx.periodoAnterior : null };
+  if (p.pareja) args.pareja = p.pareja;
   if (capacidad.entidad) {
     const tipo = capacidad.entidad.tipo;
     /* 🐛 Fase 2.1 (A2) — si esta pregunta nombra algo que no existe, ni se toma lo nombrado en otra parte
@@ -746,7 +782,14 @@ function argumentosPara(asistente, capacidad, trozo, entero, ctx, hoy) {
       if (capacidad.entidad.obligatoria || sigue || trozo.comunes.has('referencia')) args.entidad = ctx.entidades[tipo].entidad;
     }
   }
-  if (typeof capacidad.argumentos === 'function') Object.assign(args, capacidad.argumentos(trozo, args) || {});
+  if (typeof capacidad.argumentos === 'function') {
+    const propios = { ...(capacidad.argumentos(trozo, args) || {}) };
+    /* Fase 2.3 · B0 — «¿y la anterior?» después de comparar las proteínas sigue comparando las proteínas: lo
+       que la capacidad sacó del mensaje de la comparación (`argsHeredados`) rellena lo que este no dice. */
+    for (const [k, v] of Object.entries(trozo.argsHeredados || {})) if (propios[k] === null || propios[k] === undefined) propios[k] = v;
+    Object.assign(args, propios);
+    args.argsPropios = propios;
+  }
   return args;
 }
 
@@ -916,7 +959,7 @@ function opcionDePendiente(pendiente, tokens) {
  * @param {{origen: string, indice: number}} [op.opcion]  el botón de aclaración que se tocó: la respuesta
  *        que lo creó (`origen`) y su posición. Solo vale si esa aclaración sigue siendo la pendiente.
  */
-export function responderMensaje(asistente, mensaje, { datos = {}, hoy, contexto = null, sinCargar = [], ajenos = [], ahora = Date.now(), opcion = null } = {}) {
+export function responderMensaje(asistente, mensaje, { datos = {}, hoy, contexto = null, sinCargar = [], ajenos = [], ahora = Date.now(), opcion = null, aclaracionesQueSiguen = [] } = {}) {
   const ctx0 = contextoVigente(contexto, ahora);
   const ctx = { ...ctx0, turno: (ctx0.turno || 0) + 1, actualizado: ahora, entidades: { ...(ctx0.entidades || {}) } };
   const { tokens } = normalizarMensaje(mensaje);
@@ -941,17 +984,27 @@ export function responderMensaje(asistente, mensaje, { datos = {}, hoy, contexto
          de una pregunta anterior no se puede leer como si contestara a la de ahora. */
       if (r.tipo === 'aclaracion') r.opciones = r.opciones.map((o) => ({ ...o, origen: r.id }));
     });
-    const ultimaAclaracion = [...respuestas].reverse().find((r) => r.tipo === 'aclaracion' && r.opciones.length);
-    ctx.pendiente = ultimaAclaracion ? { id: ultimaAclaracion.id, opciones: ultimaAclaracion.opciones } : null;
+    /* 🐛 Fase 2.3 · B0 — TODAS las aclaraciones con botones siguen vivas, no solo la última: «¿cuándo es el
+       examen y qué temas me quedan?» pregunta dos veces «¿de qué asignatura?», y la primera nacía apagada.
+       Cada botón lleva el id de la suya (`origen`), así que contesta a su pregunta y no a la otra. Las que
+       quedaban sin contestar de la misma tanda (`restantes`) siguen vivas mientras se van contestando con
+       sus botones; cualquier otra pregunta las da por terminadas (como antes). `id` y `opciones` siguen
+       siendo los de la última, que es la que se contesta escribiendo («la primera», «Biología»). */
+    const nuevas = respuestas.filter((r) => r.tipo === 'aclaracion' && r.opciones.length).map((r) => ({ id: r.id, opciones: r.opciones }));
+    const vivas = [...restantes, ...nuevas].slice(-MAX_ACLARACIONES_VIVAS);
+    const ultimaAclaracion = vivas[vivas.length - 1];
+    ctx.pendiente = ultimaAclaracion ? { id: ultimaAclaracion.id, opciones: ultimaAclaracion.opciones, aclaraciones: vivas } : null;
     return { respuestas, contexto: ctx };
   };
 
   /* 🐛 v3.161.2 — un botón de aclaración que ya no es el pendiente (se hizo otra pregunta después, se
      contestó ya o la conversación caducó) NO se ejecuta: antes se mandaba su texto («Martes», un nombre)
      y se interpretaba con el contexto de AHORA. Se dice, y la aclaración de ahora sigue viva. */
+  const pend = ctx0.pendiente;
+  const grupo = aclaracionesVivas(pend);
   if (opcion && opcion.origen) {
-    const pend = ctx0.pendiente;
-    const vigente = pend && pend.id === opcion.origen && Array.isArray(pend.opciones) && pend.opciones[opcion.indice];
+    const suya = grupo.find((a) => a.id === opcion.origen);
+    const vigente = suya && Array.isArray(suya.opciones) && suya.opciones[opcion.indice];
     if (!vigente) {
       const caducada = respuestaFija(asistente, 'opcion_caducada', [bTexto('Ese botón era de una pregunta anterior y ya no vale. Pregúntamelo otra vez y te contesto con lo de ahora, por ejemplo:')], { opciones: sugerenciasDe(asistente, 3) });
       caducada.id = `${ctx.turno}-0`;
@@ -960,9 +1013,22 @@ export function responderMensaje(asistente, mensaje, { datos = {}, hoy, contexto
   }
 
   /* 1 · Una aclaración pendiente que se contesta (un botón, «la primera», el nombre). */
-  const elegida = opcion && opcion.origen ? ctx0.pendiente.opciones[opcion.indice] : opcionDePendiente(ctx0.pendiente, tokens);
+  const contestada = opcion && opcion.origen ? grupo.find((a) => a.id === opcion.origen) : (pend ? grupo[grupo.length - 1] : null);
+  const elegida = opcion && opcion.origen ? contestada.opciones[opcion.indice] : opcionDePendiente(pend, tokens);
+  /* Lo que sigue pendiente de la misma tanda cuando se contesta una (Fase 2.3 · B0). */
+  const restantes = elegida ? grupo.filter((a) => a !== contestada) : aclaracionesQueSiguen;
   if (elegida && elegida.plan) {
     const capacidad = (asistente.capacidades || []).find((c) => c.id === elegida.plan.capacidad);
+    if (capacidad && capacidad.dosPeriodos && Array.isArray(elegida.plan.periodos) && elegida.plan.periodos.length === 2) {
+      /* Fase 2.3 · B0 — el botón de una capacidad que compara de verdad («¿quieres comparar la semana pasada
+         con la anterior?»): se ejecuta UNA vez con los dos periodos, como si los hubiera escrito. */
+      const [periodo, segundoPeriodo] = elegida.plan.periodos;
+      const args = { periodo, segundoPeriodo, origenPeriodo: 'mensaje', hoy, conceptos: new Map(), tokens, entidad: elegida.plan.entidad || null, ...(elegida.plan.args || {}) };
+      const r = ejecutarConArgs(asistente, capacidad, args, datos, sinCargar, disponibles);
+      respuestas.push(r);
+      recordar(ctx, capacidad, args, r);
+      return terminar();
+    }
     if (capacidad && Array.isArray(elegida.plan.periodos) && elegida.plan.periodos.length) {
       /* Fase 2.2 (P5) — el botón de «¿qué quieres comparar?»: cada periodo con la capacidad elegida, por
          separado, y la nota de que la diferencia no se calcula (la comparación real es la Fase 2.3). */
@@ -995,7 +1061,7 @@ export function responderMensaje(asistente, mensaje, { datos = {}, hoy, contexto
     }
   }
   if (elegida && !elegida.plan && elegida.mensaje && normalizar(elegida.mensaje) !== tokens.join(' ')) {
-    return responderMensaje(asistente, elegida.mensaje, { datos, hoy, contexto: { ...ctx0, pendiente: null }, sinCargar, ajenos, ahora });
+    return responderMensaje(asistente, elegida.mensaje, { datos, hoy, contexto: { ...ctx0, pendiente: null }, sinCargar, ajenos, ahora, aclaracionesQueSiguen: restantes });
   }
 
   const troceado = trozos(asistente, tokens, hoy, disponibles);
@@ -1003,7 +1069,7 @@ export function responderMensaje(asistente, mensaje, { datos = {}, hoy, contexto
      sobreentendidas del propio mensaje («este mes y el pasado», P3). Primero sobre el mensaje entero, y
      luego se lleva a la parte que la contiene (sus posiciones son de esa parte, no del mensaje). */
   const itemDelContexto = itemUnicoConPeriodo(ctx0);
-  const enteroRel = relativizarAnteriores(troceado.entero, troceado.entero, itemDelContexto, hoy);
+  const enteroRel = relativizarAnteriores(troceado.entero, troceado.entero, itemDelContexto, hoy, troceado.partes.length === 1 ? comparacionVigente(ctx0) : null);
   const entero = completarSobreentendida(enteroRel, enteroRel.fechas, hoy);
   entero.originales = palabrasOriginales(mensaje);
   const partes = troceado.partes.length === 1 && troceado.partes[0] === troceado.entero
@@ -1018,7 +1084,9 @@ export function responderMensaje(asistente, mensaje, { datos = {}, hoy, contexto
      lunes sin decirlo: con varias fechas en la misma pregunta, cada una se contesta por separado (hasta
      MAX_INTENCIONES, y se dice si sobran). Las que comparan dos periodos (`dosPeriodos`) las usan juntas. */
   const contestarUno = (capacidad, trozo) => {
-    const ajuste = capacidadParaPeriodo(asistente, capacidad, argumentosPara(asistente, capacidad, trozo, entero, ctx, hoy));
+    const argsBase = argumentosPara(asistente, capacidad, trozo, entero, ctx, hoy);
+    if (argsBase.pareja) { recordar(ctx, capacidad, { periodo: null }); return aclaracionDePareja(asistente, capacidad, argsBase, hoy); }
+    const ajuste = capacidadParaPeriodo(asistente, capacidad, argsBase);
     if (ajuste.aclaracion) { recordar(ctx, ajuste.capacidad, { periodo: null }); return ajuste.aclaracion; }
     const r = ejecutarConArgs(asistente, ajuste.capacidad, ajuste.args, datos, sinCargar, disponibles);
     if (r.tipo === 'respuesta' || r.tipo === 'aclaracion') recordar(ctx, ajuste.capacidad, ajuste.args, r);
@@ -1142,7 +1210,7 @@ export function responderMensaje(asistente, mensaje, { datos = {}, hoy, contexto
     if (trozo.anterior && !trozo.fechas.some((f) => !f.invalida) && !(capacidad && capacidad.dosPeriodos)) {
       const res = resolverAnterior(asistente, ctx0, hoy, capacidad, trozo.anterior.texto);
       if (res.respuesta) { respuestas.push(res.respuesta); continue; }
-      trozo = { ...trozo, fechas: [res.fecha] };
+      trozo = { ...trozo, fechas: res.fechas || [res.fecha], ...(res.argsHeredados ? { argsHeredados: res.argsHeredados } : {}) };
       if (!capacidad) capacidad = res.capacidad;
     }
     /* Elipsis y corrección (§7.6): sin pregunta propia pero con fecha o con algo nombrado (también algo
@@ -1272,7 +1340,73 @@ function itemUnicoConPeriodo(ctx) {
   const u = ctx && ctx.ultimaRespuesta;
   if (!u || !heredable(ctx, u.turno)) return null;
   const con = (u.items || []).filter((i) => i.periodo);
-  return con.length === 1 ? con[0] : null;
+  /* Una comparación no es «un periodo»: es una pareja (`comparacionVigente`). */
+  return con.length === 1 && !con[0].segundo ? con[0] : null;
+}
+
+/* ── Fase 2.3 · B0 — la comparación como PAREJA de periodos ─────────────────────────────────────────── */
+
+const periodoValido = (p) => !!(p && typeof p.desde === 'string' && typeof p.hasta === 'string' && p.desde && p.hasta && p.desde <= p.hasta);
+/** Los dos periodos que una capacidad dice haber comparado, con su forma; si no son dos válidos, `null`. */
+function parejaValida(lista) {
+  if (!Array.isArray(lista) || lista.length !== 2 || !lista.every(periodoValido)) return null;
+  return lista.map((p) => ({ desde: p.desde, hasta: p.hasta, tipo: p.tipo || (p.desde === p.hasta ? 'dia' : 'rango'), etiqueta: p.etiqueta || null }));
+}
+
+/** La última respuesta, si sigue vigente y fue UNA comparación (sus dos periodos y su capacidad). */
+function comparacionVigente(ctx) {
+  const u = ctx && ctx.ultimaRespuesta;
+  if (!u || !heredable(ctx, u.turno)) return null;
+  const items = u.items || [];
+  return items.length === 1 && items[0].segundo ? items[0] : null;
+}
+
+const etiquetaDe = (p, hoy) => p.etiqueta || etiquetaDeRangoSimple(p, hoy);
+const mayuscula = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : t);
+
+/**
+ * «¿y la anterior?» después de comparar dos periodos (decisión de Josué, opción A): los DOS un paso atrás,
+ * con la misma unidad y la misma distancia entre ellos — hoy/ayer → ayer/anteayer; esta semana/la pasada →
+ * la pasada/la anterior; un mes/el anterior → los dos meses de antes, con sus días de verdad. Solo si se
+ * puede saber con seguridad: los dos de la misma unidad del calendario, o dos rangos de los mismos días.
+ * Si no, `null` (y quien llama pregunta en vez de adivinar).
+ */
+export function desplazarPareja(a, b, hoy) {
+  if (!periodoValido(a) || !periodoValido(b)) return null;
+  const ua = unidadDePeriodo(a, hoy);
+  const ub = unidadDePeriodo(b, hoy);
+  if (!ua || ua !== ub) return null;
+  if (ua === 'rango' && diasDelRango(a.desde, a.hasta) !== diasDelRango(b.desde, b.hasta)) return null;
+  if (a.desde === b.desde && a.hasta === b.hasta) return null;
+  const pa = periodoPrevio(a, hoy);
+  const pb = periodoPrevio(b, hoy);
+  if (!pa || !pb || (pa.desde === pb.desde && pa.hasta === pb.hasta)) return null;
+  return [pa, pb].map((p) => ({ desde: p.desde, hasta: p.hasta, tipo: p.tipo || (p.desde === p.hasta ? 'dia' : 'rango'), etiqueta: p.etiqueta, unidad: p.unidad }));
+}
+
+/* Lo que se pregunta cuando una pregunta sin fecha llega justo después de una comparación:
+   · otra pregunta de un periodo («¿y la calidad?», «¿y las proteínas?») → ¿de cuál de los dos?;
+   · la propia comparación otra vez («compáralo con lo de antes») → ya está comparado: se ofrece el paso
+     atrás de los dos, o se pide que diga qué dos periodos. Nunca se elige uno ni se juntan los dos. */
+function aclaracionDePareja(asistente, capacidad, args, hoy) {
+  const par = args.pareja;
+  const ea = etiquetaDe(par.periodo, hoy);
+  const eb = etiquetaDe(par.segundo, hoy);
+  const base = { asistente: asistente.id, capacidad: 'comparacion_que_periodo', tipo: 'aclaracion', fuente: null, confianza: null, acciones: [] };
+  /* Lo que pidió en este mensaje («¿y las proteínas?») viaja con el botón; si no pidió nada, lo de la comparación. */
+  const dichos = Object.fromEntries(Object.entries(args.argsPropios || {}).filter(([, v]) => v !== null && v !== undefined));
+  if (capacidad.dosPeriodos) {
+    const atras = desplazarPareja(par.periodo, par.segundo, hoy);
+    if (!atras) {
+      return { ...base, bloques: [bTexto(`Ya te he comparado ${ea} con ${eb}. Dime qué dos periodos quieres comparar ahora, por ejemplo:`)],
+        opciones: capacidad.ejemplo ? [{ texto: capacidad.ejemplo, mensaje: capacidad.ejemplo }] : [] };
+    }
+    const texto = mayuscula(`${etiquetaDe(atras[0], hoy)} con ${etiquetaDe(atras[1], hoy)}`);
+    return { ...base, bloques: [bTexto(`Ya te he comparado ${ea} con ${eb}. ¿Quieres comparar ${etiquetaDe(atras[0], hoy)} con ${etiquetaDe(atras[1], hoy)}?`), bNota('Si es otra cosa, dime qué dos periodos quieres comparar.')],
+      opciones: [{ texto, mensaje: texto, plan: { capacidad: capacidad.id, entidad: args.entidad || null, periodos: atras, args: { ...(par.args || {}), ...dichos } } }] };
+  }
+  return { ...base, bloques: [bTexto(`Te he comparado ${ea} con ${eb}. ¿De cuál de los dos quieres saber «${capacidad.titulo.toLowerCase()}»?`)],
+    opciones: [par.periodo, par.segundo].map((p) => ({ texto: mayuscula(etiquetaDe(p, hoy)), mensaje: mayuscula(etiquetaDe(p, hoy)), plan: { capacidad: capacidad.id, entidad: args.entidad || null, periodo: { desde: p.desde, hasta: p.hasta, tipo: p.tipo, etiqueta: p.etiqueta }, args: dichos } })) };
 }
 
 const capacidadDeLaUltima = (asistente, ctx) => (ctx && ctx.ultima && heredable(ctx, ctx.ultima.turno)
@@ -1313,25 +1447,60 @@ function resolverAnterior(asistente, ctx, hoy, capacidadPropia, dicho = null) {
       bNota('Si quieres mirar algo por fechas, por ejemplo:'),
     ], { tipo: 'respuesta', opciones: ejemplosConFechas(asistente) }) };
   }
-  const previos = [];
-  for (const i of conPeriodo) {
-    const p = periodoPrevio(i.periodo, hoy);
-    if (p && !previos.some((x) => x.p.desde === p.desde && x.p.hasta === p.hasta && x.i.capacidad === i.capacidad)) previos.push({ i, p });
-  }
   const titulo = (id) => ((asistente.capacidades || []).find((c) => c.id === id) || { titulo: id }).titulo;
-  if (previos.length > 1) {
+  /* 🐛 Fase 2.3 · B0 — después de una COMPARACIÓN, «¿y la anterior?» (sin otra pregunta, o con la misma)
+     desplaza LOS DOS periodos un paso atrás (`desplazarPareja`), con la misma capacidad y lo mismo que se
+     comparaba (las proteínas siguen siendo las proteínas). Antes se calculaba el anterior solo del primero
+     y la comparación de días repetía hoy contra ayer. Si los dos no se pueden mover a la vez con seguridad,
+     se pregunta. Con OTRA pregunta («¿y las proteínas de la anterior?»), cada periodo de la pareja cuenta
+     por separado y se pregunta anterior a cuál. */
+  const propiaDistinta = (i) => capacidadPropia && capacidadPropia.id !== i.capacidad;
+  if (conPeriodo.length === 1 && conPeriodo[0].segundo && !propiaDistinta(conPeriodo[0])) {
+    const i = conPeriodo[0];
+    const cap = (asistente.capacidades || []).find((c) => c.id === i.capacidad) || null;
+    const atras = cap ? desplazarPareja(i.periodo, i.segundo, hoy) : null;
+    if (!atras) {
+      return { respuesta: {
+        asistente: asistente.id, capacidad: 'referencia_pareja', tipo: 'aclaracion',
+        bloques: [bTexto(`Te he comparado ${etiquetaDe(i.periodo, hoy)} con ${etiquetaDe(i.segundo, hoy)} y no sé cómo pasar los dos al periodo anterior a la vez. Dime qué dos periodos quieres comparar, por ejemplo:`)],
+        fuente: null, confianza: null, acciones: [],
+        opciones: cap && cap.ejemplo ? [{ texto: cap.ejemplo, mensaje: cap.ejemplo }] : [],
+      } };
+    }
+    return { fechas: atras.map((p) => fechaCalculada(p, hoy, { texto: 'anterior' })), capacidad: cap, argsHeredados: i.args || null, entidad: i.entidad || null };
+  }
+  const sueltos = conPeriodo.flatMap((i) => (i.segundo && propiaDistinta(i) ? [{ ...i, segundo: null }, { ...i, periodo: i.segundo, segundo: null }] : [i]));
+  const previos = [];
+  for (const i of sueltos) {
+    if (i.segundo) {
+      /* Una comparación entre otras respuestas del mismo turno: una opción con los dos periodos movidos. */
+      const atras = desplazarPareja(i.periodo, i.segundo, hoy);
+      if (atras) previos.push({ i, pareja: atras });
+      continue;
+    }
+    const p = periodoPrevio(i.periodo, hoy);
+    if (p && !previos.some((x) => x.p && x.p.desde === p.desde && x.p.hasta === p.hasta && x.i.capacidad === i.capacidad)) previos.push({ i, p });
+  }
+  if (previos.length > 1 || (previos.length === 1 && previos[0].pareja)) {
     const variasCapacidades = new Set(previos.map((x) => x.i.capacidad)).size > 1;
     return { respuesta: {
       asistente: asistente.id, capacidad: 'referencia_ambigua', tipo: 'aclaracion',
       bloques: [bTexto('Te he contestado más de un periodo: ¿anterior a cuál?')],
       fuente: null, confianza: null, acciones: [],
-      opciones: previos.slice(0, MAX_OPCIONES).map(({ i, p }) => {
+      opciones: previos.slice(0, MAX_OPCIONES).map(({ i, p, pareja }) => {
+        if (pareja) {
+          const texto = mayuscula(`${titulo(i.capacidad)} · ${etiquetaDe(pareja[0], hoy)} con ${etiquetaDe(pareja[1], hoy)}`);
+          return { texto, mensaje: texto, plan: { capacidad: i.capacidad, entidad: i.entidad || null, periodos: pareja, args: i.args || null } };
+        }
         const etq = i.periodo.etiqueta || etiquetaDeRangoSimple(i.periodo, hoy);
         const texto = `${variasCapacidades ? `${titulo(i.capacidad)} · ` : ''}anterior ${aEtiqueta(etq)}`;
         const mayus = texto.charAt(0).toUpperCase() + texto.slice(1);
         return { texto: mayus, mensaje: mayus, plan: { capacidad: capacidadPropia ? capacidadPropia.id : i.capacidad, entidad: i.entidad || null, periodo: p } };
       }),
     } };
+  }
+  if (!previos.length) {
+    return { respuesta: respuestaFija(asistente, 'referencia_sin_contexto', [bTexto('¿Anterior a qué? Dime qué quieres consultar y de qué fecha.')], { tipo: 'respuesta', opciones: ejemplosConFechas(asistente) }) };
   }
   const { i, p } = previos[0];
   const cap = capacidadPropia || (asistente.capacidades || []).find((c) => c.id === i.capacidad) || null;
@@ -1370,6 +1539,17 @@ function preguntaQueComparar(asistente, dos, validas, hoy, imposibles = []) {
 
 function recordar(ctx, capacidad, args, respuesta = null) {
   ctx.ultima = { capacidad: capacidad.id, turno: ctx.turno };
+  const pareja = respuesta && respuesta.tipo === 'respuesta' ? respuesta.periodosComparados : null;
+  if (pareja) {
+    /* 🐛 Fase 2.3 · B0 — una comparación se guarda como PAREJA: ni su unión pasa a ser «el periodo de la
+       conversación» ni se pisa el periodo simple de antes. Lo que viene después la lee con
+       `comparacionVigente` (pregunta de cuál de los dos, o desplaza los dos con «¿y la anterior?»). */
+    const previos = ctx.ultimaRespuesta && ctx.ultimaRespuesta.turno === ctx.turno ? ctx.ultimaRespuesta.items : [];
+    const item = { capacidad: capacidad.id, periodo: { ...pareja[0], porDefecto: false }, segundo: { ...pareja[1], porDefecto: false }, entidad: capacidad.entidad && args.entidad ? args.entidad : null, args: args.argsPropios || null };
+    ctx.ultimaRespuesta = { turno: ctx.turno, items: [...previos, item].slice(-MAX_INTENCIONES) };
+    if (capacidad.entidad && args.entidad) ctx.entidades[capacidad.entidad.tipo] = { entidad: args.entidad, turno: ctx.turno };
+    return;
+  }
   const periodo = respuesta && respuesta.periodoUsado ? respuesta.periodoUsado : args.periodo;
   if (periodo && !periodo.porDefecto) {
     /* v3.161.3 — el periodo de antes se guarda para «compáralo con lo de antes» (solo si cambia). */

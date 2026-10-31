@@ -4815,6 +4815,28 @@ for (const [nombre, Componente, props] of CASOS) {
   }
 }
 
+/* Fase 2.3 · B0 — dos aclaraciones del MISMO turno siguen vivas: en la hoja ninguno de sus botones sale
+   apagado; las de una pregunta anterior, sí. Se pinta la conversación entera, para que lo que se mire sea
+   el camino de verdad: `contexto.pendiente.aclaraciones` → la hoja → cada botón. */
+{
+  const aclaracion = (id) => ({ id, asistente: 'estudios', capacidad: 'c', tipo: 'aclaracion', bloques: [{ tipo: 'texto', texto: '¿De qué asignatura?' }], fuente: null, confianza: null,
+    opciones: [{ texto: 'Matemáticas', mensaje: 'Matemáticas', origen: id }, { texto: 'Biología', mensaje: 'Biología', origen: id }], acciones: [] });
+  const conv = (vivas) => ({ usuario: 'u', contexto: { ...conversacionVacia('u').contexto, turno: 2, pendiente: vivas.length ? { id: vivas[vivas.length - 1], opciones: [], aclaraciones: vivas.map((id) => ({ id, opciones: [] })) } : null },
+    mensajes: [{ id: 'yo-1', rol: 'yo', texto: 'pregunta vieja' }, { id: 'as-0-0', rol: 'asistente', respuesta: aclaracion('0-0') },
+      { id: 'yo-2', rol: 'yo', texto: '¿Cuándo es el examen y qué temas me quedan?' }, { id: 'as-1-0', rol: 'asistente', respuesta: aclaracion('1-0') }, { id: 'as-1-1', rol: 'asistente', respuesta: aclaracion('1-1') }] });
+  const apagados = (html) => (html.match(/<button[^>]*disabled=""/g) || []).length;
+  const pinta = (vivas) => renderToString(React.createElement(ConversacionAsistente, { asistente: ASISTENTES.find((a) => a.id === 'estudios'), conversacion: conv(vivas), onEnviar: noop, onNavegar: noop, accent }));
+  const casos = [
+    ['las dos del mismo turno vivas: solo se apagan los de la pregunta anterior', pinta(['1-0', '1-1']), 2],
+    ['solo una viva (como antes de B0): se apagan también los de la otra', pinta(['1-1']), 4],
+    ['ninguna viva: todos apagados', pinta([]), 6],
+  ];
+  for (const [nombre, html, esperado] of casos) {
+    if (apagados(html) === esperado) console.log(`  ✓ Hoja del asistente · B0.3 · ${nombre}`);
+    else { console.error(`  ✗ Hoja del asistente · B0.3 · ${nombre} → ${apagados(html)} botones apagados, se esperaban ${esperado}`); fallos++; }
+  }
+}
+
 console.log('');
 if (fallos) { console.error(`═══ ${fallos} VISTA(S) FALLAN AL RENDERIZAR ═══\n`); process.exit(1); }
 console.log('═══ TODAS LAS VISTAS RENDERIZAN ═══\n');

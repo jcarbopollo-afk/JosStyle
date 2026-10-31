@@ -1114,5 +1114,117 @@ console.log('\n── Palabras que son propiedades heredadas («constructor», �
     && caps(unaC(ASISTENTE_PRODUCTIVIDAD, '¿Qué hábitos me tocan hoy?')) === 'habitos', 'Una pregunta normal en cada uno de los cinco sigue igual');
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   15 · FASE 2.3 · B0 — comparaciones como pareja y varias aclaraciones vivas
+   ══════════════════════════════════════════════════════════════════════════ */
+console.log('\n── 15. Fase 2.3 · B0 · Comparaciones como pareja y aclaraciones del mismo turno (asistentes de verdad) ──');
+{
+  const corpus15 = [];
+  const charla = (asistente) => {
+    let ctx = nuevaConversacion('u-prueba');
+    const f = (mensaje, extra = {}) => {
+      const r = responderMensaje(asistente, mensaje, { datos: datosParaAsistente(asistente, ESTADO), hoy: HOY, contexto: ctx, ajenos: DOMINIOS_AJENOS, ahora: 1000, ...extra });
+      ctx = r.contexto;
+      corpus15.push(...r.respuestas);
+      ultimoVisto = r.respuestas.map((x) => `[${x.capacidad}] ${textoDeRespuesta(x)}`).join(' | ');
+      return r.respuestas;
+    };
+    f.ctx = () => ctx;
+    f.boton = (resp, i) => (resp && resp.opciones && resp.opciones[i] ? f(resp.opciones[i].mensaje, { opcion: { origen: resp.opciones[i].origen, indice: i } }) : [{ capacidad: 'sin_boton', tipo: 'error', bloques: [], opciones: [] }]);
+    return f;
+  };
+  const kcal = (fecha) => resumenDelDia(NUTRICION.comidas, fecha, null).find((x) => x.id === 'calorias').consumido;
+  const pareja = (h) => { const u = h.ctx().ultimaRespuesta; const i = u && u.items.length === 1 ? u.items[0] : null; return i && i.segundo ? `${i.periodo.desde}..${i.periodo.hasta}|${i.segundo.desde}..${i.segundo.hasta}` : null; };
+
+  /* Nutrición: «¿y la anterior?» tras comparar dos días. */
+  let h = charla(ASISTENTE_NUTRICION);
+  let r = h('Compara hoy con ayer');
+  ok(caps(r) === 'comparar_dias' && pareja(h) === `${HOY}..${HOY}|${d(1)}..${d(1)}`, 'Nutrición · «compara hoy con ayer» se guarda como la pareja hoy/ayer');
+  r = h('¿Y la anterior?');
+  ok(caps(r) === 'comparar_dias' && pareja(h) === `${d(1)}..${d(1)}|${d(2)}..${d(2)}` && !txt(r).includes(`${kcal(HOY)} kcal`) && /miércoles 21 de octubre/.test(txt(r)) && /ayer/.test(txt(r)),
+    '🐛 Nutrición · «¿y la anterior?» compara ayer con anteayer (antes repetía hoy con ayer, palabra por palabra)');
+  ok(/no tienes nada registrado/.test(txt(r)) && /no es un día de 0 calorías/.test(txt(r)), 'Nutrición · anteayer no tiene registros: se dice y no se compara contra un cero inventado');
+  r = h('¿Y la anterior?');
+  ok(pareja(h) === `${d(2)}..${d(2)}|${d(3)}..${d(3)}` && txt(r).includes(`${kcal(d(3))} kcal`), 'Nutrición · otra vez: anteayer con el martes (encadenado)');
+  h = charla(ASISTENTE_NUTRICION);
+  h('¿Comí más que ayer?');
+  r = h('¿Y la anterior?');
+  ok(pareja(h) === `${d(1)}..${d(1)}|${d(2)}..${d(2)}` && !/con hoy/.test(txt(r)), 'Nutrición · «¿comí más que ayer?» (hoy con ayer) → «¿y la anterior?» → ayer con anteayer (antes: anteayer con hoy)');
+  h = charla(ASISTENTE_NUTRICION);
+  h('Compara las proteínas de hoy con las de ayer');
+  r = h('¿Y la anterior?');
+  ok(/Proteína/.test(txt(r)) && !/Calorías/.test(txt(r)), 'Nutrición · la métrica de la comparación se mantiene: siguen siendo las proteínas');
+  h = charla(ASISTENTE_NUTRICION);
+  h('Compara hoy con ayer');
+  r = h('¿Y las proteínas?');
+  ok(r[0].capacidad === 'comparacion_que_periodo' && r[0].opciones.map((o) => o.texto).join('|') === 'Hoy|Ayer', 'Nutrición · una pregunta de un día tras comparar dos: ¿de cuál?, con los dos días');
+  r = h.boton(r[0], 1);
+  ok(caps(r) === 'dia' && /^Ayer registraste/.test(textoDeRespuesta(r[0])) && /proteína/.test(txt(r)), 'Nutrición · …el botón «Ayer» contesta las proteínas de ayer (no las calorías)');
+
+  /* Sueño: la comparación ya no es la unión de los dos periodos. */
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  ok(pareja(h) === `2026-10-19..${HOY}|2026-10-12..2026-10-18` && h.ctx().periodo === null, '🐛 Sueño · la comparación se guarda como la pareja 19–23 / 12–18, no como el bloque del 12 al 23');
+  r = h('Compáralo con lo de antes');
+  ok(r[0].capacidad === 'comparacion_que_periodo' && r[0].opciones.length === 1 && /semana del 12 al 18 de octubre con la semana del 5 al 11/i.test(r[0].opciones[0].texto),
+    '🐛 Sueño · «compáralo con lo de antes» tras comparar: pregunta y ofrece las dos semanas anteriores (antes: el bloque del 12 al 23 contra el 30 sep–11 oct)');
+  r = h.boton(r[0], 0);
+  ok(caps(r) === 'comparar' && /la semana del 5 al 11 de octubre no tiene ninguna noche registrada/.test(txt(r)) && !/30 de septiembre/.test(txt(r)), 'Sueño · …y el botón compara esas dos semanas (la del 5 al 11 no tiene registros, y se dice)');
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  r = h('¿Y la anterior?');
+  ok(caps(r) === 'comparar' && pareja(h) === '2026-10-12..2026-10-18|2026-10-05..2026-10-11' && !/12 días/.test(txt(r)), '🐛 Sueño · «¿y la anterior?» tras comparar semanas → la pasada con la anterior (antes: «los 12 días anteriores»)');
+  h = charla(ASISTENTE_SUENO);
+  h('¿Cuánto dormí esta semana?');
+  r = h('Compáralo con lo de antes');
+  ok(caps(r) === 'comparar' && /del 14 al 18 de octubre/.test(txt(r)), 'Sueño · con UN periodo en la conversación, «compáralo con lo de antes» sigue como estaba');
+  r = h('Compáralo con lo de antes');
+  ok(r[0].capacidad === 'comparacion_que_periodo' && !/del 14 al 23/.test(txt(r)), '🐛 Sueño · repetirlo ya no compara dos periodos solapados (antes: «del 14 al 23» contra esta semana): pregunta');
+  h = charla(ASISTENTE_SUENO);
+  h('¿Cuánto dormí ayer?'); h('¿Cuánto dormí la semana pasada?');
+  r = h('Compáralo con lo de antes');
+  ok(caps(r) === 'comparar' && /la semana pasada/i.test(txt(r)) && /ayer/i.test(txt(r)), 'Sueño · «ayer» → «la semana pasada» → «compáralo con lo de antes» sigue comparando esas dos');
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  r = h('¿Y la calidad?');
+  ok(r[0].capacidad === 'comparacion_que_periodo' && r[0].opciones.length === 2, 'Sueño · «¿y la calidad?» tras comparar: ¿de cuál de las dos semanas? (antes: del bloque del 12 al 23)');
+  r = h.boton(r[0], 1);
+  ok(caps(r) === 'calidad' && /la semana pasada \(del 12 al 18 de octubre\)/.test(txt(r)) && !/del 12 al 23/.test(txt(r)), 'Sueño · …el botón contesta la calidad de la semana pasada, sin unir nada');
+  h = charla(ASISTENTE_SUENO);
+  r = h('Compara este mes con el mes pasado');
+  ok(/del 1 al 30 de septiembre\) no tiene ninguna noche registrada/.test(txt(r)) && !/ 0 h| 0 min/.test(txt(r)), 'Sueño · sin registros en un periodo: no se compara contra un cero');
+  r = h('¿Y la anterior?');
+  ok(pareja(h) === '2026-09-01..2026-09-30|2026-08-01..2026-08-31', 'Sueño · meses: «¿y la anterior?» → septiembre con agosto');
+  h = charla(ASISTENTE_SUENO);
+  ok(h('¿Y la anterior?')[0].capacidad === 'referencia_sin_contexto', 'Sueño · sin nada antes, «¿y la anterior?» pregunta');
+
+  /* Estudios: dos aclaraciones en el mismo turno, las dos vivas. */
+  h = charla(ASISTENTE_ESTUDIOS);
+  r = h('¿Cuándo es el examen y qué temas me quedan?');
+  ok(caps(r) === 'cuando,temas' && r.every((x) => x.tipo === 'aclaracion') && h.ctx().pendiente.aclaraciones.map((a) => a.id).join(',') === `${r[0].id},${r[1].id}`, '🐛 Estudios · las dos «¿De qué asignatura?» nacen vivas (antes la primera nacía apagada)');
+  const [ac1, ac2] = r;
+  r = h.boton(ac2, ac2.opciones.findIndex((o) => o.texto === 'Matemáticas'));
+  ok(caps(r) === 'temas' && /Matemáticas/.test(txt(r)), 'Estudios · el botón de la segunda contesta los temas de Matemáticas');
+  ok(h.ctx().pendiente && h.ctx().pendiente.aclaraciones.map((a) => a.id).join(',') === ac1.id, 'Estudios · …y la primera sigue viva');
+  r = h.boton(ac1, ac1.opciones.findIndex((o) => o.texto === 'Biología'));
+  ok(caps(r) === 'cuando' && /Biología/.test(txt(r)) && /27 de octubre/.test(txt(r)), 'Estudios · el botón de la primera contesta cuándo es el examen de Biología (su pregunta, no la otra)');
+  ok(h.boton(ac1, 0)[0].capacidad === 'opcion_caducada', 'Estudios · contestada, ya no vale');
+  h = charla(ASISTENTE_ESTUDIOS);
+  r = h('¿Cuándo es el examen y qué temas me quedan?');
+  h('¿Cuántas horas he estudiado esta semana?');
+  ok(h.boton(r[0], 0)[0].capacidad === 'opcion_caducada' && h.boton(r[1], 0)[0].capacidad === 'opcion_caducada', 'Estudios · otra pregunta las da por terminadas (como antes)');
+  h = charla(ASISTENTE_ESTUDIOS);
+  r = h('¿Cuándo es el examen?');
+  ok(h.ctx().pendiente.aclaraciones.length === 1 && caps(h.boton(r[0], r[0].opciones.findIndex((o) => o.texto === 'Biología'))) === 'cuando', 'Estudios · una sola aclaración sigue funcionando');
+  /* Ni entre asistentes: el botón de Estudios no vale en la conversación de Sueño. */
+  const est = charla(ASISTENTE_ESTUDIOS);
+  const dos = est('¿Cuándo es el examen y qué temas me quedan?');
+  const sue = charla(ASISTENTE_SUENO);
+  sue('¿Cuánto dormí ayer?');
+  ok(sue(dos[0].opciones[0].mensaje, { opcion: { origen: dos[0].opciones[0].origen, indice: 0 } })[0].capacidad === 'opcion_caducada', 'Aislamiento · un botón de Estudios no se ejecuta en la conversación de Sueño');
+
+  ok(corpus15.every((x) => !incumpleHonestidad(textoDeRespuesta(x)).length), 'Ninguna respuesta de esta sección incumple las palabras prohibidas (§8)');
+}
+
 console.log(`\n${fallos === 0 ? '\x1b[32m' : '\x1b[31m'}${total - fallos}/${total} comprobaciones\x1b[0m`);
 process.exit(fallos ? 1 : 0);

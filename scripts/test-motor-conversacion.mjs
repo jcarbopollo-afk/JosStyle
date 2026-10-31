@@ -8,7 +8,7 @@ import {
   normalizarMensaje, detectarConceptos, resolverEntidad, responderMensaje, nuevaConversacion,
   textoDeRespuesta, incumpleHonestidad, MAX_MENSAJE, TURNOS_CONTEXTO, MINUTOS_CONTEXTO, bLista, MAX_ITEMS_LISTA,
   ERRATAS_FECHA, palabrasParecidasAFecha, mencionSinResolver,
-  referenciaAnterior, conversarCon, TEXTO_SIN_DIFERENCIA,
+  referenciaAnterior, conversarCon, TEXTO_SIN_DIFERENCIA, desplazarPareja,
 } from '../src/lib/motorConversacion.js';
 import {
   interpretarFechas, etiquetaDeDia, etiquetaDeRango, lunesDeFecha, periodoPorDefecto, diasDelRango, fechasDelRango,
@@ -460,6 +460,156 @@ console.log('\n── Palabras que son propiedades heredadas («constructor», �
   ok(normalizarMensaje('q tal xq tb').tokens.join(' ') === 'que tal porque tambien', '…y las abreviaturas de verdad se siguen expandiendo');
   const rc = sinLanzar(() => responderMensaje(ASIS, 'constructor', { datos: {}, hoy: HOY })) && responderMensaje(ASIS, 'constructor', { datos: {}, hoy: HOY }).respuestas;
   ok(Array.isArray(rc) && rc.length === 1 && rc[0].capacidad === 'no_entendido', '«constructor» a secas: no entendido (con ejemplos), no un error');
+}
+
+/* ── 10 · Fase 2.3 · B0: la comparación como pareja y varias aclaraciones vivas ── */
+console.log('\n── 10. Fase 2.3 · B0 · Comparaciones como pareja, «¿y la anterior?» desplaza las dos, varias aclaraciones ──');
+{
+  /* Una capacidad que compara DE VERDAD y se porta como las de verdad: con dos periodos, esos dos; con uno
+     dicho en el mensaje, HOY contra ese (como «¿comí más que ayer?» de Nutrición); con el de la conversación,
+     ese contra el de justo antes (como «compáralo con lo de antes» de Sueño); sin nada, esta semana contra
+     la pasada. Dice qué dos comparó (`periodosComparados`). Con el código de antes, «¿y la anterior?» tras
+     «compara hoy con ayer» le pasaba solo «ayer» y repetía hoy contra ayer: estas comprobaciones lo cazan. */
+  const ESTA_SEMANA = periodoPorDefecto('estaSemana', HOY);
+  const cmp = capa('cmp', {
+    senales: { comparar: 5 }, necesita: [['comparar']], periodo: 'ambos', dosPeriodos: true, porDefecto: 'estaSemana', prioridad: 1,
+    argumentos: (trozo) => ({ indicadores: trozo.tokens.includes('proteinas') ? ['proteina'] : null }),
+    ejecutar: (datos, args) => {
+      let a; let b;
+      if (args.segundoPeriodo) { a = args.periodo; b = args.segundoPeriodo; }
+      else if (args.periodo && args.origenPeriodo === 'contexto') { a = args.periodo; b = periodoPrevio(a, HOY); }
+      else if (args.periodo) { a = { desde: HOY, hasta: HOY, tipo: 'dia' }; b = args.periodo; }
+      else { a = ESTA_SEMANA; b = periodoPrevio(a, HOY); }
+      return { bloques: [{ tipo: 'texto', texto: `cmp:${a.desde}..${a.hasta}|${b.desde}..${b.hasta}|${(args.indicadores || ['kcal']).join('+')}` }], fuente: 'prueba', periodosComparados: [a, b] };
+    },
+  });
+  const ASIS5 = { ...ASIS, lexico: { ...ASIS.lexico, temas: ['temas', 'tema'] }, capacidades: [...ASIS.capacidades, cmp,
+    capa('temas', { senales: { temas: 4 }, necesita: [['temas']], entidad: { tipo: 'ejercicio', obligatoria: true, nombre: 'ejercicio' }, prioridad: 1 })] };
+  let c5 = nuevaConversacion('u5');
+  let ult = [];
+  const p5 = (t, extra = {}) => { const r = responderMensaje(ASIS5, t, { datos: {}, hoy: HOY, contexto: c5, ahora: extra.ahora ?? 1000, opcion: extra.opcion || null }); c5 = r.contexto; ult = r.respuestas; return r.respuestas; };
+  const boton = (resp, i, extra = {}) => (resp && resp.opciones && resp.opciones[i] ? p5(resp.opciones[i].mensaje, { ...extra, opcion: { origen: resp.opciones[i].origen, indice: i } }) : [{ capacidad: 'sin_boton', tipo: 'error', bloques: [], opciones: [] }]);
+  const nueva5 = () => { c5 = nuevaConversacion('u5'); };
+  const tx = (r) => r.map((x) => { const b = x.bloques.find((y) => y.tipo === 'texto'); return b ? b.texto : x.capacidad; });
+
+  /* desplazarPareja: las dos un paso atrás, misma unidad y misma distancia, con el calendario de verdad. */
+  const dia = (d) => ({ desde: d, hasta: d, tipo: 'dia' });
+  const rg = (a, b) => ({ desde: a, hasta: b, tipo: 'rango' });
+  const par = (x) => (x ? x.map((p) => `${p.desde}..${p.hasta}`).join('|') : null);
+  ok(par(desplazarPareja(dia('2026-10-23'), dia('2026-10-22'), HOY)) === '2026-10-22..2026-10-22|2026-10-21..2026-10-21', 'desplazarPareja · hoy/ayer → ayer/anteayer');
+  ok(par(desplazarPareja(dia('2026-10-23'), dia('2026-10-19'), HOY)) === '2026-10-22..2026-10-22|2026-10-18..2026-10-18', 'desplazarPareja · dos días separados: los dos un día atrás (la distancia de 4 días se mantiene)');
+  ok(par(desplazarPareja(rg('2026-10-19', '2026-10-23'), rg('2026-10-12', '2026-10-18'), HOY)) === '2026-10-12..2026-10-18|2026-10-05..2026-10-11', 'desplazarPareja · esta semana (en curso)/la pasada → la pasada/la anterior, enteras');
+  ok(par(desplazarPareja(rg('2026-03-01', '2026-03-31'), rg('2026-02-01', '2026-02-28'), HOY)) === '2026-02-01..2026-02-28|2026-01-01..2026-01-31', 'desplazarPareja · marzo/febrero → febrero (28 días)/enero');
+  ok(par(desplazarPareja(rg('2024-03-01', '2024-03-31'), rg('2024-02-01', '2024-02-29'), HOY)) === '2024-02-01..2024-02-29|2024-01-01..2024-01-31', 'desplazarPareja · en un año bisiesto febrero tiene 29');
+  ok(par(desplazarPareja(rg('2026-01-01', '2026-01-31'), rg('2025-12-01', '2025-12-31'), HOY)) === '2025-12-01..2025-12-31|2025-11-01..2025-11-30', 'desplazarPareja · enero/diciembre cruza el año: diciembre/noviembre de 2025');
+  ok(par(desplazarPareja(rg('2026-10-01', '2026-10-23'), rg('2026-09-01', '2026-09-30'), HOY)) === '2026-09-01..2026-09-30|2026-08-01..2026-08-31', 'desplazarPareja · este mes (en curso)/el pasado → septiembre/agosto enteros');
+  ok(par(desplazarPareja(rg('2025-01-01', '2025-12-31'), rg('2024-01-01', '2024-12-31'), HOY)) === '2024-01-01..2024-12-31|2023-01-01..2023-12-31', 'desplazarPareja · años');
+  ok(par(desplazarPareja(rg('2026-10-14', '2026-10-23'), rg('2026-10-04', '2026-10-13'), HOY)) === '2026-10-04..2026-10-13|2026-09-24..2026-10-03', 'desplazarPareja · dos rangos de los mismos días: los dos esos días atrás');
+  ok(desplazarPareja(rg('2026-10-19', '2026-10-23'), rg('2026-10-14', '2026-10-18'), HOY) === null, 'desplazarPareja · una semana con 5 días sueltos (unidades distintas): no se adivina → null');
+  ok(desplazarPareja(rg('2026-10-10', '2026-10-23'), rg('2026-10-01', '2026-10-05'), HOY) === null, 'desplazarPareja · dos rangos de duración distinta: null');
+  ok(desplazarPareja(dia('2026-10-23'), dia('2026-10-23'), HOY) === null && desplazarPareja(null, dia('2026-10-23'), HOY) === null && desplazarPareja(rg('2026-10-23', '2026-10-01'), dia('2026-10-22'), HOY) === null, 'desplazarPareja · el mismo periodo dos veces, uno que falta o uno al revés: null');
+
+  /* B0.2 — «¿y la anterior?» después de comparar: los dos periodos un paso atrás, encadenado. */
+  nueva5();
+  let r = p5('compara hoy con ayer');
+  ok(tx(r)[0] === 'cmp:2026-10-23..2026-10-23|2026-10-22..2026-10-22|kcal', 'B0.2 · «compara hoy con ayer» compara el 23 con el 22');
+  r = p5('y la anterior?');
+  ok(tx(r)[0] === 'cmp:2026-10-22..2026-10-22|2026-10-21..2026-10-21|kcal', '🐛 B0.2 · «¿y la anterior?» → ayer con anteayer (antes repetía hoy con ayer)');
+  r = p5('y la anterior?');
+  ok(tx(r)[0] === 'cmp:2026-10-21..2026-10-21|2026-10-20..2026-10-20|kcal', 'B0.2 · encadenado: anteayer con el día de antes');
+  nueva5(); p5('compara esta semana con la semana pasada');
+  ok(tx(p5('y la anterior?'))[0] === 'cmp:2026-10-12..2026-10-18|2026-10-05..2026-10-11|kcal', 'B0.2 · semanas → la pasada con la anterior a esa (las dos se mueven)');
+  nueva5(); p5('compara esta semana con la semana pasada');
+  ok(tx(p5('y la semana anterior?'))[0] === 'cmp:2026-10-12..2026-10-18|2026-10-05..2026-10-11|kcal', 'B0.2 · «¿y la semana anterior?» tras comparar semanas es lo mismo (no la semana pasada del calendario, que repetía)');
+  nueva5(); p5('compara este mes con el mes pasado');
+  r = p5('y la anterior?');
+  ok(tx(r)[0] === 'cmp:2026-09-01..2026-09-30|2026-08-01..2026-08-31|kcal', 'B0.2 · meses → septiembre (30) con agosto (31), con sus días de verdad');
+  ok(tx(p5('y la anterior?'))[0] === 'cmp:2026-08-01..2026-08-31|2026-07-01..2026-07-31|kcal', 'B0.2 · …y otra vez: agosto con julio');
+  nueva5(); p5('compara las proteinas de hoy con las de ayer');
+  ok(tx(p5('y la anterior?'))[0] === 'cmp:2026-10-22..2026-10-22|2026-10-21..2026-10-21|proteina', 'B0.2 · lo que se comparaba no cambia: las proteínas siguen siendo las proteínas');
+  nueva5(); p5('compara esta semana con hace 5 dias');
+  r = p5('y la anterior?');
+  ok(r[0].capacidad === 'referencia_pareja' && r[0].tipo === 'aclaracion' && /no sé cómo pasar los dos/.test(textoDeRespuesta(r[0])), 'B0.2 · si los dos no se pueden mover a la vez con seguridad (una semana y un día), se pregunta');
+
+  /* B0.1 — el contexto guarda la pareja, nunca su unión. */
+  nueva5(); p5('cuanto dormi el lunes');
+  const periodoAntes = JSON.stringify(c5.periodo);
+  p5('compara esta semana con la semana pasada');
+  const it = c5.ultimaRespuesta.items;
+  ok(it.length === 1 && it[0].periodo?.desde === '2026-10-19' && it[0].periodo?.hasta === '2026-10-23' && it[0].segundo?.desde === '2026-10-12' && it[0].segundo?.hasta === '2026-10-18', 'B0.1 · la comparación se guarda como PAREJA: 19–23 y 12–18');
+  ok(!it.some((i) => i.periodo?.desde === '2026-10-12' && i.periodo?.hasta === '2026-10-23') && JSON.stringify(c5.periodo) === periodoAntes, 'B0.1 · ni la unión (12–23) aparece como periodo, ni se pisa el periodo simple de antes');
+  r = p5('y la calidad?');
+  ok(r[0].capacidad === 'comparacion_que_periodo' && r[0].tipo === 'aclaracion' && r[0].opciones.map((o) => `${o.plan.periodo.desde}..${o.plan.periodo.hasta}`).join('|') === '2026-10-19..2026-10-23|2026-10-12..2026-10-18', 'B0.1 · una pregunta de UN periodo tras comparar: «¿de cuál de los dos?», con un botón por periodo');
+  r = boton(r[0], 1);
+  ok(tx(r)[0] === 'calidad:2026-10-12..2026-10-18:-', 'B0.1 · …y el botón contesta ese periodo');
+  nueva5(); p5('compara las proteinas de hoy con las de ayer');
+  r = p5('y la media de sueño?');
+  ok(tx(r)[0] === 'media:2026-10-17..2026-10-23:-', 'B0.1 · una pregunta de rango tras comparar dos días no hereda ninguno de los dos ni su unión: usa su periodo por defecto (como antes)');
+
+  /* B0.1 — «compáralo con lo de antes» tras una comparación: ni unión ni periodos solapados. */
+  nueva5(); p5('compara esta semana con la semana pasada');
+  r = p5('compáralo con lo de antes');
+  ok(r[0].capacidad === 'comparacion_que_periodo' && r[0].opciones.length === 1 && r[0].opciones[0].plan.periodos.map((x) => `${x.desde}..${x.hasta}`).join('|') === '2026-10-12..2026-10-18|2026-10-05..2026-10-11', 'B0.1 · «compáralo con lo de antes» después de comparar: se pregunta, ofreciendo las dos semanas anteriores');
+  r = boton(r[0], 0);
+  ok(r.length === 1 && tx(r)[0] === 'cmp:2026-10-12..2026-10-18|2026-10-05..2026-10-11|kcal' && !textoDeRespuesta(r[0]).includes(TEXTO_SIN_DIFERENCIA), 'B0.1 · …el botón compara las dos de una vez (es una comparación, no dos respuestas sueltas)');
+  const [x1, x2] = [c5.ultimaRespuesta.items[0].periodo, c5.ultimaRespuesta.items[0].segundo];
+  ok(!!x1 && !!x2 && !(x1.desde <= x2.hasta && x2.desde <= x1.hasta), 'B0.1 · los dos periodos comparados no se solapan');
+  nueva5(); p5('cuanto dormi esta semana');
+  r = p5('compara');
+  ok(tx(r)[0] === 'cmp:2026-10-19..2026-10-23|2026-10-12..2026-10-18|kcal', 'B0.1 · con UN periodo en el contexto, comparar sigue funcionando como antes');
+  r = p5('compara');
+  ok(r[0].capacidad === 'comparacion_que_periodo', '🐛 B0.1 · repetirlo ya no compara un periodo solapado: pregunta');
+
+  /* Sin contexto suficiente, se pregunta; lo de un solo periodo no cambia. */
+  nueva5();
+  ok(p5('y la anterior?')[0].capacidad === 'referencia_sin_contexto', 'Sin contexto, «¿y la anterior?» pregunta (como en la Fase 2.2)');
+  nueva5(); p5('media de sueño la semana pasada');
+  ok(tx(p5('y la anterior?'))[0] === 'media:2026-10-05..2026-10-11:-', 'Una consulta de un solo periodo sigue igual: «¿y la anterior?» → la semana de antes');
+  nueva5(); p5('cuanto dormi esta semana');
+  ok(tx(p5('y la calidad?'))[0] === 'calidad:2026-10-19..2026-10-23:-', 'Una consulta de un solo periodo sigue igual: «¿y la calidad?» hereda esta semana');
+  nueva5(); p5('compara esta semana con la semana pasada'); p5('cuanto dormi ayer');
+  ok(tx(p5('y la anterior?'))[0] === 'noche:2026-10-21..2026-10-21:-', 'Después de otra pregunta de un periodo, la comparación ya no manda: «¿y la anterior?» es la noche de antes');
+  nueva5(); r = p5('compara esta semana con la semana pasada y cuanto dormi ayer');
+  r = p5('y la anterior?');
+  ok(r[0].capacidad === 'referencia_ambigua' && r[0].opciones.length === 2 && r[0].opciones.some((o) => Array.isArray(o.plan.periodos)), 'Una comparación y otra respuesta en el mismo turno: «¿anterior a cuál?», y la comparación se ofrece con los dos periodos movidos');
+  r = boton(r[0], r[0].opciones.findIndex((o) => Array.isArray(o.plan.periodos)));
+  ok(tx(r)[0] === 'cmp:2026-10-12..2026-10-18|2026-10-05..2026-10-11|kcal', '…y ese botón compara las dos semanas anteriores');
+  for (let i = 0; i < TURNOS_CONTEXTO; i += 1) p5('hola');
+  ok(p5('y la anterior?')[0].capacidad === 'referencia_sin_contexto', 'La pareja caduca como el resto del contexto');
+
+  /* B0.3 — dos aclaraciones en el mismo turno: las dos vivas, cada botón contesta a la suya. */
+  nueva5();
+  r = p5('como voy y que temas tengo');
+  ok(r.length === 2 && r.every((x) => x.tipo === 'aclaracion') && r[0].opciones[0].origen !== r[1].opciones[0].origen, 'B0.3 · dos aclaraciones en un turno, cada una con su origen');
+  ok(c5.pendiente && c5.pendiente.aclaraciones.map((a) => a.id).join(',') === `${r[0].id},${r[1].id}`, '🐛 B0.3 · las DOS nacen vivas (antes solo la última)');
+  const [a1, a2] = r;
+  r = boton(a1, a1.opciones.findIndex((o) => o.texto === 'Press militar'));
+  ok(tx(r)[0] === 'ejercicio:-:pm', 'B0.3 · el botón de la PRIMERA contesta su pregunta (cómo voy), no la otra');
+  ok(c5.pendiente && c5.pendiente.aclaraciones.map((a) => a.id).join(',') === a2.id, 'B0.3 · …y la segunda sigue viva');
+  r = boton(a2, a2.opciones.findIndex((o) => o.texto === 'Press militar'));
+  ok(tx(r)[0] === 'temas:-:pm', 'B0.3 · el botón de la segunda contesta la suya (temas)');
+  ok(!c5.pendiente, 'B0.3 · contestadas las dos, no queda nada pendiente');
+  r = boton(a1, 0);
+  ok(r[0].capacidad === 'opcion_caducada', 'B0.3 · un botón de una aclaración ya contestada caduca');
+  nueva5(); r = p5('como voy y que temas tengo');
+  const [b1, b2] = r;
+  p5('cuanto dormi ayer');
+  ok(boton(b1, 0)[0].capacidad === 'opcion_caducada' && boton(b2, 0)[0].capacidad === 'opcion_caducada', 'B0.3 · si pregunta otra cosa, las dos caducan (como antes)');
+  nueva5(); r = p5('como voy y que temas tengo');
+  const ahoraLuego = 1000 + (MINUTOS_CONTEXTO + 1) * 60000;
+  ok(boton(r[0], 0, { ahora: ahoraLuego })[0].capacidad === 'opcion_caducada', 'B0.3 · y caducan con el tiempo, como el resto del contexto');
+  nueva5(); r = p5('como voy y que temas tengo');
+  p5('Press militar');
+  ok(tx(ult)[0] === 'temas:-:pm' && c5.pendiente && c5.pendiente.aclaraciones.length === 1 && c5.pendiente.aclaraciones[0].id === r[0].id, 'B0.3 · escribir la respuesta contesta la ÚLTIMA (como antes), y la otra sigue viva');
+  nueva5(); r = p5('como voy');
+  ok(c5.pendiente.aclaraciones.length === 1 && tx(boton(r[0], r[0].opciones.findIndex((o) => o.texto === 'Press militar')))[0] === 'ejercicio:-:pm', 'B0.3 · con una sola aclaración todo sigue igual');
+  /* Ni entre usuarios ni con un contexto viejo (de antes de B0, sin `aclaraciones`). */
+  let conv = conversarCon(ASIS5, null, 'como voy y que temas tengo', { usuario: 'ana', hoy: HOY, ahora: 1000 });
+  const resp = conv.mensajes.filter((m) => m.rol === 'asistente').map((m) => m.respuesta);
+  const otra = conversarCon(ASIS5, conv, resp[0].opciones[0].mensaje, { usuario: 'luis', hoy: HOY, ahora: 1000, opcion: { origen: resp[0].opciones[0].origen, indice: 0 } });
+  ok(otra.mensajes.at(-1).respuesta.capacidad === 'opcion_caducada', 'B0.3 · el botón de otro usuario no se ejecuta en su conversación');
+  const viejo = { ...nuevaConversacion('u5'), turno: 1, actualizado: 1000, pendiente: { id: '1-0', opciones: [{ texto: 'Press militar', mensaje: 'Press militar', origen: '1-0', plan: { capacidad: 'ejercicio', entidad: { id: 'pm', nombre: 'Press militar' }, periodo: null } }] } };
+  ok(tx(responderMensaje(ASIS5, 'Press militar', { datos: {}, hoy: HOY, contexto: viejo, ahora: 1000, opcion: { origen: '1-0', indice: 0 } }).respuestas)[0] === 'ejercicio:-:pm', 'B0.3 · un contexto de antes de B0 (una sola aclaración, sin lista) sigue funcionando');
 }
 
 console.log(`\n${fallos === 0 ? '\x1b[32m' : '\x1b[31m'}${total - fallos}/${total} comprobaciones\x1b[0m`);

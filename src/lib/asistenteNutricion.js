@@ -216,22 +216,28 @@ function compararDias(datos, { periodo, segundoPeriodo, hoy, indicadores }) {
   const nutricion = datos.nutricion || {};
   const todas = comidasDe(nutricion);
   if ((periodo && periodo.desde !== periodo.hasta) || (segundoPeriodo && segundoPeriodo.desde !== segundoPeriodo.hasta)) {
-    return { sinDatos: true, bloques: [bTexto('Comparo días sueltos, por ejemplo hoy con ayer. Para comparar semanas o meses, pregúntame la media de cada uno.')], fuente: FUENTE };
+    /* Fase 2.3 · B0 — aunque no compare, dice qué dos periodos se le pidieron: «¿y la anterior?» los
+       desplaza a los dos en vez de mirar solo el primero. */
+    const pedidosAntes = periodo && segundoPeriodo ? [periodo, segundoPeriodo] : null;
+    return { sinDatos: true, bloques: [bTexto('Comparo días sueltos, por ejemplo hoy con ayer. Para comparar semanas o meses, pregúntame la media de cada uno.')], fuente: FUENTE, ...(pedidosAntes ? { periodosComparados: pedidosAntes } : {}) };
   }
   let a = hoy;
   let b = addDays(hoy, -1);
   if (periodo && segundoPeriodo) { a = periodo.desde; b = segundoPeriodo.desde; } else if (periodo && periodo.desde !== hoy) b = periodo.desde;
   const etiquetaA = etiquetaDeDia(a, hoy);
   const etiquetaB = etiquetaDeDia(b, hoy);
+  /* Fase 2.3 · B0 — los dos días que se comparan DE VERDAD (con «¿comí más que ayer?» son hoy y ayer,
+     aunque el mensaje solo nombre ayer): la conversación los guarda como pareja, nunca como un periodo. */
+  const periodosComparados = [{ desde: a, hasta: a, tipo: 'dia', etiqueta: etiquetaA }, { desde: b, hasta: b, tipo: 'dia', etiqueta: etiquetaB }];
   if (a === b) return { sinDatos: true, bloques: [bTexto(`Has nombrado dos veces el mismo día (${etiquetaA}). Dime con qué otro día lo comparo.`)], fuente: FUENTE };
   if (b > hoy || a > hoy) {
-    return { sinDatos: true, bloques: [bTexto(`${mayuscula(b > hoy ? etiquetaB : etiquetaA)} todavía no ha llegado, así que no hay nada que comparar.`)], fuente: FUENTE };
+    return { sinDatos: true, bloques: [bTexto(`${mayuscula(b > hoy ? etiquetaB : etiquetaA)} todavía no ha llegado, así que no hay nada que comparar.`)], fuente: FUENTE, periodosComparados };
   }
   const conA = comidasDelDia(todas, a).length > 0;
   const conB = comidasDelDia(todas, b).length > 0;
   const pedidos = INDICADORES.filter((i) => (indicadores ? indicadores.includes(i.id) : i.id === 'calorias'));
   const nota = bNota('Un día sin apuntar no es un día de 0 calorías: simplemente no hay datos.');
-  if (!conA && !conB) return { sinDatos: true, bloques: [bTexto(`No tienes nada registrado ni ${etiquetaA} ni ${etiquetaB}, así que no hay nada que comparar.`), nota], fuente: FUENTE };
+  if (!conA && !conB) return { sinDatos: true, bloques: [bTexto(`No tienes nada registrado ni ${etiquetaA} ni ${etiquetaB}, así que no hay nada que comparar.`), nota], fuente: FUENTE, periodosComparados };
   if (!conA || !conB) {
     const con = conA ? a : b;
     const resumen = resumenDelDia(todas, con, null);
@@ -243,6 +249,7 @@ function compararDias(datos, { periodo, segundoPeriodo, hoy, indicadores }) {
         nota,
       ],
       fuente: FUENTE,
+      periodosComparados,
     };
   }
   const ra = resumenDelDia(todas, a, null);
@@ -259,7 +266,7 @@ function compararDias(datos, { periodo, segundoPeriodo, hoy, indicadores }) {
   for (const ind of pedidos) bloques.push(bCifra(`${ind.emoji} ${ind.nombre}`, `${valorConUnidad(ind, valor(ra, ind.id))} · ${valorConUnidad(ind, valor(rb, ind.id))}`, 'calculo', `${etiquetaA} · ${etiquetaB}`));
   if (a === hoy || b === hoy) bloques.push(bNota('Hoy sigue en curso: es lo que llevas apuntado hasta ahora.'));
   bloques.push(bNota('Comparo lo que registraste; no digo si es mucho o poco.'));
-  return { bloques, fuente: `${FUENTE} · ${etiquetaA} y ${etiquetaB}` };
+  return { bloques, fuente: `${FUENTE} · ${etiquetaA} y ${etiquetaB}`, periodosComparados };
 }
 
 const conIndicadores = (trozo) => ({ indicadores: indicadoresPedidos(trozo) });
