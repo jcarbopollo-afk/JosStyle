@@ -9,7 +9,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { responderMensaje, nuevaConversacion, textoDeRespuesta, incumpleHonestidad, normalizarMensaje, esOrdenDeEscritura, textosDeOpciones, conversarCon, TEXTO_SIN_DIFERENCIA } from '../src/lib/motorConversacion.js';
+import { responderMensaje, nuevaConversacion, textoDeRespuesta, incumpleHonestidad, normalizarMensaje, esOrdenDeEscritura, textosDeOpciones, conversarCon, TEXTO_SIN_DIFERENCIA, validarMetrica, metricasComparables } from '../src/lib/motorConversacion.js';
 import { ASISTENTES, asistenteDeModulo, datosParaAsistente, DOMINIOS_AJENOS, MATRIZ_CANDIDATOS, CLAVES_QUE_NINGUN_ASISTENTE_LEE } from '../src/lib/asistentesModulos.js';
 import { ASISTENTE_SUENO, nochesDeSueno, minutosDeLaNoche } from '../src/lib/asistenteSueno.js';
 import { ASISTENTE_FITNESS } from '../src/lib/asistenteFitness.js';
@@ -1224,6 +1224,13 @@ console.log('\n── 15. Fase 2.3 · B0 · Comparaciones como pareja y aclaraci
   ok(sue(dos[0].opciones[0].mensaje, { opcion: { origen: dos[0].opciones[0].origen, indice: 0 } })[0].capacidad === 'opcion_caducada', 'Aislamiento · un botón de Estudios no se ejecuta en la conversación de Sueño');
 
   ok(corpus15.every((x) => !incumpleHonestidad(textoDeRespuesta(x)).length), 'Ninguna respuesta de esta sección incumple las palabras prohibidas (§8)');
+
+  /* Fase 2.3 · B1 — el contrato del comparador común: lo que un asistente declare en `metricas` tiene que
+     estar bien declarado (si no, `metricasComparables` lo deja fuera y nunca se compararía), y cada id es
+     único dentro de su asistente. Las métricas de verdad llegan en B2–B5. */
+  const declaradas = ASISTENTES.flatMap((a) => (a.metricas || []).map((m) => ({ a: a.id, m })));
+  ok(declaradas.every(({ m }) => validarMetrica(m).length === 0), `B1 · las métricas que declara cada asistente cumplen el contrato (${declaradas.length} declaradas)`);
+  ok(ASISTENTES.every((a) => new Set((a.metricas || []).map((m) => m.id)).size === (a.metricas || []).length) && ASISTENTES.every((a) => metricasComparables(a).length === (a.metricas || []).filter((m) => m.comparable !== false).length), 'B1 · ningún id de métrica repetido, y ninguna declarada se queda fuera por estar mal');
 }
 
 console.log(`\n${fallos === 0 ? '\x1b[32m' : '\x1b[31m'}${total - fallos}/${total} comprobaciones\x1b[0m`);

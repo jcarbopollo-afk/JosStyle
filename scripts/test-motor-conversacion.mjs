@@ -9,6 +9,7 @@ import {
   textoDeRespuesta, incumpleHonestidad, MAX_MENSAJE, TURNOS_CONTEXTO, MINUTOS_CONTEXTO, bLista, MAX_ITEMS_LISTA,
   ERRATAS_FECHA, palabrasParecidasAFecha, mencionSinResolver,
   referenciaAnterior, conversarCon, TEXTO_SIN_DIFERENCIA, desplazarPareja,
+  medidaDePeriodo, validarMetrica, metricasComparables, compararMedidas, compararMetrica, numeroLegible,
 } from '../src/lib/motorConversacion.js';
 import {
   interpretarFechas, etiquetaDeDia, etiquetaDeRango, lunesDeFecha, periodoPorDefecto, diasDelRango, fechasDelRango,
@@ -610,6 +611,134 @@ console.log('\n── 10. Fase 2.3 · B0 · Comparaciones como pareja, «¿y la 
   ok(otra.mensajes.at(-1).respuesta.capacidad === 'opcion_caducada', 'B0.3 · el botón de otro usuario no se ejecuta en su conversación');
   const viejo = { ...nuevaConversacion('u5'), turno: 1, actualizado: 1000, pendiente: { id: '1-0', opciones: [{ texto: 'Press militar', mensaje: 'Press militar', origen: '1-0', plan: { capacidad: 'ejercicio', entidad: { id: 'pm', nombre: 'Press militar' }, periodo: null } }] } };
   ok(tx(responderMensaje(ASIS5, 'Press militar', { datos: {}, hoy: HOY, contexto: viejo, ahora: 1000, opcion: { origen: '1-0', indice: 0 } }).respuestas)[0] === 'ejercicio:-:pm', 'B0.3 · un contexto de antes de B0 (una sola aclaración, sin lista) sigue funcionando');
+}
+
+/* ── 11 · Fase 2.3 · B1: el comparador común de métricas ── */
+console.log('\n── 11. Fase 2.3 · B1 · Comparador común: diferencia, porcentaje, sin datos, insuficiente, fechas ──');
+{
+  const ENT = { id: 'entrenos', nombre: 'Entrenamientos completados', tipo: 'entero', agregacion: 'total', admitePorcentaje: true, unidad: { singular: 'entrenamiento', plural: 'entrenamientos' }, calcular: () => null };
+  const KCAL = { id: 'kcal', nombre: 'Media diaria de calorías', tipo: 'decimal', decimales: 1, agregacion: 'media', admitePorcentaje: true, minimoDias: 2, unidad: 'kcal', calcular: () => null };
+  const NOTA = { id: 'saldo', nombre: 'Saldo', tipo: 'decimal', decimales: 2, agregacion: 'total', admitePorcentaje: true, unidad: '€', calcular: () => null };
+  const ESCALA = { id: 'animo', nombre: 'Ánimo medio', tipo: 'decimal', decimales: 1, agregacion: 'media', admitePorcentaje: false, unidad: null, calcular: () => null };
+  const SEM = { desde: '2026-10-19', hasta: '2026-10-23', etiqueta: 'esta semana (del 19 al 23 de octubre)' };
+  const PAS = { desde: '2026-10-12', hasta: '2026-10-18', etiqueta: 'la semana del 12 al 18 de octubre' };
+  const med = (periodo, valor, extra = {}) => medidaDePeriodo({ periodo, valor, ...extra });
+  const texto = (r) => textoDeRespuesta({ bloques: r.bloques, fuente: null });
+  const frase = (r) => r.bloques[0].texto;
+
+  /* 1 · Aumento con dos valores positivos. */
+  let r = compararMedidas(ENT, med(SEM, 3, { diasConDatos: 3 }), med(PAS, 1, { diasConDatos: 1 }), { hoy: HOY });
+  ok(r.estado === 'comparable' && r.diferencia === 2 && r.sentido === 'mas' && r.porcentaje === 200, 'B1 · 1 · aumento: 3 frente a 1 → +2 y un 200 %');
+  ok(frase(r) === 'Entrenamientos completados: 3 entrenamientos esta semana (del 19 al 23 de octubre) y 1 entrenamiento la semana del 12 al 18 de octubre. Son 2 entrenamientos más esta semana (del 19 al 23 de octubre), un 200 % más.', 'B1 · 1 · …dicho con las dos fechas, la unidad en singular y plural y el porcentaje');
+  /* 2 · Disminución. */
+  r = compararMedidas(ENT, med(SEM, 2), med(PAS, 4), { hoy: HOY });
+  ok(r.diferencia === -2 && r.sentido === 'menos' && r.porcentaje === -50 && /Son 2 entrenamientos menos esta semana \(del 19 al 23 de octubre\), un 50 % menos\./.test(frase(r)), 'B1 · 2 · disminución: 2 frente a 4 → 2 menos, un 50 % menos (la diferencia se dice en positivo con «menos»)');
+  /* 3 · Iguales. */
+  r = compararMedidas(ENT, med(SEM, 3), med(PAS, 3), { hoy: HOY });
+  ok(r.sentido === 'igual' && r.diferencia === 0 && r.porcentaje === null && r.sinPorcentaje === null && frase(r) === 'Entrenamientos completados: 3 entrenamientos esta semana (del 19 al 23 de octubre) y lo mismo la semana del 12 al 18 de octubre.', 'B1 · 3 · iguales: lo dice, sin diferencia ni porcentaje');
+  /* 4 · Referencia cero: diferencia sí, porcentaje no, y se explica. */
+  r = compararMedidas(ENT, med(SEM, 3), med(PAS, 0), { hoy: HOY });
+  ok(r.estado === 'comparable' && r.diferencia === 3 && r.porcentaje === null && r.sinPorcentaje === 'referencia_cero', 'B1 · 4 · referencia 0: diferencia 3, sin porcentaje');
+  ok(!/%/.test(frase(r)) && texto(r).includes('No calculo un porcentaje porque la semana del 12 al 18 de octubre el valor es 0'), 'B1 · 4 · …y se dice por qué no hay porcentaje');
+  /* 5 · Referencia negativa (una métrica que puede ser negativa, como un saldo). */
+  r = compararMedidas(NOTA, med(SEM, 10), med(PAS, -5), { hoy: HOY });
+  ok(r.diferencia === 15 && r.porcentaje === null && r.sinPorcentaje === 'referencia_negativa' && /Son 15 € más/.test(frase(r)) && texto(r).includes('el valor es negativo'), 'B1 · 5 · referencia negativa: diferencia 15 €, sin porcentaje (no tendría sentido)');
+  /* 6 · Decimales sin errores de coma flotante. */
+  r = compararMedidas(NOTA, med(SEM, 0.3), med(PAS, 0.1), { hoy: HOY });
+  ok(r.diferencia === 0.2 && /0,3 € esta semana/.test(frase(r)) && /0,1 € la semana/.test(frase(r)) && /Son 0,2 € más/.test(frase(r)) && r.porcentaje === 200, 'B1 · 6 · decimales: 0,3 − 0,1 = 0,2 (no 0,19999…), y el 200 % exacto');
+  r = compararMedidas(KCAL, med(SEM, 1950.46, { diasConDatos: 4 }), med(PAS, 1800, { diasConDatos: 5 }), { hoy: HOY });
+  ok(/1950,5 kcal esta semana/.test(frase(r)) && /1800 kcal la semana/.test(frase(r)) && /Son 150,5 kcal más/.test(frase(r)) && /un 8,4 % más/.test(frase(r)) && r.diferencia === 150.46, 'B1 · 6 · decimales: se redondea al leer (1950,5; un 8,4 %), no al calcular (150,46)');
+  ok(numeroLegible(0.1 + 0.2, 2) === '0,3' && numeroLegible(1.05, 1) === '1,1' && numeroLegible(-0.04, 1) === '0' && numeroLegible(1039, 0) === '1039' && numeroLegible(NaN) === null, 'B1 · 6 · números legibles: sin ceros de más, sin «-0», coma decimal; NaN no es un número');
+  /* 7 y 8 · Sin dato en un periodo: no es cero. */
+  r = compararMedidas(KCAL, med(SEM, null, { diasConDatos: 0 }), med(PAS, 1800, { diasConDatos: 5 }), { hoy: HOY });
+  ok(r.estado === 'sin_datos' && r.diferencia === null && r.porcentaje === null && frase(r) === 'No puedo comparar «media diaria de calorías»: esta semana (del 19 al 23 de octubre) no tiene datos.', 'B1 · 7 · sin datos en el primero: no se compara, y se dice cuál');
+  ok(texto(r).includes('Un periodo sin registros no cuenta como cero') && !/1800 kcal más|menos/.test(texto(r)), 'B1 · 7 · …ni se convierte en 0 (no sale «1800 kcal menos»)');
+  r = compararMedidas(KCAL, med(SEM, 1950, { diasConDatos: 4 }), med(PAS, null, { motivo: 'no hay comidas apuntadas' }), { hoy: HOY });
+  ok(r.estado === 'sin_datos' && frase(r) === 'No puedo comparar «media diaria de calorías»: la semana del 12 al 18 de octubre (no hay comidas apuntadas) no tiene datos.', 'B1 · 8 · sin datos en el segundo, con el motivo que da el asistente');
+  r = compararMedidas(KCAL, med(SEM, null), med(PAS, null), { hoy: HOY });
+  ok(r.estado === 'sin_datos' && /ni esta semana .* ni la semana del 12 al 18 de octubre tienen datos/.test(frase(r)), 'B1 · 7-8 · sin datos en ninguno: se dicen los dos');
+  /* Cero real frente a ausencia: el 0 sí se compara. */
+  const ceroReal = compararMedidas(ENT, med(SEM, 0), med(PAS, 2), { hoy: HOY });
+  const sinDato = compararMedidas(ENT, med(SEM, null), med(PAS, 2), { hoy: HOY });
+  ok(ceroReal.estado === 'comparable' && ceroReal.diferencia === -2 && ceroReal.porcentaje === -100 && sinDato.estado === 'sin_datos' && sinDato.diferencia === null, 'B1 · cero real (0 entrenamientos registrados) se compara; un dato ausente no');
+  ok(medidaDePeriodo({ periodo: SEM, valor: undefined }).valor === null && medidaDePeriodo({ periodo: SEM, valor: NaN }).valor === null && medidaDePeriodo({ periodo: SEM, valor: '3' }).valor === null && medidaDePeriodo({ periodo: SEM, valor: 0 }).valor === 0, 'B1 · una medida: undefined, NaN o un texto no son un valor (null); el 0 sí');
+  /* 9 · Datos insuficientes según la métrica. */
+  r = compararMedidas(KCAL, med(SEM, 1950, { diasConDatos: 1 }), med(PAS, 1800, { diasConDatos: 5 }), { hoy: HOY });
+  ok(r.estado === 'insuficiente' && r.diferencia === null && frase(r) === 'No puedo comparar «media diaria de calorías» de forma fiable: esta semana (del 19 al 23 de octubre) solo tiene 1 día con datos, y hacen falta al menos 2.', 'B1 · 9 · con menos días de los que pide la métrica: no se compara y se dice cuántos hay (D5)');
+  r = compararMedidas(ENT, med(SEM, 3, { suficiente: false, motivo: 'el registro está a medias' }), med(PAS, 1), { hoy: HOY });
+  ok(r.estado === 'insuficiente' && texto(r).includes('Esta semana (del 19 al 23 de octubre): el registro está a medias'), 'B1 · 9 · …o si el asistente dice que no basta, con su motivo');
+  r = compararMedidas({ ...KCAL, minimoDias: 0, diasParaFiable: 3 }, med(SEM, 1950, { diasConDatos: 2 }), med(PAS, 1800, { diasConDatos: 5 }), { hoy: HOY });
+  ok(r.estado === 'comparable' && r.confianza === 'pocos_datos' && texto(r).includes('Con tan pocos días con datos'), 'B1 · 9 · un umbral suave (`diasParaFiable`): se compara, avisando y con confianza baja');
+  /* 10 · Distinta duración y semana en curso (D3): totales tal cual, días de cada uno. */
+  r = compararMedidas(ENT, med(SEM, 3, { diasConDatos: 3 }), med(PAS, 1, { diasConDatos: 1 }), { hoy: HOY });
+  ok(r.diferencia === 2 && texto(r).includes('Los periodos no duran lo mismo (5 días y 7 días): comparo los totales tal cual, sin pasarlos a días.') && texto(r).includes('Esta semana (del 19 al 23 de octubre) sigue en curso: cuenta lo registrado hasta hoy.'), 'B1 · 10 · semana en curso (5 días) frente a una entera (7): totales tal cual, y se dicen los días y que sigue en curso');
+  ok(r.bloques[1].detalle === '3 días con datos de 5' && r.bloques[2].detalle === '1 día con datos de 7', 'B1 · 10 · …cada cifra dice sus días con datos y los días del periodo');
+  r = compararMedidas(KCAL, med(SEM, 1950, { diasConDatos: 4 }), med(PAS, 1800, { diasConDatos: 5 }), { hoy: HOY });
+  ok(texto(r).includes('Los periodos no duran lo mismo (5 días y 7 días).') && !texto(r).includes('totales'), 'B1 · 10 · una media no habla de totales: solo dice que no duran lo mismo');
+  r = compararMedidas(ENT, med(PAS, 3), med({ desde: '2026-10-05', hasta: '2026-10-11', etiqueta: 'la semana del 5 al 11 de octubre' }, 1), { hoy: HOY });
+  ok(!/no duran lo mismo|sigue en curso/.test(texto(r)), 'B1 · 10 · dos semanas enteras: ni nota de duración ni de «en curso»');
+  /* 11 · Una métrica que no admite porcentaje. */
+  r = compararMedidas(ESCALA, med(SEM, 4.2), med(PAS, 3.8), { hoy: HOY });
+  ok(r.porcentaje === null && r.sinPorcentaje === 'no_admite' && frase(r) === 'Ánimo medio: 4,2 esta semana (del 19 al 23 de octubre) y 3,8 la semana del 12 al 18 de octubre. Son 0,4 más esta semana (del 19 al 23 de octubre).', 'B1 · 11 · una escala (del 1 al 5) no lleva porcentaje: solo la diferencia');
+  /* 12 · La unidad se conserva en la diferencia; un formato propio también. */
+  const MIN = { id: 'sueno', nombre: 'Sueño medio', tipo: 'entero', agregacion: 'media', admitePorcentaje: true, formatear: (v) => `${Math.floor(v / 60)} h ${v % 60} min`, calcular: () => null };
+  r = compararMedidas(MIN, med(SEM, 460), med(PAS, 450), { hoy: HOY });
+  ok(/Son 0 h 10 min más/.test(frase(r)) && /7 h 40 min esta semana/.test(frase(r)), 'B1 · 12 · la diferencia lleva la unidad (y el formato propio de la métrica: minutos → «h min»)');
+  r = compararMedidas(KCAL, med(SEM, 1950, { diasConDatos: 4, unidad: 'kcal' }), med(PAS, 8.1, { diasConDatos: 5, unidad: 'kJ' }), { hoy: HOY });
+  ok(r.estado === 'no_comparable' && /no vienen en la misma unidad/.test(frase(r)), 'B1 · 12 · dos medidas en unidades distintas no se comparan');
+  /* 13 · Las etiquetas y fechas de los dos periodos, tal cual; sin etiqueta, la de sus fechas. */
+  r = compararMedidas(ENT, med({ desde: '2026-10-01', hasta: '2026-10-23' }, 5), med({ desde: '2026-09-01', hasta: '2026-09-30' }, 4), { hoy: HOY });
+  ok(r.etiquetas[0] === etiquetaDeRango('2026-10-01', '2026-10-23', HOY) && r.etiquetas[1] === etiquetaDeRango('2026-09-01', '2026-09-30', HOY) && frase(r).includes(r.etiquetas[0]) && frase(r).includes(r.etiquetas[1]), 'B1 · 13 · sin etiqueta, cada periodo se nombra por sus fechas');
+  ok(JSON.stringify(r.periodosComparados.map((p) => [p.desde, p.hasta])) === '[["2026-10-01","2026-10-23"],["2026-09-01","2026-09-30"]]', 'B1 · 13 · …y la pareja sale con sus fechas exactas');
+  /* 14 · Nunca «mejor» ni «peor». */
+  const todos = [compararMedidas(ENT, med(SEM, 3), med(PAS, 1), { hoy: HOY }), compararMedidas(ENT, med(SEM, 1), med(PAS, 3), { hoy: HOY }), compararMedidas(KCAL, med(SEM, 2100, { diasConDatos: 4 }), med(PAS, 1800, { diasConDatos: 4 }), { hoy: HOY })];
+  ok(todos.every((x) => !/\b(mejor|peor|bien|mal|bueno|malo|mejorado|empeorado)\b/i.test(texto(x).replace('no dice si es bueno o malo', ''))) && todos.every((x) => texto(x).includes('no dice si es bueno o malo ni a qué se debe')), 'B1 · 14 · lenguaje neutral: «más» y «menos», nunca «mejor» o «peor»');
+  ok(todos.every((x) => !incumpleHonestidad(texto(x)).length), 'B1 · 14 · …y nada que incumpla las palabras prohibidas del chat');
+  /* Métricas que no se pueden comparar: se rechaza y se explica. */
+  ok(compararMedidas({ ...ENT, comparable: false, motivoNoComparable: 'las notas son texto, no números' }, med(SEM, 1), med(PAS, 2)).estado === 'no_comparable', 'B1 · una métrica marcada como no comparable no se compara');
+  r = compararMedidas({ ...ENT, comparable: false, motivoNoComparable: 'las notas son texto, no números' }, med(SEM, 1), med(PAS, 2), { hoy: HOY });
+  ok(frase(r) === '«Entrenamientos completados» no lo puedo comparar entre dos periodos: las notas son texto, no números', 'B1 · …y se dice por qué');
+  ok(compararMedidas({ id: 'x', nombre: 'X' }, med(SEM, 1), med(PAS, 2)).estado === 'no_comparable', 'B1 · una métrica mal declarada (sin tipo ni agregación) no se compara');
+  ok(compararMedidas(ENT, med(SEM, 1), med(SEM, 2), { hoy: HOY }).estado === 'no_comparable' && compararMedidas(ENT, med(SEM, 1), null, { hoy: HOY }).estado === 'no_comparable', 'B1 · el mismo periodo dos veces, o uno que falta: no se compara');
+  r = compararMedidas(ENT, med(SEM, 3), med({ desde: '2026-10-17', hasta: '2026-10-23' }, 2), { hoy: HOY });
+  ok(r.estado === 'comparable' && texto(r).includes('Los dos periodos comparten días'), 'B1 · dos periodos que se solapan: se compara, avisando');
+  /* El contrato: qué declara un asistente y qué se puede comparar de verdad. */
+  ok(validarMetrica(ENT).length === 0 && validarMetrica(ESCALA).length === 0 && validarMetrica(MIN).length === 0, 'B1 · contrato · métricas bien declaradas: sin errores');
+  ok(validarMetrica({ id: 'x', nombre: 'X', tipo: 'texto', agregacion: 'suma', admitePorcentaje: 'si', minimoDias: -1, unidad: 3 }).join(',') === 'tipo,agregacion,admitePorcentaje,minimoDias,unidad,calcular', 'B1 · contrato · cada campo mal declarado se nombra');
+  const ASIS_M = { metricas: [ENT, { ...KCAL, comparable: false }, { id: 'rota' }, ESCALA] };
+  ok(metricasComparables(ASIS_M).map((m) => m.id).join(',') === 'entrenos,animo' && metricasComparables({}).length === 0, 'B1 · contrato · `metricasComparables`: solo las declaradas, válidas y comparables');
+
+  /* compararMetrica: calcula con la función DEL ASISTENTE en los dos periodos y compara. */
+  const SESIONES = ['2026-10-12', '2026-10-19', '2026-10-21', '2026-10-23'];
+  const ENT_REAL = { ...ENT, calcular: (datos, p) => { const n = datos.sesiones.filter((f) => f >= p.desde && f <= p.hasta).length; return { valor: n, diasConDatos: n }; } };
+  r = compararMetrica(ENT_REAL, { sesiones: SESIONES }, [SEM, PAS], { hoy: HOY });
+  ok(r.estado === 'comparable' && r.a.valor === 3 && r.b.valor === 1 && r.diferencia === 2, 'B1 · compararMetrica · la cifra de cada periodo sale del cálculo del asistente (3 y 1)');
+  const ROTA = { ...ENT, calcular: () => { throw new Error('x'); } };
+  const avisos = console.warn; console.warn = () => {};
+  r = compararMetrica(ROTA, {}, [SEM, PAS], { hoy: HOY });
+  console.warn = avisos;
+  ok(r.estado === 'sin_datos' && /no he podido calcularlo/.test(frase(r)), 'B1 · compararMetrica · un fallo al calcular no tumba el chat: ese periodo queda sin dato y se dice');
+
+  /* 15 · Con las parejas de B0: una capacidad que usa el comparador se recuerda como pareja. */
+  const cmpM = capa('cmpM', {
+    senales: { comparar: 5 }, necesita: [['comparar']], periodo: 'ambos', dosPeriodos: true, porDefecto: 'estaSemana', prioridad: 1,
+    ejecutar: (datos, args) => {
+      const a = args.periodo || periodoPorDefecto('estaSemana', HOY);
+      const b = args.segundoPeriodo || periodoPrevio(a, HOY);
+      const c = compararMetrica(ENT_REAL, { sesiones: SESIONES }, [a, b], { hoy: HOY });
+      return { bloques: c.bloques, periodosComparados: c.periodosComparados, confianza: c.confianza, fuente: 'prueba' };
+    },
+  });
+  const ASIS6 = { ...ASIS, capacidades: [...ASIS.capacidades, cmpM] };
+  let c6 = nuevaConversacion('u6');
+  const p6 = (t) => { const x = responderMensaje(ASIS6, t, { datos: {}, hoy: HOY, contexto: c6, ahora: 1000 }); c6 = x.contexto; return x.respuestas; };
+  r = p6('compara esta semana con la semana pasada');
+  const it6 = c6.ultimaRespuesta.items;
+  ok(r[0].capacidad === 'cmpM' && /3 entrenamientos esta semana .* y 1 entrenamiento la semana pasada/.test(textoDeRespuesta(r[0])) && it6.length === 1 && it6[0].periodo.desde === '2026-10-19' && it6[0].segundo.desde === '2026-10-12' && it6[0].segundo.hasta === '2026-10-18', 'B1 · 15 · la comparación del comparador se guarda como pareja (19–23 y 12–18), sin unir');
+  r = p6('y la anterior?');
+  ok(/1 entrenamiento la semana del 12 al 18 de octubre y 0 entrenamientos la semana del 5 al 11 de octubre/.test(textoDeRespuesta(r[0])) && /No calculo un porcentaje porque la semana del 5 al 11 de octubre el valor es 0/.test(textoDeRespuesta(r[0])), 'B1 · 15 · «¿y la anterior?» desplaza las dos semanas y el comparador dice la referencia 0 sin porcentaje');
+  r = p6('compáralo con lo de antes');
+  ok(r[0].capacidad === 'comparacion_que_periodo', 'B1 · 15 · «compáralo con lo de antes» tras comparar sigue preguntando (B0)');
 }
 
 console.log(`\n${fallos === 0 ? '\x1b[32m' : '\x1b[31m'}${total - fallos}/${total} comprobaciones\x1b[0m`);

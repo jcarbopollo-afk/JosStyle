@@ -1614,3 +1614,200 @@ function buscarAjeno(tokens, ajenos, propio) {
   }
   return null;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   11 · FASE 2.3 · B1 — EL COMPARADOR COMÚN DE MÉTRICAS
+   ══════════════════════════════════════════════════════════════════════════
+   Comparar dos periodos son siempre las mismas cuentas y las mismas reglas de honestidad, así que viven
+   aquí una vez. Lo que cada asistente sabe de sus datos se queda en el asistente:
+
+   · El asistente DECLARA lo que puede comparar (`asistente.metricas`, ver `validarMetrica`): nombre,
+     unidad, tipo, si es un total o una media, si admite porcentaje, cuántos días con datos hacen falta
+     y `calcular(datos, periodo, hoy)`, que reutiliza SU cálculo de siempre y devuelve una MEDIDA.
+   · Una medida (`medidaDePeriodo`) es lo que sale de un periodo: su valor (`null` = no hay dato; un 0 es
+     un 0 de verdad), cuántos días tienen datos, cuántos días abarca y si basta para fiarse.
+   · `compararMedidas` hace las cuentas sobre dos medidas ya calculadas —nunca sobre un texto— y devuelve
+     el resultado estructurado y los bloques para el chat. Nunca juzga: «más» y «menos», no «mejor».
+
+   Reglas (decisiones D1, D3 y D5 de Josué):
+   · Un periodo sin dato no es un 0: no se calcula ni diferencia ni porcentaje, y se dice cuál falta.
+   · Con menos días con datos de los que pide la métrica, no se compara y se dice cuántos hay.
+   · El porcentaje, solo si la métrica lo admite y la referencia (el segundo periodo) es mayor que 0.
+   · Periodos de distinta duración o uno que no ha terminado: se comparan los valores tal cual y se dicen
+     las fechas y los días de cada uno; nunca se pasa a «por día» por cuenta propia.
+   · La pareja de periodos sale tal cual (`periodosComparados`) para que la conversación la recuerde como
+     pareja (B0), nunca unida en un solo intervalo. */
+
+export const TIPOS_DE_METRICA = ['entero', 'decimal'];
+export const AGREGACIONES_DE_METRICA = ['total', 'media'];
+
+/** Una medida de un periodo, con su forma. `valor` null = no hay dato (nunca se convierte en 0). */
+export function medidaDePeriodo({ periodo, valor = null, diasConDatos = null, diasDelPeriodo = null, suficiente = true, motivo = null, notas = [], unidad = null } = {}) {
+  const v = typeof valor === 'number' && Number.isFinite(valor) ? valor : null;
+  const n = (x) => (Number.isInteger(x) && x >= 0 ? x : null);
+  const p = periodoValido(periodo) ? { desde: periodo.desde, hasta: periodo.hasta, tipo: periodo.tipo || (periodo.desde === periodo.hasta ? 'dia' : 'rango'), etiqueta: periodo.etiqueta || null } : null;
+  return {
+    periodo: p,
+    valor: v,
+    diasConDatos: n(diasConDatos),
+    diasDelPeriodo: n(diasDelPeriodo) ?? (p ? diasDelRango(p.desde, p.hasta) : null),
+    suficiente: suficiente !== false,
+    motivo: motivo || null,
+    notas: (Array.isArray(notas) ? notas : []).filter((t) => typeof t === 'string' && t),
+    unidad,
+  };
+}
+
+/** Lo que le falta a la declaración de una métrica para poder compararla (lista vacía = válida). */
+export function validarMetrica(m) {
+  const errores = [];
+  if (!m || typeof m !== 'object') return ['no es una métrica'];
+  if (!m.id || typeof m.id !== 'string') errores.push('id');
+  if (!m.nombre || typeof m.nombre !== 'string') errores.push('nombre');
+  if (!TIPOS_DE_METRICA.includes(m.tipo)) errores.push('tipo');
+  if (!AGREGACIONES_DE_METRICA.includes(m.agregacion)) errores.push('agregacion');
+  if (typeof m.admitePorcentaje !== 'boolean') errores.push('admitePorcentaje');
+  if (m.minimoDias !== undefined && !(Number.isInteger(m.minimoDias) && m.minimoDias >= 0)) errores.push('minimoDias');
+  if (m.diasParaFiable !== undefined && !(Number.isInteger(m.diasParaFiable) && m.diasParaFiable >= 0)) errores.push('diasParaFiable');
+  const u = m.unidad;
+  const unidadValida = u === null || typeof u === 'string' || (u && typeof u.singular === 'string' && typeof u.plural === 'string');
+  if (!unidadValida && typeof m.formatear !== 'function') errores.push('unidad');
+  if (m.comparable !== false && typeof m.calcular !== 'function') errores.push('calcular');
+  return errores;
+}
+
+/** Las métricas que un asistente puede comparar DE VERDAD: declaradas, válidas y no marcadas como no comparables. */
+export function metricasComparables(asistente) {
+  return (Array.isArray(asistente && asistente.metricas) ? asistente.metricas : [])
+    .filter((m) => m && m.comparable !== false && !validarMetrica(m).length);
+}
+
+/* Un número para leer: sin errores de coma flotante, con los decimales de la métrica y sin ceros de más. */
+const limpiar = (x) => Number(Number(x).toPrecision(12));
+export function numeroLegible(x, decimales = 0) {
+  if (typeof x !== 'number' || !Number.isFinite(x)) return null;
+  const d = Math.max(0, Math.min(4, Number.isInteger(decimales) ? decimales : 0));
+  const r = limpiar(Math.round(limpiar(x) * 10 ** d) / 10 ** d);
+  const fija = r.toFixed(d);
+  const t = fija.includes('.') ? fija.replace(/0+$/, '').replace(/\.$/, '') : fija;
+  return (t === '-0' ? '0' : t).replace('.', ',');
+}
+const decimalesDe = (m) => (Number.isInteger(m.decimales) ? m.decimales : (m.tipo === 'entero' ? 0 : 1));
+function valorConUnidad(m, v) {
+  if (typeof m.formatear === 'function') return m.formatear(v);
+  const n = numeroLegible(v, decimalesDe(m));
+  const u = m.unidad;
+  if (!u) return n;
+  if (typeof u === 'string') return `${n} ${u}`;
+  return `${n} ${Math.abs(limpiar(v)) === 1 ? u.singular : u.plural}`;
+}
+/* El porcentaje para leer: entero desde el 10 %, con un decimal por debajo. */
+const porcentajeLegible = (p) => `${numeroLegible(Math.abs(p), Math.abs(p) >= 10 ? 0 : 1)} %`;
+
+/**
+ * Compara dos medidas ya calculadas de la misma métrica: `a` es el periodo que se pregunta (esta semana) y
+ * `b` la referencia (la pasada). Devuelve `estado` ('comparable' | 'sin_datos' | 'insuficiente' |
+ * 'no_comparable'), las cifras, la diferencia (a − b), el porcentaje (o por qué no hay), las notas, los
+ * `bloques` para el chat y `periodosComparados` para la conversación (B0).
+ */
+export function compararMedidas(metrica, a, b, { hoy = null } = {}) {
+  const base = { metrica: metrica && metrica.id ? metrica.id : null, a: a || null, b: b || null, diferencia: null, sentido: null, porcentaje: null, sinPorcentaje: null, notas: [], confianza: null };
+  const errores = validarMetrica({ calcular: () => null, ...(metrica || {}) });
+  const ma = a && a.periodo ? a : null;
+  const mb = b && b.periodo ? b : null;
+  const ea = ma ? etiquetaDe(ma.periodo, hoy || ma.periodo.hasta) : null;
+  const eb = mb ? etiquetaDe(mb.periodo, hoy || mb.periodo.hasta) : null;
+  const pareja = ma && mb ? [ma.periodo, mb.periodo] : null;
+  const fin = (estado, bloques, extra = {}) => ({ ...base, ...extra, estado, bloques, periodosComparados: pareja, etiquetas: [ea, eb] });
+  const nombre = metrica && metrica.nombre ? metrica.nombre : 'Esto';
+  if (errores.length || metrica.comparable === false) {
+    return fin('no_comparable', [bTexto(`«${nombre}» no lo puedo comparar entre dos periodos${metrica && metrica.motivoNoComparable ? `: ${metrica.motivoNoComparable}` : '.'}`)]);
+  }
+  if (!ma || !mb) return fin('no_comparable', [bTexto(`Para comparar «${nombre.toLowerCase()}» necesito dos periodos con sus fechas.`)]);
+  if (ma.periodo.desde === mb.periodo.desde && ma.periodo.hasta === mb.periodo.hasta) {
+    return fin('no_comparable', [bTexto(`Has nombrado dos veces el mismo periodo (${ea}). Dime con qué otro lo comparo.`)]);
+  }
+  for (const m of [ma, mb]) {
+    if (m.unidad !== null && m.unidad !== undefined && JSON.stringify(m.unidad) !== JSON.stringify(metrica.unidad ?? null)) {
+      return fin('no_comparable', [bTexto(`No puedo comparar «${nombre.toLowerCase()}»: los dos periodos no vienen en la misma unidad.`)]);
+    }
+  }
+  /* Sin dato no es 0 (D5): se dice qué periodo no tiene, y no se calcula nada. */
+  const sinDato = [[ma, ea], [mb, eb]].filter(([m]) => m.valor === null);
+  if (sinDato.length) {
+    const cuales = sinDato.map(([m, e]) => `${e}${m.motivo ? ` (${m.motivo})` : ''}`);
+    return fin('sin_datos', [
+      bTexto(`No puedo comparar «${nombre.toLowerCase()}»: ${sinDato.length === 2 ? `ni ${cuales[0]} ni ${cuales[1]} tienen datos` : `${cuales[0]} no tiene datos`}.`),
+      bNota('Un periodo sin registros no cuenta como cero: simplemente no hay datos.'),
+    ]);
+  }
+  /* Con menos días con datos de los que pide la métrica, no se compara (D5) y se dice cuántos hay. */
+  const minimo = Number.isInteger(metrica.minimoDias) ? metrica.minimoDias : 0;
+  const cortos = [[ma, ea], [mb, eb]].filter(([m]) => m.suficiente === false || (minimo && m.diasConDatos !== null && m.diasConDatos < minimo));
+  if (cortos.length) {
+    return fin('insuficiente', [
+      bTexto(`No puedo comparar «${nombre.toLowerCase()}» de forma fiable: ${cortos.map(([m, e]) => `${e} ${m.diasConDatos === null ? 'no tiene datos suficientes' : `solo tiene ${plural(m.diasConDatos, 'día', 'días')} con datos`}`).join(' y ')}${minimo ? `, y hacen falta al menos ${minimo}` : ''}.`),
+      ...cortos.filter(([m]) => m.motivo).map(([m, e]) => bNota(`${mayuscula(e)}: ${m.motivo}`)),
+    ]);
+  }
+  const va = limpiar(ma.valor);
+  const vb = limpiar(mb.valor);
+  const diferencia = limpiar(va - vb);
+  const d = decimalesDe(metrica);
+  const igual = numeroLegible(Math.abs(diferencia), d) === '0';
+  const sentido = igual ? 'igual' : (diferencia > 0 ? 'mas' : 'menos');
+  let porcentaje = null;
+  let sinPorcentaje = null;
+  if (!igual) {
+    if (!metrica.admitePorcentaje) sinPorcentaje = 'no_admite';
+    else if (vb === 0) sinPorcentaje = 'referencia_cero';
+    else if (vb < 0) sinPorcentaje = 'referencia_negativa';
+    else porcentaje = limpiar((diferencia / vb) * 100);
+  }
+  const notas = [];
+  if (sinPorcentaje === 'referencia_cero') notas.push(`No calculo un porcentaje porque ${eb} el valor es 0: no hay de dónde partir.`);
+  if (sinPorcentaje === 'referencia_negativa') notas.push(`No calculo un porcentaje porque ${eb} el valor es negativo.`);
+  const duracion = (m) => m.diasDelPeriodo;
+  if (duracion(ma) !== null && duracion(mb) !== null && duracion(ma) !== duracion(mb)) {
+    notas.push(`Los periodos no duran lo mismo (${plural(duracion(ma), 'día', 'días')} y ${plural(duracion(mb), 'día', 'días')})${metrica.agregacion === 'total' ? ': comparo los totales tal cual, sin pasarlos a días' : ''}.`);
+  }
+  for (const [m, e] of [[ma, ea], [mb, eb]]) {
+    if (hoy && m.periodo.hasta >= hoy && m.periodo.desde <= hoy) notas.push(`${mayuscula(e)} sigue en curso: cuenta lo registrado hasta hoy.`);
+  }
+  if (ma.periodo.desde <= mb.periodo.hasta && mb.periodo.desde <= ma.periodo.hasta) notas.push('Los dos periodos comparten días, así que la diferencia dice menos.');
+  const fiable = Number.isInteger(metrica.diasParaFiable) ? metrica.diasParaFiable : 0;
+  const pocos = fiable && [ma, mb].some((m) => m.diasConDatos !== null && m.diasConDatos < fiable);
+  if (pocos) notas.push('Con tan pocos días con datos en uno de los dos, la diferencia dice poco.');
+  for (const m of [ma, mb]) notas.push(...m.notas);
+  const conDias = (m) => (m.diasConDatos !== null ? `${plural(m.diasConDatos, 'día', 'días')} con datos de ${m.diasDelPeriodo}` : null);
+  const frase = igual
+    ? `${nombre}: ${valorConUnidad(metrica, va)} ${ea} y lo mismo ${eb}.`
+    : `${nombre}: ${valorConUnidad(metrica, va)} ${ea} y ${valorConUnidad(metrica, vb)} ${eb}. Son ${valorConUnidad(metrica, Math.abs(diferencia))} ${sentido === 'mas' ? 'más' : 'menos'} ${ea}${porcentaje !== null ? `, un ${porcentajeLegible(porcentaje)} ${sentido === 'mas' ? 'más' : 'menos'}` : ''}.`;
+  const bloques = [
+    bTexto(frase),
+    bCifra(mayuscula(ea), valorConUnidad(metrica, va), 'calculo', conDias(ma)),
+    bCifra(mayuscula(eb), valorConUnidad(metrica, vb), 'calculo', conDias(mb)),
+    ...notas.map(bNota),
+    bNota('Es solo la diferencia entre los dos periodos: no dice si es bueno o malo ni a qué se debe.'),
+  ];
+  return fin('comparable', bloques, { diferencia, sentido, porcentaje, sinPorcentaje, notas, confianza: pocos ? 'pocos_datos' : 'normal' });
+}
+
+/**
+ * Calcula una métrica declarada en los dos periodos con la función del propio asistente y los compara.
+ * Un fallo al calcular no tumba el chat: el periodo queda sin dato y se dice.
+ */
+export function compararMetrica(metrica, datos, [pa, pb] = [], { hoy = null } = {}) {
+  if (validarMetrica(metrica).length || metrica.comparable === false) return compararMedidas(metrica, null, null, { hoy });
+  const medir = (p) => {
+    if (!periodoValido(p)) return null;
+    try {
+      const r = metrica.calcular(datos, p, hoy);
+      return medidaDePeriodo({ ...(r || {}), periodo: { ...p, ...(r && r.periodo ? r.periodo : {}) } });
+    } catch (error) {
+      registrarErrorAsistente('nucleo', `metrica:${metrica.id}`, error);
+      return medidaDePeriodo({ periodo: p, valor: null, motivo: 'no he podido calcularlo' });
+    }
+  };
+  return compararMedidas(metrica, medir(pa), medir(pb), { hoy });
+}
