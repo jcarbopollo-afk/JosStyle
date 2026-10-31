@@ -8,6 +8,10 @@
 
 ## Estado en una línea
 
+**Fase 2.x (2.1, 2.2, B0, B1, B2, correcciones del paso 4 y E2): integrada en la rama local `claude/chatbots-fase-2x` (2026-10-31),
+sin push ni `main`; B3–B7 pendientes** ([`ESPECIFICACION_FASE_2X.md`](ESPECIFICACION_FASE_2X.md)). Lo que sigue es el estado
+anterior, que se conserva como historia.
+
 **Fase 2 — chatbots deterministas: hecha en local (2026-10-23, v3.161.0), sin commit ni push; y sus 10 defectos de la auditoría
 técnica, corregidos (2026-10-24, v3.161.1, también sin commit: [`ESPECIFICACION_CHATBOTS.md`](ESPECIFICACION_CHATBOTS.md) §18); y la integración —duración del sueño exacta en todas partes, despertares sin contestar como `null`, «tus últimas noches» y botones de aclaración atados a su pregunta— (2026-10-24, v3.161.2, sin commit: §19); y Sueño sin datos inventados —siesta y horas sin contestar como `null`, noches por fecha— con «Analizar mi sueño» abriendo el asistente (2026-10-24, v3.161.3, sin commit: §20).** Hechos el
 **Prompt 1** (especificación: [`ESPECIFICACION_CHATBOTS.md`](ESPECIFICACION_CHATBOTS.md), DA-12), el **Prompt 2** (auditoría, §16)
@@ -317,3 +321,19 @@ duración de la **pantalla** de Sueño sigue redondeando a décimas de hora (es 
 - [x] Capacidades `incompletas`, `fiabilidad`, mejor/peor en `extremos`, «compáralo con lo de antes».
 - [x] Pruebas A–D en `test-integracion-chatbots` (136), banco de renderizado y recorrido «E3 F31» / «CHAT F2».
 - [ ] Probar en el iPhone (§20.6).
+
+### Fase 2.x — 2.1, 2.2, B0–B2 y E2: recuperación e integración · ✅ 2026-10-31 (rama local, sin push ni `main`)
+- [x] 2.1 (A1, A2, A3, A7, A8, A9) y 2.2 (P1–P7), en parte reconstruidas tras la pérdida del trabajo (procedencia en
+  `PROCEDENCIA_PASO15.md`, aceptada por Josué).
+- [x] B0 (pareja de periodos, «¿y la anterior?» mueve los dos, varias aclaraciones vivas), con la opción 4a.
+- [x] B1 (comparador común) y B2 (Fitness y Productividad).
+- [x] Correcciones del paso 4 y E2 (menciones: entidad, desconocida, circunstancia, no filtrable).
+- [x] Pruebas de los pasos 15, 18 y 19; suites del chat 363 / 441 / 136.
+- [x] Integrada en la rama local `claude/chatbots-fase-2x` desde `14f225c`, seis commits con sus comprobaciones en verde.
+- [x] `verificar.sh` completo en la rama: «TODO CORRECTO» (3854 comprobaciones en Chromium).
+- [ ] Publicar la rama y llevarla a `main` (decisión de Josué).
+- [ ] Los dos riesgos de B0 (ESPECIFICACION_FASE_2X §4.1): abiertos.
+- [ ] B3 Nutrición, B4 Estudios, B5 Sueño, B6 extras (D2), B7 cierre.
+- [ ] Línea base del corpus como prueba permanente (`CORPUS_FASE_2X.md` §5).
+- [ ] Probar en el iPhone.
+

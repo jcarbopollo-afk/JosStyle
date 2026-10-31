@@ -9,7 +9,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { responderMensaje, nuevaConversacion, textoDeRespuesta, incumpleHonestidad, normalizarMensaje, esOrdenDeEscritura, textosDeOpciones, conversarCon, TEXTO_SIN_DIFERENCIA, validarMetrica, metricasComparables, metricaPara, compararMetrica } from '../src/lib/motorConversacion.js';
+import { responderMensaje, nuevaConversacion, textoDeRespuesta, incumpleHonestidad, normalizarMensaje, esOrdenDeEscritura, textosDeOpciones, conversarCon, TEXTO_SIN_DIFERENCIA, validarMetrica, metricasComparables, metricaPara, compararMetrica, TURNOS_CONTEXTO, MINUTOS_CONTEXTO } from '../src/lib/motorConversacion.js';
 import { ASISTENTES, asistenteDeModulo, datosParaAsistente, DOMINIOS_AJENOS, MATRIZ_CANDIDATOS, CLAVES_QUE_NINGUN_ASISTENTE_LEE } from '../src/lib/asistentesModulos.js';
 import { ASISTENTE_SUENO, nochesDeSueno, minutosDeLaNoche } from '../src/lib/asistenteSueno.js';
 import { ASISTENTE_FITNESS, METRICAS_FITNESS } from '../src/lib/asistenteFitness.js';
@@ -969,6 +969,7 @@ console.log('\n── 13. Fase 2.1 · Fechas, entidades y preguntas honestas (lo
   ok(corpus13.every((x) => !incumpleHonestidad(textoDeRespuesta(x)).length), 'Ninguna respuesta de esta sección incumple las palabras prohibidas (§8)');
   ok(corpus13.every((x) => !/HUECO|undefined|NaN|null/.test(textoDeRespuesta(x))), 'Ninguna respuesta de esta sección enseña nada roto');
 }
+/* ⟦Procedencia · paso 15⟧ Mezcla ORIGINAL VERIFICADO, RECONSTRUIDO (paso 2) y algunas líneas originales cuyo sitio no está demostrado. Ver PROCEDENCIA_PASO15.md. */
 /* ══════════════════════════════════════════════════════════════════════════
    14 · FASE 2.2 · Contexto conversacional en los cinco asistentes ⟦cabecera RECONSTRUIDA salvo la línea de abajo⟧
    «¿y la anterior?» con el periodo anterior del calendario, unidades sobreentendidas, continuidad,
@@ -1234,6 +1235,140 @@ console.log('\n── 15. Fase 2.3 · B0 · Comparaciones como pareja y aclaraci
   sue('¿Cuánto dormí ayer?');
   ok(sue(dos[0].opciones[0].mensaje, { opcion: { origen: dos[0].opciones[0].origen, indice: 0 } })[0].capacidad === 'opcion_caducada', 'Aislamiento · un botón de Estudios no se ejecuta en la conversación de Sueño');
 
+  /* ── Paso 19 · las cuatro comprobaciones de B0 con el asistente de Sueño de verdad (2026-10-31) ──
+     Fijan el comportamiento de B0 tal como está (decisión de Josué: se pregunta de cuál de los dos periodos, sin
+     botón «los dos juntos»). El motor ya las prueba con un asistente de mentira (secciones 3 y 10 de
+     test-motor-conversacion); aquí, con las capacidades y los textos de Sueño. Datos: esta semana (19–23) tiene
+     cuatro noches, la pasada (12–18) dos, y septiembre y agosto ninguna. */
+  const P_SEMANAS = `2026-10-19..${HOY}|2026-10-12..2026-10-18`;
+  const unPeriodo = (hh) => { const u = hh.ctx().ultimaRespuesta; const i = u && u.items.length === 1 ? u.items[0] : null; return i && !i.segundo && i.periodo ? `${i.periodo.desde}..${i.periodo.hasta}` : null; };
+  const rango = (p) => (p ? `${p.desde}..${p.hasta}` : null);
+  const pendientes = (hh) => (hh.ctx().pendiente ? (hh.ctx().pendiente.aclaraciones || []).map((a) => a.id).join(',') : '');
+
+  /* 1 · Caducidad de la pareja y lo que queda en `ctx.periodo`. */
+  h = charla(ASISTENTE_SUENO);
+  h('¿Cuánto dormí de media la semana pasada?');
+  h('Compara esta semana con la semana pasada');
+  ok(pareja(h) === P_SEMANAS && rango(h.ctx().periodo) === '2026-10-12..2026-10-18' && h.ctx().periodoAnterior == null,
+    'Paso 19 · Sueño · la comparación no pisa el periodo de antes (sigue la semana pasada en `ctx.periodo`, sin anterior)');
+  for (let i = 0; i < TURNOS_CONTEXTO - 2; i += 1) h('hola');
+  r = h('¿Cuánto dormí de media?');
+  ok(r[0].capacidad === 'comparacion_que_periodo' && r[0].opciones.length === 2, `Paso 19 · Sueño · con ${TURNOS_CONTEXTO - 2} turnos en medio la pareja sigue viva: pregunta de cuál de los dos`);
+  h = charla(ASISTENTE_SUENO);
+  h('¿Cuánto dormí de media la semana pasada?');
+  h('Compara esta semana con la semana pasada');
+  for (let i = 0; i < TURNOS_CONTEXTO - 1; i += 1) h('hola');
+  r = h('¿Cuánto dormí de media?');
+  ok(caps(r) === 'media' && unPeriodo(h) === `2026-10-17..${HOY}` && !/del 12 al 18/.test(txt(r)),
+    `Paso 19 · Sueño · con ${TURNOS_CONTEXTO - 1} turnos en medio la pareja caduca, y el periodo de antes también: los últimos 7 días, no la semana pasada`);
+  h = charla(ASISTENTE_SUENO);
+  h('¿Cuánto dormí de media la semana pasada?');
+  h('Compara esta semana con la semana pasada');
+  r = h('¿Cuánto dormí de media?', { ahora: 1000 + (MINUTOS_CONTEXTO + 1) * 60000 });
+  ok(caps(r) === 'media' && unPeriodo(h) === `2026-10-17..${HOY}` && h.ctx().periodo === null,
+    `Paso 19 · Sueño · a los ${MINUTOS_CONTEXTO} minutos caducan la pareja y el periodo de antes: los últimos 7 días`);
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  r = h.boton(h('¿Cuánto dormí de media?')[0], 1);
+  ok(caps(r) === 'media' && unPeriodo(h) === '2026-10-12..2026-10-18' && rango(h.ctx().periodo) === '2026-10-12..2026-10-18',
+    'Paso 19 · Sueño · el periodo elegido con el botón pasa a ser el de la conversación');
+  r = h('¿Y la calidad?');
+  ok(caps(r) === 'calidad' && unPeriodo(h) === '2026-10-12..2026-10-18', 'Paso 19 · Sueño · …y la pregunta siguiente lo hereda (ya no hay pareja que aclarar)');
+
+  /* 2 · «¿Y respecto a la semana pasada?» y «¿Y el mes anterior?» después de comparar. */
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  r = h('¿Y respecto a la semana pasada?');
+  ok(caps(r) === 'comparar' && pareja(h) === P_SEMANAS && /la semana pasada \(del 12 al 18 de octubre\)/.test(txt(r)), 'Paso 19 · Sueño · semanas → «¿y respecto a la semana pasada?»: esta semana con la pasada');
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  r = h('¿Y el mes anterior?');
+  /* Comportamiento actual, pendiente de decisión de Josué (§20.5): tras comparar semanas, esta semana con el mes
+     pasado. Si decide otra lectura, esta comprobación se da la vuelta. */
+  ok(caps(r) === 'comparar' && pareja(h) === `2026-10-19..${HOY}|2026-09-01..2026-09-30` && /del 1 al 30 de septiembre/.test(txt(r)) && /no tiene ninguna noche registrada/.test(txt(r)),
+    'Paso 19 · Sueño · semanas → «¿y el mes anterior?»: esta semana con septiembre (lo de hoy; pendiente de decidir), y septiembre sin noches se dice');
+  h = charla(ASISTENTE_SUENO);
+  h('Compara este mes con el mes pasado');
+  r = h('¿Y el mes anterior?');
+  ok(caps(r) === 'comparar' && pareja(h) === '2026-09-01..2026-09-30|2026-08-01..2026-08-31', 'Paso 19 · Sueño · meses → «¿y el mes anterior?»: los dos meses un paso atrás (septiembre con agosto)');
+  h = charla(ASISTENTE_SUENO);
+  h('Compara este mes con el mes pasado');
+  r = h('¿Y respecto a la semana pasada?');
+  ok(caps(r) === 'comparar' && pareja(h) === P_SEMANAS, 'Paso 19 · Sueño · meses → «¿y respecto a la semana pasada?»: la fecha nueva manda (esta semana con la pasada)');
+  h = charla(ASISTENTE_SUENO);
+  h('Compara ayer con anteayer');
+  r = h('¿Y respecto a la semana pasada?');
+  ok(caps(r) === 'comparar' && pareja(h) === P_SEMANAS, 'Paso 19 · Sueño · días → «¿y respecto a la semana pasada?»: esta semana con la pasada');
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  h('¿Y la anterior?');
+  r = h('¿Y respecto a la semana pasada?');
+  ok(caps(r) === 'comparar' && pareja(h) === P_SEMANAS, 'Paso 19 · Sueño · tras «¿y la anterior?», «¿y respecto a la semana pasada?» vuelve a esta semana con la pasada');
+
+  /* 3 · Periodos de unidades distintas → «¿Y la anterior?» → `referencia_pareja`. */
+  const ejemploComparar = ASISTENTE_SUENO.capacidades.find((c) => c.id === 'comparar').ejemplo;
+  for (const [inicio, par] of [
+    ['Compara esta semana con el mes pasado', `2026-10-19..${HOY}|2026-09-01..2026-09-30`],
+    ['Compara el mes pasado con esta semana', `2026-09-01..2026-09-30|2026-10-19..${HOY}`],
+    ['Compara ayer con la semana pasada', `${d(1)}..${d(1)}|2026-10-12..2026-10-18`],
+  ]) {
+    h = charla(ASISTENTE_SUENO);
+    r = h(inicio);
+    ok(caps(r) === 'comparar' && pareja(h) === par, `Paso 19 · Sueño · «${inicio}» se guarda como su pareja`);
+    r = h('¿Y la anterior?');
+    ok(r.length === 1 && r[0].capacidad === 'referencia_pareja' && r[0].tipo === 'aclaracion' && /no sé cómo pasar los dos al periodo anterior/.test(txt(r)) && !/días anteriores/.test(txt(r)),
+      `Paso 19 · Sueño · «${inicio}» → «¿y la anterior?»: pregunta qué dos periodos (sin «los N días anteriores»)`);
+    ok(pareja(h) === par && pendientes(h) === r[0].id && r[0].opciones.length === 1 && r[0].opciones[0].mensaje === ejemploComparar && r[0].opciones[0].origen === r[0].id,
+      `Paso 19 · Sueño · …la pareja se conserva y el único botón es el ejemplo de «comparar», con su origen`);
+    const ref = r[0];
+    r = h.boton(ref, 0);
+    ok(caps(r) === 'comparar' && r[0].tipo === 'respuesta' && pendientes(h) === '', 'Paso 19 · Sueño · …y el botón compara de verdad');
+    ok(h.boton(ref, 0)[0].capacidad === 'opcion_caducada', 'Paso 19 · Sueño · …y pulsarlo otra vez ya no vale');
+  }
+
+  /* 4 · Aclaraciones de la pareja: botones con su origen, caducidad y que no se reutilizan. */
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  let ac = h('¿Y la calidad?')[0];
+  ok(ac.capacidad === 'comparacion_que_periodo' && ac.opciones.length === 2 && ac.opciones.every((o) => o.origen === ac.id) && pendientes(h) === ac.id,
+    'Paso 19 · Sueño · la aclaración de la pareja: dos botones, los dos con su origen, y queda pendiente');
+  r = h.boton(ac, 0);
+  ok(caps(r) === 'calidad' && unPeriodo(h) === `2026-10-19..${HOY}` && pendientes(h) === '', 'Paso 19 · Sueño · el botón 0 contesta esta semana y la aclaración se cierra');
+  r = h.boton(ac, 0);
+  ok(r[0].capacidad === 'opcion_caducada' && unPeriodo(h) === `2026-10-19..${HOY}`, 'Paso 19 · Sueño · el mismo botón otra vez no se ejecuta ni cambia lo contestado');
+  ok(h.boton(ac, 1)[0].capacidad === 'opcion_caducada', 'Paso 19 · Sueño · …ni el otro botón de la misma aclaración');
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  ac = h('¿Y la calidad?')[0];
+  h('¿Cuánto dormí ayer?');
+  r = h.boton(ac, 0);
+  ok(r[0].capacidad === 'opcion_caducada' && unPeriodo(h) === `${d(1)}..${d(1)}`, 'Paso 19 · Sueño · tras otra pregunta, el botón de antes caduca y no pisa lo último');
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  ac = h('¿Y la calidad?')[0];
+  r = ac.opciones && ac.opciones[0] ? h(ac.opciones[0].mensaje, { opcion: { origen: ac.opciones[0].origen, indice: 0 }, ahora: 1000 + (MINUTOS_CONTEXTO + 1) * 60000 }) : [{ capacidad: 'sin_boton' }];
+  ok(ac.capacidad === 'comparacion_que_periodo' && r[0].capacidad === 'opcion_caducada', `Paso 19 · Sueño · y a los ${MINUTOS_CONTEXTO} minutos el botón tampoco vale`);
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  const dosAc = h('¿Y la calidad y los despertares?');
+  ok(caps(dosAc) === 'comparacion_que_periodo,comparacion_que_periodo' && dosAc[0].id !== dosAc[1].id && pendientes(h) === `${dosAc[0].id},${dosAc[1].id}`,
+    'Paso 19 · Sueño · dos preguntas tras comparar: dos aclaraciones, cada una con su id, las dos pendientes');
+  r = h.boton(dosAc[1], 0);
+  ok(caps(r) === 'despertares' && unPeriodo(h) === `2026-10-19..${HOY}` && pendientes(h) === dosAc[0].id, 'Paso 19 · Sueño · el botón de la segunda contesta los despertares de esta semana, y la primera sigue viva');
+  r = h.boton(dosAc[0], 1);
+  ok(caps(r) === 'calidad' && unPeriodo(h) === '2026-10-12..2026-10-18' && pendientes(h) === '', 'Paso 19 · Sueño · el de la primera contesta la calidad de la semana pasada (su pregunta, no la otra)');
+  ok(h.boton(dosAc[1], 0)[0].capacidad === 'opcion_caducada', 'Paso 19 · Sueño · contestadas las dos, ningún botón vale');
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  h('¿Y la calidad?');
+  r = h('La semana pasada');
+  ok(caps(r) === 'calidad' && unPeriodo(h) === '2026-10-12..2026-10-18' && pendientes(h) === '', 'Paso 19 · Sueño · la aclaración también se contesta escribiendo («la semana pasada»)');
+  h = charla(ASISTENTE_SUENO);
+  h('Compara esta semana con la semana pasada');
+  h('¿Y la calidad?');
+  r = h('la primera');
+  ok(caps(r) === 'calidad' && unPeriodo(h) === `2026-10-19..${HOY}`, 'Paso 19 · Sueño · …o por su posición («la primera» es esta semana)');
+
   ok(corpus15.every((x) => !incumpleHonestidad(textoDeRespuesta(x)).length), 'Ninguna respuesta de esta sección incumple las palabras prohibidas (§8)');
 
   /* Fase 2.3 · B1 — el contrato del comparador común: lo que un asistente declare en `metricas` tiene que
@@ -1389,6 +1524,203 @@ console.log('\n── 17. Paso 4 · Auditoría de B0–B2: comprobaciones que fa
   const itF = ctxF.ultimaRespuesta && ctxF.ultimaRespuesta.items[0];
   ok(caps(rf17) === 'cuantos' && /septiembre/.test(txt(rf17)) && !/No puedo comparar/.test(txt(rf17)) && !!itF && itF.periodo.desde === '2026-09-01' && !itF.segundo,
     'B0 (006) · tras comparar dos semanas, «compáralo con el mes pasado» no compara septiembre con una de las dos semanas elegida por su cuenta');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   18 · PASO 15 · Regresión de entidades en Estudios, con los datos de la suite ⟦Paso 15 de la recuperación,
+   no es código original⟧. Se mira el contenido (las horas, calculadas aquí desde ESTUDIOS.horas, y los mismos
+   bloques que la pregunta hecha de cero) Y la asignatura usada de verdad (`ultimaRespuesta.items`). No se ha
+   tocado el motor para que pasen: si una sale en rojo, se deja en rojo y se documenta.
+   ══════════════════════════════════════════════════════════════════════════ */
+console.log('\n── 18. Paso 15 · Regresión de entidades en Estudios: lo nombrado es lo que se usa ──');
+{
+  const charla18 = () => {
+    let ctx = nuevaConversacion('u-prueba');
+    const f = (mensaje) => {
+      const r = responderMensaje(ASISTENTE_ESTUDIOS, mensaje, { datos: datosParaAsistente(ASISTENTE_ESTUDIOS, ESTADO), hoy: HOY, contexto: ctx, ajenos: DOMINIOS_AJENOS, ahora: 1000 });
+      ctx = r.contexto;
+      ultimoVisto = r.respuestas.map((x) => `[${x.capacidad}] ${textoDeRespuesta(x)}`).join(' | ');
+      return r.respuestas;
+    };
+    f.asignatura = () => { const u = ctx.ultimaRespuesta; const i = u && u.items.length === 1 ? u.items[0] : undefined; return i === undefined ? undefined : (i.entidad ? i.entidad.id : null); };
+    return f;
+  };
+  const notas18 = (x) => x.bloques.filter((b) => b.tipo === 'nota').map((b) => b.texto).join(' ');
+  const sinNotas18 = (x) => JSON.stringify(x.bloques.filter((b) => b.tipo !== 'nota'));
+  /* Las horas de esta semana (del lunes a hoy), sumadas aquí desde los datos, aparte del asistente. */
+  const lunes18 = addDays(HOY, -((new Date(`${HOY}T00:00:00`).getDay() + 6) % 7));
+  const horas18 = (id) => ESTUDIOS.horas.filter((x) => x.fecha >= lunes18 && x.fecha <= HOY && (id === null || x.asignaturaId === id)).reduce((s, x) => s + x.horas, 0);
+  const frase18 = (id, nombre) => `has registrado ${horas18(id)} h de estudio${nombre ? ` de ${nombre}` : ''}.`;
+  ok([horas18('bio'), horas18('mat'), horas18(null)].every(Number.isInteger) && horas18('bio') !== horas18(null),
+    'Paso 15 · el escenario sirve: horas enteras esta semana, y las de Biología no son el total (filtrar se nota)');
+  const deCero18 = (m) => charla18()(m)[0];
+  const todas18 = deCero18('¿Cuántas horas he estudiado esta semana?');
+  const mates18 = deCero18('¿Cuántas horas he estudiado de matemáticas esta semana?');
+
+  /* 1 · Una asignatura que existe, en la primera pregunta. */
+  let h = charla18();
+  let r = h('¿Cuántas horas he estudiado de biología esta semana?');
+  ok(caps(r) === 'horas' && textoDeRespuesta(r[0]).includes(frase18('bio', 'Biología')) && sinNotas18(r[0]) !== sinNotas18(todas18) && !notas18(r[0]),
+    `Paso 15 · 1 · «horas de biología esta semana»: ${horas18('bio')} h, las de Biología (no el total), sin notas`);
+  ok(h.asignatura() === 'bio', 'Paso 15 · 1 · …y lo contestado es Biología');
+
+  /* 2 · «¿y en X?» con X que no existe. */
+  r = h('¿Y en inglés?');
+  ok(caps(r) === 'horas' && sinNotas18(r[0]) === sinNotas18(todas18) && textoDeRespuesta(r[0]).includes(frase18(null)) && !textoDeRespuesta(r[0]).includes(frase18('bio', 'Biología')),
+    `Paso 15 · 2 · «¿y en inglés?» tras biología: las ${horas18(null)} h de todo (lo mismo que preguntarlo de cero), nunca las de Biología`);
+  ok(/No encuentro «inglés» entre tus asignaturas, así que te lo enseño sin filtrar/.test(notas18(r[0])) && h.asignatura() === null,
+    'Paso 15 · 2 · …lo dice, y lo contestado ya no es Biología');
+  h = charla18();
+  h('¿Cuándo es el examen de biología?');
+  r = h('¿Y en inglés?');
+  ok(r[0].tipo === 'aclaracion' && r[0].capacidad === 'cuando' && /No encuentro «inglés» entre tus asignaturas/.test(textoDeRespuesta(r[0])) && !/La célula/.test(txt(r)),
+    'Paso 15 · 2 · «¿y en inglés?» tras el examen de biología: pregunta cuál, sin contestar con el de Biología');
+
+  /* 3 · «¿y de X?» con X que no existe. */
+  h = charla18();
+  h('¿Cuántas horas he estudiado de biología esta semana?');
+  r = h('¿Y de latín?');
+  ok(caps(r) === 'horas' && sinNotas18(r[0]) === sinNotas18(todas18) && /No encuentro «latín»/.test(notas18(r[0])) && h.asignatura() === null,
+    'Paso 15 · 3 · «¿y de latín?» tras biología: el total, lo dice, y no se queda con Biología');
+
+  /* 4 · El seguimiento con otra asignatura que sí existe. */
+  h = charla18();
+  h('¿Cuántas horas he estudiado de biología esta semana?');
+  r = h('¿Y de matemáticas?');
+  ok(caps(r) === 'horas' && sinNotas18(r[0]) === sinNotas18(mates18) && textoDeRespuesta(r[0]).includes(frase18('mat', 'Matemáticas')) && !notas18(r[0]) && h.asignatura() === 'mat',
+    `Paso 15 · 4 · «¿y de matemáticas?» tras biología: ${horas18('mat')} h de Matemáticas, lo mismo que preguntarlo de cero, y lo contestado es Matemáticas`);
+  h = charla18();
+  h('¿Cuándo es el examen de biología?');
+  r = h('¿Y de matemáticas?');
+  ok(caps(r) === 'cuando' && /Derivadas/.test(txt(r)) && !/La célula/.test(txt(r)) && h.asignatura() === 'mat',
+    'Paso 15 · 4 · «¿y de matemáticas?» tras el examen de biología: el de Matemáticas (Derivadas), no el de Biología');
+
+  /* 5 · Una asignatura que no existe, en la primera pregunta. */
+  h = charla18();
+  r = h('¿Cuántas horas he estudiado de inglés esta semana?');
+  ok(caps(r) === 'horas' && sinNotas18(r[0]) === sinNotas18(todas18) && /No encuentro «inglés»/.test(notas18(r[0])) && h.asignatura() === null,
+    'Paso 15 · 5 · «horas de inglés» sin Inglés: el total, lo dice, y no se queda con ninguna asignatura');
+
+  /* 6 · «casa» y «amigo» no son asignaturas que filtrar. */
+  for (const [frase, palabra] of [['¿Cuántas horas he estudiado en casa esta semana?', 'casa'], ['¿Cuántas horas he estudiado con un amigo esta semana?', 'amigo']]) {
+    h = charla18();
+    r = h(frase);
+    ok(caps(r) === 'horas' && sinNotas18(r[0]) === sinNotas18(todas18) && h.asignatura() === null,
+      `Paso 15 · 6 · «${frase}»: el total de la semana, sin filtrar por ninguna asignatura`);
+    ok(!new RegExp(`No encuentro «${palabra}»`).test(txt(r)),
+      `Paso 15 · 6 · …y no dice «No encuentro «${palabra}» entre tus asignaturas»: «${palabra}» no se buscó como asignatura`);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   19 · PASO 17 · E2 en los cinco asistentes, con los datos de la suite ⟦E2 · paso 17, NUEVO⟧
+   El contrato: «en casa» y «con mi amigo» ni filtran ni avisan; una asignatura que no tiene se avisa y nunca
+   hereda la anterior; una circunstancia no borra la que había. Se mira la respuesta entera (contra la misma
+   pregunta hecha de cero) y la entidad contestada y heredable.
+   ══════════════════════════════════════════════════════════════════════════ */
+console.log('\n── 19. Paso 17 · E2 en los cinco asistentes: circunstancias, desconocidas y herencia ──');
+{
+  const charla19 = (asistente) => {
+    let ctx = nuevaConversacion('u-prueba');
+    const f = (mensaje) => {
+      const r = responderMensaje(asistente, mensaje, { datos: datosParaAsistente(asistente, ESTADO), hoy: HOY, contexto: ctx, ajenos: DOMINIOS_AJENOS, ahora: 1000 });
+      ctx = r.contexto;
+      ultimoVisto = r.respuestas.map((x) => `[${x.capacidad}] ${textoDeRespuesta(x)}`).join(' | ');
+      return r.respuestas;
+    };
+    f.contestada = () => { const u = ctx.ultimaRespuesta; const i = u && u.items.length === 1 ? u.items[0] : null; return i && i.entidad ? i.entidad.id : null; };
+    f.heredable = (tipo) => (ctx.entidades && ctx.entidades[tipo] ? ctx.entidades[tipo].entidad.id : null);
+    return f;
+  };
+  const notas19 = (x) => x.bloques.filter((b) => b.tipo === 'nota').map((b) => b.texto).join(' ');
+  const bloques19 = (x) => JSON.stringify(x.bloques);
+  const sinNotas19 = (x) => JSON.stringify(x.bloques.filter((b) => b.tipo !== 'nota'));
+  const deCero19 = (asistente, m) => charla19(asistente)(m)[0];
+  const E = ASISTENTE_ESTUDIOS;
+  const todas19 = deCero19(E, '¿Cuántas horas he estudiado esta semana?');
+  const bio19 = deCero19(E, '¿Cuántas horas he estudiado de Biología esta semana?');
+  const mat19 = deCero19(E, '¿Cuántas horas he estudiado de Matemáticas esta semana?');
+  ok(bloques19(todas19) !== bloques19(bio19) && /de Biología/.test(textoDeRespuesta(bio19)) && !notas19(todas19), 'E2 · el escenario sirve: Biología no es el total');
+
+  /* Estudios · la tabla del contrato. */
+  let h = charla19(E);
+  let r = h('¿Cuántas horas he estudiado de Biología esta semana?');
+  ok(bloques19(r[0]) === bloques19(bio19) && h.contestada() === 'bio' && h.heredable('asignatura') === 'bio', 'E2 · Estudios «de Biología»: filtra por Biología');
+  for (const m of ['¿Cuántas horas he estudiado de Inglés esta semana?', '¿Cuántas horas he estudiado en Inglés esta semana?']) {
+    h = charla19(E); r = h(m);
+    ok(sinNotas19(r[0]) === sinNotas19(todas19) && /No encuentro «Inglés» entre tus asignaturas, así que te lo enseño sin filtrar/.test(notas19(r[0])) && h.contestada() === null && h.heredable('asignatura') === null,
+      `E2 · Estudios «${m}»: avisa de Inglés y contesta todo, sin quedarse con ninguna`);
+  }
+  for (const m of ['¿Cuántas horas he estudiado en casa esta semana?', '¿Cuántas horas he estudiado con mi amigo esta semana?', '¿Cuántas horas he estudiado con Marta esta semana?']) {
+    h = charla19(E); r = h(m);
+    ok(bloques19(r[0]) === bloques19(todas19) && h.contestada() === null, `E2 · Estudios «${m}»: lo mismo que sin decirlo — ni filtro ni aviso`);
+  }
+  h = charla19(E);
+  h('¿Cuántas horas he estudiado de Biología esta semana?');
+  r = h('¿Y en casa?');
+  ok(bloques19(r[0]) === bloques19(bio19) && h.contestada() === 'bio' && h.heredable('asignatura') === 'bio', 'E2 · Estudios «¿Y en casa?» tras Biología: conserva Biología, sin avisos');
+  r = h('¿Y con Marta?');
+  ok(bloques19(r[0]) === bloques19(bio19) && h.contestada() === 'bio' && h.heredable('asignatura') === 'bio', 'E2 · Estudios «¿Y con Marta?» después: conserva Biología');
+  r = h('¿Y en Inglés?');
+  ok(sinNotas19(r[0]) === sinNotas19(todas19) && /No encuentro «Inglés»/.test(notas19(r[0])) && h.contestada() === null && h.heredable('asignatura') === null,
+    'E2 · Estudios «¿Y en Inglés?» después: no hereda Biología y avisa');
+  h = charla19(E);
+  h('¿Cuántas horas he estudiado de Biología esta semana?');
+  r = h('¿Y de Inglés?');
+  ok(sinNotas19(r[0]) === sinNotas19(todas19) && /No encuentro «Inglés»/.test(notas19(r[0])) && h.heredable('asignatura') === null, 'E2 · Estudios «¿Y de Inglés?» tras Biología: no hereda y avisa');
+  h = charla19(E);
+  h('¿Cuántas horas he estudiado de Biología esta semana?');
+  r = h('¿Y de Matemáticas?');
+  ok(bloques19(r[0]) === bloques19(mat19) && h.contestada() === 'mat' && h.heredable('asignatura') === 'mat', 'E2 · Estudios «¿Y de Matemáticas?» tras Biología: cambia a Matemáticas');
+  h = charla19(E); r = h('¿Cuántas horas he estudiado de Biología y Matemáticas esta semana?');
+  ok(r.length === 1 && r[0].tipo === 'aclaracion' && r[0].opciones.length >= 2 && r[0].opciones.some((o) => o.texto === 'Biología') && r[0].opciones.some((o) => o.texto === 'Matemáticas'),
+    'E2 · Estudios «de Biología y Matemáticas»: pide aclaración con las dos, no elige');
+  h = charla19(E); r = h('¿Cuántas horas he estudiado en el bosque esta semana?');
+  ok(sinNotas19(r[0]) === sinNotas19(todas19) && /No puedo filtrar por «bosque»/.test(notas19(r[0])) && !/No encuentro/.test(notas19(r[0])), 'E2 · Estudios no filtrable: «en el bosque» contesta todo y dice que no puede filtrar por eso');
+  h = charla19(E); r = h('¿Cuántas horas he estudiado con mi amigo de inglés esta semana?');
+  ok(/No encuentro «inglés»/.test(notas19(r[0])) && !/amigo/.test(notas19(r[0])) && sinNotas19(r[0]) === sinNotas19(todas19), 'E2 · Estudios, dos menciones: avisa de inglés y no de «amigo»');
+  h = charla19(E); r = h('¿Cuándo es el examen con mi amigo?');
+  ok(r[0].tipo === 'aclaracion' && r[0].capacidad === 'cuando' && /¿De qué asignatura\?/.test(textoDeRespuesta(r[0])) && !/No encuentro/.test(textoDeRespuesta(r[0])),
+    'E2 · Estudios, entidad obligatoria + circunstancia: pregunta qué asignatura, sin «No encuentro «amigo»»');
+  h = charla19(E);
+  h('¿Cuándo es el examen de Biología?');
+  r = h('¿Y en casa?');
+  ok(caps(r) === 'cuando' && /La célula/.test(txt(r)) && h.contestada() === 'bio', 'E2 · Estudios «¿Y en casa?» tras el examen de Biología: el de Biología');
+  h = charla19(E); r = h('¿Cuántas horas estudié en octubre?');
+  ok(caps(r) === 'horas' && /1 al 31 de octubre/.test(txt(r)) && !/No encuentro|No puedo filtrar|octubre»/.test(notas19(r[0])) && h.contestada() === null,
+    'E2 · Estudios «en octubre»: es una fecha, sin ninguna nota de mención (la de «cuento hasta hoy» es del periodo)');
+  h = charla19(E);
+  h('¿Cuántas horas he estudiado de Biología esta semana?');
+  r = h('Compáralo con la semana pasada');
+  ok(r.length === 2 && r.every((x) => /Biología/.test(textoDeRespuesta(x))) && !/No encuentro|No puedo filtrar/.test(txt(r)), 'E2 · Estudios «compáralo con la semana pasada»: «con» lleva a un periodo; las dos respuestas, de Biología');
+  h = charla19(E); r = h('¿Cuántas horas he estudiado de química esta semana?');
+  ok(h.contestada() === 'fyq' && !notas19(r[0]), 'E2 · Estudios «química» (en el vocabulario, y trozo de «Física y Química»): es la que tiene');
+
+  /* Productividad · hábito opcional. */
+  const P = ASISTENTE_PRODUCTIVIDAD;
+  const racha19 = deCero19(P, '¿Cuál es mi racha?');
+  h = charla19(P); r = h('¿Cuál es mi racha en casa?');
+  ok(bloques19(r[0]) === bloques19(racha19) && h.contestada() === null, 'E2 · Productividad «racha en casa»: lo mismo que «¿cuál es mi racha?», sin «No encuentro «casa» entre tus hábitos»');
+  h = charla19(P);
+  h('¿Cuál es mi racha de leer?');
+  const hab19 = h.heredable('habito');
+  r = h('¿Y con mi amigo?');
+  ok(!!hab19 && h.contestada() === hab19 && h.heredable('habito') === hab19 && !notas19(r[0]), 'E2 · Productividad «¿Y con mi amigo?» tras la racha de leer: sigue con ese hábito');
+
+  /* Fitness · ejercicio obligatorio. */
+  const F = ASISTENTE_FITNESS;
+  h = charla19(F); r = h('¿Cuál es mi récord con mi amigo?');
+  ok(r[0].tipo === 'aclaracion' && r[0].capacidad === 'record' && /¿De qué ejercicio\?/.test(textoDeRespuesta(r[0])) && !/No encuentro/.test(textoDeRespuesta(r[0])),
+    'E2 · Fitness «récord con mi amigo»: pregunta qué ejercicio, sin presentar «amigo» como un ejercicio que falta');
+  h = charla19(F);
+  const recPress19 = h('¿Cuál es mi récord en press de banca?');
+  const ej19 = h.contestada();
+  r = h('¿Y en casa?');
+  ok(!!ej19 && caps(r) === 'record' && h.contestada() === ej19 && bloques19(r[0]) === bloques19(recPress19[0]), 'E2 · Fitness «¿Y en casa?» tras el récord del press de banca: el mismo récord');
+
+  /* Sueño y Nutrición · sin entidades: nada cambia. */
+  ok(bloques19(deCero19(ASISTENTE_SUENO, '¿Cuánto dormí ayer en casa?')) === bloques19(deCero19(ASISTENTE_SUENO, '¿Cuánto dormí ayer?')), 'E2 · Sueño «¿Cuánto dormí ayer en casa?»: lo mismo que sin «en casa»');
+  ok(bloques19(deCero19(ASISTENTE_NUTRICION, '¿Qué comí ayer con mi amigo?')) === bloques19(deCero19(ASISTENTE_NUTRICION, '¿Qué comí ayer?')), 'E2 · Nutrición «¿Qué comí ayer con mi amigo?»: lo mismo que sin decirlo');
 }
 
 console.log(`\n${fallos === 0 ? '\x1b[32m' : '\x1b[31m'}${total - fallos}/${total} comprobaciones\x1b[0m`);

@@ -948,7 +948,21 @@ pregunta de fiabilidad.
      con su criterio, sin elegir por él. «¿Y la peor?» basta.
    - `comparar` con «compáralo con lo de antes»: el periodo de la conversación contra el anterior (`periodoAnterior`, que el
      núcleo guarda cuando cambia el periodo); sin anterior, contra los mismos días justo antes. Dice las dos fechas y avisa si
-     se solapan. Su `periodoUsado` son los dos periodos juntos.
+     se solapan. ⚠️ **Actualizado por B0 (paso 19):** `comparar` ya no devuelve `periodoUsado` (antes, los dos periodos juntos,
+     del 12 al 23): devuelve `periodosComparados`, los dos por separado, y el núcleo guarda la comparación como **pareja** en
+     `ultimaRespuesta` sin tocar `ctx.periodo` ni `periodoAnterior` (`recordar`, `comparacionVigente`). Mientras la pareja
+     sigue vigente (menos de `TURNOS_CONTEXTO` = 6 turnos y de `MINUTOS_CONTEXTO` = 30 minutos):
+     - una pregunta de un solo periodo sin fecha propia («¿y la calidad?», «¿cuánto dormí de media?», «¿qué noches no tienen
+       datos completos?») pregunta de cuál de los dos (`comparacion_que_periodo`), con un botón por periodo; también se puede
+       contestar escribiendo («la semana pasada», «la primera»);
+     - «compáralo con lo de antes» pregunta y propone los dos periodos un paso atrás (12–18 con 5–11), sin comparar nada
+       solapado;
+     - «¿y la anterior?» mueve los dos un paso atrás con la misma unidad (semanas, días, meses; encadenable); si no son de la
+       misma unidad (esta semana con el mes pasado, ayer con la semana pasada), pregunta qué dos periodos quiere
+       (`referencia_pareja`) en vez de calcular «los 53 días anteriores»;
+     - una pregunta con su propia fecha («¿y respecto a la semana pasada?», «¿cuánto dormí ayer?») se contesta con esa fecha.
+     Cuando la pareja caduca por turnos o por tiempo, lo que había antes de la comparación también ha caducado y se usa el
+     periodo por defecto. Decisión de Josué (paso 19): se queda así, preguntando, sin un botón «los dos juntos».
 6. «Últimamente» también lleva a `ultimas`; erratas y coloquialismos los cubre el léxico de siempre (pruebas con siete formas de
    pedirlo). La frase cambia con el contexto («Del 15 al 22…» en frío, «En esos mismos días…» siguiendo) y las cifras no.
 
@@ -957,7 +971,9 @@ pregunta de fiabilidad.
 | Riesgo | Detalle |
 |---|---|
 | Datos de antes | Siestas sin contestar guardadas como «no» y noches con 23:00 → 07:00 puestas por el formulario antiguo: indistinguibles |
-| «Compáralo» después de una comparación | Compara el periodo de la comparación (los dos juntos) con el de antes; lo dice con fechas, pero puede no ser lo que él quería |
+| «Compáralo» después de una comparación | ✅ Resuelto por B0 (paso 19): antes comparaba los dos periodos juntos con el de antes (solapados, o «los 12 días anteriores»); ahora pregunta y propone los dos periodos un paso atrás (§20.4, punto 5) |
+| «Compáralo» después de comparar y preguntar por otro periodo | Abierto, sin decidir: tras «septiembre» → «compara esta semana con la anterior» → «¿cuánto dormí ayer?», «compáralo con lo de antes» compara ayer con **septiembre** (el periodo de antes de la comparación, que B0 no toca), no con la comparación. Lo dice con fechas y ya no solapa (antes: ayer contra «del 12 al 23») |
+| «¿Y el mes anterior?» después de comparar semanas | Abierto, cuestión funcional aparte (paso 19): compara esta semana con septiembre (una semana contra un mes, medias por noche). Tras comparar meses sí mueve los dos (septiembre con agosto). Lo decide Josué |
 | «Mejor noche» | Se dan dos criterios (cómo dijo que durmió y la más larga); no hay una sola «mejor» |
 | Los demás botones «próximamente» | Sin tocar (§19.4); Nutrición sigue teniendo los dos botones para lo mismo |
 
@@ -965,3 +981,10 @@ pregunta de fiabilidad.
 
 El campo de hora vacío del iPhone (cómo se ve y cómo se borra), guardar con una sola hora, desmarcar la siesta, la lista con
 «¿?», tocar «Analizar mi sueño» (la hoja se abre con la respuesta, el teclado y el foco), seguir la conversación y VoiceOver.
+
+## 21. Fase 2.x: 2.1, 2.2, 2.3 (B0–B7) y E2
+
+La especificación de lo que vino después de la v3.161.3 —las Fases 2.1 y 2.2, las decisiones D1–D6 de la Fase 2.3, los
+bloques B0–B7 y E2, con su estado, sus dependencias, lo pendiente de decidir y los criterios de aceptación— está en
+`ESPECIFICACION_FASE_2X.md`. El corpus de 130 preguntas y las 37 preguntas de ejemplo, con lo que se ha podido recuperar y
+lo que no, están en `CORPUS_FASE_2X.md`. (Preparados el 2026-10-31; todavía no integrados en el repositorio.)

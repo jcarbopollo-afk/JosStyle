@@ -1,3 +1,4 @@
+/* ⟦Procedencia · paso 15⟧ Casi todo es PROVISIONAL (texto de ea7bc4a, igual que 14f225c: no consta si la 2.2 lo cambió). ORIGINAL VERIFICADO: `unidadDePeriodo` (su JSDoc es RECONSTRUIDO), `periodoPrevio` y `periodoAnterior`. Ver PROCEDENCIA_PASO15.md. */
 /* Fase 2 · Chatbots — las fechas relativas de una conversación
    ═══════════════════════════════════════════════════════════════════════════
 

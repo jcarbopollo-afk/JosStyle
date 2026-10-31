@@ -211,11 +211,23 @@ function entidades(datos) {
 
 const conTipos = (trozo) => ({ tipos: tiposPedidos(trozo) });
 
+/* ⟦E2 · paso 17, NUEVO⟧ Nombres de asignatura habituales (ESO y Bachillerato). Solo sirven para una cosa: si
+   aparecen en la pregunta y NO son una de sus asignaturas, son con seguridad una asignatura que no tiene
+   («¿y en inglés?»), no una circunstancia. Si la tiene, la resuelve antes `resolverEntidad` y esta lista ni se
+   mira. Ampliarla es añadir un nombre; no decide nada más. */
+export const VOCABULARIO_ASIGNATURAS = Object.freeze(['inglés', 'francés', 'alemán', 'italiano', 'portugués', 'chino', 'latín', 'griego',
+  'lengua', 'literatura', 'castellano', 'valenciano', 'catalán', 'euskera', 'gallego', 'matemáticas', 'mates', 'física', 'química', 'biología',
+  'geología', 'ciencias', 'naturales', 'sociales', 'tecnología', 'informática', 'programación', 'robótica', 'dibujo', 'plástica', 'música',
+  'filosofía', 'historia', 'geografía', 'economía', 'empresa', 'religión', 'valores', 'ética', 'psicología', 'sociología', 'arte', 'artes',
+  'anatomía', 'estadística', 'educación física']);
+
+/* ⟦Procedencia · paso 15⟧ P7: el léxico `agenda` y su uso en `proximos` son EDITADO (paso 2, por el resumen de las 11:11); el resto del archivo, PROVISIONAL. Ver PROCEDENCIA_PASO15.md. */
 export const ASISTENTE_ESTUDIOS = {
   id: 'estudios',
   modulo: 'estudios',
   nombre: 'Estudios',
   lee: ['estudios'],
+  vocabulario: { asignatura: VOCABULARIO_ASIGNATURAS },
   saludo: '¡Hola! Pregúntame por tus exámenes y entregas, las horas que has estudiado, tus notas o los temas de una asignatura.',
   lexico: {
     examen: ['examen', 'examenes', 'control', 'controles', 'prueba', 'parcial', 'global', 'recuperacion'],

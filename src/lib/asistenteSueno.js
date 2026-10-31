@@ -631,6 +631,7 @@ function fiabilidad(datos, { periodo, origenPeriodo, hoy }) {
    El registro del asistente
    ══════════════════════════════════════════════════════════════════════════ */
 
+/* ⟦Procedencia · paso 15⟧ P7: el «=a medias» del léxico `incompleto` es EDITADO (paso 2); del archivo, ORIGINAL VERIFICADO lo leído antes de B y lo de B0, PROVISIONAL el resto. Ver PROCEDENCIA_PASO15.md. */
 export const ASISTENTE_SUENO = {
   id: 'sueno',
   modulo: 'sueno',

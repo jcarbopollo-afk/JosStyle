@@ -1,3 +1,4 @@
+/* ⟦Procedencia · paso 15⟧ Archivo reconstruido: lo de B0–B2 y lo leído antes de B es ORIGINAL VERIFICADO; lo que no se leyó es PROVISIONAL (texto de ea7bc4a, igual que 14f225c). Mapa línea a línea en el documento. Ver PROCEDENCIA_PASO15.md. */
 /* Fase 2 · Chatbots — el núcleo conversacional determinista
    ═══════════════════════════════════════════════════════════════════════════
 
@@ -59,6 +60,7 @@ const ABREVIATURAS = {
   sobao: 'sobado', dormio: 'dormido', cuantoo: 'cuanto', tal: 'tal',
 };
 
+/* ⟦Procedencia · paso 15⟧ RECONSTRUIDO (paso 2, A7) de aquí a `palabrasParecidasAFecha`, salvo las firmas de las funciones (originales) y `NO_SON_FECHA` (NUEVO, paso 4). Ver PROCEDENCIA_PASO15.md. */
 /* Fase 2.1 (A7) — erratas de FECHA que se corrigen solas. Solo las que no pueden ser otra palabra: una
    lista cerrada, escrita a mano, y nunca una distancia de erratas (con ella «mes» y «mas», o «martes» y
    «partes», serían lo mismo). Lo que se parece a una fecha y no está aquí no se adivina: se avisa
@@ -100,6 +102,7 @@ export function palabrasParecidasAFecha(tokens, consumidos = new Set()) {
   });
   return dudosas;
 }
+/* ⟦Procedencia · paso 15⟧ EDITADO (paso 2, A7: `.map(corregirFecha)`) + C (NUEVO, 14f225c); el resto, PROVISIONAL. Ver PROCEDENCIA_PASO15.md. */
 /** Separa por signos ANTES de normalizar (normalizar los borra): «?», «,», «;» y «.» marcan dónde
  *  puede acabar una pregunta. El marcador `¦` no casa con nada y corta las frases del léxico. */
 export function normalizarMensaje(entrada) {
@@ -126,6 +129,7 @@ export function normalizarMensaje(entrada) {
    3 · EL LÉXICO: conceptos con raíces, plurales y erratas
    ══════════════════════════════════════════════════════════════════════════ */
 
+/* ⟦Procedencia · paso 15⟧ EDITADO (paso 2, A9): `RELLENO` y `compiladas`. Ver PROCEDENCIA_PASO15.md. */
 /* Palabras que pueden ir entre las de una expresión sin romperla: «horas DE sueño». */
 const RELLENO = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'mi', 'mis', 'un', 'una', 'lo', 'al', 'en', 'a', 'me', 'te', 'tu', 'tus', 'su', 'sus', 'que', 'he', 'has', 'ha']);
 
@@ -199,6 +203,7 @@ export function detectarConceptos(tokens, lexico) {
   return salida;
 }
 
+/* ⟦Procedencia · paso 15⟧ PROVISIONAL de otra clase: texto original, pero leído solo a las 11:27:40, después del primer parche B; su sitio no está demostrado (hasta parte de `LEXICO_COMUN`). Ver PROCEDENCIA_PASO15.md. */
 /* Lo que entienden TODOS los asistentes: cómo se pregunta y lo que no se puede hacer. */
 export const LEXICO_GENERAL = {
   /* «=cantidad» exacta: con dos erratas de margen, «calidad» casaba con «cantidad». */
@@ -266,6 +271,7 @@ export function esOrdenDeEscritura(tokens) {
    capacidad que lo contesta con datos (`cubreObligacion`). «Debería», «qué hago» o «recomiéndame»
    siguen avisando siempre. */
 const CONSEJO_DEBIL = ['tengo que', 'debo'];
+/* ⟦Procedencia · paso 15⟧ EDITADO (paso 2, por el resumen de las 11:11) de aquí a `resolverEntidad`; `nombraAlgoMas` y una línea de `resolverEntidad` son NUEVO (paso 4). Ver PROCEDENCIA_PASO15.md. */
 function consejoCubierto(tokens, ganadoraDelMensaje) {
   const fuertes = LEXICO_COMUN.consejo.filter((e) => !CONSEJO_DEBIL.includes(e));
   const h = detectarConceptos(tokens, { fuerte: fuertes, debil: CONSEJO_DEBIL });
@@ -476,6 +482,7 @@ function puntuar(capacidad, conceptos, fechas, entidadesHalladas) {
   return puntos;
 }
 
+/* ⟦Procedencia · paso 15⟧ EDITADO (paso 2): el cuerpo. La firma es ORIGINAL VERIFICADO. Ver PROCEDENCIA_PASO15.md. */
 /**
  * Lo que dice un trozo de mensaje, sin ejecutar nada.
  * @returns {{ tokens, texto, conceptos, comunes, fechas, entidades, ranking: [{ capacidad, puntos }] }}
@@ -595,6 +602,7 @@ function relativizarAnteriores(e, entero, item, hoy, par = null) {
   return cambio ? { ...e, fechas } : e;
 }
 
+/* ⟦Procedencia · paso 15⟧ RECONSTRUIDO (paso 2, A2): el final de `indicesConsumidos`, `PREPOSICIONES_DE_MENCION`, `NO_ES_MENCION` y `mencionSinResolver` salvo su firma. Ver PROCEDENCIA_PASO15.md. */
 /** Los índices de token que ya son algo: un concepto del léxico, uno común o una fecha. */
 function indicesConsumidos(conceptos, comunes, ocupados) {
   const s = new Set(ocupados);
@@ -611,6 +619,7 @@ function indicesConsumidos(conceptos, comunes, ocupados) {
 const PREPOSICIONES_DE_MENCION = new Set(['de', 'del', 'en', 'con', 'sobre']);
 const NO_ES_MENCION = new Set(['general', 'total', 'resumen', 'serio', 'verdad', 'nuevo', 'realidad', 'momento', 'medio', 'plan', 'vez', 'veces']);
 export function mencionSinResolver(tokens, consumidos = new Set()) {
+  const todas = [];
   for (let i = 0; i < tokens.length - 1; i += 1) {
     if (!PREPOSICIONES_DE_MENCION.has(tokens[i]) || consumidos.has(i)) continue;
     const indices = [];
@@ -621,9 +630,78 @@ export function mencionSinResolver(tokens, consumidos = new Set()) {
       if (NO_ENTIDAD.has(t) || NO_ES_MENCION.has(t) || /^\d+$/.test(t)) break;
       indices.push(j);
     }
-    if (indices.some((k) => tokens[k].length >= 3)) return { indices, texto: indices.map((k) => tokens[k]).join(' ') };
+    /* ⟦E2 · paso 17⟧ Cada mención guarda la preposición que la introduce, y se siguen buscando las demás
+       (`todas`): «con mi amigo de inglés» trae dos, y no son de la misma clase. La primera sigue siendo la que
+       se devuelve arriba, como antes. */
+    if (indices.some((k) => tokens[k].length >= 3)) {
+      todas.push({ indices, texto: indices.map((k) => tokens[k]).join(' '), preposicion: tokens[i] });
+      i = indices[indices.length - 1];
+    }
   }
-  return null;
+  return todas.length ? { ...todas[0], todas } : null;
+}
+
+/* ══ ⟦E2 · paso 17, NUEVO⟧ Qué es lo nombrado que no es nada conocido ═══════════════════════════════════
+   Una mención sin resolver puede ser cuatro cosas, y solo una de ellas es «algo tuyo que no encuentro»:
+     · desconocida  — el nombre de algo de ese tipo que no tiene («¿y en inglés?» sin Inglés): se avisa y NUNCA
+                      se hereda lo de antes en su lugar;
+     · circunstancia — dónde, con quién o con qué («en casa», «con mi amigo», «con Marta»): no es una entidad,
+                      así que ni se busca, ni se avisa, ni borra lo que se estaba hablando;
+     · no filtrable — tras «en», algo que no se sabe qué es («en el bosque»), en una pregunta completa con una
+                      entidad que solo acota: se contesta sin filtrar diciendo que no se puede filtrar por eso,
+                      sin afirmar que sea una asignatura, y tampoco se hereda nada en su lugar.
+   (La cuarta, la entidad conocida, ya la resuelve `resolverEntidad`: a esto solo llega lo que no casó.)
+   El orden importa, y está escrito una sola vez aquí: el vocabulario del tipo (las asignaturas habituales)
+   gana a todo; después, las circunstancias; después la preposición. Nada de esto se adivina con IA. */
+export const CIRCUNSTANCIAS = Object.freeze({
+  lugar: ['casa', 'clase', 'clases', 'biblioteca', 'instituto', 'insti', 'colegio', 'cole', 'academia', 'universidad', 'uni', 'facultad',
+    'calle', 'parque', 'cama', 'sofa', 'habitacion', 'cuarto', 'salon', 'cocina', 'tren', 'bus', 'autobus', 'metro', 'coche', 'playa',
+    'pueblo', 'gimnasio', 'piscina', 'campo', 'pista'],
+  compania: ['amigo', 'amiga', 'amigos', 'amigas', 'companero', 'companera', 'companeros', 'companeras', 'novio', 'novia', 'padre', 'madre',
+    'padres', 'hermano', 'hermana', 'hermanos', 'hermanas', 'primo', 'prima', 'primos', 'abuelo', 'abuela', 'profe', 'profesor', 'profesora',
+    'tutor', 'tutora', 'entrenador', 'entrenadora', 'grupo', 'familia', 'colega', 'colegas', 'gente', 'equipo'],
+  medio: ['movil', 'ordenador', 'portatil', 'tablet', 'ipad', 'apuntes'],
+});
+/* Conservadora a propósito: ninguna de estas palabras es un concepto de los asistentes (salvo «gimnasio» en
+   Fitness, que allí se lee antes como concepto y nunca llega a ser mención) ni el nombre de una asignatura
+   habitual («música» no está: es una asignatura). Ampliarla es añadir una palabra; un asistente puede sumar las
+   suyas con `circunstancias: { categoria: [...] }`. */
+const CATEGORIA_DE_CIRCUNSTANCIA = new Map(Object.entries(CIRCUNSTANCIAS).flatMap(([cat, palabras]) => palabras.map((p) => [p, cat])));
+/* Las que introducen el NOMBRE de algo: tras ellas, lo que no es una circunstancia es algo que falta. */
+const PREPOSICIONES_DE_NOMBRE = new Set(['de', 'del', 'sobre']);
+
+/**
+ * La clase de UNA mención sin resolver (ver arriba). Pura: no lee el contexto, se le dice.
+ * @param {{ texto: string, preposicion?: string }} mencion
+ * @param {{ asistente?, tipo?: string, obligatoria?: boolean, eliptica?: boolean }} opciones
+ *   `obligatoria`: la capacidad no puede contestar sin esa entidad; `eliptica`: el mensaje es un «¿y …?» que
+ *   sigue la pregunta anterior sin ninguna señal propia.
+ * @returns {{ clase: 'desconocida'|'circunstancia'|'no_filtrable', categoria?: string, motivo: string }}
+ */
+export function clasificarMencion(mencion, { asistente = null, tipo = null, obligatoria = false, eliptica = false } = {}) {
+  const palabras = String((mencion && mencion.texto) || '').split(' ').filter(Boolean);
+  const vocabulario = new Set((((asistente && asistente.vocabulario) || {})[tipo] || []).map((v) => normalizar(v)));
+  if (palabras.some((p) => vocabulario.has(p))) return { clase: 'desconocida', motivo: 'vocabulario' };
+  const extra = (asistente && asistente.circunstancias) || {};
+  const categoria = palabras.map((p) => CATEGORIA_DE_CIRCUNSTANCIA.get(p)
+    || Object.keys(extra).find((cat) => (extra[cat] || []).map((x) => normalizar(x)).includes(p))).find(Boolean);
+  if (categoria) return { clase: 'circunstancia', categoria, motivo: 'lexico' };
+  /* «con» + algo que no es nada suyo: la compañía (una persona, casi siempre). Nunca una asignatura, un
+     ejercicio o un hábito que falta; si la capacidad lo exige, se pregunta cuál, sin presentarla como tal. */
+  if (mencion.preposicion === 'con') return { clase: 'circunstancia', categoria: 'compania', motivo: 'con' };
+  if (PREPOSICIONES_DE_NOMBRE.has(mencion.preposicion)) return { clase: 'desconocida', motivo: 'preposicion' };
+  if (obligatoria) return { clase: 'desconocida', motivo: 'obligatoria' };
+  /* Un «¿y en X?» que solo cambia ESO de la pregunta anterior: X ocupa el sitio de la entidad. Ante la duda,
+     no se hereda: se dice que no se encuentra. */
+  if (eliptica) return { clase: 'desconocida', motivo: 'eliptica' };
+  return { clase: 'no_filtrable', motivo: 'en' };
+}
+
+/** Todas las menciones de un trozo, clasificadas; manda la primera desconocida, luego la primera no filtrable. */
+function mencionQueManda(mencion, opciones) {
+  if (!mencion) return null;
+  const clasificadas = (mencion.todas || [mencion]).map((m) => ({ mencion: m, ...clasificarMencion(m, opciones) }));
+  return clasificadas.find((c) => c.clase === 'desconocida') || clasificadas.find((c) => c.clase === 'no_filtrable') || clasificadas[0];
 }
 function ganadora(e) {
   const [a, b] = e.ranking;
@@ -784,10 +862,17 @@ function argumentosPara(asistente, capacidad, trozo, entero, ctx, hoy) {
     /* 🐛 Fase 2.1 (A2) — si esta pregunta nombra algo que no existe, ni se toma lo nombrado en otra parte
        del mensaje ni se hereda lo de antes: se dice que no se encuentra (`noEncontrada`). */
     const propia = trozo.entidades[tipo];
-    const r = propia?.estado !== 'ninguna' ? propia : (trozo.mencion ? null : entero.entidades[tipo]);
+    /* ⟦E2 · paso 17⟧ Lo nombrado sin resolver se clasifica antes: una desconocida o una no filtrable siguen
+       cortando la herencia (como hacía toda mención); una circunstancia («en casa», «con Marta») no es una
+       entidad, así que se sigue como si no se hubiera nombrado nada (y la regla de herencia de abajo, intacta). */
+    const eliptica = !!(ctx.ultima && ctx.ultima.capacidad === capacidad.id && heredable(ctx, ctx.ultima.turno) && senalesPropias(capacidad, trozo) === 0);
+    const clasificada = mencionQueManda(trozo.mencion, { asistente, tipo, obligatoria: !!capacidad.entidad.obligatoria, eliptica });
+    const corta = clasificada && clasificada.clase !== 'circunstancia' ? clasificada : null;
+    const r = propia?.estado !== 'ninguna' ? propia : (corta ? null : entero.entidades[tipo]);
     if (r && r.estado === 'unica') args.entidad = r.entidad;
     else if (r && r.estado === 'ambigua') args.ambigua = r;
-    else if (trozo.mencion) args.desconocida = textoOriginal(trozo.mencion.texto, entero.originales);
+    else if (corta && corta.clase === 'desconocida') args.desconocida = textoOriginal(corta.mencion.texto, entero.originales);
+    else if (corta) args.noFiltrable = textoOriginal(corta.mencion.texto, entero.originales);
     else if (ctx.entidades[tipo] && heredable(ctx, ctx.entidades[tipo].turno)) {
       /* Una entidad que la capacidad EXIGE se hereda («¿y su récord?»). Una que solo acota, solo si se
          sigue con la misma pregunta o se señala («eso», «esa»): si no, «¿qué notas he sacado?» después
@@ -833,6 +918,7 @@ const nombreRepetido = (entidades) => {
   return e ? e.nombre : null;
 };
 
+/* ⟦Procedencia · paso 15⟧ ORIGINAL VERIFICADO de aquí a `noEncontrada`: lectura de las 11:20:37, antes de B (restaurado en el paso 4). Ver PROCEDENCIA_PASO15.md. */
 function opcionesDeEntidades(entidades, capacidad, periodo) {
   const textos = textosDeOpciones(entidades);
   return entidades.map((e, i) => ({ texto: textos[i], mensaje: textos[i], plan: { capacidad: capacidad.id, entidad: e, periodo } }));
@@ -883,6 +969,7 @@ function noEncontrada(asistente, capacidad, args, disponibles) {
   };
 }
 
+/* ⟦Procedencia · paso 15⟧ PROVISIONAL de otra clase: el cuerpo de `ejecutarConArgs` y el principio de `capacidadParaPeriodo` son texto original leído a las 19:11:28, después de B; su sitio no está demostrado. Ver PROCEDENCIA_PASO15.md. */
 function ejecutarConArgs(asistente, capacidad, args, datos, sinCargar, disponibles = {}) {
   const faltan = (asistente.lee || []).filter((k) => sinCargar.includes(k));
   if (faltan.length) {
@@ -892,6 +979,12 @@ function ejecutarConArgs(asistente, capacidad, args, datos, sinCargar, disponibl
     if (capacidad.entidad.obligatoria) return noEncontrada(asistente, capacidad, args, disponibles);
     const r = ejecutarConArgs(asistente, capacidad, { ...args, desconocida: null }, datos, sinCargar, disponibles);
     if (r.tipo === 'respuesta') r.bloques = [bNota(`No encuentro «${args.desconocida}» entre tus ${pluralDe(capacidad.entidad.nombre || 'elemento')}, así que te lo enseño sin filtrar.`), ...r.bloques];
+    return r;
+  }
+  /* ⟦E2 · paso 17⟧ Algo por lo que no se puede filtrar (sin afirmar que sea una entidad que falta). */
+  if (capacidad.entidad && !capacidad.entidad.obligatoria && !args.entidad && !args.ambigua && args.noFiltrable) {
+    const r = ejecutarConArgs(asistente, capacidad, { ...args, noFiltrable: null }, datos, sinCargar, disponibles);
+    if (r.tipo === 'respuesta') r.bloques = [bNota(`No puedo filtrar por «${args.noFiltrable}», así que te lo enseño sin filtrar.`), ...r.bloques];
     return r;
   }
   if (capacidad.entidad && capacidad.entidad.obligatoria && !args.entidad) {

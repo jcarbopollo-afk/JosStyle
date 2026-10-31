@@ -10,6 +10,7 @@ import {
   ERRATAS_FECHA, palabrasParecidasAFecha, mencionSinResolver,
   referenciaAnterior, conversarCon, TEXTO_SIN_DIFERENCIA, desplazarPareja,
   medidaDePeriodo, validarMetrica, metricasComparables, compararMedidas, compararMetrica, numeroLegible,
+  MAX_OPCIONES as MAX_OPCIONES_18,
 } from '../src/lib/motorConversacion.js';
 import {
   interpretarFechas, etiquetaDeDia, etiquetaDeRango, lunesDeFecha, periodoPorDefecto, diasDelRango, fechasDelRango,
@@ -788,6 +789,383 @@ console.log('\n── 12. Paso 4 · Auditoría de B0–B2: comprobaciones que fa
   const r12 = pregunta12(ASIS)('compara esta semana con el 31 de febrero');
   ok(r12[0].capacidad === 'comparar_que' && /Todavía no calculo la diferencia/.test(textoDeRespuesta(r12[0])),
     'B2 (029) · con un solo periodo válido, la pregunta de qué comparar avisa de que la diferencia no se calcula');
+}
+
+/* ── 13 · Paso 15 · Regresión de entidades ⟦Paso 15 de la recuperación, no es código original⟧ ──
+   Lo que se nombra es lo que se usa: con qué asignatura se EJECUTA de verdad la capacidad (sus argumentos),
+   qué queda como contestado (`ultimaRespuesta.items`) y qué entidad se puede heredar (`contexto.entidades`).
+   No se ha tocado el motor para que pasen: si una sale en rojo, se deja en rojo y se documenta. */
+console.log('\n── 13. Paso 15 · Regresión de entidades: lo nombrado es lo que se usa ──');
+{
+  const ASIG15 = [
+    { tipo: 'asignatura', id: 'bio', nombre: 'Biología', alias: [], reciente: 3 },
+    { tipo: 'asignatura', id: 'mat', nombre: 'Matemáticas', alias: [], reciente: 2 },
+    { tipo: 'asignatura', id: 'his', nombre: 'Historia', alias: [], reciente: 1 },
+  ];
+  let usadas15 = [];
+  const capE15 = (id, obligatoria, extra) => ({
+    id, titulo: id, ejemplo: `ejemplo ${id}`, entidad: { tipo: 'asignatura', obligatoria, nombre: 'asignatura' },
+    ejecutar: (datos, args) => { usadas15.push(args.entidad ? args.entidad.id : null); return { bloques: [{ tipo: 'texto', texto: `${id}:${args.entidad ? args.entidad.id : '-'}` }], fuente: 'prueba' }; },
+    ...extra,
+  });
+  const ASIS15 = {
+    id: 'prueba15', modulo: 'prueba15', nombre: 'Prueba 15', lee: ['x'], saludo: 'Hola.',
+    lexico: { estudiar: ['estudi*'], horas: ['horas'], examen: ['examen*'] },
+    capacidades: [
+      capE15('horas', false, { senales: { estudiar: 3, horas: 2 }, necesita: [['estudiar']], prioridad: 2 }),
+      capE15('examen', true, { senales: { examen: 4 }, necesita: [['examen']], prioridad: 1 }),
+    ],
+    entidades: () => ({ asignatura: ASIG15 }),
+  };
+  const charla15 = () => {
+    let c = nuevaConversacion('u15');
+    const f = (t) => { usadas15 = []; const r = responderMensaje(ASIS15, t, { datos: {}, hoy: HOY, contexto: c, ahora: 1000 }); c = r.contexto; return r.respuestas; };
+    f.item = () => { const u = c.ultimaRespuesta; return u && u.items.length === 1 ? u.items[0] : null; };
+    f.heredable = () => (c.entidades && c.entidades.asignatura ? c.entidades.asignatura.entidad.id : null);
+    f.usadas = () => usadas15.slice();
+    return f;
+  };
+  const nota15 = (x) => x.bloques.filter((b) => b.tipo === 'nota').map((b) => b.texto).join(' ');
+  const entidad15 = (i) => (i && i.entidad ? i.entidad.id : null);
+
+  /* 1 · Una entidad que existe, en la primera pregunta. */
+  let h = charla15();
+  let r = h('cuantas horas he estudiado de biologia');
+  ok(r.length === 1 && r[0].tipo === 'respuesta' && JSON.stringify(h.usadas()) === '["bio"]' && textoDeRespuesta(r[0]).startsWith('horas:bio'),
+    'Paso 15 · 1 · «horas de biología»: la capacidad se ejecuta con Biología, y solo con ella');
+  ok(entidad15(h.item()) === 'bio' && h.heredable() === 'bio' && !nota15(r[0]), 'Paso 15 · 1 · …lo contestado y lo que se puede heredar es Biología, sin notas');
+
+  /* 2 · «¿y en X?» con X que no existe, después de una que sí. */
+  r = h('y en ingles?');
+  ok(r.length === 1 && r[0].capacidad === 'horas' && JSON.stringify(h.usadas()) === '[null]' && !textoDeRespuesta(r[0]).includes('horas:bio'),
+    'Paso 15 · 2 · «¿y en inglés?» tras biología: se ejecuta SIN asignatura, nunca con Biología');
+  ok(/No encuentro «ingles» entre tus asignaturas, así que te lo enseño sin filtrar/.test(nota15(r[0])) && entidad15(h.item()) === null && h.heredable() === null,
+    'Paso 15 · 2 · …lo dice, y Biología ya no es lo contestado ni se puede heredar');
+  h = charla15();
+  h('cuando es el examen de biologia');
+  r = h('y en ingles?');
+  ok(r[0].tipo === 'aclaracion' && r[0].capacidad === 'examen' && h.usadas().length === 0 && /No encuentro «ingles»/.test(textoDeRespuesta(r[0])) && h.heredable() === null,
+    'Paso 15 · 2 · con una entidad obligatoria: pregunta cuál, no ejecuta nada y no deja Biología para heredar');
+
+  /* 3 · «¿y de X?» con X que no existe. */
+  h = charla15();
+  h('cuantas horas he estudiado de biologia');
+  r = h('y de latin?');
+  ok(r.length === 1 && JSON.stringify(h.usadas()) === '[null]' && /No encuentro «latin»/.test(nota15(r[0])) && entidad15(h.item()) === null && h.heredable() === null,
+    'Paso 15 · 3 · «¿y de latín?» tras biología: sin asignatura, lo dice y no hereda Biología');
+
+  /* 4 · El seguimiento con otra entidad que sí existe. */
+  h = charla15();
+  h('cuantas horas he estudiado de biologia');
+  r = h('y de matematicas?');
+  ok(r.length === 1 && r[0].capacidad === 'horas' && JSON.stringify(h.usadas()) === '["mat"]' && entidad15(h.item()) === 'mat' && h.heredable() === 'mat' && !nota15(r[0]),
+    'Paso 15 · 4 · «¿y de matemáticas?» tras biología: misma pregunta, con Matemáticas (la ejecutada, la contestada y la heredable)');
+  h = charla15();
+  h('cuando es el examen de biologia');
+  r = h('y de matematicas?');
+  ok(r[0].tipo === 'respuesta' && r[0].capacidad === 'examen' && JSON.stringify(h.usadas()) === '["mat"]' && entidad15(h.item()) === 'mat',
+    'Paso 15 · 4 · lo mismo con una entidad obligatoria: el examen de Matemáticas');
+
+  /* 5 · Una entidad que no existe, en la primera pregunta. */
+  h = charla15();
+  r = h('cuantas horas he estudiado de ingles');
+  ok(r.length === 1 && JSON.stringify(h.usadas()) === '[null]' && /No encuentro «ingles»/.test(nota15(r[0])) && entidad15(h.item()) === null && h.heredable() === null,
+    'Paso 15 · 5 · «horas de inglés» sin Inglés: sin filtrar, lo dice y no se queda con ninguna asignatura');
+  h = charla15();
+  r = h('cuando es el examen de ingles');
+  ok(r[0].tipo === 'aclaracion' && h.usadas().length === 0 && /No encuentro «ingles»/.test(textoDeRespuesta(r[0])) && r[0].opciones.length === ASIG15.length,
+    'Paso 15 · 5 · «el examen de inglés» sin Inglés: pregunta cuál, con las que hay, sin ejecutar nada');
+
+  /* 6 · «casa» y «amigo» no son asignaturas que filtrar. */
+  for (const [frase, palabra] of [['cuantas horas he estudiado en casa', 'casa'], ['cuantas horas he estudiado con un amigo', 'amigo']]) {
+    h = charla15();
+    r = h(frase);
+    ok(r.length === 1 && r[0].capacidad === 'horas' && JSON.stringify(h.usadas()) === '[null]' && entidad15(h.item()) === null,
+      `Paso 15 · 6 · «${frase}»: no filtra por ninguna asignatura`);
+    ok(!new RegExp(`No encuentro «${palabra}»`).test(textoDeRespuesta(r[0])),
+      `Paso 15 · 6 · …y no dice «No encuentro «${palabra}» entre tus asignaturas»: «${palabra}» no se buscó como asignatura`);
+  }
+}
+
+/* ── 14 · Paso 17 · E2: lo nombrado que no es nada conocido ⟦E2 · paso 17, NUEVO⟧ ──
+   La clasificación (`clasificarMencion`) por sí sola, y después en conversación con un asistente simulado:
+   con qué asignatura se EJECUTA la capacidad, qué queda contestado y qué se puede heredar. */
+console.log('\n── 14. Paso 17 · E2: entidad conocida, desconocida, circunstancia y no filtrable ──');
+{
+  const { clasificarMencion, CIRCUNSTANCIAS, entender: entender17 } = await import('../src/lib/motorConversacion.js');
+  const VOC17 = { vocabulario: { asignatura: ['inglés', 'latín', 'física'] } };
+  const cm = (texto, preposicion, o = {}) => clasificarMencion({ texto, preposicion }, { asistente: VOC17, tipo: 'asignatura', ...o });
+
+  /* Unitarias: cada clase y su orden. */
+  ok(cm('ingles', 'en').clase === 'desconocida' && cm('ingles', 'en').motivo === 'vocabulario', 'E2 · «en inglés»: del vocabulario de asignaturas → desconocida (aunque vaya tras «en»)');
+  ok(cm('ingles', 'con').clase === 'desconocida', 'E2 · el vocabulario gana también a «con»');
+  ok(cm('latin', 'de').clase === 'desconocida' && clasificarMencion({ texto: 'robotica', preposicion: 'de' }, { tipo: 'asignatura' }).motivo === 'preposicion',
+    'E2 · tras «de», algo que no es una circunstancia es algo que falta (con o sin vocabulario)');
+  ok(clasificarMencion({ texto: 'robotica', preposicion: 'sobre' }, {}).clase === 'desconocida', 'E2 · «sobre» también introduce un nombre');
+  const casa17 = cm('casa', 'en');
+  ok(casa17.clase === 'circunstancia' && casa17.categoria === 'lugar', 'E2 · «en casa» → circunstancia (lugar)');
+  ok(cm('casa', 'de').clase === 'circunstancia', 'E2 · «de casa»: la circunstancia gana a la preposición');
+  ok(cm('amigo', 'con').categoria === 'compania' && cm('amigo', 'con').motivo === 'lexico', 'E2 · «con mi amigo» → circunstancia (compañía), por el léxico');
+  ok(cm('marta', 'con').clase === 'circunstancia' && cm('marta', 'con').motivo === 'con', 'E2 · «con Marta» (sin lista de nombres) → compañía, nunca una asignatura que falta');
+  ok(cm('bosque', 'en').clase === 'no_filtrable', 'E2 · «en el bosque» en una pregunta completa con entidad opcional → no filtrable');
+  ok(cm('bosque', 'en', { obligatoria: true }).clase === 'desconocida' && cm('bosque', 'en', { obligatoria: true }).motivo === 'obligatoria',
+    'E2 · con una entidad obligatoria, lo que va tras «en» y no es una circunstancia es algo que falta');
+  ok(cm('bosque', 'en', { eliptica: true }).motivo === 'eliptica', 'E2 · en un «¿y en X?» que solo cambia eso, X ocupa el sitio de la entidad → desconocida');
+  ok(cm('casa', 'en', { obligatoria: true, eliptica: true }).clase === 'circunstancia', 'E2 · una circunstancia lo sigue siendo con entidad obligatoria y en un seguimiento');
+  ok(clasificarMencion({ texto: 'bosque', preposicion: 'en' }, { asistente: { circunstancias: { lugar: ['bosque'] } } }).clase === 'circunstancia',
+    'E2 · un asistente puede ampliar las circunstancias con las suyas');
+  ok(!Object.values(CIRCUNSTANCIAS).flat().some((p) => ['ingles', 'latin', 'musica', 'historia', 'matematicas', 'biologia'].includes(p)) && Object.isFrozen(CIRCUNSTANCIAS),
+    'E2 · ninguna circunstancia es el nombre de una asignatura habitual, y la lista no se puede cambiar desde fuera');
+
+  /* Varias menciones en una frase: se ven todas, cada una con su preposición; la primera sigue arriba (como antes). */
+  const varias17 = mencionSinResolver(normalizarMensaje('con mi amigo de ingles').tokens);
+  ok(varias17 && varias17.texto === 'amigo' && varias17.preposicion === 'con' && varias17.todas.length === 2 && varias17.todas[1].texto === 'ingles' && varias17.todas[1].preposicion === 'de',
+    'E2 · «con mi amigo de inglés»: dos menciones, con su preposición; la primera sigue siendo la de siempre');
+
+  /* Fechas y periodos con «en» o «con»: son fechas, no menciones. */
+  const sinMencion17 = (t) => entender17({ capacidades: [], lexico: {} }, normalizarMensaje(t).tokens, HOY, {}).mencion;
+  ok(sinMencion17('cuantas horas en octubre') === null && sinMencion17('compara esta semana con la semana pasada') === null && sinMencion17('en la semana del 12 de octubre') === null
+    && sinMencion17('compara el lunes con el martes') === null,
+    'E2 · «en octubre», «con la semana pasada», «en la semana del 12», «el lunes con el martes»: fechas, ninguna mención');
+
+  /* En conversación: un asistente simulado con vocabulario, una capacidad opcional (con periodo) y una obligatoria. */
+  const ASIG17 = [
+    { tipo: 'asignatura', id: 'bio', nombre: 'Biología', alias: ['bio'], reciente: 4 },
+    { tipo: 'asignatura', id: 'mat', nombre: 'Matemáticas', alias: [], reciente: 3 },
+    { tipo: 'asignatura', id: 'fyq', nombre: 'Física y Química', alias: [], reciente: 2 },
+    { tipo: 'asignatura', id: 'his', nombre: 'Historia', alias: [], reciente: 1 },
+  ];
+  let usadas17 = [];
+  const capE17 = (id, obligatoria, extra) => ({
+    id, titulo: id, ejemplo: `ejemplo ${id}`, entidad: { tipo: 'asignatura', obligatoria, nombre: 'asignatura' },
+    ejecutar: (datos, args) => { usadas17.push(args.entidad ? args.entidad.id : null); return { bloques: [{ tipo: 'texto', texto: `${id}:${args.periodo ? `${args.periodo.desde}..${args.periodo.hasta}` : '-'}:${args.entidad ? args.entidad.id : '-'}` }], fuente: 'prueba' }; },
+    ...extra,
+  });
+  const ASIS17 = {
+    id: 'prueba17', modulo: 'prueba17', nombre: 'Prueba 17', lee: ['x'], saludo: 'Hola.', vocabulario: { asignatura: ['inglés', 'latín', 'física', 'química'] },
+    lexico: { estudiar: ['estudi*'], horas: ['horas'], examen: ['examen*'] },
+    capacidades: [
+      capE17('horas', false, { senales: { estudiar: 3, horas: 2 }, necesita: [['estudiar']], periodo: 'rango', porDefecto: 'ultimos7', prioridad: 2 }),
+      capE17('examen', true, { senales: { examen: 4 }, necesita: [['examen']], prioridad: 1 }),
+    ],
+    entidades: () => ({ asignatura: ASIG17 }),
+  };
+  const charla17 = () => {
+    let c = nuevaConversacion('u17');
+    const f = (t) => { usadas17 = []; const r = responderMensaje(ASIS17, t, { datos: {}, hoy: HOY, contexto: c, ahora: 1000 }); c = r.contexto; return r.respuestas; };
+    f.item = () => { const u = c.ultimaRespuesta; return u && u.items.length === 1 ? u.items[0] : null; };
+    f.contestada = () => { const i = f.item(); return i && i.entidad ? i.entidad.id : null; };
+    f.heredable = () => (c.entidades && c.entidades.asignatura ? c.entidades.asignatura.entidad.id : null);
+    f.usadas = () => JSON.stringify(usadas17);
+    return f;
+  };
+  const notas17 = (x) => x.bloques.filter((b) => b.tipo === 'nota').map((b) => b.texto).join(' ');
+  const estado17 = (h) => `${h.usadas()}|${h.contestada()}|${h.heredable()}`;
+
+  /* 1 · Conocidas (y las que comparten trozos de palabra). */
+  let h = charla17();
+  let r = h('cuantas horas he estudiado de biologia');
+  ok(estado17(h) === '["bio"]|bio|bio' && !notas17(r[0]), 'E2 · conocida: «de biología» se ejecuta, se contesta y se puede heredar como Biología, sin notas');
+  h = charla17(); r = h('cuantas horas he estudiado de fisica');
+  ok(estado17(h) === '["fyq"]|fyq|fyq' && !notas17(r[0]), 'E2 · «física» está en el vocabulario, pero es una palabra de «Física y Química», que la tiene: es ella');
+  h = charla17(); r = h('cuantas horas he estudiado de quimica');
+  ok(estado17(h) === '["fyq"]|fyq|fyq', 'E2 · «química» también es ella (comparten trozo y gana la conocida)');
+  h = charla17(); r = h('cuando es el examen de bio');
+  ok(estado17(h) === '["bio"]|bio|bio', 'E2 · «bio» (alias y principio del nombre) sigue siendo Biología');
+
+  /* 2 · Desconocidas: se avisa y no se hereda nada en su lugar. */
+  for (const t of ['cuantas horas he estudiado de ingles', 'cuantas horas he estudiado en ingles']) {
+    h = charla17(); r = h(t);
+    ok(estado17(h) === '[null]|null|null' && /No encuentro «ingles» entre tus asignaturas, así que te lo enseño sin filtrar/.test(notas17(r[0])),
+      `E2 · desconocida: «${t}» se ejecuta sin asignatura y lo dice`);
+  }
+
+  /* 3 · Circunstancias: ni filtro, ni aviso. */
+  for (const t of ['cuantas horas he estudiado en casa', 'cuantas horas he estudiado con mi amigo', 'cuantas horas he estudiado con marta', 'cuantas horas he estudiado de casa']) {
+    h = charla17(); r = h(t);
+    ok(r.length === 1 && r[0].tipo === 'respuesta' && estado17(h) === '[null]|null|null' && !notas17(r[0]),
+      `E2 · circunstancia: «${t}» no filtra ni avisa`);
+  }
+
+  /* 4 · No filtrable: sin filtrar, diciendo que no se puede filtrar por eso (y sin llamarlo asignatura). */
+  h = charla17(); r = h('cuantas horas he estudiado en el bosque');
+  ok(estado17(h) === '[null]|null|null' && /No puedo filtrar por «bosque», así que te lo enseño sin filtrar/.test(notas17(r[0])) && !/No encuentro/.test(notas17(r[0])),
+    'E2 · no filtrable: «en el bosque» contesta sin filtrar y lo dice, sin afirmar que sea una asignatura');
+
+  /* 5 · Herencia: la circunstancia la conserva; la desconocida la corta. */
+  h = charla17();
+  h('cuantas horas he estudiado de biologia');
+  r = h('y en casa?');
+  ok(estado17(h) === '["bio"]|bio|bio' && !notas17(r[0]) && textoDeRespuesta(r[0]).includes(':bio'), 'E2 · «¿y en casa?» tras biología: sigue con Biología, sin avisos');
+  r = h('y con marta?');
+  ok(estado17(h) === '["bio"]|bio|bio' && !notas17(r[0]), 'E2 · «¿y con Marta?» después: sigue con Biología');
+  r = h('y en ingles?');
+  ok(estado17(h) === '[null]|null|null' && /No encuentro «ingles»/.test(notas17(r[0])), 'E2 · «¿y en inglés?» después: NO hereda Biología y avisa');
+  h = charla17();
+  h('cuantas horas he estudiado de biologia');
+  r = h('y de ingles?');
+  ok(estado17(h) === '[null]|null|null' && /No encuentro «ingles»/.test(notas17(r[0])), 'E2 · «¿y de inglés?» tras biología: no hereda y avisa');
+  h = charla17();
+  h('cuantas horas he estudiado de biologia');
+  r = h('y en el bosque?');
+  ok(estado17(h) === '[null]|null|null' && /No encuentro «bosque»/.test(notas17(r[0])), 'E2 · «¿y en el bosque?» (no se sabe qué es, en un seguimiento): ante la duda, no hereda y avisa');
+
+  /* 6 · Cambio de entidad. */
+  h = charla17();
+  h('cuantas horas he estudiado de biologia');
+  r = h('y de matematicas?');
+  ok(estado17(h) === '["mat"]|mat|mat' && !notas17(r[0]), 'E2 · «¿y de matemáticas?» tras biología: cambia a Matemáticas');
+
+  /* 7 · Entidad obligatoria. */
+  h = charla17(); r = h('cuando es el examen con mi amigo');
+  ok(r[0].tipo === 'aclaracion' && r[0].capacidad === 'examen' && h.usadas() === '[]' && /¿De qué asignatura\?/.test(textoDeRespuesta(r[0])) && !/No encuentro/.test(textoDeRespuesta(r[0])),
+    'E2 · obligatoria + circunstancia: pregunta qué asignatura, sin presentar «amigo» como una que falta');
+  h = charla17(); r = h('cuando es el examen en el bosque');
+  ok(r[0].tipo === 'aclaracion' && h.usadas() === '[]' && /No encuentro «bosque»/.test(textoDeRespuesta(r[0])), 'E2 · obligatoria + algo desconocido tras «en»: lo dice y pregunta (como antes)');
+  h = charla17();
+  h('cuando es el examen de biologia');
+  r = h('y en casa?');
+  ok(r[0].tipo === 'respuesta' && estado17(h) === '["bio"]|bio|bio', 'E2 · «¿y en casa?» tras el examen de biología: el de Biología (la circunstancia no la borra)');
+
+  /* 8 · Dos entidades a la vez: se pregunta, no se elige ninguna. */
+  h = charla17(); r = h('cuantas horas he estudiado de biologia y matematicas');
+  ok(r[0].tipo === 'aclaracion' && h.usadas() === '[]' && r[0].opciones.map((o) => o.texto).join('|').includes('Biología') && r[0].opciones.map((o) => o.texto).join('|').includes('Matemáticas'),
+    'E2 · «de biología y matemáticas»: aclaración con las dos, sin ejecutar ninguna en silencio');
+
+  /* 9 · Varias menciones: manda la desconocida; la circunstancia no avisa. */
+  h = charla17(); r = h('cuantas horas he estudiado con mi amigo de ingles');
+  ok(estado17(h) === '[null]|null|null' && /No encuentro «ingles»/.test(notas17(r[0])) && !/amigo/.test(notas17(r[0])), 'E2 · «con mi amigo de inglés»: avisa de inglés, no de «amigo»');
+  h = charla17(); r = h('cuantas horas he estudiado de biologia en casa');
+  ok(estado17(h) === '["bio"]|bio|bio' && !notas17(r[0]), 'E2 · «de biología en casa»: Biología, sin avisos');
+
+  /* 10 · Fechas con «en» y «con» en conversación. */
+  h = charla17(); r = h('cuantas horas he estudiado en octubre');
+  ok(textoDeRespuesta(r[0]).startsWith('horas:2026-10-01..2026-10-23:-') && !notas17(r[0]), 'E2 · «en octubre»: el periodo de octubre (recortado a hoy), sin ninguna nota de mención');
+  h = charla17();
+  h('cuantas horas he estudiado de biologia');
+  r = h('y la semana pasada?');
+  ok(textoDeRespuesta(r[0]).startsWith('horas:2026-10-12..2026-10-18:bio'), 'E2 · «¿y la semana pasada?» tras biología: Biología la semana pasada (la herencia de siempre)');
+}
+
+/* ── 15 · Paso 18: las cinco ramas internas que ninguna prueba recorría ──────
+   Salieron del análisis de cobertura de las partes PROVISIONALES del motor (texto idéntico al de 14f225c,
+   ejecutado por las suites pero con estas ramas sin recorrer). Cada prueba fija `hoy` (nunca el reloj) y
+   comprueba DOS cosas: el resultado, y que se llega por la rama que pretende (con un caso de contraste
+   que, con la misma entrada salvo el detalle que activa la rama, sale distinto). Las dos primeras y la
+   quinta usan frases normales; la 3 y la 4 son ramas DEFENSIVAS: ningún periodo que construye el motor
+   llega sin nombre (barrido de ~1 900 combinaciones en el paso 18), así que se alcanzan con un botón
+   pendiente hecho a mano, la misma técnica que la sección B0.3 (contexto `viejo`). */
+console.log('\n── 15. Paso 18 · Ramas internas: un solo día, ningún día, periodo sin nombre, fecha futura sin nombre y trozo con fecha ──');
+{
+  let ll18 = [];
+  const capa18 = (id, extra) => ({ id, titulo: id, ejemplo: `ejemplo ${id}`, ejecutar: (datos, args) => { ll18.push({ id, args }); return { bloques: [{ tipo: 'texto', texto: `${id}:${args.periodo ? `${args.periodo.desde}..${args.periodo.hasta}` : '-'}` }] }; }, ...extra });
+  /* Capacidades de UN día sin hermana de rangos (`siRango`): así un rango pasa por `capacidadParaPeriodo`. */
+  const ASIS18 = {
+    id: 'prueba18', modulo: 'prueba18', nombre: 'Prueba 18', lee: ['x'], saludo: 'Hola.',
+    lexico: { dormir: ['dorm*', 'duerm*'], calidad: ['calidad'], animo: ['animo'], plan: ['toca'] },
+    capacidades: [
+      capa18('noche', { senales: { dormir: 2, cuanto: 1 }, necesita: [['dormir']], periodo: 'dia', porDefecto: 'hoy', prioridad: 3 }),
+      capa18('calidad', { senales: { calidad: 4 }, necesita: [['calidad']], periodo: 'ambos', porDefecto: 'ultimos7', prioridad: 1 }),
+      capa18('animo', { senales: { animo: 4 }, necesita: [['animo']], periodo: 'ambos', porDefecto: 'ultimos7', prioridad: 1 }),
+      capa18('toca', { senales: { plan: 4 }, necesita: [['plan']], periodo: 'dia', tiempo: 'futuro', porDefecto: 'hoy', prioridad: 2 }),
+    ],
+    entidades: () => ({}),
+  };
+  const DOMINGO = '2026-10-25';
+  const SABADO = '2026-10-24';
+  const pide = (texto, hoy, extra = {}) => {
+    ll18 = [];
+    return responderMensaje(ASIS18, texto, { datos: {}, hoy, contexto: extra.contexto || nuevaConversacion('u18'), ahora: 1000, opcion: extra.opcion }).respuestas;
+  };
+  const conBoton = (periodo, texto = 'Ese periodo') => ({
+    contexto: { ...nuevaConversacion('u18b'), turno: 1, actualizado: 1000,
+      pendiente: { id: '1-0', opciones: [{ texto, mensaje: texto, origen: '1-0', plan: { capacidad: 'noche', entidad: null, periodo } }] } },
+    opcion: { origen: '1-0', indice: 0 },
+  });
+  /* El reloj del sistema se cambia a otro año para demostrar que el resultado solo depende de `hoy`. */
+  const conRelojFalso = (fn) => {
+    const Original = globalThis.Date;
+    const fijo = Original.parse('2031-03-04T12:00:00');
+    class Falso extends Original { constructor(...a) { super(...(a.length ? a : [fijo])); } static now() { return fijo; } }
+    globalThis.Date = Falso;
+    try { return fn(); } finally { globalThis.Date = Original; }
+  };
+  const resumen = (rs) => rs.map((x) => `${x.tipo}|${x.capacidad}|${textoDeRespuesta(x)}`).join(' // ');
+
+  /* 1 · capacidadParaPeriodo — un rango con UN solo día posible. «¿Qué me toca este finde?» un domingo: el
+     finde es sábado y domingo, pero para algo futuro solo queda hoy, así que se contesta hoy sin preguntar. */
+  const finde = interpretarFechas(normalizarMensaje('este finde').texto, DOMINGO, { tiempo: 'futuro' })[0];
+  ok(finde.desde === SABADO && finde.hasta === DOMINGO, 'P18.1 · precondición: «este finde» un domingo, en futuro, es un RANGO (sábado y domingo)');
+  let r = pide('que me toca este finde', DOMINGO);
+  ok(r.length === 1 && r[0].tipo === 'respuesta' && textoDeRespuesta(r[0]) === `toca:${DOMINGO}..${DOMINGO}`,
+    'P18.1 · un solo día posible: contesta ese día (hoy) sin preguntar qué día');
+  const periodo1 = ll18[0] && ll18[0].args.periodo;
+  ok(!!periodo1 && periodo1.tipo === 'dia' && periodo1.etiqueta === 'hoy' && periodo1.desde === DOMINGO,
+    'P18.1 · …y por la rama del día único: el periodo que llega a la capacidad es el día construido por `diaComo` (etiqueta «hoy»), no el rango');
+  const contraste1 = pide('que me toca este finde', SABADO);
+  ok(contraste1[0].tipo === 'aclaracion' && /¿Qué día de del 24 al 25 de octubre\?/.test(textoDeRespuesta(contraste1[0])) && contraste1[0].opciones.length === 2,
+    'P18.1 · contraste: el sábado quedan DOS días posibles y entonces sí pregunta cuál');
+  ok(conRelojFalso(() => resumen(pide('que me toca este finde', DOMINGO))) === resumen(r),
+    'P18.1 · determinista: con el reloj del sistema en 2031 sale exactamente lo mismo');
+
+  /* 2 · capacidadParaPeriodo — un rango SIN ningún día posible. «¿Cuánto dormí la semana que viene?» (algo
+     del pasado con una semana entera futura): no hay día que preguntar, sigue adelante y `ejecutarConArgs`
+     dice que todavía no ha llegado, con el nombre del periodo. */
+  const viene = interpretarFechas(normalizarMensaje('la semana que viene').texto, HOY, { tiempo: 'pasado' })[0];
+  ok(viene.desde === '2026-10-26' && viene.hasta === '2026-11-01' && viene.desde > HOY,
+    'P18.2 · precondición: «la semana que viene» es un rango entero posterior a hoy');
+  r = pide('cuanto dormi la semana que viene', HOY);
+  ok(r.length === 1 && r[0].tipo === 'respuesta' && r[0].capacidad === 'periodo_futuro'
+    && textoDeRespuesta(r[0]) === 'La semana que viene (del 26 de octubre al 1 de noviembre) todavía no ha llegado, así que no hay nada registrado.',
+  'P18.2 · ningún día posible: dice que todavía no ha llegado, con el nombre del periodo');
+  ok(r[0].tipo !== 'aclaracion' && ll18.length === 0,
+    'P18.2 · …y por la rama de «ningún día»: no pregunta qué día (sería una pregunta sin botones) ni ejecuta la capacidad');
+  const contraste2 = pide('cuanto dormi esta semana', HOY);
+  ok(contraste2[0].tipo === 'aclaracion' && /¿Qué día de esta semana/.test(textoDeRespuesta(contraste2[0])) && contraste2[0].opciones.length === MAX_OPCIONES_18,
+    'P18.2 · contraste: con días posibles (esta semana) sí pregunta qué día');
+  ok(conRelojFalso(() => resumen(pide('cuanto dormi la semana que viene', HOY))) === resumen(r),
+    'P18.2 · determinista: con el reloj del sistema en 2031 sale exactamente lo mismo');
+
+  /* 3 · capacidadParaPeriodo — la pregunta «¿Qué día de…?» con un periodo SIN nombre: «ese periodo». Rama
+     defensiva: se alcanza con un botón hecho a mano cuyo periodo no trae `etiqueta`. */
+  r = pide('Ese periodo', HOY, conBoton({ desde: '2026-10-19', hasta: HOY, tipo: 'rango' }));
+  const esperadas3 = ['2026-10-20', '2026-10-21', '2026-10-22', HOY].map((f) => { const t = etiquetaDeDia(f, HOY); return t.charAt(0).toUpperCase() + t.slice(1); });
+  ok(r.length === 1 && r[0].tipo === 'aclaracion' && textoDeRespuesta(r[0]).startsWith('Eso lo miro día a día. ¿Qué día de ese periodo?'),
+    'P18.3 · periodo sin nombre: pregunta «¿Qué día de ese periodo?»');
+  ok(JSON.stringify(r[0].opciones.map((o) => o.texto)) === JSON.stringify(esperadas3) && ll18.length === 0,
+    `P18.3 · …con los últimos días posibles como botones (${esperadas3.join(', ')}) y sin ejecutar nada todavía`);
+  const contraste3 = pide('Ese periodo', HOY, conBoton({ desde: '2026-10-19', hasta: HOY, tipo: 'rango', etiqueta: 'la semana de prueba' }));
+  ok(textoDeRespuesta(contraste3[0]).startsWith('Eso lo miro día a día. ¿Qué día de la semana de prueba?'),
+    'P18.3 · contraste: con nombre usa el nombre; «ese periodo» solo sale cuando no lo hay');
+
+  /* 4 · ejecutarConArgs — un periodo futuro SIN nombre: «Esa fecha todavía no ha llegado». Rama defensiva,
+     también con un botón hecho a mano. */
+  r = pide('Ese día', HOY, conBoton({ desde: '2026-10-26', hasta: '2026-10-26', tipo: 'dia' }, 'Ese día'));
+  ok(r.length === 1 && r[0].tipo === 'respuesta' && r[0].capacidad === 'periodo_futuro'
+    && textoDeRespuesta(r[0]) === 'Esa fecha todavía no ha llegado, así que no hay nada registrado.' && ll18.length === 0,
+  'P18.4 · fecha futura sin nombre: «Esa fecha todavía no ha llegado, así que no hay nada registrado.» y no se ejecuta la capacidad');
+  const contraste4 = pide('Ese día', HOY, conBoton({ desde: '2026-10-26', hasta: '2026-10-26', tipo: 'dia', etiqueta: 'el lunes 26 de octubre' }, 'Ese día'));
+  ok(textoDeRespuesta(contraste4[0]) === 'El lunes 26 de octubre todavía no ha llegado, así que no hay nada registrado.',
+    'P18.4 · contraste: con nombre dice el nombre; «Esa fecha» solo sale cuando no lo hay');
+
+  /* 5 · trozos — en «¿X y Y y Z?», un trozo sin pregunta clara se conserva si trae una fecha (§7.4), y
+     entonces la regla de elipsis (§7.3, paso 5) lo contesta con la pregunta anterior. Sin fecha se descarta. */
+  const charla18 = () => { let c = nuevaConversacion('u18c'); return (t) => { ll18 = []; const res = responderMensaje(ASIS18, t, { datos: {}, hoy: HOY, contexto: c, ahora: 1000 }); c = res.contexto; return res.respuestas; }; };
+  let h18 = charla18();
+  h18('cuanto dormi ayer');
+  r = h18('que tal la calidad el martes y el animo el miercoles y el lunes');
+  ok(r.length === 3 && textoDeRespuesta(r[0]) === 'calidad:2026-10-20..2026-10-20' && textoDeRespuesta(r[1]) === 'animo:2026-10-21..2026-10-21',
+    'P18.5 · las dos preguntas claras se contestan, cada una con su fecha');
+  ok(r.length === 3 && r[2].capacidad === 'noche' && textoDeRespuesta(r[2]) === 'noche:2026-10-19..2026-10-19',
+    'P18.5 · …y el trozo «y el lunes» (sin pregunta, con fecha) se conserva: lo contesta la pregunta anterior (dormir) para el lunes');
+  h18 = charla18();
+  h18('cuanto dormi ayer');
+  const contraste5 = h18('que tal la calidad el martes y el animo el miercoles y hola');
+  ok(contraste5.length === 2 && contraste5.every((x) => x.capacidad !== 'noche'),
+    'P18.5 · contraste: el mismo mensaje con un trozo SIN fecha («y hola») lo descarta: la fecha es lo que decide');
+  const sinContexto5 = pide('que tal la calidad el martes y el animo el miercoles y el lunes', HOY);
+  ok(sinContexto5.length === 2,
+    'P18.5 · y sin una pregunta anterior, el trozo con fecha se conserva pero no hay nada que heredar: no se inventa una tercera respuesta');
 }
 
 console.log(`\n${fallos === 0 ? '\x1b[32m' : '\x1b[31m'}${total - fallos}/${total} comprobaciones\x1b[0m`);
