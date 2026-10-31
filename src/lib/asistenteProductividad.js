@@ -16,10 +16,10 @@
    (`NO_TOCA`, E3 F24): «hoy no te toca» no es «no lo has hecho». */
 
 import { normalizarHabitos, tocaHoy, hechoHoy, estadisticasHabito, textoRacha } from './habitos';
-import { estadisticasDe, normalizarSesion } from './pomodoro';
+import { estadisticasDe, normalizarSesion, formatearDuracionLarga } from './pomodoro';
 import { normalizarMetas, progresoDeMeta, normalizarObjetivos, progresoDeObjetivo, metaCompletada } from './metasObjetivos';
 import { paraHoy as rutinasParaHoy, filtrarRutinas, tocaHoy as rutinaTocaHoy, normalizarEjecuciones, fechaDeEjecucion } from './rutinas';
-import { etiquetaDeDia, etiquetaDeRango } from './fechasConversacion';
+import { etiquetaDeDia, etiquetaDeRango, diasDelRango, diaYMesConversacion } from './fechasConversacion';
 import { bTexto, bNota, bCifra, bLista, plural } from './motorConversacion';
 
 const lista = (x) => (Array.isArray(x) ? x : []);
@@ -146,6 +146,40 @@ function rutinas(datos, { periodo, hoy }) {
   };
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   Fase 2.3 · B2 — lo que se puede COMPARAR entre dos periodos (contrato de B1)
+   ══════════════════════════════════════════════════════════════════════════
+   Solo el Pomodoro tiene cifras por periodo que se puedan sumar: pomodoros completados y su tiempo de
+   enfoque, los dos de `estadisticasDe` (lo mismo que la pantalla de Pomodoro y que «tus pomodoros»). Los
+   hábitos por periodo no se comparan todavía (decisión D4), y metas, objetivos y rachas no son de un
+   periodo. 🚨 Un periodo sin pomodoros, con el Pomodoro ya en uso, es un 0 de verdad; antes de la primera
+   sesión que existe —o lo que todavía no ha llegado— no hay dato (`null`), nunca 0. */
+function medidaDePomodoro(datos, periodo, hoy, cifra) {
+  const sesiones = lista((datos.productividad || {}).pomodoroSesiones).map(normalizarSesion).filter(Boolean);
+  if (periodo.desde > hoy) return { valor: null, motivo: 'todavía no ha llegado' };
+  const hasta = periodo.hasta > hoy ? hoy : periodo.hasta;
+  const fechas = sesiones.map((x) => x.fecha).filter((f) => typeof f === 'string' && f <= hoy).sort();
+  const primera = fechas[0] || null;
+  if (!primera || primera > hasta) return { valor: null, motivo: 'todavía no habías usado el Pomodoro' };
+  const e = estadisticasDe(sesiones, { desde: periodo.desde, hasta });
+  const notas = primera > periodo.desde ? [`Tu primera sesión de Pomodoro es del ${diaYMesConversacion(primera, hoy)}: ${etiquetaP(periodo, hoy)} solo cuenta desde ahí.`] : [];
+  return { periodo: { hasta }, valor: cifra(e), diasDelPeriodo: diasDelRango(periodo.desde, hasta), notas };
+}
+
+export const METRICAS_PRODUCTIVIDAD = [
+  {
+    id: 'pomodoros', nombre: 'Pomodoros completados', tipo: 'entero', agregacion: 'total', admitePorcentaje: true, minimoDias: 0,
+    unidad: { singular: 'pomodoro', plural: 'pomodoros' }, fuente: 'Productividad · Pomodoro',
+    calcular: (datos, periodo, hoy) => medidaDePomodoro(datos, periodo, hoy, (e) => e.pomodoros),
+  },
+  {
+    /* En minutos enteros: la suma de las duraciones (ms) se redondea una sola vez al final. */
+    id: 'enfoque', nombre: 'Tiempo de enfoque', concepto: 'tiempo_enfoque', tipo: 'entero', agregacion: 'total', admitePorcentaje: true, minimoDias: 0,
+    unidad: 'min', formatear: (v) => formatearDuracionLarga(v * 60000) || '0 min', fuente: 'Productividad · Pomodoro',
+    calcular: (datos, periodo, hoy) => medidaDePomodoro(datos, periodo, hoy, (e) => Math.round(e.ms / 60000)),
+  },
+];
+
 function entidades(datos, hoy) {
   return {
     habito: habitosDe(datos).map((h) => {
@@ -169,14 +203,17 @@ export const ASISTENTE_PRODUCTIVIDAD = {
     objetivo: ['objetivo', 'objetivos', 'proposito', 'propositos'],
     rutina: ['rutina', 'rutinas'],
     hecho: ['he hecho', 'llevo', 'hecho', 'completado', 'he completado', 'me quedan', 'me falta', 'me faltan'],
+    /* B2 — qué cifra se compara cuando lo dice: el tiempo, no el número de pomodoros. */
+    tiempo_enfoque: ['tiempo de enfoque', 'tiempo de concentracion', 'cuanto tiempo', 'minutos de enfoque', 'horas de enfoque', 'tiempo'],
   },
   capacidades: [
     { id: 'habitos', titulo: 'Tus hábitos de un día', ejemplo: '¿Qué hábitos me tocan hoy?', senales: { habito: 4, hecho: 1, proximo: 1 }, necesita: [['habito']], periodo: 'dia', porDefecto: 'hoy', prioridad: 2, cubreObligacion: true, ejecutar: habitos },
     { id: 'racha', titulo: 'Tus rachas', ejemplo: '¿Cuál es mi racha más larga?', senales: { racha: 4, habito: 1 }, necesita: [['racha']], entidad: { tipo: 'habito', obligatoria: false, nombre: 'hábito' }, periodo: null, prioridad: 2, ejecutar: racha },
-    { id: 'pomodoro', titulo: 'Tus pomodoros', ejemplo: '¿Cuántos pomodoros he hecho esta semana?', senales: { pomodoro: 4, cuanto: 1, hecho: 1 }, necesita: [['pomodoro']], periodo: 'ambos', porDefecto: 'hoy', prioridad: 1, ejecutar: pomodoro },
+    { id: 'pomodoro', titulo: 'Tus pomodoros', ejemplo: '¿Cuántos pomodoros he hecho esta semana?', senales: { pomodoro: 4, cuanto: 1, hecho: 1 }, necesita: [['pomodoro']], periodo: 'ambos', porDefecto: 'hoy', prioridad: 1, metricas: ['pomodoros', 'enfoque'], ejecutar: pomodoro },
     { id: 'metas', titulo: 'Tus metas', ejemplo: '¿Cómo van mis metas?', senales: { meta: 4 }, necesita: [['meta']], periodo: null, prioridad: 1, ejecutar: metas },
     { id: 'objetivos', titulo: 'Tus objetivos', ejemplo: '¿Cómo van mis objetivos?', senales: { objetivo: 4 }, necesita: [['objetivo']], periodo: null, prioridad: 1, ejecutar: objetivos },
     { id: 'rutinas', titulo: 'Tus rutinas de un día', ejemplo: '¿Qué rutinas tengo hoy?', senales: { rutina: 4, proximo: 1 }, necesita: [['rutina']], periodo: 'dia', porDefecto: 'hoy', prioridad: 1, cubreObligacion: true, ejecutar: rutinas },
   ],
+  metricas: METRICAS_PRODUCTIVIDAD,
   entidades,
 };

@@ -639,7 +639,7 @@ console.log('\n── 11. Fase 2.3 · B1 · Comparador común: diferencia, porce
   /* 4 · Referencia cero: diferencia sí, porcentaje no, y se explica. */
   r = compararMedidas(ENT, med(SEM, 3), med(PAS, 0), { hoy: HOY });
   ok(r.estado === 'comparable' && r.diferencia === 3 && r.porcentaje === null && r.sinPorcentaje === 'referencia_cero', 'B1 · 4 · referencia 0: diferencia 3, sin porcentaje');
-  ok(!/%/.test(frase(r)) && texto(r).includes('No calculo un porcentaje porque la semana del 12 al 18 de octubre el valor es 0'), 'B1 · 4 · …y se dice por qué no hay porcentaje');
+  ok(!/%/.test(frase(r)) && texto(r).includes('No calculo un porcentaje: la semana del 12 al 18 de octubre el valor es 0 y no hay de dónde partir.'), 'B1 · 4 · …y se dice por qué no hay porcentaje');
   /* 5 · Referencia negativa (una métrica que puede ser negativa, como un saldo). */
   r = compararMedidas(NOTA, med(SEM, 10), med(PAS, -5), { hoy: HOY });
   ok(r.diferencia === 15 && r.porcentaje === null && r.sinPorcentaje === 'referencia_negativa' && /Son 15 € más/.test(frase(r)) && texto(r).includes('el valor es negativo'), 'B1 · 5 · referencia negativa: diferencia 15 €, sin porcentaje (no tendría sentido)');
@@ -691,8 +691,13 @@ console.log('\n── 11. Fase 2.3 · B1 · Comparador común: diferencia, porce
   ok(r.etiquetas[0] === etiquetaDeRango('2026-10-01', '2026-10-23', HOY) && r.etiquetas[1] === etiquetaDeRango('2026-09-01', '2026-09-30', HOY) && frase(r).includes(r.etiquetas[0]) && frase(r).includes(r.etiquetas[1]), 'B1 · 13 · sin etiqueta, cada periodo se nombra por sus fechas');
   ok(JSON.stringify(r.periodosComparados.map((p) => [p.desde, p.hasta])) === '[["2026-10-01","2026-10-23"],["2026-09-01","2026-09-30"]]', 'B1 · 13 · …y la pareja sale con sus fechas exactas');
   /* 14 · Nunca «mejor» ni «peor». */
-  const todos = [compararMedidas(ENT, med(SEM, 3), med(PAS, 1), { hoy: HOY }), compararMedidas(ENT, med(SEM, 1), med(PAS, 3), { hoy: HOY }), compararMedidas(KCAL, med(SEM, 2100, { diasConDatos: 4 }), med(PAS, 1800, { diasConDatos: 4 }), { hoy: HOY })];
-  ok(todos.every((x) => !/\b(mejor|peor|bien|mal|bueno|malo|mejorado|empeorado)\b/i.test(texto(x).replace('no dice si es bueno o malo', ''))) && todos.every((x) => texto(x).includes('no dice si es bueno o malo ni a qué se debe')), 'B1 · 14 · lenguaje neutral: «más» y «menos», nunca «mejor» o «peor»');
+  /* 🐛 B2 — la nota de la referencia 0 decía «porque», que el chat prohíbe (no atribuye causas), y este
+     barrido no la veía: no tenía ningún caso con referencia 0 ni negativa. Ahora barre todos los estados. */
+  const todos = [compararMedidas(ENT, med(SEM, 3), med(PAS, 1), { hoy: HOY }), compararMedidas(ENT, med(SEM, 1), med(PAS, 3), { hoy: HOY }), compararMedidas(KCAL, med(SEM, 2100, { diasConDatos: 4 }), med(PAS, 1800, { diasConDatos: 4 }), { hoy: HOY }),
+    compararMedidas(ENT, med(SEM, 3), med(PAS, 0), { hoy: HOY }), compararMedidas(NOTA, med(SEM, 10), med(PAS, -5), { hoy: HOY }), compararMedidas(ESCALA, med(SEM, 4), med(PAS, 4), { hoy: HOY }),
+    compararMedidas(KCAL, med(SEM, null), med(PAS, 1800, { diasConDatos: 5 }), { hoy: HOY }), compararMedidas(KCAL, med(SEM, 1950, { diasConDatos: 1 }), med(PAS, 1800, { diasConDatos: 5 }), { hoy: HOY }),
+    compararMedidas({ ...ENT, comparable: false }, med(SEM, 1), med(PAS, 2), { hoy: HOY })];
+  ok(todos.every((x) => !/\b(mejor|peor|bien|mal|bueno|malo|mejorado|empeorado)\b/i.test(texto(x).replace('no dice si es bueno o malo', ''))) && todos.filter((x) => x.estado === 'comparable').every((x) => texto(x).includes('no dice si es bueno o malo ni a qué se debe')), 'B1 · 14 · lenguaje neutral: «más» y «menos», nunca «mejor» o «peor»');
   ok(todos.every((x) => !incumpleHonestidad(texto(x)).length), 'B1 · 14 · …y nada que incumpla las palabras prohibidas del chat');
   /* Métricas que no se pueden comparar: se rechaza y se explica. */
   ok(compararMedidas({ ...ENT, comparable: false, motivoNoComparable: 'las notas son texto, no números' }, med(SEM, 1), med(PAS, 2)).estado === 'no_comparable', 'B1 · una métrica marcada como no comparable no se compara');
@@ -736,7 +741,7 @@ console.log('\n── 11. Fase 2.3 · B1 · Comparador común: diferencia, porce
   const it6 = c6.ultimaRespuesta.items;
   ok(r[0].capacidad === 'cmpM' && /3 entrenamientos esta semana .* y 1 entrenamiento la semana pasada/.test(textoDeRespuesta(r[0])) && it6.length === 1 && it6[0].periodo.desde === '2026-10-19' && it6[0].segundo.desde === '2026-10-12' && it6[0].segundo.hasta === '2026-10-18', 'B1 · 15 · la comparación del comparador se guarda como pareja (19–23 y 12–18), sin unir');
   r = p6('y la anterior?');
-  ok(/1 entrenamiento la semana del 12 al 18 de octubre y 0 entrenamientos la semana del 5 al 11 de octubre/.test(textoDeRespuesta(r[0])) && /No calculo un porcentaje porque la semana del 5 al 11 de octubre el valor es 0/.test(textoDeRespuesta(r[0])), 'B1 · 15 · «¿y la anterior?» desplaza las dos semanas y el comparador dice la referencia 0 sin porcentaje');
+  ok(/1 entrenamiento la semana del 12 al 18 de octubre y 0 entrenamientos la semana del 5 al 11 de octubre/.test(textoDeRespuesta(r[0])) && /No calculo un porcentaje: la semana del 5 al 11 de octubre el valor es 0 y no hay de dónde partir\./.test(textoDeRespuesta(r[0])), 'B1 · 15 · «¿y la anterior?» desplaza las dos semanas y el comparador dice la referencia 0 sin porcentaje');
   r = p6('compáralo con lo de antes');
   ok(r[0].capacidad === 'comparacion_que_periodo', 'B1 · 15 · «compáralo con lo de antes» tras comparar sigue preguntando (B0)');
 }

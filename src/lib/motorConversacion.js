@@ -997,6 +997,21 @@ export function responderMensaje(asistente, mensaje, { datos = {}, hoy, contexto
     return { respuestas, contexto: ctx };
   };
 
+  /* Fase 2.3 · B2 — comparar DOS periodos con una métrica que el asistente declara (contrato de B1): una
+     sola respuesta del comparador común, que la conversación recuerda como pareja. Pasa por
+     `ejecutarConArgs`, así que los datos sin cargar y un fallo se tratan como en cualquier respuesta. */
+  const compararConMetrica = (capacidad, metrica, f1, f2, trozo) => {
+    const periodos = [f1, f2].map((f) => ({ desde: f.desde, hasta: f.hasta, tipo: f.tipo || (f.desde === f.hasta ? 'dia' : 'rango'), etiqueta: f.etiqueta || null }));
+    const pseudo = { ...capacidad, entidad: null, ejecutar: (d) => {
+      const c = compararMetrica(metrica, d, periodos, { hoy });
+      return { bloques: c.bloques, periodosComparados: c.periodosComparados, confianza: c.confianza, fuente: metrica.fuente || null, sinDatos: c.estado !== 'comparable' };
+    } };
+    const args = { periodo: periodos[0], segundoPeriodo: periodos[1], origenPeriodo: 'mensaje', hoy, conceptos: trozo.conceptos, tokens: trozo.tokens, argsPropios: { ...(trozo.argsHeredados || {}), metrica: metrica.id } };
+    const r = ejecutarConArgs(asistente, pseudo, args, datos, sinCargar, disponibles);
+    if (r.tipo === 'respuesta') recordar(ctx, capacidad, args, r);
+    return r;
+  };
+
   /* 🐛 v3.161.2 — un botón de aclaración que ya no es el pendiente (se hizo otra pregunta después, se
      contestó ya o la conversación caducó) NO se ejecuta: antes se mandaba su texto («Martes», un nombre)
      y se interpretaba con el contexto de AHORA. Se dice, y la aclaración de ahora sigue viva. */
@@ -1027,6 +1042,15 @@ export function responderMensaje(asistente, mensaje, { datos = {}, hoy, contexto
       const r = ejecutarConArgs(asistente, capacidad, args, datos, sinCargar, disponibles);
       respuestas.push(r);
       recordar(ctx, capacidad, args, r);
+      return terminar();
+    }
+    const metricaDelPlan = capacidad && Array.isArray(elegida.plan.periodos) && elegida.plan.periodos.length === 2
+      ? metricaPara(asistente, capacidad, { conceptos: new Map(), argsHeredados: elegida.plan.args || null }) : null;
+    if (metricaDelPlan) {
+      /* Fase 2.3 · B2 — el botón de «¿qué quieres comparar?» (o de «¿anterior a cuál?») con una métrica
+         comparable: una comparación de verdad, no dos respuestas sueltas. */
+      const [f1, f2] = elegida.plan.periodos;
+      respuestas.push(compararConMetrica(capacidad, metricaDelPlan, f1, f2, { conceptos: new Map(), tokens, argsHeredados: elegida.plan.args || null }));
       return terminar();
     }
     if (capacidad && Array.isArray(elegida.plan.periodos) && elegida.plan.periodos.length) {
@@ -1109,6 +1133,13 @@ export function responderMensaje(asistente, mensaje, { datos = {}, hoy, contexto
   };
   const contestar = (capacidad, trozo) => {
     const fechas = fechasDistintas(trozo);
+    const metrica = fechas.length >= 2 && capacidad.periodo && !capacidad.dosPeriodos && (trozo.parejaDesplazada || (trozo.conceptos && trozo.conceptos.has('comparar')))
+      ? metricaPara(asistente, capacidad, trozo) : null;
+    if (metrica) {
+      const salida = [compararConMetrica(capacidad, metrica, fechas[0], fechas[1], trozo)];
+      if (fechas.length > 2) salida.push(respuestaFija(asistente, 'demasiadas_fechas', [bNota(`Has nombrado ${fechas.length} periodos y he comparado los 2 primeros. Pregúntame los demás aparte.`)]));
+      return salida;
+    }
     const salida = fechas.length < 2 || !capacidad.periodo || capacidad.dosPeriodos
       ? [contestarUno(capacidad, trozo)]
       : fechas.slice(0, MAX_INTENCIONES).map((f) => contestarUno(capacidad, { ...trozo, fechas: [f], texto: f.texto }));
@@ -1210,7 +1241,7 @@ export function responderMensaje(asistente, mensaje, { datos = {}, hoy, contexto
     if (trozo.anterior && !trozo.fechas.some((f) => !f.invalida) && !(capacidad && capacidad.dosPeriodos)) {
       const res = resolverAnterior(asistente, ctx0, hoy, capacidad, trozo.anterior.texto);
       if (res.respuesta) { respuestas.push(res.respuesta); continue; }
-      trozo = { ...trozo, fechas: res.fechas || [res.fecha], ...(res.argsHeredados ? { argsHeredados: res.argsHeredados } : {}) };
+      trozo = { ...trozo, fechas: res.fechas || [res.fecha], ...(res.argsHeredados ? { argsHeredados: res.argsHeredados } : {}), ...(res.fechas ? { parejaDesplazada: true } : {}) };
       if (!capacidad) capacidad = res.capacidad;
     }
     /* Elipsis y corrección (§7.6): sin pregunta propia pero con fecha o con algo nombrado (también algo
@@ -1521,12 +1552,18 @@ function preguntaQueComparar(asistente, dos, validas, hoy, imposibles = []) {
     /* Una capacidad de un día que con un rango pasa a su hermana daría lo mismo que ella: no se ofrece dos veces. */
     .filter((c, _, todas) => !(c.siRango && todas.some((x) => x.id === c.siRango)));
   const etiquetas = validas.slice(0, 2).map((f) => f.etiqueta).join(' y ');
+  /* Fase 2.3 · B2 — lo que tiene métrica comparable se compara de verdad; solo lo demás va por separado. */
+  const ofrecidas = candidatas.slice(0, MAX_OPCIONES);
+  const conMetrica = ofrecidas.filter((c) => metricaPara(asistente, c));
+  const todasConMetrica = !!dos && ofrecidas.length > 0 && conMetrica.length === ofrecidas.length;
+  const notaDiferencia = todasConMetrica ? []
+    : [bNota(dos && conMetrica.length ? 'De algunas cosas todavía no calculo la diferencia: de esas te enseñaré cada periodo por separado.' : 'Todavía no calculo la diferencia: te enseñaré cada periodo por separado.')];
   return {
     asistente: asistente.id, capacidad: 'comparar_que', tipo: 'aclaracion',
     bloques: [
       bTexto(`¿Qué quieres comparar de ${etiquetas}?`),
       ...imposibles.map((f) => bNota(`«${f.texto}» no es una fecha que exista, así que no la puedo mirar.`)),
-      bNota('Todavía no calculo la diferencia: te enseñaré cada periodo por separado.'),
+      ...notaDiferencia,
     ],
     fuente: null, confianza: null, acciones: [],
     opciones: candidatas.slice(0, MAX_OPCIONES).map((c) => ({
@@ -1642,7 +1679,7 @@ export const TIPOS_DE_METRICA = ['entero', 'decimal'];
 export const AGREGACIONES_DE_METRICA = ['total', 'media'];
 
 /** Una medida de un periodo, con su forma. `valor` null = no hay dato (nunca se convierte en 0). */
-export function medidaDePeriodo({ periodo, valor = null, diasConDatos = null, diasDelPeriodo = null, suficiente = true, motivo = null, notas = [], unidad = null } = {}) {
+export function medidaDePeriodo({ periodo, valor = null, diasConDatos = null, diasDelPeriodo = null, suficiente = true, motivo = null, notas = [], unidad = null, detalle = null } = {}) {
   const v = typeof valor === 'number' && Number.isFinite(valor) ? valor : null;
   const n = (x) => (Number.isInteger(x) && x >= 0 ? x : null);
   const p = periodoValido(periodo) ? { desde: periodo.desde, hasta: periodo.hasta, tipo: periodo.tipo || (periodo.desde === periodo.hasta ? 'dia' : 'rango'), etiqueta: periodo.etiqueta || null } : null;
@@ -1655,6 +1692,9 @@ export function medidaDePeriodo({ periodo, valor = null, diasConDatos = null, di
     motivo: motivo || null,
     notas: (Array.isArray(notas) ? notas : []).filter((t) => typeof t === 'string' && t),
     unidad,
+    /* B2 — lo que dice la cifra debajo («en 3 días de 5») cuando «días con datos» no es lo que cuenta la
+       métrica (un recuento de entrenamientos no tiene «días con datos», tiene días con entrenamiento). */
+    detalle: typeof detalle === 'string' && detalle ? detalle : null,
   };
 }
 
@@ -1680,6 +1720,24 @@ export function validarMetrica(m) {
 export function metricasComparables(asistente) {
   return (Array.isArray(asistente && asistente.metricas) ? asistente.metricas : [])
     .filter((m) => m && m.comparable !== false && !validarMetrica(m).length);
+}
+
+/**
+ * Fase 2.3 · B2 — la métrica con la que se compara una pregunta: una de las que su capacidad declara
+ * (`capacidad.metricas`) y el asistente puede comparar. Manda la que ya se estaba comparando (al seguir la
+ * conversación), luego la que nombra el mensaje (`metrica.concepto`) y si no, la primera de la capacidad.
+ * Sin ninguna, `null`: esa pregunta no se compara (y se contesta cada periodo por separado, como antes).
+ */
+export function metricaPara(asistente, capacidad, trozo = {}) {
+  const ids = Array.isArray(capacidad && capacidad.metricas) ? capacidad.metricas : [];
+  if (!ids.length) return null;
+  const posibles = metricasComparables(asistente).filter((m) => ids.includes(m.id));
+  if (!posibles.length) return null;
+  const heredada = trozo.argsHeredados && trozo.argsHeredados.metrica;
+  const conceptos = trozo.conceptos instanceof Map ? trozo.conceptos : new Map();
+  return posibles.find((m) => m.id === heredada)
+    || posibles.find((m) => m.concepto && conceptos.has(m.concepto))
+    || posibles.find((m) => m.id === ids[0]) || posibles[0];
 }
 
 /* Un número para leer: sin errores de coma flotante, con los decimales de la métrica y sin ceros de más. */
@@ -1765,8 +1823,8 @@ export function compararMedidas(metrica, a, b, { hoy = null } = {}) {
     else porcentaje = limpiar((diferencia / vb) * 100);
   }
   const notas = [];
-  if (sinPorcentaje === 'referencia_cero') notas.push(`No calculo un porcentaje porque ${eb} el valor es 0: no hay de dónde partir.`);
-  if (sinPorcentaje === 'referencia_negativa') notas.push(`No calculo un porcentaje porque ${eb} el valor es negativo.`);
+  if (sinPorcentaje === 'referencia_cero') notas.push(`No calculo un porcentaje: ${eb} el valor es 0 y no hay de dónde partir.`);
+  if (sinPorcentaje === 'referencia_negativa') notas.push(`No calculo un porcentaje: ${eb} el valor es negativo.`);
   const duracion = (m) => m.diasDelPeriodo;
   if (duracion(ma) !== null && duracion(mb) !== null && duracion(ma) !== duracion(mb)) {
     notas.push(`Los periodos no duran lo mismo (${plural(duracion(ma), 'día', 'días')} y ${plural(duracion(mb), 'día', 'días')})${metrica.agregacion === 'total' ? ': comparo los totales tal cual, sin pasarlos a días' : ''}.`);
@@ -1779,7 +1837,7 @@ export function compararMedidas(metrica, a, b, { hoy = null } = {}) {
   const pocos = fiable && [ma, mb].some((m) => m.diasConDatos !== null && m.diasConDatos < fiable);
   if (pocos) notas.push('Con tan pocos días con datos en uno de los dos, la diferencia dice poco.');
   for (const m of [ma, mb]) notas.push(...m.notas);
-  const conDias = (m) => (m.diasConDatos !== null ? `${plural(m.diasConDatos, 'día', 'días')} con datos de ${m.diasDelPeriodo}` : null);
+  const conDias = (m) => m.detalle || (m.diasConDatos !== null ? `${plural(m.diasConDatos, 'día', 'días')} con datos de ${m.diasDelPeriodo}` : null);
   const frase = igual
     ? `${nombre}: ${valorConUnidad(metrica, va)} ${ea} y lo mismo ${eb}.`
     : `${nombre}: ${valorConUnidad(metrica, va)} ${ea} y ${valorConUnidad(metrica, vb)} ${eb}. Son ${valorConUnidad(metrica, Math.abs(diferencia))} ${sentido === 'mas' ? 'más' : 'menos'} ${ea}${porcentaje !== null ? `, un ${porcentajeLegible(porcentaje)} ${sentido === 'mas' ? 'más' : 'menos'}` : ''}.`;

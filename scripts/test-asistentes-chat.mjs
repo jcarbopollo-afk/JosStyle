@@ -9,13 +9,13 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { responderMensaje, nuevaConversacion, textoDeRespuesta, incumpleHonestidad, normalizarMensaje, esOrdenDeEscritura, textosDeOpciones, conversarCon, TEXTO_SIN_DIFERENCIA, validarMetrica, metricasComparables } from '../src/lib/motorConversacion.js';
+import { responderMensaje, nuevaConversacion, textoDeRespuesta, incumpleHonestidad, normalizarMensaje, esOrdenDeEscritura, textosDeOpciones, conversarCon, TEXTO_SIN_DIFERENCIA, validarMetrica, metricasComparables, metricaPara, compararMetrica } from '../src/lib/motorConversacion.js';
 import { ASISTENTES, asistenteDeModulo, datosParaAsistente, DOMINIOS_AJENOS, MATRIZ_CANDIDATOS, CLAVES_QUE_NINGUN_ASISTENTE_LEE } from '../src/lib/asistentesModulos.js';
 import { ASISTENTE_SUENO, nochesDeSueno, minutosDeLaNoche } from '../src/lib/asistenteSueno.js';
-import { ASISTENTE_FITNESS } from '../src/lib/asistenteFitness.js';
+import { ASISTENTE_FITNESS, METRICAS_FITNESS } from '../src/lib/asistenteFitness.js';
 import { ASISTENTE_NUTRICION, mediaDelRangoNutricion } from '../src/lib/asistenteNutricion.js';
 import { ASISTENTE_ESTUDIOS } from '../src/lib/asistenteEstudios.js';
-import { ASISTENTE_PRODUCTIVIDAD, seguidos } from '../src/lib/asistenteProductividad.js';
+import { ASISTENTE_PRODUCTIVIDAD, seguidos, METRICAS_PRODUCTIVIDAD } from '../src/lib/asistenteProductividad.js';
 import { textoDuracion as textoDuracionPantalla, mediaDeMinutos, duracionDe, crearRegistroSueno } from '../src/lib/sueno.js';
 import { formatearDuracionLarga } from '../src/lib/pomodoro.js';
 import { empezarSesion, ejerciciosDeSesion, editarSerie, marcarSerie, guardarSesion } from '../src/lib/entrenamiento.js';
@@ -1036,13 +1036,16 @@ console.log('\n── 14. Fase 2.2 · Contexto conversacional (los cinco asisten
   r = h('Compara esta semana con la pasada');
   ok(r[0].capacidad === 'comparar_que' && r[0].opciones.map((o) => o.texto).join('|') === 'Cuántos entrenamientos llevas', 'Fitness · «compara esta semana con la pasada» sin tema: pregunta qué, con lo que puede (antes: «No lo he entendido»)');
   r = h('Cuántos entrenamientos llevas');
-  ok(caps(r) === 'cuantos,cuantos' && notas(r[0]).includes(TEXTO_SIN_DIFERENCIA) && /3 entrenamientos/.test(textoDeRespuesta(r[0])) && /1 entrenamiento/.test(textoDeRespuesta(r[1])), 'Fitness · …y contesta las dos semanas por separado, diciendo que no calcula la diferencia');
+  /* 🔓 Fase 2.3 · B2 — esta comprobación decía que se contestaba cada semana por separado con la nota de que
+     la diferencia no se calculaba (lo provisional de la Fase 2.2). Se da la vuelta, no se borra: siguen
+     siendo las dos semanas, y ahora en UNA comparación del comparador común, con su diferencia. */
+  ok(caps(r) === 'cuantos' && !notas(r[0]).includes(TEXTO_SIN_DIFERENCIA) && /3 entrenamientos esta semana \(del 19 al 23 de octubre\) y 1 entrenamiento la semana del 12 al 18 de octubre\. Son 2 entrenamientos más/.test(textoDeRespuesta(r[0])), 'Fitness · …y el botón compara las dos semanas de verdad (B2: antes, cada una por separado)');
   r = charla(ASISTENTE_FITNESS)('Compara mis entrenos de esta semana con la pasada');
-  ok(caps(r) === 'cuantos,cuantos' && notas(r[0]).includes(TEXTO_SIN_DIFERENCIA), 'Fitness · con el tema dicho: las dos semanas (antes: «la pasada» se perdía)');
+  ok(caps(r) === 'cuantos' && /3 entrenamientos esta semana \(del 19 al 23 de octubre\) y 1 entrenamiento la semana del 12 al 18 de octubre/.test(textoDeRespuesta(r[0])) && /Son 2 entrenamientos más/.test(textoDeRespuesta(r[0])), 'Fitness · con el tema dicho: las dos semanas, comparadas (B2; antes de la Fase 2.2 «la pasada» se perdía)');
   h = charla(ASISTENTE_FITNESS);
   h('¿Cuántas veces he entrenado esta semana?');
   r = h('Compáralo con la semana pasada');
-  ok(caps(r) === 'cuantos,cuantos' && /^Todavía no calculo/.test(textoDeRespuesta(r[0])) && /Esta semana/.test(textoDeRespuesta(r[0])) && /semana pasada/.test(textoDeRespuesta(r[1])), 'Fitness · «compáralo con la semana pasada» suma la nueva semana sin quitar la que se miraba');
+  ok(caps(r) === 'cuantos' && /3 entrenamientos esta semana .* y 1 entrenamiento la semana pasada \(del 12 al 18 de octubre\)/.test(textoDeRespuesta(r[0])), 'Fitness · «compáralo con la semana pasada» compara la nueva semana con la que se miraba (B2), sin quitarla');
   r = charla(ASISTENTE_FITNESS)('Compara cómo voy en press de banca esta semana con la pasada');
   ok(caps(r) === 'ejercicio' && /no lo puedo filtrar por fechas/.test(txt(r)), 'Fitness · negativa: una pregunta de progreso con sus palabras no se convierte en «¿qué quieres comparar?»');
   /* ⟦RECONSTRUIDO en el paso 2 de la recuperación (líneas 1097–1129 del original, perdidas)⟧ */
@@ -1231,6 +1234,129 @@ console.log('\n── 15. Fase 2.3 · B0 · Comparaciones como pareja y aclaraci
   const declaradas = ASISTENTES.flatMap((a) => (a.metricas || []).map((m) => ({ a: a.id, m })));
   ok(declaradas.every(({ m }) => validarMetrica(m).length === 0), `B1 · las métricas que declara cada asistente cumplen el contrato (${declaradas.length} declaradas)`);
   ok(ASISTENTES.every((a) => new Set((a.metricas || []).map((m) => m.id)).size === (a.metricas || []).length) && ASISTENTES.every((a) => metricasComparables(a).length === (a.metricas || []).filter((m) => m.comparable !== false).length), 'B1 · ningún id de métrica repetido, y ninguna declarada se queda fuera por estar mal');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   16 · FASE 2.3 · B2 — métricas comparables de Fitness y Productividad
+   ══════════════════════════════════════════════════════════════════════════ */
+console.log('\n── 16. Fase 2.3 · B2 · Métricas de Fitness y Productividad con el comparador común ──');
+{
+  const corpus16 = [];
+  const charla = (asistente, estado = ESTADO) => {
+    let ctx = nuevaConversacion('u-prueba');
+    let ult = [];
+    const f = (mensaje, extra = {}) => {
+      const r = responderMensaje(asistente, mensaje, { datos: datosParaAsistente(asistente, estado), hoy: HOY, contexto: ctx, ajenos: DOMINIOS_AJENOS, ahora: 1000, ...extra });
+      ctx = r.contexto; ult = r.respuestas;
+      corpus16.push(...r.respuestas);
+      ultimoVisto = r.respuestas.map((x) => `[${x.capacidad}] ${textoDeRespuesta(x)}`).join(' | ');
+      return r.respuestas;
+    };
+    f.ctx = () => ctx;
+    f.boton = (resp, i) => (resp && resp.opciones && resp.opciones[i] ? f(resp.opciones[i].mensaje, { opcion: { origen: resp.opciones[i].origen, indice: i } }) : [{ capacidad: 'sin_boton', tipo: 'error', bloques: [], opciones: [] }]);
+    return f;
+  };
+  const pareja = (h) => { const u = h.ctx().ultimaRespuesta; const i = u && u.items.length === 1 ? u.items[0] : null; return i && i.segundo ? `${i.periodo.desde}..${i.periodo.hasta}|${i.segundo.desde}..${i.segundo.hasta}` : null; };
+  const metrica = (lista, id) => lista.find((m) => m.id === id);
+  const SEM = { desde: '2026-10-19', hasta: HOY, etiqueta: 'esta semana' };
+  const PAS = { desde: '2026-10-12', hasta: '2026-10-18', etiqueta: 'la semana pasada' };
+  const ANT = { desde: '2026-10-05', hasta: '2026-10-11', etiqueta: 'la semana del 5 al 11 de octubre' };
+
+  /* El contrato: las cuatro métricas están bien declaradas y la capacidad dice cuáles usa. */
+  ok(METRICAS_FITNESS.concat(METRICAS_PRODUCTIVIDAD).every((m) => validarMetrica(m).length === 0) && metricasComparables(ASISTENTE_FITNESS).map((m) => m.id).join(',') === 'entrenamientos,dias_entreno' && metricasComparables(ASISTENTE_PRODUCTIVIDAD).map((m) => m.id).join(',') === 'pomodoros,enfoque',
+    'B2 · Fitness compara entrenamientos y días con entrenamiento; Productividad, pomodoros y tiempo de enfoque (ni hábitos, ni metas, ni rachas)');
+  const capCuantos = ASISTENTE_FITNESS.capacidades.find((c) => c.id === 'cuantos');
+  const capPomo = ASISTENTE_PRODUCTIVIDAD.capacidades.find((c) => c.id === 'pomodoro');
+  ok(metricaPara(ASISTENTE_FITNESS, capCuantos, { conceptos: new Map() }).id === 'entrenamientos' && metricaPara(ASISTENTE_FITNESS, capCuantos, { conceptos: new Map([['dias_entreno', []]]) }).id === 'dias_entreno' && metricaPara(ASISTENTE_PRODUCTIVIDAD, capPomo, { conceptos: new Map([['tiempo_enfoque', []]]) }).id === 'enfoque' && metricaPara(ASISTENTE_FITNESS, capCuantos, { conceptos: new Map(), argsHeredados: { metrica: 'dias_entreno' } }).id === 'dias_entreno',
+    'B2 · qué se compara: lo que nombra el mensaje, lo que ya se comparaba, o la primera de la capacidad');
+  ok(['habitos', 'racha', 'metas', 'objetivos', 'rutinas'].every((id) => metricaPara(ASISTENTE_PRODUCTIVIDAD, ASISTENTE_PRODUCTIVIDAD.capacidades.find((c) => c.id === id)) === null) && ['ultimo', 'plan', 'ejercicio', 'record', 'objetivos'].every((id) => metricaPara(ASISTENTE_FITNESS, ASISTENTE_FITNESS.capacidades.find((c) => c.id === id)) === null),
+    'B2 · lo que no es de un periodo (racha, metas, objetivos, plan, récord) no tiene métrica comparable');
+
+  /* Fitness — un escenario propio: empieza a registrar el 6 de octubre; la semana del 12 al 18 NO entrenó. */
+  const ses = (id, fecha, estado = 'completada') => ({ id, estado, fecha });
+  const FIT = { sesiones: [ses('a', '2026-10-06'), ses('b', '2026-10-08'), ses('c', '2026-10-19'), ses('d', '2026-10-21'), ses('e', '2026-10-21'), ses('f', '2026-10-22', 'en_curso'), ses('g', '2026-10-25'), ses('h', '2026-10-21')] };
+  const EST_FIT = { ...ESTADO, fitness: FIT };
+  const ENT = metrica(METRICAS_FITNESS, 'entrenamientos');
+  const DIAS = metrica(METRICAS_FITNESS, 'dias_entreno');
+  let c = compararMetrica(ENT, { fitness: FIT }, [SEM, PAS], { hoy: HOY });
+  ok(c.estado === 'comparable' && c.a.valor === 4 && c.b.valor === 0 && c.diferencia === 4 && c.porcentaje === null && c.sinPorcentaje === 'referencia_cero',
+    'B2 · Fitness · esta semana 4 completados (el «en curso» y el del día 25, que no ha llegado, no cuentan); la pasada, 0 DE VERDAD: diferencia 4, sin porcentaje sobre cero');
+  ok(textoDeRespuesta({ bloques: c.bloques }).includes('No calculo un porcentaje: la semana pasada el valor es 0 y no hay de dónde partir.') && textoDeRespuesta({ bloques: c.bloques }).includes('Esta semana sigue en curso') && textoDeRespuesta({ bloques: c.bloques }).includes('(5 días y 7 días)'),
+    'B2 · Fitness · …dice por qué no hay porcentaje, que la semana sigue en curso y los días de cada una');
+  c = compararMetrica(DIAS, { fitness: FIT }, [SEM, PAS], { hoy: HOY });
+  ok(c.a.valor === 2 && c.b.valor === 0 && c.bloques[1].detalle === 'en 2 días de 5', 'B2 · Fitness · días con entrenamiento: tres el 21 son UN día → 2 días esta semana');
+  c = compararMetrica(ENT, { fitness: FIT }, [PAS, ANT], { hoy: HOY });
+  ok(c.estado === 'comparable' && c.a.valor === 0 && c.b.valor === 2 && c.porcentaje === -100, 'B2 · Fitness · semana pasada (0) frente a la del 5 al 11 (2): un 100 % menos');
+  ok(textoDeRespuesta({ bloques: c.bloques }).includes('Tu primer entrenamiento registrado es del 6 de octubre: la semana del 5 al 11 de octubre solo cuenta desde ahí'), 'B2 · Fitness · un periodo registrado a medias (empezó el 6) lo dice');
+  c = compararMetrica(ENT, { fitness: FIT }, [ANT, { desde: '2026-09-28', hasta: '2026-10-04', etiqueta: 'la semana del 28 de septiembre al 4 de octubre' }], { hoy: HOY });
+  ok(c.estado === 'sin_datos' && c.diferencia === null && /la semana del 28 de septiembre al 4 de octubre \(todavía no habías registrado ningún entrenamiento\) no tiene datos/.test(c.bloques[0].texto),
+    'B2 · Fitness · antes del primer registro NO es 0: no hay datos, y se dice por qué');
+  c = compararMetrica(ENT, { fitness: FIT }, [{ desde: '2026-10-26', hasta: '2026-11-01', etiqueta: 'la semana que viene' }, SEM], { hoy: HOY });
+  ok(c.estado === 'sin_datos' && /la semana que viene \(todavía no ha llegado\) no tiene datos/.test(c.bloques[0].texto), 'B2 · Fitness · lo que no ha llegado tampoco es 0');
+  ok(compararMetrica(ENT, { fitness: { sesiones: [] } }, [SEM, PAS], { hoy: HOY }).estado === 'sin_datos' && compararMetrica(ENT, {}, [SEM, PAS], { hoy: HOY }).estado === 'sin_datos', 'B2 · Fitness · sin ningún entrenamiento registrado nunca: sin datos (no «0 contra 0»)');
+
+  /* Fitness en conversación. */
+  let h = charla(ASISTENTE_FITNESS, EST_FIT);
+  let r = h('Compara mis entrenos de esta semana con la pasada');
+  ok(r.length === 1 && r[0].capacidad === 'cuantos' && /4 entrenamientos esta semana \(del 19 al 23 de octubre\) y 0 entrenamientos la semana del 12 al 18 de octubre\. Son 4 entrenamientos más esta semana/.test(textoDeRespuesta(r[0])) && pareja(h) === `2026-10-19..${HOY}|2026-10-12..2026-10-18`,
+    'B2 · Fitness · «compara mis entrenos de esta semana con la pasada»: una comparación (4 frente a 0), guardada como pareja');
+  r = h('¿Y la anterior?');
+  ok(r[0].capacidad === 'cuantos' && /0 entrenamientos la semana del 12 al 18 de octubre y 2 entrenamientos la semana del 5 al 11 de octubre\. Son 2 entrenamientos menos/.test(textoDeRespuesta(r[0])) && pareja(h) === '2026-10-12..2026-10-18|2026-10-05..2026-10-11',
+    'B2 · Fitness · «¿y la anterior?» desplaza las dos semanas y vuelve a comparar (B0)');
+  h = charla(ASISTENTE_FITNESS, EST_FIT);
+  r = h('Compara los días que he entrenado esta semana con la semana pasada');
+  ok(/Días con entrenamiento: 2 días esta semana .* y 0 días la semana pasada/.test(textoDeRespuesta(r[0])), 'B2 · Fitness · si pregunta por los DÍAS, compara días con entrenamiento');
+  r = h('¿Y la anterior?');
+  ok(/Días con entrenamiento: 0 días la semana del 12 al 18 de octubre y 2 días la semana del 5 al 11 de octubre/.test(textoDeRespuesta(r[0])), 'B2 · Fitness · …y al seguir, la métrica no cambia (siguen siendo los días)');
+  h = charla(ASISTENTE_FITNESS, EST_FIT);
+  h('¿Cuántos entrenamientos llevo esta semana?');
+  r = h('Compáralo con la semana pasada');
+  ok(r.length === 1 && /4 entrenamientos esta semana .* y 0 entrenamientos la semana pasada/.test(textoDeRespuesta(r[0])), 'B2 · Fitness · «¿cuántos llevo esta semana?» → «compáralo con la semana pasada»: una comparación');
+  h = charla(ASISTENTE_FITNESS, EST_FIT);
+  r = h('Compara esta semana con la pasada');
+  ok(r[0].capacidad === 'comparar_que' && !/Todavía no calculo/.test(textoDeRespuesta(r[0])), 'B2 · Fitness · «compara esta semana con la pasada» sin tema: pregunta qué, sin decir ya que no calcula la diferencia');
+  r = h.boton(r[0], 0);
+  ok(r.length === 1 && /Son 4 entrenamientos más/.test(textoDeRespuesta(r[0])) && pareja(h) === `2026-10-19..${HOY}|2026-10-12..2026-10-18`, 'B2 · Fitness · …el botón compara de verdad y se recuerda como pareja');
+  h = charla(ASISTENTE_FITNESS, EST_FIT);
+  r = h('¿Cuántos entrenamientos llevo esta semana y la pasada?');
+  ok(caps(r) === 'cuantos,cuantos', 'B2 · Fitness · sin pedir comparar, dos periodos siguen siendo dos respuestas (no se compara por su cuenta)');
+  ok(caps(charla(ASISTENTE_FITNESS, EST_FIT)('Compara mis entrenos de esta semana con la pasada', { sinCargar: ['fitness'] })) === 'datos_no_cargados', 'B2 · Fitness · sin los datos cargados no compara nada');
+
+  /* Productividad. Escenario real: el Pomodoro se empezó a usar ayer (p2), y p3 se interrumpió. */
+  const POMO = metrica(METRICAS_PRODUCTIVIDAD, 'pomodoros');
+  const ENF = metrica(METRICAS_PRODUCTIVIDAD, 'enfoque');
+  const ayer = { desde: d(1), hasta: d(1), etiqueta: 'ayer' };
+  const hoyP = { desde: HOY, hasta: HOY, etiqueta: 'hoy' };
+  c = compararMetrica(POMO, { productividad: PRODUCTIVIDAD }, [hoyP, ayer], { hoy: HOY });
+  ok(c.estado === 'comparable' && c.a.valor === 1 && c.b.valor === 1 && c.sentido === 'igual', 'B2 · Productividad · 1 pomodoro hoy y 1 ayer (el interrumpido no cuenta): lo mismo');
+  c = compararMetrica(POMO, { productividad: PRODUCTIVIDAD }, [SEM, PAS], { hoy: HOY });
+  ok(c.estado === 'sin_datos' && /todavía no habías usado el Pomodoro/.test(c.bloques[0].texto), 'B2 · Productividad · antes de la primera sesión no es 0: sin datos');
+  const minutos = (n) => n * 60000;
+  const ps = (id, fecha, mins, completada = true) => ({ id, tipo: 'focus', inicio: new Date(`${fecha}T10:00:00`).getTime(), fin: 0, duracionMs: minutos(mins), completada, fecha });
+  const PROD = { pomodoroSesiones: [ps('q1', '2026-10-13', 25), ps('q2', '2026-10-20', 20.4), ps('q3', '2026-10-21', 20.4), ps('q4', '2026-10-22', 20.4), ps('q5', '2026-10-22', 50, false)] };
+  c = compararMetrica(POMO, { productividad: PROD }, [SEM, PAS], { hoy: HOY });
+  ok(c.a.valor === 3 && c.b.valor === 1 && c.porcentaje === 200, 'B2 · Productividad · 3 pomodoros frente a 1: un 200 % más');
+  c = compararMetrica(ENF, { productividad: PROD }, [SEM, PAS], { hoy: HOY });
+  ok(c.a.valor === 61 && c.b.valor === 25 && c.diferencia === 36 && /Tiempo de enfoque: 1 h 1 min esta semana y 25 min la semana pasada\. Son 36 min más esta semana, un 144 % más\./.test(c.bloques[0].texto),
+    'B2 · Productividad · tiempo de enfoque: 3 × 20,4 min = 61 (se redondea UNA vez al final, no 60), y el interrumpido no suma');
+  h = charla(ASISTENTE_PRODUCTIVIDAD, { ...ESTADO, productividad: PROD });
+  r = h('Compara el tiempo de enfoque de esta semana con la semana pasada');
+  ok(r.length === 1 && r[0].capacidad === 'pomodoro' && /Tiempo de enfoque: 1 h 1 min/.test(textoDeRespuesta(r[0])), 'B2 · Productividad · en conversación: si dice «tiempo de enfoque», compara el tiempo');
+  r = h('¿Y la anterior?');
+  ok(/^No puedo comparar «tiempo de enfoque»/.test(textoDeRespuesta(r[0])) && pareja(h) === '2026-10-12..2026-10-18|2026-10-05..2026-10-11', 'B2 · Productividad · «¿y la anterior?» desplaza las dos y sigue con el tiempo de enfoque');
+  ok(/la semana del 5 al 11 de octubre \(todavía no habías usado el Pomodoro\) no tiene datos/.test(textoDeRespuesta(r[0])), 'B2 · Productividad · …y la del 5 al 11, antes de usar el Pomodoro, no tiene datos (no «0 min»)');
+  h = charla(ASISTENTE_PRODUCTIVIDAD, { ...ESTADO, productividad: PROD });
+  r = h('Compara esta semana con la pasada');
+  ok(r[0].capacidad === 'comparar_que' && r[0].opciones.map((o) => o.texto).join('|') === 'Tus pomodoros' && !/Todavía no calculo/.test(textoDeRespuesta(r[0])), 'B2 · Productividad · sin tema: pregunta qué (solo los pomodoros se pueden mirar por periodos)');
+  r = h.boton(r[0], 0);
+  ok(r.length === 1 && /Pomodoros completados: 3 pomodoros esta semana .* y 1 pomodoro la semana del 12 al 18 de octubre/.test(textoDeRespuesta(r[0])), 'B2 · Productividad · …y el botón compara los pomodoros');
+  ok(caps(charla(ASISTENTE_PRODUCTIVIDAD)('¿Cuántos pomodoros he hecho este mes y el pasado?')) === 'pomodoro,pomodoro', 'B2 · Productividad · sin pedir comparar, dos periodos siguen siendo dos respuestas');
+
+  /* Sueño y Nutrición no cambian (B3 y B5). */
+  ok(!ASISTENTE_SUENO.metricas && !ASISTENTE_NUTRICION.metricas && !ASISTENTE_ESTUDIOS.metricas, 'B2 · Sueño, Nutrición y Estudios todavía no declaran métricas (B3–B5)');
+  const malas = corpus16.filter((x) => incumpleHonestidad(textoDeRespuesta(x)).length || /\b(mejor|peor)\b/i.test(textoDeRespuesta(x).replace(/no dice si es bueno o malo/g, '')));
+  if (malas.length) console.log('      ', malas.map((x) => `[${x.capacidad}] ${textoDeRespuesta(x)} → ${incumpleHonestidad(textoDeRespuesta(x)).join(',')}`).join('\n       '));
+  ok(!malas.length, 'B2 · nada incumple las palabras prohibidas, y nunca «mejor» ni «peor»');
 }
 
 console.log(`\n${fallos === 0 ? '\x1b[32m' : '\x1b[31m'}${total - fallos}/${total} comprobaciones\x1b[0m`);

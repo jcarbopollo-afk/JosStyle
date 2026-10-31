@@ -206,6 +206,41 @@ function objetivos(datos, { entidad, hoy }) {
   };
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   Fase 2.3 · B2 — lo que se puede COMPARAR entre dos periodos (contrato de B1)
+   ══════════════════════════════════════════════════════════════════════════
+   Las dos cifras salen de la misma cuenta que «cuántos entrenamientos llevas» (`completadosHastaHoy` +
+   `sesionesPorDia`): solo entrenamientos COMPLETADOS hasta hoy. 🚨 Lo que no se registró como hecho no
+   cuenta como hecho, y un día de descanso no necesita registro, así que un periodo con registro y sin
+   entrenamientos es un 0 de verdad. Lo que NO hay es dato antes de empezar a registrar (el primer
+   entrenamiento completado que existe) ni de lo que todavía no ha llegado: eso es `null`, nunca 0. */
+function medidaDeEntrenos(fitness, periodo, hoy, contar) {
+  const { sesiones } = completadosHastaHoy(fitness, hoy);
+  if (periodo.desde > hoy) return { valor: null, motivo: 'todavía no ha llegado' };
+  const hasta = periodo.hasta > hoy ? hoy : periodo.hasta;
+  const primero = sesiones.length ? sesiones[sesiones.length - 1].fecha : null;
+  if (!primero || primero > hasta) return { valor: null, motivo: 'todavía no habías registrado ningún entrenamiento' };
+  const dentro = sesiones.filter((s) => s.fecha >= periodo.desde && s.fecha <= hasta);
+  const dias = sesionesPorDia(dentro).size;
+  const diasDelPeriodo = diasDelRango(periodo.desde, hasta);
+  const notas = [];
+  if (primero > periodo.desde) notas.push(`Tu primer entrenamiento registrado es del ${diaYMesConversacion(primero, hoy)}: ${etiquetaP(periodo, hoy)} solo cuenta desde ahí.`);
+  return { periodo: { hasta }, valor: contar(dentro, dias), diasDelPeriodo, detalle: `en ${plural(dias, 'día', 'días')} de ${diasDelPeriodo}`, notas };
+}
+
+export const METRICAS_FITNESS = [
+  {
+    id: 'entrenamientos', nombre: 'Entrenamientos completados', tipo: 'entero', agregacion: 'total', admitePorcentaje: true, minimoDias: 0,
+    unidad: { singular: 'entrenamiento', plural: 'entrenamientos' }, fuente: FUENTE,
+    calcular: (datos, periodo, hoy) => medidaDeEntrenos(datos.fitness || {}, periodo, hoy, (dentro) => dentro.length),
+  },
+  {
+    id: 'dias_entreno', nombre: 'Días con entrenamiento', concepto: 'dias_entreno', tipo: 'entero', agregacion: 'total', admitePorcentaje: true, minimoDias: 0,
+    unidad: { singular: 'día', plural: 'días' }, fuente: FUENTE,
+    calcular: (datos, periodo, hoy) => medidaDeEntrenos(datos.fitness || {}, periodo, hoy, (dentro, dias) => dias),
+  },
+];
+
 /* ── Las entidades: los ejercicios, con los que tienen historia primero ───── */
 function entidades(datos) {
   const fitness = datos.fitness || {};
@@ -243,15 +278,18 @@ export const ASISTENTE_FITNESS = {
     progreso: ['como voy', 'como va', 'como llevo', 'progreso', 'progres*', 'evolucion', 'avance', 'como me va', 'tendencia', 'que tal voy', 'ultima vez que hice', 'he mejorado', 'he subido'],
     objetivo: ['objetivo', 'objetivos', 'reto', 'retos', 'meta de', 'metas'],
     ejercicio_generico: ['ejercicio', 'ejercicios'],
+    /* B2 — qué cifra se compara cuando lo dice: los días, no los entrenamientos. */
+    dias_entreno: ['dias con entrenamiento', 'dias entrenados', 'dias que entrene', 'dias que he entrenado', 'dias de entrenamiento', 'cuantos dias'],
   },
   capacidades: [
     { id: 'ultimo', titulo: 'Tu último entrenamiento', ejemplo: '¿Cuándo fue mi último entrenamiento?', senales: { ultimo: 4, entrenar: 2, cuando: 1 }, necesita: [['ultimo']], periodo: null, prioridad: 2, ejecutar: ultimo },
-    { id: 'dia', titulo: 'Qué entrenaste un día', ejemplo: '¿Qué entrené ayer?', senales: { que_hice: 3, entrenar: 2 }, necesita: [['entrenar', 'que_hice']], periodo: 'dia', siRango: 'cuantos', porDefecto: 'hoy', prioridad: 3, ejecutar: dia },
-    { id: 'cuantos', titulo: 'Cuántos entrenamientos llevas', ejemplo: '¿Cuántas veces he entrenado esta semana?', senales: { entrenar: 2, cuanto: 2, veces: 2 }, necesita: [['entrenar', 'veces']], periodo: 'rango', porDefecto: 'estaSemana', prioridad: 2, ejecutar: cuantos },
+    { id: 'dia', titulo: 'Qué entrenaste un día', ejemplo: '¿Qué entrené ayer?', senales: { que_hice: 3, entrenar: 2 }, necesita: [['entrenar', 'que_hice']], periodo: 'dia', siRango: 'cuantos', porDefecto: 'hoy', prioridad: 3, metricas: ['entrenamientos', 'dias_entreno'], ejecutar: dia },
+    { id: 'cuantos', titulo: 'Cuántos entrenamientos llevas', ejemplo: '¿Cuántas veces he entrenado esta semana?', senales: { entrenar: 2, cuanto: 2, veces: 2 }, necesita: [['entrenar', 'veces']], periodo: 'rango', porDefecto: 'estaSemana', prioridad: 2, metricas: ['entrenamientos', 'dias_entreno'], ejecutar: cuantos },
     { id: 'plan', titulo: 'Qué toca según tu plan', ejemplo: '¿Qué me toca entrenar hoy?', senales: { toca: 4, plan: 3, proximo: 2, entrenar: 1 }, necesita: [['toca', 'plan', 'proximo']], periodo: 'dia', tiempo: 'futuro', porDefecto: 'hoy', prioridad: 2, cubreObligacion: true, ejecutar: plan },
     { id: 'ejercicio', titulo: 'Cómo vas en un ejercicio', ejemplo: '¿Cómo voy en dominadas pronas?', senales: { progreso: 3, ejercicio_generico: 1, entrenar: 1, ultimo: 1 }, necesita: [], entidad: { tipo: 'ejercicio', obligatoria: true, nombre: 'ejercicio', vacio: 'Todavía no tienes ejercicios en tu historial.' }, periodo: null, prioridad: 2, ejecutar: ejercicio },
     { id: 'record', titulo: 'Tu mejor marca en un ejercicio', ejemplo: '¿Cuál es mi récord en press de banca?', senales: { mejor: 4, ejercicio_generico: 1 }, necesita: [['mejor']], entidad: { tipo: 'ejercicio', obligatoria: true, nombre: 'ejercicio', vacio: 'Todavía no tienes ejercicios en tu historial.' }, periodo: null, prioridad: 1, ejecutar: record },
     { id: 'objetivos', titulo: 'Tus objetivos de Fitness', ejemplo: '¿Cómo van mis objetivos?', senales: { objetivo: 4 }, necesita: [['objetivo']], entidad: { tipo: 'ejercicio', obligatoria: false, nombre: 'ejercicio' }, periodo: null, prioridad: 1, ejecutar: objetivos },
   ],
+  metricas: METRICAS_FITNESS,
   entidades,
 };
