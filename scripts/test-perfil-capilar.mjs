@@ -84,8 +84,13 @@ ok(!/askAI|AI_SYSTEM|anthropic/i.test(codigo), '⚠️ Apartado 17: ni una llama
   ['recomendaciones', /(function|const)\s+\w*[Rr]ecomend/]].forEach(([que, re2]) => {
   ok(!re2.test(codigo), `⚠️ No se construye ${que}: el enunciado lo prohíbe (apartados 11, 12 y 17)`);
 });
-ok(/fase 11/.test(fuente),
-  '⚠️ …pero sí se DICE cuándo llega el calendario, en vez de callarlo (regla 8)');
+/* 🔓 Fase A de Imagen personal — esto exigía que la ayuda dijera que el calendario
+   «llega en la fase 11», y la F11 ya lo construyó. Se da la vuelta: la ayuda dice
+   para qué se usa, sin prometer una fase que ya pasó. */
+ok(/calendario de peluquería/.test(PREGUNTAS_PELO.find((q) => q.id === 'frecuenciaCorte').ayuda),
+  'Fase A: la ayuda sigue diciendo para qué se usa la respuesta (el calendario de peluquería)');
+ok(!/fase \d/i.test(PREGUNTAS_PELO.find((q) => q.id === 'frecuenciaCorte').ayuda),
+  '⚠️ Fase A: …y ya no promete una fase que llegó (la F11)');
 
 /* ── 2 · ⚠️ DÓNDE SE GUARDA CADA RESPUESTA (apartado 16) ─────────────────── */
 

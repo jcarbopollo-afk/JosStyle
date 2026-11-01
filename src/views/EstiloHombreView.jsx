@@ -4508,7 +4508,14 @@ export function PanelBarba({ estado, accent, datosGlobales = {}, onCambiar, onCe
       ? 'Crea la primera'
       : `${rut.rutinas} ${rut.rutinas === 1 ? 'rutina' : 'rutinas'}`
         + (rut.hoy > 0 ? ` · ${rut.hechasHoy}/${rut.hoy} hoy` : ''),
+    /* 🔓 Fase A de Imagen personal — el seguimiento vive DENTRO de «Mi rutina»
+       (`dentroDe`), así que la plaquita lleva allí. Con las rutinas apagadas no
+       abre nada ni enciende nada por él: dice dónde está y que se activa abajo. */
+    seguimiento: parteActivaBarba(estado, 'rutinas')
+      ? 'Dentro de Mi rutina'
+      : 'Se apunta en Mi rutina: actívala aquí abajo',
   };
+  const seguimientoAbre = parteActivaBarba(estado, 'rutinas') ? () => setZona('rutina') : null;
 
   return (
     <div className="space-y-3">
@@ -4538,7 +4545,8 @@ export function PanelBarba({ estado, accent, datosGlobales = {}, onCambiar, onCe
                 onAbrir={p.listo
                   ? (p.id === 'perfil' ? onPerfil
                     : (p.id === 'rutina' ? () => setZona('rutina')
-                      : (p.id === 'productos' ? () => setZona('productos') : null)))
+                      : (p.id === 'productos' ? () => setZona('productos')
+                        : (p.id === 'seguimiento' ? seguimientoAbre : null))))
                   : null}
               />
             ))}

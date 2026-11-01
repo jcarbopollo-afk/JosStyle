@@ -25,7 +25,9 @@ import {
   subirModulo, bajarModulo, moverA, puedeMover,
   recomendados, MAX_RECOMENDADOS, fichaModulo, TEXTOS_GESTION,
   resumenGestion, MODULOS_DEL_ENUNCIADO_NO_CREADOS,
+  APARTADOS_CON_DESTINO, AVISO_SIN_PANTALLA,
 } from '../src/lib/gestionModulos.js';
+import { FUENTES_DE_ESTADO } from '../src/lib/miEstilo.js';
 
 let n = 0;
 let fallos = 0;
@@ -209,10 +211,56 @@ eq(ficha.estadoTexto, 'Activado', 'Y el estado, en palabras');
 eq(fichaModulo(base(), 'higiene').estadoTexto, 'Desactivado', 'Y el contrario');
 eq(ficha.categoria, 'Cuidado', 'Y su categoría');
 ok(ficha.sub, 'Y la descripción corta');
-ok(ficha.contenido === false, '⚠️ Hoy ningún módulo tiene contenido, y la ficha lo dice');
-ok(ficha.avisoContenido.includes('fase 6'), '⚠️ Y dice en cuál llega, en vez de "próximamente"');
+/* 🔓 Fase A de Imagen personal — esto exigía que Skincare (hecho desde la F13)
+   dijera «El contenido de este apartado llega en la fase 6». Se da la vuelta: los
+   diez con destino tienen contenido y ningún aviso; los siete sin pantalla lo dicen
+   sin prometer una fase. Las comprobaciones de la lista van en la sección 7b. */
+ok(ficha.contenido === true, '⚠️ Fase A: Skincare tiene contenido, y la ficha lo dice');
+eq(ficha.avisoContenido, '', '⚠️ Fase A: y no lleva aviso de «llega en la fase 6»');
 ok(ficha.confirmarAlApagar === true, 'La ficha sabe si pedirá confirmación');
 eq(fichaModulo(base(), 'inventado'), null, 'Un id que no existe devuelve null, no un objeto a medias');
+
+/* ── 7b · 🔓 FASE A — LOS DIEZ APARTADOS CON DESTINO ─────────────────────────
+   `APARTADOS_CON_DESTINO` es la lista que decide si la ficha tiene contenido. Se
+   comprobó en la Fase A uno a uno hasta la pantalla que se pinta; aquí se ata a
+   las dos fuentes que ya existían, para que el día que un apartado gane (o
+   cambie) su pantalla la lista no se quede vieja en silencio. */
+{
+  const vista = readFileSync(new URL('../src/views/EstiloHombreView.jsx', import.meta.url), 'utf8');
+  const ini = vista.indexOf('const abrirModulo = (id) => {');
+  const fin = vista.indexOf('return undefined;', ini);
+  ok(ini > 0 && fin > ini, 'Fase A: se encuentra `abrirModulo` en la vista');
+  const bloque = vista.slice(ini, fin);
+  // Cada rama es `id === MODULO_X`; el valor de cada constante se lee de su librería.
+  const constantes = [...new Set([...bloque.matchAll(/id === (MODULO_[A-Z_]+)/g)].map((m) => m[1]))];
+  const valores = {};
+  for (const lib of ['armarioEnEstiloHombre', 'perfilCapilar', 'perfilPiel', 'perfilBarba', 'sonrisa',
+    'perfumes', 'accesorios', 'gustos', 'cuerpoHigiene']) {
+    const src = readFileSync(new URL(`../src/lib/${lib}.js`, import.meta.url), 'utf8');
+    for (const m of src.matchAll(/export const (MODULO_[A-Z_]+) = '([a-z]+)'/g)) valores[m[1]] = m[2];
+  }
+  const rutas = constantes.map((c) => valores[c]).filter(Boolean).sort();
+  eq(constantes.length, rutas.length, 'Fase A: cada rama de `abrirModulo` se traduce a un apartado');
+  eq(rutas, [...APARTADOS_CON_DESTINO].sort(),
+    '⚠️ Fase A: los diez con destino son EXACTAMENTE las ramas de `abrirModulo`');
+  eq(Object.keys(FUENTES_DE_ESTADO).sort(), [...APARTADOS_CON_DESTINO].sort(),
+    '⚠️ Fase A: …y exactamente los que reconoce el sistema de estados (F29)');
+  eq(APARTADOS_CON_DESTINO.length, 10, 'Fase A: nueve con pantalla propia y Estilo y armario, que lleva al Armario');
+  ok(APARTADOS_CON_DESTINO.every((id) => IDS_EH.includes(id)), 'Fase A: y todos están en el catálogo');
+
+  const todas = MODULOS_EH.map((m) => fichaModulo(base(), m.id));
+  eq(todas.length, 17, 'Fase A: los diecisiete apartados siguen teniendo ficha (no se quita ninguno)');
+  ok(todas.every((x) => !/fase\s*\d/i.test(x.avisoContenido)),
+    '⚠️ Fase A: ninguna ficha promete una fase («llega en la fase N»)');
+  const sinPantalla = todas.filter((x) => !x.contenido).map((x) => x.id).sort();
+  eq(sinPantalla, ['educacion', 'fitness', 'habitos', 'productos', 'progreso', 'salud', 'sueno'],
+    'Fase A: los siete sin pantalla se conservan en el catálogo y su ficha lo dice');
+  ok(todas.filter((x) => !x.contenido).every((x) => x.avisoContenido === AVISO_SIN_PANTALLA),
+    'Fase A: los siete dicen lo mismo, sin prometer nada');
+  ok(todas.filter((x) => x.contenido).every((x) => x.avisoContenido === ''),
+    'Fase A: los diez con destino no llevan aviso');
+  ok(MODULOS_EH.every((m) => Number.isInteger(m.fase)), 'Fase A: los números de fase del catálogo se conservan (el dato no se borra)');
+}
 
 /* ── 8 · ESTADO VACÍO (apartado 10) ──────────────────────────────────────── */
 

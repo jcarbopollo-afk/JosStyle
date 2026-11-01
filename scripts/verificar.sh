@@ -188,6 +188,13 @@ else
   fallo "Falla la gestión de módulos de Estilo de Hombre"; grep '✗' /tmp/jc_eh2.log
 fi
 
+# Fase A de Imagen personal (2026-10-31) — ningún texto que se lea promete una fase ya llegada.
+if node --import ./scripts/resolver-vite.mjs scripts/test-imagen-textos.mjs >/tmp/jc_eh_textos.log 2>&1; then
+  ok "Imagen personal: textos sin fases ya llegadas y plaquitas que funcionan (Fase A) — $(grep -c '✓' /tmp/jc_eh_textos.log) comprobaciones"
+else
+  fallo "Imagen personal: un texto promete una fase o una plaquita se quedó «por llegar»"; grep '✗' /tmp/jc_eh_textos.log
+fi
+
 if node --import ./scripts/resolver-vite.mjs scripts/test-configuracion-inicial.mjs >/tmp/jc_eh3.log 2>&1; then
   ok "Primera configuración y perfil (EH F3) — $(grep -c '✓' /tmp/jc_eh3.log) comprobaciones"
 else

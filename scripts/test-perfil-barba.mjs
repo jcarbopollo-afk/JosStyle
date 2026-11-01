@@ -386,8 +386,18 @@ console.log('\n12 · Regla 8: lo que todavía no funciona lo dice');
 
 eq(PLAQUITAS_BARBA.find((p) => p.id === 'perfil').listo, true, 'El perfil funciona hoy');
 eq(PLAQUITAS_BARBA.find((p) => p.id === 'rutina').listo, true, 'Y la rutina, desde la Fase 21');
-eq(PLAQUITAS_BARBA.filter((p) => !p.listo).map((p) => p.fase), [21, 21],
-  '⚠️ Y las que no, dicen en qué fase llegan (regla 8)');
+/* 🔓 Fase A de Imagen personal — esto exigía que Seguimiento y Productos siguieran
+   «sin llegar» ([21, 21]) con la F21 ya hecha: la plaquita decía «Llega en la fase
+   21» y no hacía nada. Se da la vuelta: ahora las cuatro funcionan, ninguna se ha
+   quitado del catálogo y el seguimiento sigue declarando que vive en la rutina. */
+eq(PLAQUITAS_BARBA.filter((p) => !p.listo).map((p) => p.id), [],
+  '⚠️ Fase A: ninguna plaquita de Barba se queda «por llegar» — la F21 ya llegó');
+eq(PLAQUITAS_BARBA.map((p) => p.id), ['perfil', 'rutina', 'seguimiento', 'productos'],
+  'Fase A: y siguen estando las cuatro, en su orden (no se quita ninguna)');
+eq(PLAQUITAS_BARBA.find((p) => p.id === 'seguimiento').dentroDe, 'rutina',
+  'Fase A: el seguimiento sigue declarando que vive dentro de la rutina');
+eq(PLAQUITAS_BARBA.filter((p) => p.id === 'seguimiento' || p.id === 'productos').map((p) => p.fase), [21, 21],
+  'Fase A: y conservan su fase en el catálogo (el dato no se borra)');
 ok(!/proximamente|próximamente|en construcción|TODO:/i.test(fuente), 'Ni un "próximamente" ni un TODO');
 ok(!/Math\.random/.test(codigo), 'Ni una cifra inventada');
 ok(!/askAI|anthropic|claude|fetch\(/i.test(codigo), '⚠️ Sin IA: ni una llamada');

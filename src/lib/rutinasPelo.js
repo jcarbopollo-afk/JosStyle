@@ -526,7 +526,8 @@ export function baseParaRecomendar(estado, datosGlobales = {}) {
     fuentes: ['perfil capilar', 'necesidades', 'preferencias', 'rutina', 'productos existentes', 'información registrada'],
     disponible: false,
     fase: 9,
-    nota: 'Las recomendaciones de pelo se construyen en la fase 9.',
+    // 🔓 Fase A de Imagen personal — la F9 ya llegó: se dice dónde están, no cuándo llegan.
+    nota: 'Tus recomendaciones de pelo están en 💡 Recomendaciones, en tu panel de pelo.',
     sinIA: true,
   };
 }
