@@ -1,5 +1,50 @@
 # CHANGELOG.md
 
+## Sin versión — Imagen personal: el ciclo posterior a la F65 (Fases A y B, la portada de seis tarjetas) en la rama `claude/imagen-personal-fase-a` (2026-11-01)
+
+> Ciclo nuevo abierto por Josué después de la EH F65, que **sigue congelada** (`docs/09` y `cierre.js` sin tocar). La Fase A
+> está en el commit `7996c5b`; la Fase B (B1–B8 y las correcciones posteriores a B7) está en la rama, **pendiente de commit,
+> de `main` y de despliegue** (B9). **Versión 3.161.3, sin subir.** Detalle completo: `docs/16_IMAGEN_PERSONAL_CICLO_POST_F65.md`.
+
+### ✨ Qué entra
+- **Fase A** — en Barba, «Productos» abre «Mis productos» y «Seguimiento» abre «Mi rutina»; los textos que prometían fases ya
+  llegadas dicen dónde está cada cosa; la ficha de cada apartado sale de `APARTADOS_CON_DESTINO` y los siete sin pantalla lo
+  dicen sin número de fase.
+- **B1** — `CATEGORIAS_EH` con seis categorías de portada (Ropa, Cuidado, Pelo, Fragancia, Accesorios, Funcionamiento). Ni un id
+  ni un dato guardado cambia: la categoría no se guarda.
+- **B2** — `tarjetasDePortada()` y `contenidoDeCategoria()` (`pantallaEH.js`).
+- **B3** — la portada nueva: seis tarjetas en 2 × 3, **Hábitos y rutinas** aparte (sin botón, «Todavía no tiene pantalla
+  propia») y los accesos rápidos debajo. Ropa abre el Armario y lleva el enlace a 👤 Mi estilo.
+- **B4** — la pantalla de categoría (`CategoriaEH`) para Cuidado y Funcionamiento: apartados en su orden, ocultos y apagados
+  aparte, con «Activar».
+- **B5** — Mi estilo personal, Ideas, Mi progreso, Descubrir, Personalizar, Ordenar, las recomendaciones y Gestionar se mudan a
+  Funcionamiento (un único acceso cada uno). Las cuatro tarjetas fijas no ofrecen tamaño (decisión A) ni «Ocultar» (decisión
+  B); subir, bajar y «Mover» actúan dentro de cada categoría. Lo guardado (tamaños, orden, ocultos) se conserva.
+- **B6** — `RECORRIDOS` (F51) con la navegación real; el del recordatorio va por Barba (decisión E). Límites, `maximoDe` y
+  `demasiadoLargos`, intactos.
+- **B7** — `test-app-real` adaptado a las rutas nuevas y con una sección de navegación en siete tamaños de pantalla.
+- **Correcciones posteriores a B7** — el acceso rápido «🧴 Rutina facial» abre la rutina de Skincare directamente (1 toque);
+  las respuestas de `PREGUNTAS` dicen las rutas actuales.
+- **B8** — `docs/08` regenerado desde `documentacionEH.js` (textos), `docs/16` nuevo, su línea en `docs/00_INDICE.md` y `HANDOFF.md`.
+
+### 🐛 Encontrado por el camino
+- Cuatro recorridos de la F51 ya no eran verdad antes de la Fase B: el favorito de un perfume vive dentro de «Mi colección»
+  (3 toques, no 2), las rutinas de Skincare no tienen recordatorio, «Ocultar» está en 🧩 Gestionar apartados (Personalizar) y
+  «Mis datos» no lleva a Preferencias.
+- Desde B5, `test-app-real` no solo fallaba diez comprobaciones: **se cortaba** justo después (esperaba un campo que no
+  llegaba), así que el resto del recorrido no se ejecutaba. B7 lo resolvió.
+- El acceso rápido «Rutina facial» guardaba su zona y la portada no la usaba.
+
+### 🧪 Comprobado
+- `scripts/test-portada-eh.jsx` (nueva, 150), `test-experiencia-real.mjs` (120), `test-gestion-modulos.mjs` (195) y
+  `test-app-real.mjs` (3927 en Chromium, con la portada medida a 320, 375, 393, 430 px, horizontal, iPad y escritorio).
+- `bash scripts/verificar.sh` completo en verde al cerrar las correcciones posteriores a B7.
+
+### ⚠️ Lo que sigue abierto
+- **B9** (commits, push, vista previa, `main`) y **el iPhone** (R1): todo está probado en Chromium.
+- Los demás accesos rápidos («Afeitarme», «Mi pelo», «Elegir perfume») siguen abriendo su apartado, no su zona.
+- Siete apartados siguen sin pantalla propia y seis librerías sin conectar (CX-13); `docs/09` sigue describiendo la v3.0.0.
+
 ## v3.161.3 — Sueño: lo que no se sabe no se inventa, y «Analizar mi sueño» abre una conversación
 
 > Encargo de Josué del 2026-10-24 (*«Corregir definitivamente la interpretación de los datos incompletos del sueño y revisar la

@@ -63,7 +63,8 @@ export const COMO_ESTA_ORGANIZADO = [
   { capa: 'Datos', que: 'Una clave de Supabase, `estiloHombre`, con un objeto por módulo.', donde: 'src/lib/estiloDeHombre.js' },
   { capa: 'Catálogo', que: 'Los módulos son LÍNEAS de `MODULOS_EH`. Añadir uno es añadir una línea.', donde: 'src/lib/estiloDeHombre.js' },
   { capa: 'Motores', que: 'Rutinas, recomendaciones, productos y cuestionarios: compartidos, nunca duplicados.', donde: 'src/lib/motor*.js' },
-  { capa: 'Pantalla', que: 'Una vista con un componente por apartado.', donde: 'src/views/EstiloHombreView.jsx' },
+  /* 🔓 Ciclo posterior a la F65 (Fase B) — la portada de seis tarjetas. Solo cambia el texto. */
+  { capa: 'Pantalla', que: 'Una vista con un componente por apartado. La portada (Fase B, posterior a la F65): cabecera, buscador, bienvenida y avisos, seis tarjetas en 2 × 3 —Ropa (abre el Armario y lleva el enlace a 👤 Mi estilo), Cuidado, Pelo, Fragancia, Accesorios y Funcionamiento—, debajo el acceso a Hábitos y rutinas (sin pantalla propia, sin botón) y los accesos rápidos. Cuidado y Funcionamiento abren su pantalla de categoría (`CategoriaEH`); Pelo, Fragancia y Accesorios, su apartado. El acceso rápido «🧴 Rutina facial» abre directamente la rutina de Skincare. Fitness, Sueño y Salud solo se gestionan desde Gestionar apartados. Rutas: `docs/16_IMAGEN_PERSONAL_CICLO_POST_F65.md`.', donde: 'src/views/EstiloHombreView.jsx' },
   { capa: 'Revisores', que: 'Las fases 43-53 no añaden funciones: comprueban las que hay.', donde: 'src/lib/{privacidad,rendimiento,coherenciaVisual,...}' },
 ];
 
@@ -88,12 +89,13 @@ export function mapaDeModulos() {
 
 /** Las pantallas que no son un módulo, pero están. */
 export const PANTALLAS_TRANSVERSALES = [
-  { id: 'descubrir', nombre: 'Descubrir', fase: 32, que: 'Tarjetas de ideas que se pueden rechazar.' },
-  { id: 'preferencias', nombre: 'Preferencias', fase: 38, que: 'Lo que ha contestado, editable y borrable.' },
-  { id: 'buscador', nombre: 'Buscador', fase: 39, que: 'Busca en todos los apartados a la vez.' },
-  { id: 'gestionar', nombre: 'Gestionar apartados', fase: 36, que: 'Encender, apagar, ocultar y reordenar.' },
-  { id: 'progreso', nombre: 'Progreso', fase: 35, que: 'Métricas sin puntuaciones ni porcentajes.' },
-  { id: 'mis_datos', nombre: 'Mis datos', fase: 43, que: 'Qué se guarda, cómo se exporta y cómo se borra.' },
+  /* 🔓 Ciclo posterior a la F65 (Fase B) — se añade DÓNDE está cada una ahora. */
+  { id: 'descubrir', nombre: 'Descubrir', fase: 32, que: 'Tarjetas de ideas que se pueden rechazar. Está en Funcionamiento, junto a 💡 Ideas para ti.' },
+  { id: 'preferencias', nombre: 'Preferencias', fase: 38, que: 'Lo que ha contestado, editable y borrable. Se abre con ⚙️ Mis preferencias, en el bloque «Mi estilo personal» de Funcionamiento (o desde Ropa → 👤 Mi estilo).' },
+  { id: 'buscador', nombre: 'Buscador', fase: 39, que: 'Busca en todos los apartados a la vez. Está arriba, en la portada (🔍 Buscar en Imagen personal).' },
+  { id: 'gestionar', nombre: 'Gestionar apartados', fase: 36, que: 'Encender y apagar (interruptores): botón Gestionar apartados de Funcionamiento. Ocultar y reordenar: ⋮ Personalizar → 🧩 Gestionar apartados. Las cuatro tarjetas fijas (Ropa, Pelo, Fragancia y Accesorios) no ofrecen ocultar ni flechas; se reordena dentro de cada categoría.' },
+  { id: 'progreso', nombre: 'Progreso', fase: 35, que: 'Métricas sin puntuaciones ni porcentajes. Es el bloque 📊 Mi progreso de Funcionamiento (el apartado Progreso del catálogo todavía no tiene pantalla propia).' },
+  { id: 'mis_datos', nombre: 'Mis datos', fase: 43, que: 'Qué se guarda, cómo se exporta y cómo se borra. Se abre desde Gestionar apartados (botón Mis datos).' },
 ];
 
 /* ===========================================================================
@@ -319,7 +321,7 @@ export const SUITE_DE_PRUEBAS = {
    =========================================================================== */
 
 export const HISTORIAL = {
-  donde: 'CHANGELOG.md, una entrada por fase, y `docs/02_ORDEN_DE_FASES.md`, una fila por versión.',
+  donde: 'CHANGELOG.md, una entrada por fase, y `docs/02_ORDEN_DE_FASES.md`, una fila por versión. Lo posterior a la F65 (el ciclo de reorganización: Fases A y B) va en el CHANGELOG y en `docs/16_IMAGEN_PERSONAL_CICLO_POST_F65.md`; las 65 fases originales no se reescriben.',
   formato: 'vX.Y.0 — EH Fase N/65: qué se construyó, qué se decidió y qué se encontró.',
   regla: '⚠️ Una fase sin entrada en el CHANGELOG no está terminada.',
 };
