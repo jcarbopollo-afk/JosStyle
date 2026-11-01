@@ -17,7 +17,7 @@ import {
   MODULOS_EH, CATEGORIAS_EH, IDS_EH, DEFAULT_ESTILO_HOMBRE,
   normalizarEstiloHombre, configurarPrimeraVez, alternarModulo, reordenar,
   guardarConfig, modulosActivos, todosLosModulos, estadoPantalla,
-  retiradosQueVuelven, restaurarRetirados,
+  retiradosQueVuelven, restaurarRetirados, moduloEH, categoriaEH,
 } from '../src/lib/estiloDeHombre.js';
 import {
   modulosAgrupados, modulosSinCategoria, buscarModulos, resultadosAgrupados,
@@ -49,11 +49,107 @@ const base = () => configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['skincare', 'pel
 
 /* ── 1 · AGRUPACIÓN (apartado 3) ─────────────────────────────────────────── */
 
-ok(CATEGORIAS_EH.length === 7, 'Las siete categorías del enunciado');
+/* 🔓 Fase B de Imagen personal (2026-11-01) — esto exigía las siete categorías de
+   la F2 en su orden. Josué decidió las seis tarjetas de la portada, que son ESTAS
+   MISMAS categorías (las que llevan `portada`), así que se da la vuelta: las siete
+   de siempre siguen todas en el catálogo —ninguna se borra— y delante van las
+   cuatro nuevas, en el orden de la portada. */
+ok(CATEGORIAS_EH.length === 11, 'Fase B: las siete de la F2 siguen y se suman cuatro (once)');
 eq(CATEGORIAS_EH.map((c) => c.id),
-  ['estilo', 'cuidado', 'fisico', 'salud', 'bienestar', 'conocimiento', 'compras'],
-  'En el orden del enunciado');
+  ['estilo', 'cuidado', 'pelo', 'fragancia', 'accesorios', 'funcionamiento',
+    'fisico', 'salud', 'bienestar', 'conocimiento', 'compras'],
+  'Fase B: primero las seis de la portada, en su orden, y después las de siempre');
+ok(['estilo', 'cuidado', 'fisico', 'salud', 'bienestar', 'conocimiento', 'compras']
+  .every((id) => CATEGORIAS_EH.some((c) => c.id === id)),
+'⚠️ Fase B: ninguna de las siete categorías de la F2 desaparece del catálogo');
 ok(CATEGORIAS_EH.every((c) => c.nombre && c.icono), 'Cada categoría con nombre e icono');
+
+/* ── 1b · 🔓 FASE B — LAS SEIS TARJETAS SON CATEGORÍAS (una sola fuente) ─────
+   La portada no tiene una lista propia: lee `CATEGORIAS_EH` (las que llevan
+   `portada`) y la `categoria` de cada línea de `MODULOS_EH`. */
+{
+  const portada = CATEGORIAS_EH.filter((c) => c.portada).sort((a, b) => a.portada - b.portada);
+  eq(portada.map((c) => c.nombre), ['Ropa', 'Cuidado', 'Pelo', 'Fragancia', 'Accesorios', 'Funcionamiento'],
+    'Fase B: las seis tarjetas, en el orden que decidió Josué');
+  eq(portada.map((c) => c.portada), [1, 2, 3, 4, 5, 6], 'Fase B: con su posición, de la 1 a la 6, sin huecos');
+  eq(portada.map((c) => c.id), ['estilo', 'cuidado', 'pelo', 'fragancia', 'accesorios', 'funcionamiento'],
+    'Fase B: Ropa es la categoría `estilo` de siempre, renombrada solo por fuera');
+  const de = (cat) => MODULOS_EH.filter((m) => m.categoria === cat).map((m) => m.id).sort();
+  eq(de('estilo'), ['estilo'], 'Fase B: Ropa → Estilo y armario');
+  eq(de('cuidado'), ['barba', 'cuerpo', 'higiene', 'skincare', 'sonrisa'],
+    'Fase B: Cuidado → Higiene, Skincare, Barba, Sonrisa y Cuidado corporal');
+  eq(de('pelo'), ['pelo'], 'Fase B: Pelo → Pelo');
+  eq(de('fragancia'), ['perfumes'], 'Fase B: Fragancia → Perfumes');
+  eq(de('accesorios'), ['accesorios'], 'Fase B: Accesorios → Accesorios');
+  eq(de('funcionamiento'), ['educacion', 'gustos', 'productos', 'progreso'],
+    'Fase B: Funcionamiento → Mis gustos, Progreso, Educación y Productos');
+
+  /* Fitness, Sueño y Salud: fuera de las seis, por decisión de Josué, con su
+     categoría de siempre. Hábitos y rutinas tiene su acceso aparte. */
+  const deNoPortada = ['fitness', 'sueno', 'salud', 'habitos'];
+  ok(deNoPortada.every((id) => !categoriaEH(moduloEH(id).categoria).portada),
+    '⚠️ Fase B: Fitness, Sueño, Salud y Hábitos no son de ninguna tarjeta de la portada');
+  eq(deNoPortada.map((id) => moduloEH(id).categoria), ['fisico', 'fisico', 'salud', 'bienestar'],
+    'Fase B: …y conservan su categoría de siempre (no se les asigna una artificial)');
+
+  /* Conocimiento y Compras se quedan vacías y en el catálogo durante esta fase. */
+  eq(de('conocimiento'), [], 'Fase B: Conocimiento se queda vacía…');
+  eq(de('compras'), [], 'Fase B: …y Compras también');
+  const todos = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, IDS_EH);
+  ok(!modulosAgrupados(todos).some((g) => g.id === 'conocimiento' || g.id === 'compras'),
+    'Fase B: y una categoría vacía no se pinta en Gestionar apartados');
+
+  /* Los IDs no cambian, ni su orden. */
+  eq(IDS_EH, ['estilo', 'pelo', 'barba', 'skincare', 'higiene', 'cuerpo', 'sonrisa', 'perfumes', 'accesorios',
+    'fitness', 'gustos', 'sueno', 'salud', 'habitos', 'progreso', 'educacion', 'productos'],
+  '⚠️ Fase B: los diecisiete IDs, intactos y en el mismo orden');
+}
+
+/* ── 1c · 🔓 FASE B — FITNESS, SUEÑO Y SALUD SIGUEN EN GESTIONAR APARTADOS ──────
+   Activados o no, se pueden consultar, activar y desactivar allí. Gestionar
+   agrupa con `modulosAgrupados(estado)` sobre TODOS los apartados. */
+{
+  const ids = ['fitness', 'sueno', 'salud'];
+  const enGestionar = (estado) => modulosAgrupados(estado).flatMap((g) => g.modulos);
+  const apagados = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, ['skincare']);
+  const visto = enGestionar(apagados);
+  ok(ids.every((id) => visto.some((m) => m.id === id && !m.activo)),
+    'Fase B: desactivados, Fitness, Sueño y Salud salen en Gestionar apartados');
+  let encendidos = apagados;
+  ids.forEach((id) => { encendidos = alternarModulo(encendidos, id, true); });
+  ok(ids.every((id) => enGestionar(encendidos).some((m) => m.id === id && m.activo)),
+    'Fase B: se activan desde allí, y siguen saliendo');
+  let otraVez = encendidos;
+  ids.forEach((id) => { otraVez = alternarModulo(otraVez, id, false); });
+  ok(ids.every((id) => enGestionar(otraVez).some((m) => m.id === id && !m.activo)),
+    'Fase B: y se desactivan, sin desaparecer de la lista');
+  eq(modulosAgrupados(apagados).filter((g) => g.id === 'fisico' || g.id === 'salud').map((g) => g.nombre),
+    ['Físico', 'Salud'], 'Fase B: agrupados en «Físico» y «Salud», como antes');
+}
+
+/* ── 1d · 🔓 FASE B — NINGÚN DATO NI CONFIGURACIÓN SE TOCA ────────────────────
+   La categoría vive en el catálogo y nunca se guarda: lo guardado de cada
+   apartado (activo, oculto, orden, configuración y versión) sale igual. */
+{
+  const guardado = {
+    ...DEFAULT_ESTILO_HOMBRE,
+    configurado: true,
+    modulos: [
+      { id: 'pelo', activo: true, oculto: true, orden: 3, config: { pelo: { x: 1 } }, version: 1 },
+      { id: 'perfumes', activo: false, oculto: false, orden: 1, config: {}, version: 1 },
+      { id: 'estilo', activo: true, oculto: false, orden: 0,
+        config: { pantalla: { tamanos: { pelo: 'grande', perfumes: 'pequena' }, contenido: { pelo: ['a'] } } }, version: 1 },
+    ],
+  };
+  const n = normalizarEstiloHombre(guardado);
+  ok(n.modulos.every((m) => !('categoria' in m)), 'Fase B: la categoría no se guarda en ningún apartado');
+  eq(n.modulos.find((m) => m.id === 'pelo'),
+    { id: 'pelo', activo: true, oculto: true, orden: 3, config: { pelo: { x: 1 } }, version: 1 },
+    'Fase B: Pelo, oculto y con su configuración, sale exactamente como estaba');
+  eq(n.modulos.find((m) => m.id === 'estilo').config.pantalla.tamanos, { pelo: 'grande', perfumes: 'pequena' },
+    'Fase B: los tamaños guardados de las plaquitas siguen ahí, sin tocar');
+  eq(n.modulos.find((m) => m.id === 'perfumes').activo, false, 'Fase B: y un apartado apagado sigue apagado');
+}
 
 eq(modulosSinCategoria(), [], 'Ningún módulo del catálogo se queda sin categoría');
 
@@ -227,7 +323,9 @@ eq(fichaModulo(base(), 'inventado'), null, 'Un id que no existe devuelve null, n
    cambie) su pantalla la lista no se quede vieja en silencio. */
 {
   const vista = readFileSync(new URL('../src/views/EstiloHombreView.jsx', import.meta.url), 'utf8');
-  const ini = vista.indexOf('const abrirModulo = (id) => {');
+  /* 🔓 Fase B — `abrirModulo` acepta ahora una `zona` opcional (el acceso rápido
+     «Rutina facial»): se busca por el principio de la firma, y las ramas son las mismas. */
+  const ini = vista.search(/const abrirModulo = \(id(, zona = null)?\) => \{/);
   const fin = vista.indexOf('return undefined;', ini);
   ok(ini > 0 && fin > ini, 'Fase A: se encuentra `abrirModulo` en la vista');
   const bloque = vista.slice(ini, fin);
@@ -364,7 +462,12 @@ eq(despues.creadoEn, antes.creadoEn, 'Test E: y la fecha');
 
 const todosOn = configurarPrimeraVez(DEFAULT_ESTILO_HOMBRE, IDS_EH);
 eq(modulosActivos(todosOn).length, MODULOS_EH.length, 'Test H: los trece activos');
-eq(modulosAgrupados(todosOn).length, CATEGORIAS_EH.length, 'Test H: y las siete categorías con contenido');
+/* 🔓 Fase B — esto exigía que todas las categorías tuvieran contenido. Conocimiento y
+   Compras se quedan vacías en esta fase (decisión de Josué), y una categoría vacía
+   no se pinta: con todo activo salen todas las que tienen algún apartado. */
+eq(modulosAgrupados(todosOn).length, CATEGORIAS_EH.filter((c) => MODULOS_EH.some((m) => m.categoria === c.id)).length,
+  'Test H: y todas las categorías con contenido (Fase B: las vacías no se pintan)');
+eq(modulosAgrupados(todosOn).length, 9, 'Fase B: nueve con contenido (seis tarjetas, Físico, Salud y Personal)');
 ok(modulosAgrupados(todosOn).every((g) => g.activos === g.total), 'Test H: todas al completo');
 eq(estadoPantalla(todosOn), 'con_modulos', 'Test H: la pantalla sigue siendo la normal');
 eq(new Set(modulosActivos(todosOn).map((m) => m.orden)).size, MODULOS_EH.length,
@@ -376,7 +479,9 @@ const r = resumenGestion(base());
 eq(r.activos, 3, 'Cuenta los activos');
 eq(r.total, MODULOS_EH.length, 'Y el total');
 eq(r.disponibles, MODULOS_EH.length - 3, 'Y los que quedan');
-eq(r.categoriasTotales, 7, 'Y las categorías que existen');
+// 🔓 Fase B — eran siete; ahora once (las siete de siempre y las cuatro nuevas).
+eq(r.categoriasTotales, CATEGORIAS_EH.length, 'Y las categorías que existen');
+eq(r.categoriasTotales, 11, 'Fase B: once, sin perder ninguna de las siete');
 ok(r.puedeReordenar, 'Con tres se puede reordenar');
 ok(!resumenGestion(alternarModulo(alternarModulo(base(), 'pelo', false), 'fitness', false)).puedeReordenar,
   '⚠️ Con uno solo no se ofrece reordenar: dos flechas que no hacen nada');

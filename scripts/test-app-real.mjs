@@ -354,6 +354,50 @@ const pulsar = async (txt, tope = 6000) => {
   return clicado;
 };
 
+/* 🔓 Imagen personal · Fase B · B7 — LA PORTADA ES DE SEIS TARJETAS. Desde B3–B5
+   las plaquitas de Skincare, Barba, Sonrisa y Mis gustos viven dentro de su
+   categoría (Cuidado y Funcionamiento), y los bloques de Personalizar, Gestionar,
+   Mi progreso, Ideas, Descubrir y «Mi estilo personal», dentro de Funcionamiento.
+   `pulsar('Barba')` desde la portada ya no encuentra la plaquita —y si
+   encuentra «algo con Barba», no es lo que se quiere probar—, así que se entra
+   como entra él: tocando LA TARJETA y, dentro, el apartado. Las dos esperan a
+   que aparezca lo que tocan, como `pulsar`, y fallan si no está. */
+const tocarTarjetaEH = async (nombre, tope = 6000) => {
+  const hasta = Date.now() + tope;
+  let ok_ = false;
+  do {
+    ok_ = await page.evaluate((n) => {
+      const b = [...document.querySelectorAll('[data-portada-eh="tarjetas"] button')]
+        .find((x) => x.innerText.split('\n').map((l) => l.trim()).includes(n));
+      if (!b) return false;
+      b.click();
+      return true;
+    }, nombre);
+    if (!ok_) await page.waitForTimeout(200);
+  } while (!ok_ && Date.now() < hasta);
+  await page.waitForTimeout(600);
+  return ok_;
+};
+const tocarEnCategoriaEH = async (categoria, nombre, tope = 6000) => {
+  const hasta = Date.now() + tope;
+  let ok_ = false;
+  do {
+    ok_ = await page.evaluate(([c, n]) => {
+      const b = [...document.querySelectorAll(`[data-categoria-eh="${c}"] button`)]
+        .find((x) => x.innerText.split('\n').map((l) => l.replace(/^[⚪🟢⚫🟡]\s*/u, '').trim()).includes(n));
+      if (!b) return false;
+      b.click();
+      return true;
+    }, [categoria, nombre]);
+    if (!ok_) await page.waitForTimeout(200);
+  } while (!ok_ && Date.now() < hasta);
+  await page.waitForTimeout(600);
+  return ok_;
+};
+/** Imagen personal → la tarjeta de la categoría → el apartado. */
+const abrirApartadoEH = async (categoria, tarjeta, nombre) =>
+  (await tocarTarjetaEH(tarjeta)) && (await tocarEnCategoriaEH(categoria, nombre));
+
 /* 🐛 ⚠️ **Esperar un número de milisegundos no es esperar a que algo aparezca.**
    Las comprobaciones del primer uso (F40) fallaban en la pasada completa y
    pasaban al ejecutar este archivo solo: con las 9.671 pruebas de Node por
@@ -405,13 +449,19 @@ ok(/Josué/.test(inicio), 'Y se ve el Inicio de Josué');
 await pulsar('Bienestar');
 ok(await pulsar('Imagen personal'), 'Imagen personal se abre desde Bienestar (NAV F1: se mudó de área)');
 const eh = await ver();
-ok(/Pelo/.test(eh) && /Skincare/.test(eh),
+/* 🔓 B7 — la portada ya no escribe «Skincare»: está dentro de Cuidado. Lo que
+   demuestra que llega lo guardado (Pelo, Skincare, Barba, Sonrisa, Perfumes,
+   Accesorios y Mis gustos encendidos) es lo que pintan las tarjetas: Cuidado
+   cuenta SUS tres activos de cinco y Funcionamiento el suyo; con lo de por
+   defecto no habría ninguno. Y dentro de Cuidado tiene que estar Skincare. */
+ok(/Pelo/.test(eh) && /3 de 5 apartados activos/.test(eh) && /1 de 4 apartados activos/.test(eh)
+  && !/Sin activar/.test(eh.slice(eh.indexOf('Fragancia'), eh.indexOf('Fragancia') + 40)),
   '⚠️ LOS DATOS GUARDADOS LLEGAN: salen los módulos que había en Supabase, no los de por defecto');
 ok(!/Vamos a configurar|Empezar/.test(eh),
   'Y no se le vuelve a plantar el asistente de configuración, porque ya lo terminó');
 
 /* ── 3 · LAS FASES SE VEN Y SE TOCAN ───────────────────────────────────── */
-ok(await pulsar('Pelo'), 'La plaquita de Pelo abre su panel');
+ok(await tocarTarjetaEH('Pelo'), 'La tarjeta de Pelo abre su panel (B7: Pelo tiene su propia tarjeta)');
 const panel = await ver();
 ['Mi pelo', 'Mi rutina', 'Seguimiento', 'Recomendaciones', 'Productos', 'Peluquería']
   .forEach((p) => ok(panel.includes(p), `Se ve la plaquita "${p}"`));
@@ -442,7 +492,11 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-ok(await pulsar('Skincare'), 'Skincare se abre');
+/* 🔓 B7 — Skincare vive dentro de la tarjeta Cuidado (B4). */
+ok(await tocarTarjetaEH('Cuidado'), 'La tarjeta Cuidado se abre');
+ok(/Skincare/.test(await ver()) && /Barba/.test(await ver()) && /Sonrisa/.test(await ver()),
+  '⚠️ …y dentro están los tres apartados de Cuidado que había guardados (Skincare, Barba, Sonrisa)');
+ok(await tocarEnCategoriaEH('cuidado', 'Skincare'), 'Skincare se abre');
 const piel = await ver();
 ok(!/Configurar|Ahora no/.test(piel),
   '⚠️ Y sin volver a preguntarle el perfil, porque ya lo tenía guardado');
@@ -481,7 +535,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-ok(await pulsar('Barba'), 'Barba (EH F20) se abre desde Imagen personal');
+ok(await abrirApartadoEH('cuidado', 'Cuidado', 'Barba'), 'Barba (EH F20) se abre desde Imagen personal (B7: tarjeta Cuidado → Barba)');
 const barba = await ver();
 ok(/¿Quieres utilizar este apartado\?/.test(barba),
   '⚠️ Y pregunta si lo quiere usar: es 100 % opcional (apartado 1)');
@@ -539,7 +593,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-await pulsar('Barba');
+await abrirApartadoEH('cuidado', 'Cuidado', 'Barba');   // B7: tarjeta Cuidado → Barba
 const panelBarba = await ver();
 ok(/Mi barba/.test(panelBarba),
   '⚠️ RECARGA: Barba abre su panel con lo que se guardó antes, no la pantalla de entrada');
@@ -582,7 +636,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-ok(await pulsar('Sonrisa'), 'Sonrisa (EH F23) se abre desde Imagen personal');
+ok(await abrirApartadoEH('cuidado', 'Cuidado', 'Sonrisa'), 'Sonrisa (EH F23) se abre desde Imagen personal (B7: tarjeta Cuidado → Sonrisa)');
 const son = await ver();
 ok(/Higiene bucal/.test(son), 'Con su entrada');
 ok(/Ahora no/.test(son), 'Y su "Ahora no": es opcional');
@@ -628,7 +682,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-ok(await pulsar('Perfumes'), 'Perfumes (EH F24) se abre desde Imagen personal');
+ok(await tocarTarjetaEH('Fragancia'), 'Perfumes (EH F24) se abre desde Imagen personal (B7: tarjeta Fragancia)');
 ok(/¿Quieres utilizar este apartado\?/.test(await ver()), 'Y pregunta si lo quiere usar');
 
 ok(await pulsar('Sí, configurarlo'), 'Se puede configurar');
@@ -674,7 +728,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-await pulsar('Perfumes');
+await tocarTarjetaEH('Fragancia');   // B7: Perfumes es la tarjeta Fragancia
 const panelP2 = await ver();
 ok(/Recomendaciones/.test(panelP2), 'La plaquita de Recomendaciones (EH F25) ya funciona');
 ok(!/Llega en la fase 25/.test(panelP2), '⚠️ Y ya no dice que llega en la Fase 25: ha llegado');
@@ -701,7 +755,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-ok(await pulsar('Accesorios'), 'Accesorios (EH F26) se abre desde Imagen personal');
+ok(await tocarTarjetaEH('Accesorios'), 'Accesorios (EH F26) se abre desde Imagen personal (B7: su tarjeta)');
 ok(/¿Quieres utilizar este apartado\?/.test(await ver()), 'Y pregunta si lo quiere usar');
 
 ok(await pulsar('Sí, configurarlo'), 'Se puede configurar');
@@ -757,7 +811,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-await pulsar('Accesorios');
+await tocarTarjetaEH('Accesorios');   // B7: su tarjeta
 await pulsar('Mis accesorios');
 await page.waitForTimeout(500);
 ok(/Casio negro/.test(await ver()), '⚠️ PERSISTENCIA: sigue ahí después de recargar');
@@ -767,7 +821,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-ok(await pulsar('Mis gustos'), 'Mis gustos (EH F27) se abre desde Imagen personal');
+ok(await abrirApartadoEH('funcionamiento', 'Funcionamiento', 'Mis gustos'), 'Mis gustos (EH F27) se abre desde Imagen personal (B7: tarjeta Funcionamiento → Mis gustos)');
 ok(/¿Quieres utilizar este apartado\?/.test(await ver()), 'Y pregunta si lo quiere usar');
 
 ok(await pulsar('Sí, configurarlo'), 'Se puede configurar');
@@ -805,7 +859,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-await pulsar('Mis gustos');
+await abrirApartadoEH('funcionamiento', 'Funcionamiento', 'Mis gustos');   // B7
 await pulsar('Quiero hacer');
 await page.waitForTimeout(500);
 ok(/Viajar a Londres/.test(await ver()), '⚠️ PERSISTENCIA: sigue ahí después de recargar');
@@ -815,7 +869,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-await pulsar('Mis gustos');
+await abrirApartadoEH('funcionamiento', 'Funcionamiento', 'Mis gustos');   // B7
 ok(/Experiencias/.test(await ver()), 'La plaquita 🌟 Experiencias (EH F28) está ahí');
 ok(await pulsar('Quiero hacer'), '"Quiero hacer" se abre');
 await page.waitForTimeout(400);
@@ -867,8 +921,15 @@ await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(500);
-const miEstilo = await ver();
-ok(/Mi estilo personal/.test(miEstilo), 'La tarjeta "Mi estilo" (EH F29) sale arriba');
+/* 🔓 B7 — «Mi estilo personal» se mudó a Funcionamiento (B5). Lo que se mira es
+   ESA tarjeta, desde su título hasta su última frase: Funcionamiento tiene más
+   bloques (Ideas, Descubrir…) y uno de ellos puede decir «Ropa». */
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
+const miEstiloTodo = await ver();
+const iMiEstilo = miEstiloTodo.indexOf('Mi estilo personal');
+const fMiEstilo = miEstiloTodo.indexOf('Solo se esconde este resumen', iMiEstilo);
+const miEstilo = iMiEstilo >= 0 && fMiEstilo > iMiEstilo ? miEstiloTodo.slice(iMiEstilo, fMiEstilo + 60) : '';
+ok(/Mi estilo personal/.test(miEstilo), 'La tarjeta "Mi estilo" (EH F29) sale en Funcionamiento');
 /* ⚠️ Los bloques del apartado 1, solo los que tienen módulos activos. */
 ['Cuidado', 'Fragancias', 'Accesorios', 'Gustos']
   .forEach((b) => ok(miEstilo.includes(b), `Se ve el bloque "${b}"`));
@@ -890,15 +951,20 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 guardado.length = 0;
 ok(await pulsar('⚙️ Ocultar "Mi estilo"'), 'Se puede ocultar');
 await page.waitForTimeout(1200);
 const trasOcultar = await ver();
 ok(!/Mi estilo personal/.test(trasOcultar), 'Y desaparece');
 ok(/Volver a enseñar/.test(trasOcultar), 'Con su botón para traerla de vuelta');
-ok(/Perfumes/.test(trasOcultar),
-  '⚠️ Y LOS MÓDULOS SIGUEN AHÍ: ocultar el resumen no apaga nada (apartado 10)');
 const escMiEstilo = guardado.filter((g) => g && g.key === 'estiloHombre');
+/* 🔓 B7 — decía «sigue saliendo "Perfumes"», que en la portada era una plaquita.
+   Lo que el apartado 10 protege es que NINGÚN apartado se apague: se mira en lo
+   guardado (los siete siguen encendidos) y en Funcionamiento (Mis gustos sigue). */
+ok(/Mis gustos/.test(trasOcultar)
+  && (escMiEstilo.at(-1)?.value?.modulos || []).filter((m) => m.activo).length === 7,
+  '⚠️ Y LOS MÓDULOS SIGUEN AHÍ: ocultar el resumen no apaga nada (apartado 10)');
 ok(escMiEstilo.length > 0, '⚠️ PERSISTENCIA: se guarda que la ocultó');
 const cfgEstilo = escMiEstilo.at(-1)?.value?.modulos?.find((m) => m.id === 'estilo')?.config || {};
 ok(cfgEstilo.miEstilo?.oculto === true, 'Y es lo ÚNICO que esta fase guarda: un booleano');
@@ -918,10 +984,19 @@ const portada = await ver();
 ok(/Imagen personal/.test(portada), 'La cabecera está');
 ok(/Tu cuidado, estilo y preferencias\./.test(portada), 'Con su frase, tal cual (apartado 1)');
 // Apartado 3 — las plaquitas, agrupadas.
-ok(/Cuidado/.test(portada), 'Se ve la sección "Cuidado"');
-ok(/Estilo\b/.test(portada), 'y la sección "Estilo"');
-ok(/Personal/.test(portada), 'y "Personal", que es como Josué llama al tercero');
-ok(/⚪/.test(portada), 'Con la marca de lo que está sin configurar (apartado 5)');
+/* 🔓 B7 — desde la Fase B (B3) la portada agrupa en SEIS TARJETAS (Ropa, Cuidado,
+   Pelo, Fragancia, Accesorios y Funcionamiento) y Hábitos y rutinas aparte: las
+   secciones de la F30 («Estilo» es ahora Ropa; «Personal», Hábitos y rutinas).
+   Las plaquitas, con su marca de estado, viven dentro de cada categoría. */
+const tarjetasPortada = await page.$$eval('[data-portada-eh="tarjetas"] > *', (xs) => xs.map((x) => x.innerText.split('\n').map((l) => l.trim()).filter(Boolean)[1] || ''));
+ok(JSON.stringify(tarjetasPortada) === JSON.stringify(['Ropa', 'Cuidado', 'Pelo', 'Fragancia', 'Accesorios', 'Funcionamiento']),
+  `Se ven las seis tarjetas, en su orden (${JSON.stringify(tarjetasPortada)})`);
+ok(/Hábitos y rutinas/.test(portada) && /Todavía no tiene pantalla propia/.test(portada),
+  'y Hábitos y rutinas aparte, diciendo que todavía no tiene pantalla propia');
+ok(await tocarTarjetaEH('Cuidado') && /⚪/.test(await ver()),
+  'Con la marca de lo que está sin configurar en las plaquitas de dentro (apartado 5)');
+await page.click('button[aria-label="Volver"]');
+await page.waitForTimeout(400);
 
 /* Apartado 9 — los accesos rápidos: nacen vacíos y los elige él. */
 ok(/Accesos rápidos/.test(portada), 'La zona de accesos rápidos se ofrece');
@@ -955,6 +1030,7 @@ await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(500);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 ok(await pulsar('⋮ Personalizar'), '⋮ Personalizar abre el modo edición (apartado 1)');
 await page.waitForTimeout(600);
 const personalizar = await ver();
@@ -990,6 +1066,7 @@ await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(500);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 await pulsar('⋮ Personalizar');
 await page.waitForTimeout(600);
 /* ⚠️ El texto "⬜ Grande" está SIEMPRE —es uno de los tres botones—, así que
@@ -1007,7 +1084,8 @@ ok(/Frecuencia de sugerencias/.test(await ver()),
 await pulsar('Listo');
 await page.waitForTimeout(600);
 const conIdeas = await ver();
-ok(/Ideas para ti/.test(conIdeas), '💡 La tarjeta de ideas está en la pantalla principal (apartado 1)');
+ok(/Ideas para ti/.test(conIdeas) && await page.locator('[data-categoria-eh="funcionamiento"]').count() === 1,
+  '💡 La tarjeta de ideas está en Funcionamiento (apartado 1; B5 la mudó de la portada)');
 ok(/Por qué aparece/.test(conIdeas), '⚠️ Y cada idea EXPLICA por qué aparece (apartado 8 · prueba 3)');
 ok(/Lo hemos pensado porque/.test(conIdeas), 'con una frase entera, hecha con sus datos');
 ok(/Podrías|Quizá te interese|Una opción sería/.test(conIdeas),
@@ -1032,6 +1110,7 @@ await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(600);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 ok(/Ideas para ti/.test(await ver()),
   '⚠️ PERSISTENCIA: tras recargar, las ideas siguen ahí (pruebas 9 y 11)');
 ok(await pulsar('👁️ Ocultar'), 'Y se pueden ocultar (apartado 1)');
@@ -1043,7 +1122,7 @@ ok(/Volver a ver las ideas/.test(await ver()),
    Lo que importa: que la tarjeta salga, que su lenguaje sea abierto, que
    guardar vaya a LA MISMA lista que las ideas, y que eso siga tras recargar. */
 const descubrirTxt = await ver();
-ok(/Descubrir/.test(descubrirTxt), '✨ Descubrir está en la pantalla principal (apartado 1)');
+ok(/Descubrir/.test(descubrirTxt), '✨ Descubrir está en Funcionamiento (apartado 1; B5 lo mudó de la portada)');
 ok(/Inspiración, no obligación/.test(descubrirTxt), 'con la regla del objetivo, literal');
 ok(/Podrías|Una idea podría ser|Si te gusta/.test(descubrirTxt),
   '⚠️ Y lenguaje abierto: nunca una tendencia como verdad absoluta (apartado 14)');
@@ -1070,6 +1149,7 @@ await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(600);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 ok(/Quitar de guardados/.test(await ver()),
   '⚠️ PERSISTENCIA: tras recargar, la tarjeta sigue guardada (prueba 12)');
 
@@ -1101,6 +1181,7 @@ await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(500);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 await pulsar('⚙️ Mis preferencias');
 await page.waitForTimeout(600);
 ok(await pulsar('🗑️ Eliminar datos de Imagen personal'), 'La opción avanzada abre su confirmación');
@@ -1121,8 +1202,9 @@ await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(700);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 const progreso = await ver();
-ok(/Mi progreso/.test(progreso), '📊 Mi progreso está en la pantalla principal (apartado 1)');
+ok(/Mi progreso/.test(progreso), '📊 Mi progreso está en Funcionamiento (apartado 1; B5 lo mudó de la portada)');
 ok(/Esta semana/.test(progreso), 'con el encabezado del apartado 4, literal');
 ok(/Todavía no hay suficientes datos/.test(progreso),
   '⚠️ Y sin registros NO enseña un cero: dice que no hay datos (apartado 10 · prueba 9)');
@@ -1147,6 +1229,7 @@ await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(700);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 ok(/Este mes/.test(await ver()), '⚠️ PERSISTENCIA: tras recargar sigue en el mes');
 ok(await pulsar('👁️ Ocultar'), 'y se puede ocultar (apartado 12 · prueba 7)');
 await page.waitForTimeout(1000);
@@ -1161,7 +1244,14 @@ await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(600);
-ok(/Perfumes/.test(await ver()), 'De partida, Perfumes sale en la portada');
+/* 🔓 B7 — ocultar quita un apartado de SU categoría (Cuidado o Funcionamiento): las
+   tarjetas de la portada son fijas y no se ocultan (decisión B). De partida,
+   Skincare está entre las plaquitas de Cuidado. */
+ok(await tocarTarjetaEH('Cuidado') && await page.locator('[data-categoria-eh="cuidado"] button', { hasText: 'Skincare' }).count() === 1,
+  'De partida, Skincare sale entre las plaquitas de Cuidado');
+await page.click('button[aria-label="Volver"]');
+await page.waitForTimeout(400);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 await pulsar('⋮ Personalizar');
 await page.waitForTimeout(600);
 ok(await pulsar('🧩 Gestionar apartados'),
@@ -1188,6 +1278,8 @@ const ocultoAlguno = modsGest.find((m) => m.oculto === true);
 ok(!!ocultoAlguno, 'con el módulo marcado como oculto');
 ok(ocultoAlguno && ocultoAlguno.activo === true,
   '⚠️ Y SIGUE ACTIVO: ocultar no es desactivar (apartado 3)');
+ok(ocultoAlguno && !['estilo', 'pelo', 'perfumes', 'accesorios'].includes(ocultoAlguno.id),
+  `🔓 B7 (decisión B) — el primer «Ocultar» es de un apartado de categoría, no de una tarjeta fija (${ocultoAlguno?.id})`);
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
@@ -1199,8 +1291,16 @@ const nombreOculto = ({
   estilo: 'Estilo y armario', pelo: 'Pelo', barba: 'Barba', skincare: 'Skincare',
   sonrisa: 'Sonrisa', perfumes: 'Perfumes', accesorios: 'Accesorios', gustos: 'Mis gustos',
 })[ocultoAlguno.id] || ocultoAlguno.id;
-ok(!new RegExp(`⚪ ${nombreOculto}|▫️ ${nombreOculto}`).test(await ver()),
-  `⚠️ PERSISTENCIA: tras recargar, ${nombreOculto} sigue fuera de la portada`);
+/* 🔓 B7 — se mira en SU categoría: ahí es donde estaba la plaquita. */
+const catOculto = ['gustos', 'progreso', 'educacion', 'productos'].includes(ocultoAlguno.id) ? 'funcionamiento' : 'cuidado';
+ok(await tocarTarjetaEH(catOculto === 'cuidado' ? 'Cuidado' : 'Funcionamiento'), `B7 — se abre ${catOculto}`);
+const enCatOculto = (await ver()).replace(/<!-- -->/g, '');
+ok(await page.locator(`[data-categoria-eh="${catOculto}"] button`, { hasText: nombreOculto }).count() === 0
+  && new RegExp(`Ocultos: [^\n]*${nombreOculto}`).test(enCatOculto),
+  `⚠️ PERSISTENCIA: tras recargar, ${nombreOculto} sigue fuera de las plaquitas (y se dice que está oculto)`);
+await page.click('button[aria-label="Volver"]');
+await page.waitForTimeout(400);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 await pulsar('⋮ Personalizar');
 await page.waitForTimeout(500);
 await pulsar('🧩 Gestionar apartados');
@@ -1260,6 +1360,7 @@ await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(600);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 await pulsar('⋮ Personalizar');
 await page.waitForTimeout(600);
 ok(await pulsar('🔔 Avisos de Imagen personal'),
@@ -1298,6 +1399,7 @@ await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(600);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 await pulsar('⋮ Personalizar');
 await page.waitForTimeout(500);
 await pulsar('🔔 Avisos de Imagen personal');
@@ -1326,6 +1428,7 @@ await page.waitForTimeout(2200);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(600);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 await pulsar('⋮ Personalizar');
 await page.waitForTimeout(600);
 ok(await pulsar('🔗 Cómo se conecta con el resto'),
@@ -1376,6 +1479,7 @@ await page.waitForTimeout(2200);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(600);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 await pulsar('⋮ Personalizar');
 await page.waitForTimeout(500);
 await pulsar('🔗 Cómo se conecta con el resto');
@@ -1498,7 +1602,7 @@ ok(!/undefined|NaN|\[object/.test(estados),
   '⚠️ Y la pantalla no habla en informático');
 
 /* Apartado 1 — un vacío con salida. */
-ok(await pulsar('Accesorios'), 'Se entra en Accesorios');
+ok(await tocarTarjetaEH('Accesorios'), 'Se entra en Accesorios (B7: su tarjeta)');
 await page.waitForTimeout(800);
 ok(await pulsar('Mis accesorios'), 'y en su lista, que está vacía');
 await page.waitForTimeout(700);
@@ -1527,6 +1631,7 @@ await page.waitForTimeout(2200);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(700);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 await pulsar('⋮ Personalizar');
 await page.waitForTimeout(600);
 await pulsar('🔔 Avisos de Imagen personal');
@@ -1587,6 +1692,7 @@ await page.waitForTimeout(2200);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(700);
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 await pulsar('⋮ Personalizar');
 await page.waitForTimeout(600);
 ok(await pulsar('🔒 Tus datos'), '🔒 Tus datos se abre desde ⋮ Personalizar');
@@ -1659,7 +1765,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-ok(await pulsar('Barba'), 'Fase A — Barba se abre desde la portada');
+ok(await abrirApartadoEH('cuidado', 'Cuidado', 'Barba'), 'Fase A — Barba se abre desde la portada (B7: tarjeta Cuidado → Barba)');
 const panel_fa = await esperarTexto(/Mi barba/);
 ok(/Marca los tuyos/.test(panel_fa), 'Fase A — la plaquita Productos dice lo que hay («Marca los tuyos»)');
 ok(/Dentro de Mi rutina/.test(panel_fa), 'Fase A — y la de Seguimiento dice dónde vive');
@@ -1676,7 +1782,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-await pulsar('Barba');
+await abrirApartadoEH('cuidado', 'Cuidado', 'Barba');   // B7
 await esperarTexto(/Mi barba/);
 ok(await pulsar('Dentro de Mi rutina'), 'Fase A — la plaquita Seguimiento se puede tocar');
 const rut_fa = await esperarTexto(/Crear rutina|Usar esta rutina/);
@@ -1692,7 +1798,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-await pulsar('Barba');
+await abrirApartadoEH('cuidado', 'Cuidado', 'Barba');   // B7
 await esperarTexto(/Mi barba/);
 await page.locator('[role="switch"][aria-label="Rutinas"]').first().click();
 const sinRut_fa = await esperarTexto(/Se apunta en Mi rutina/);
@@ -1711,7 +1817,8 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-ok(await pulsar('Gestionar apartados'), 'Fase A — Gestionar apartados se abre');
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
+ok(await pulsar('Gestionar apartados'), 'Fase A — Gestionar apartados se abre (B7: desde Funcionamiento)');
 ok(await pulsar('Información de Pelo'), 'Fase A — se abre la ficha de Pelo');
 const fichaPelo_fa = await esperarTexto(/Pelo/);
 ok(!/El contenido de este apartado llega/.test(fichaPelo_fa) && !/fases?\s+\d/i.test(fichaPelo_fa),
@@ -1720,6 +1827,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
+ok(await tocarTarjetaEH('Funcionamiento'), 'B7 — se entra por la tarjeta Funcionamiento');
 await pulsar('Gestionar apartados');
 ok(await pulsar('Información de Hábitos y rutinas'), 'Fase A — se abre la ficha de Hábitos y rutinas');
 const fichaHab_fa = await esperarTexto(/todavía no tiene pantalla propia/);
@@ -1732,7 +1840,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-ok(await pulsar('Cuidado corporal'), 'Fase A — Cuidado corporal se puede tocar desde la portada');
+ok(await abrirApartadoEH('cuidado', 'Cuidado', 'Cuidado corporal'), 'Fase A — Cuidado corporal se puede tocar (B7: tarjeta Cuidado → Cuidado corporal)');
 const cue_fa = await esperarTexto(/¿Qué quieres utilizar\?/);
 ok(/¿Qué quieres utilizar\?/.test(cue_fa) && /Cuidado específico/.test(cue_fa),
   '⚠️ Fase A — y abre su pantalla, con sus propias casillas (es uno de los diez destinos)');
@@ -1741,7 +1849,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2000);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-ok(await pulsar('Estilo y armario'), 'Fase A — Estilo y armario se puede tocar desde la portada');
+ok(await tocarTarjetaEH('Ropa'), 'Fase A — Estilo y armario se puede tocar desde la portada (B7: es la tarjeta Ropa)');
 const arm_fa = await esperarTexto(/Camisa de la Fase A/);
 ok(/Camisa de la Fase A/.test(arm_fa), '⚠️ Fase A — y lleva al Armario de la aplicación, con sus prendas (el décimo destino)');
 
@@ -1777,11 +1885,14 @@ await page.waitForTimeout(2200);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
 await page.waitForTimeout(900);
+/* 🔓 B7 — los dos viven dentro de la tarjeta Cuidado (B1–B4). */
+ok(await tocarTarjetaEH('Cuidado'), 'B7 — se abre la tarjeta Cuidado');
 const portadaCH = await ver();
-ok(/Higiene/.test(portadaCH) && /Cuidado corporal/.test(portadaCH),
-  '⚠️ Los DOS apartados están en la portada (C-25, respuesta 1)');
+ok(await page.locator('[data-categoria-eh="cuidado"] button', { hasText: 'Higiene' }).count() === 1
+  && await page.locator('[data-categoria-eh="cuidado"] button', { hasText: 'Cuidado corporal' }).count() === 1,
+  '⚠️ Los DOS apartados están, cada uno con su plaquita, dentro de Cuidado (C-25, respuesta 1)');
 
-ok(await pulsar('Higiene'), 'Se entra en Higiene');
+ok(await tocarEnCategoriaEH('cuidado', 'Higiene'), 'Se entra en Higiene');
 await page.waitForTimeout(800);
 const entrada = await ver();
 ok(/¿Qué quieres utilizar\?/.test(entrada), 'con su "¿Qué quieres utilizar?" (apartado 1)');
@@ -1997,14 +2108,263 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 await pulsar('Bienestar');
 await pulsar('Imagen personal');
-const simple = await esperarTexto(/Perfumes/);
+const simple = await esperarTexto(/Fragancia/);
 
-/* Apartado 6 — el usuario sencillo: dos apartados encendidos y nada más. */
-ok(/Perfumes/.test(simple) && /Skincare/.test(simple),
+/* Apartado 6 — el usuario sencillo: dos apartados encendidos y nada más.
+   🔓 B7 — en la portada de seis tarjetas, Perfumes es la tarjeta Fragancia
+   (encendida, sin «Sin activar») y Skincare cuenta en la de Cuidado («1 de 5») y
+   está dentro de ella. */
+const fraganciaSimple = simple.slice(simple.indexOf('Fragancia'), simple.indexOf('Fragancia') + 40);
+ok(/Fragancia/.test(simple) && !/Sin activar/.test(fraganciaSimple) && /1 de 5 apartados activos/.test(simple)
+  && await tocarTarjetaEH('Cuidado')
+  && await page.locator('[data-categoria-eh="cuidado"] button', { hasText: 'Skincare' }).count() === 1,
   '⚠️ Con SOLO dos apartados encendidos, la pantalla enseña los dos (apartado 6)');
+await page.click('button[aria-label="Volver"]');
+await page.waitForTimeout(400);
 ok(!/Peluquería|Sonrisa|Manos, uñas y pies/.test(simple),
   'y ni rastro de los apagados: no se cuela ninguno');
 ok(simple.length > 200, '⚠️ y no se siente vacía: hay pantalla de verdad, no un hueco');
+
+/* ── 34 · 🔓 FASE B · B7 — LA NAVEGACIÓN DE IMAGEN PERSONAL, ENTERA ─────────
+   La portada de seis tarjetas (B3), las categorías (B4), Funcionamiento con sus
+   bloques (B5), las decisiones A y B y los recorridos de la F51 (B6), en los siete
+   tamaños de pantalla de la matriz (`DISPOSITIVOS_DE_PRUEBA`, la que ya usa
+   Fitness: no se escribe otra) y con «Reducir movimiento». Cada sección prepara su
+   estado y devuelve el de antes al acabar. */
+const ehAntes_b7 = almacen.estiloHombre;
+const erroresAntes_b7 = errores.length;
+almacen.estiloHombre = {
+  configurado: true,
+  asistente: { paso: 4, estado: 'terminado', seleccion: ['pelo', 'skincare', 'barba', 'perfumes', 'gustos', 'habitos'] },
+  modulos: [
+    { id: 'pelo', activo: true, orden: 0, config: {} },
+    { id: 'skincare', activo: true, orden: 1, config: { necesidadesPiel: 'hidratacion', complejidadPiel: 'basico' } },
+    { id: 'barba', activo: true, orden: 2, config: { barba: { elegido: true, partes: {
+      barba: true, afeitado: false, perfilado: false, cuidadoPiel: false, productos: true, seguimiento: true, rutinas: true,
+    } } } },
+    // Ya configurado: los recorridos miden el uso de cada día, no la primera vez (F51).
+    { id: 'perfumes', activo: true, orden: 3, config: { perfumes: { configurado: true, perfumes: [{ id: 'pf_b7', nombre: 'Perfume B7' }] } } },
+    { id: 'gustos', activo: true, orden: 4, config: {} },
+    { id: 'habitos', activo: true, orden: 5, config: {} },
+  ],
+  datos: {}, retirados: [],
+};
+const aImagen_b7 = async () => (await pulsar('Bienestar')) && (await pulsar('Imagen personal'));
+const volver_b7 = async () => {
+  const hecho = await page.evaluate(() => {
+    const b = [...document.querySelectorAll('button[aria-label="Volver"]')].find((x) => !x.closest('[inert], [data-capa-saliendo]'));
+    if (!b) return false;
+    b.click();
+    return true;
+  });
+  await page.waitForTimeout(500);
+  return hecho;
+};
+const desborde_b7 = () => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+const quienSeSale_b7 = () => page.evaluate(() => {
+  const w = window.innerWidth;
+  const fuera = [...document.querySelectorAll('body *')]
+    .filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.right > w + 1; })
+    .filter((el) => ![...el.children].some((c) => c.getBoundingClientRect().right > w + 1));
+  const el = fuera[0];
+  return el ? `<${el.tagName.toLowerCase()}> «${(el.innerText || el.getAttribute('aria-label') || '').trim().slice(0, 30)}» hasta ${Math.round(el.getBoundingClientRect().right)} px` : '';
+});
+
+/* 1 · Los siete tamaños: portada, Cuidado, un apartado, Funcionamiento,
+   Personalizar y Gestionar apartados, sin salirse de lado; la portada en 2 × 3. */
+const dispositivos_b7 = await page.evaluate(async () => (await import('/src/lib/movilFitness.js')).DISPOSITIVOS_DE_PRUEBA);
+ok(Array.isArray(dispositivos_b7) && dispositivos_b7.map((d) => d.ancho).join() === '320,375,393,430,667,768,1280',
+  `B7 — la matriz de tamaños es la de la aplicación: 320, 375, 393, 430, horizontal, iPad y escritorio (${dispositivos_b7.map((d) => d.ancho).join(', ')})`);
+for (const d of dispositivos_b7) {
+  await page.setViewportSize({ width: d.ancho, height: d.alto });
+  await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1200);
+  const problemas = [];
+  const medir = async (nombre) => { const x = await desborde_b7(); if (x > 1) problemas.push(`${nombre}: +${x} px ${await quienSeSale_b7()}`); };
+  if (!(await aImagen_b7())) problemas.push('no se llega a Imagen personal');
+  const rejilla = await page.evaluate(() => {
+    const g = document.querySelector('[data-portada-eh="tarjetas"]');
+    if (!g) return null;
+    const hijos = [...g.children].map((c) => c.getBoundingClientRect());
+    const filas = [...new Set(hijos.map((r) => Math.round(r.top)))].length;
+    const altos = hijos.map((r) => Math.round(r.height));
+    const hab = [...document.querySelectorAll('[role="group"]')].find((x) => /Hábitos y rutinas/.test(x.innerText));
+    const rh = hab && hab.getBoundingClientRect();
+    const rg = g.getBoundingClientRect();
+    return {
+      columnas: getComputedStyle(g).gridTemplateColumns.split(' ').length, n: hijos.length, filas,
+      mismoAlto: Math.max(...altos) - Math.min(...altos) <= 1,
+      habitosDebajo: !!rh && rh.top >= rg.bottom - 1, habitosAncho: !!rh && Math.abs(rh.width - rg.width) <= 2,
+    };
+  });
+  if (!rejilla || rejilla.columnas !== 2 || rejilla.n !== 6 || rejilla.filas !== 3 || !rejilla.mismoAlto) problemas.push(`rejilla ${JSON.stringify(rejilla)}`);
+  if (rejilla && !(rejilla.habitosDebajo && rejilla.habitosAncho)) problemas.push(`Hábitos ${JSON.stringify(rejilla)}`);
+  await medir('portada');
+  if (!(await tocarTarjetaEH('Cuidado'))) problemas.push('Cuidado no se abre'); else await medir('Cuidado');
+  if (!(await tocarEnCategoriaEH('cuidado', 'Barba'))) problemas.push('Barba no se abre'); else await medir('Barba');
+  await volver_b7(); await volver_b7();
+  if (!(await page.locator('[data-portada-eh="tarjetas"]').count())) problemas.push('volver no lleva a la portada');
+  if (!(await tocarTarjetaEH('Funcionamiento'))) problemas.push('Funcionamiento no se abre'); else await medir('Funcionamiento');
+  if (!(await pulsar('⋮ Personalizar'))) problemas.push('Personalizar no se abre'); else await medir('Personalizar');
+  await pulsar('Listo');
+  if (!(await page.locator('[data-categoria-eh="funcionamiento"]').count())) problemas.push('Listo no vuelve a Funcionamiento');
+  if (!(await pulsar('Gestionar apartados'))) problemas.push('Gestionar no se abre'); else await medir('Gestionar apartados');
+  await volver_b7();
+  if (!(await page.locator('[data-categoria-eh="funcionamiento"]').count())) problemas.push('cerrar Gestionar no vuelve a Funcionamiento');
+  ok(problemas.length === 0,
+    `B7 — ${d.nombre} (${d.ancho} × ${d.alto}): seis tarjetas en 2 × 3 del mismo alto, Hábitos debajo y a lo ancho, y seis pantallas sin salirse de lado${problemas.length ? ` — ${problemas.join('; ')}` : ''}`);
+}
+await page.setViewportSize({ width: 1280, height: 720 });
+
+/* 2 · Los recorridos de la F51, contados pulsando: cada toque es un clic. */
+const f51_b7 = await page.evaluate(async () => {
+  const m = await import('/src/lib/experienciaReal.js');
+  return Object.fromEntries(['crear_recordatorio', 'marcar_favorito', 'abrir_rutina'].map((id) => [id, m.toquesDe(id)]));
+});
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+await aImagen_b7();
+// Preparación (una sola vez, no es del uso diario): la primera rutina de Barba.
+await abrirApartadoEH('cuidado', 'Cuidado', 'Barba');
+await pulsar('Mi rutina');
+await pulsar('Usar esta rutina');
+await page.waitForTimeout(800);
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+await aImagen_b7();
+guardado.length = 0;
+let toques_b7 = 0;
+const toca_b7 = async (accion) => { if (await accion()) { toques_b7 += 1; return true; } return false; };
+await toca_b7(() => tocarTarjetaEH('Cuidado'));
+await toca_b7(() => tocarEnCategoriaEH('cuidado', 'Barba'));
+await toca_b7(() => pulsar('Mi rutina'));
+await toca_b7(() => pulsar('Recordármelo'));
+await page.waitForTimeout(800);
+const conAviso_b7 = (guardado.filter((g) => g && g.key === 'estiloHombre').at(-1)?.value?.modulos || [])
+  .find((m) => m.id === 'barba')?.config?.rutinas?.rutinas || [];
+ok(toques_b7 === 4 && f51_b7.crear_recordatorio === 4 && /Con recordatorio/.test(await ver())
+  && conAviso_b7.some((r) => r.recordatorio === true),
+  `B7 — recordatorio en ${toques_b7} toques (Cuidado → Barba → Mi rutina → Recordármelo), los ${f51_b7.crear_recordatorio} de la F51, y se guarda encendido`);
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+await aImagen_b7();
+guardado.length = 0;
+toques_b7 = 0;
+await toca_b7(() => tocarTarjetaEH('Fragancia'));
+await toca_b7(() => pulsar('Mi colección'));
+await toca_b7(() => pulsar('Favorito Perfume B7'));
+await page.waitForTimeout(800);
+const fav_b7 = (guardado.filter((g) => g && g.key === 'estiloHombre').at(-1)?.value?.modulos || [])
+  .find((m) => m.id === 'perfumes')?.config?.perfumes?.perfumes || [];
+ok(toques_b7 === 3 && f51_b7.marcar_favorito === 3 && fav_b7.some((p) => p.id === 'pf_b7' && p.favorito === true),
+  `B7 — favorito en ${toques_b7} toques (Fragancia → Mi colección → Favorito), los ${f51_b7.marcar_favorito} de la F51, y se guarda`);
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+await aImagen_b7();
+toques_b7 = 0;
+await toca_b7(() => tocarTarjetaEH('Cuidado'));
+await toca_b7(() => tocarEnCategoriaEH('cuidado', 'Skincare'));
+await toca_b7(() => pulsar('Mi rutina'));
+ok(toques_b7 === 3 && f51_b7.abrir_rutina === 3 && /Crea tu primera rutina|Usar esta rutina|Mi rutina/.test(await ver()),
+  `B7 — rutina facial en ${toques_b7} toques (Cuidado → Skincare → Mi rutina), los ${f51_b7.abrir_rutina} de la F51`);
+
+/* 3 · Activar desde la categoría, desactivar desde Gestionar, una tarjeta apagada
+   (F41) y la decisión B: una tarjeta fija no ofrece «Ocultar». */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+await aImagen_b7();
+await tocarTarjetaEH('Cuidado');
+guardado.length = 0;
+ok(await pulsar('Activar Sonrisa'), 'B7 — en Cuidado, «Activar» un apartado apagado (decisión 6)');
+await page.waitForTimeout(800);
+const trasActivar_b7 = (guardado.filter((g) => g && g.key === 'estiloHombre').at(-1)?.value?.modulos || []).find((m) => m.id === 'sonrisa');
+ok(trasActivar_b7?.activo === true && await page.locator('[data-categoria-eh="cuidado"] button', { hasText: 'Sonrisa' }).count() === 1
+  && /Activado/.test(await ver()),
+  'B7 — …se guarda activado, pasa a plaquita y lo confirma');
+await volver_b7();
+await tocarTarjetaEH('Funcionamiento');
+await pulsar('Gestionar apartados');
+guardado.length = 0;
+await page.locator('[role="switch"][aria-label="Sonrisa"]').first().click();
+await page.waitForTimeout(800);
+const trasApagar_b7 = (guardado.filter((g) => g && g.key === 'estiloHombre').at(-1)?.value?.modulos || []).find((m) => m.id === 'sonrisa');
+ok(trasApagar_b7?.activo === false && JSON.stringify(trasApagar_b7?.config) === JSON.stringify(trasActivar_b7?.config),
+  'B7 — desactivar desde Gestionar apartados lo apaga y NO borra su configuración');
+await volver_b7(); await volver_b7();
+await tocarTarjetaEH('Cuidado');
+ok(await page.locator('button[aria-label="Activar Sonrisa"]').count() === 1, 'B7 — …y en Cuidado vuelve a «Sin activar»');
+await volver_b7();
+const accesorios_b7 = await page.evaluate(() => [...document.querySelectorAll('[data-portada-eh="tarjetas"] button')]
+  .find((b) => b.innerText.split('\n').map((l) => l.trim()).includes('Accesorios'))?.innerText || '');
+ok(/Sin activar/.test(accesorios_b7), 'B7 — una tarjeta fija con su apartado apagado lo dice («Sin activar») y no se atenúa');
+await tocarTarjetaEH('Accesorios');
+ok(/desactivad/i.test(await ver()) && await page.locator('button', { hasText: /Activar/ }).count() >= 1,
+  'B7 — …y al tocarla, la pantalla de la F41 ofrece activarlo');
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+await aImagen_b7();
+await tocarTarjetaEH('Funcionamiento');
+await pulsar('⋮ Personalizar');
+await pulsar('🧩 Gestionar apartados');
+ok(await page.locator('[data-sin-ocultar="pelo"], [data-sin-ocultar="perfumes"]').count() === 2
+  && await page.locator('button', { hasText: '👁️ Ocultar' }).count() >= 3,
+  'B7 (decisión B) — Pelo y Perfumes, con tarjeta fija, no ofrecen «Ocultar»; Skincare, Barba y Mis gustos sí');
+
+/* 4 · Hábitos y accesos rápidos. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+await aImagen_b7();
+const habitos_b7 = await page.evaluate(() => {
+  const g = [...document.querySelectorAll('[role="group"]')].find((x) => /Hábitos y rutinas/.test(x.innerText));
+  return g ? { texto: g.innerText, boton: !!g.closest('button') || !!g.querySelector('button') } : null;
+});
+ok(habitos_b7 && /Todavía no tiene pantalla propia/.test(habitos_b7.texto) && habitos_b7.boton === false,
+  'B7 — Hábitos y rutinas: visible, honesto y sin botón (decisión 4)');
+await pulsar('🪒 Afeitarme');
+await page.waitForTimeout(600);
+const accesos_b7 = await page.evaluate(() => {
+  const g = document.querySelector('[data-portada-eh="tarjetas"]');
+  const a = [...document.querySelectorAll('button')].find((b) => b.innerText.trim() === '🪒 Afeitarme');
+  return g && a ? a.getBoundingClientRect().top > g.getBoundingClientRect().bottom : false;
+});
+ok(accesos_b7, 'B7 — los accesos rápidos están en la portada, debajo de las tarjetas (decisión 7)');
+/* 🔓 Corrección posterior a B7 — el acceso «🧴 Rutina facial» abre la rutina de
+   Skincare directamente: un toque, y volver deja en el panel de Skincare. Se mira
+   el título de la pantalla de rutinas (fuera de un botón: la plaquita del panel se
+   llama igual) y se cuentan los clics. */
+await pulsar('🧴 Rutina facial');   // elegirlo entre los disponibles (una vez)
+await page.waitForTimeout(600);
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+await aImagen_b7();
+toques_b7 = 0;
+await toca_b7(() => pulsar('🧴 Rutina facial'));
+const enRutinaPiel_b7 = await page.evaluate(() => [...document.querySelectorAll('p')]
+  .some((x) => x.innerText.trim() === '🧴 Mi rutina' && !x.closest('button')));
+ok(toques_b7 === 1 && enRutinaPiel_b7,
+  `Acceso rápido — «🧴 Rutina facial» abre la rutina facial en ${toques_b7} toque (no la pantalla general de Skincare)`);
+await volver_b7();
+ok(/Mi piel/.test(await ver()) && await page.locator('button', { hasText: 'Mi rutina' }).count() >= 1,
+  'Acceso rápido — …y volver deja en el panel de Skincare');
+
+/* 5 · Con «Reducir movimiento» del sistema: se navega igual y nada se desplaza. */
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(1200);
+await aImagen_b7();
+const reducido_b7 = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--motion-dist-small').trim());
+const navReducida_b7 = (await tocarTarjetaEH('Cuidado'))
+  && (await page.locator('[data-categoria-eh="cuidado"]').count()) === 1
+  && (await volver_b7()) && (await tocarTarjetaEH('Funcionamiento'))
+  && (await page.locator('[data-categoria-eh="funcionamiento"]').count()) === 1;
+ok(navReducida_b7 && reducido_b7 === '0px',
+  `B7 — con «Reducir movimiento», portada → Cuidado → portada → Funcionamiento funciona y sin desplazamientos (${reducido_b7})`);
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+/* 6 · La consola, limpia en toda la sección. */
+ok(errores.length === erroresAntes_b7,
+  `B7 — ni un error de JavaScript en toda la sección${errores.length > erroresAntes_b7 ? `: ${errores.slice(erroresAntes_b7).join(' | ').slice(0, 300)}` : ''}`);
+almacen.estiloHombre = ehAntes_b7;
 
 /* ===========================================================================
    ENTREGA 3 · FASE 7 — LA AGENDA DE UN DÍA
