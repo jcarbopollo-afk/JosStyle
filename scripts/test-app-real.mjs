@@ -513,8 +513,10 @@ ok(/Mi barba/.test(panelB), '⚠️ Y llega a su panel: el usuario VE que ha pas
 /* ⚠️ Solo marcó "Barba", así que Productos y Seguimiento no salen; lo que sí
    sale es la rutina, porque su interruptor es propio (F21, apartado 16). */
 ok(/Mi rutina/.test(panelB), '⚠️ Y la rutina está ahí aunque solo gestione la barba (EH F21)');
-ok(!/Llega en la fase/.test(panelB) || /Llega en la fase 2/.test(panelB),
-  'Regla 8: y si algo no funciona todavía, dice en qué fase llega');
+/* 🔓 Fase A de Imagen personal — esto TOLERABA «Llega en la fase 2…» (las plaquitas
+   de Barba lo decían con la F21 ya hecha). Se da la vuelta: no puede salir. */
+ok(!/Llega en la fase/.test(panelB),
+  '⚠️ Fase A: ninguna plaquita de Barba dice «Llega en la fase…»');
 
 ok(await pulsar('Mi barba'), 'El perfil se abre');
 const perfilB = await ver();
@@ -1624,6 +1626,135 @@ ok(!/Perfume Del Primero/.test(fuera),
   '🚨 Y NO QUEDA NADA suyo en la pantalla (apartados 3 y 15)');
 ok(!/Imagen personal/.test(fuera),
   'ni se puede llegar a sus apartados');
+
+/* ── 28b · 🔓 FASE A DE IMAGEN PERSONAL (2026-10-31) ───────────────────────
+   Las plaquitas de Barba que decían «Llega en la fase 21» llevan a su pantalla,
+   la ficha de un apartado no promete una fase ya llegada, y los diez apartados
+   con destino abren de verdad lo que tienen detrás. Se prepara el estado aquí y
+   se devuelve lo que había al acabar: la sección 29 prepara el suyo. */
+const ehAntes_fa = almacen.estiloHombre;
+const armarioAntes_fa = almacen.armario;
+almacen.armario = {
+  prendas: [
+    { id: 'pr_fa', nombre: 'Camisa de la Fase A', categoria: 'camisas', color: 'blanco', estado: 'disponible', favorita: false, creadaEn: '2026-09-01T10:00:00.000Z' },
+  ],
+  outfits: [], usos: [],
+};
+almacen.estiloHombre = {
+  configurado: true,
+  asistente: { paso: 4, estado: 'terminado', seleccion: ['estilo', 'barba', 'cuerpo'] },
+  modulos: [
+    { id: 'estilo', activo: true, orden: 0, config: {} },
+    { id: 'barba', activo: true, orden: 1, config: { barba: { elegido: true, partes: {
+      barba: true, afeitado: false, perfilado: false, cuidadoPiel: false, productos: true, seguimiento: true, rutinas: true,
+    } } } },
+    { id: 'cuerpo', activo: true, orden: 2, config: {} },
+    { id: 'habitos', activo: true, orden: 3, config: {} },
+  ],
+  datos: {}, retirados: [],
+};
+
+/* 1 · Barba: Productos y Seguimiento llevan a algún sitio. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Bienestar');
+await pulsar('Imagen personal');
+ok(await pulsar('Barba'), 'Fase A — Barba se abre desde la portada');
+const panel_fa = await esperarTexto(/Mi barba/);
+ok(/Marca los tuyos/.test(panel_fa), 'Fase A — la plaquita Productos dice lo que hay («Marca los tuyos»)');
+ok(/Dentro de Mi rutina/.test(panel_fa), 'Fase A — y la de Seguimiento dice dónde vive');
+ok(!/Llega en la fase/.test(panel_fa) && !/fases?\s+\d/i.test(panel_fa),
+  '⚠️ Fase A — el panel de Barba ya no habla de fases');
+ok(await pulsar('Marca los tuyos'), 'Fase A — la plaquita Productos se puede tocar');
+const prod_fa = await esperarTexto(/Mis productos/);
+ok(/🛒 Mis productos/.test(prod_fa) && /Son los que ya tienes registrados en otros apartados/.test(prod_fa),
+  '⚠️ Fase A — y abre «Mis productos», la pantalla de la F20 que no tenía puerta');
+ok(/Todavía no has registrado ningún producto/.test(prod_fa),
+  'Fase A — sin productos en Skincare ni en Pelo, lo dice con una frase (no un catálogo inventado)');
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Bienestar');
+await pulsar('Imagen personal');
+await pulsar('Barba');
+await esperarTexto(/Mi barba/);
+ok(await pulsar('Dentro de Mi rutina'), 'Fase A — la plaquita Seguimiento se puede tocar');
+const rut_fa = await esperarTexto(/Crear rutina|Usar esta rutina/);
+ok(/Crear rutina|Usar esta rutina/.test(rut_fa), '⚠️ Fase A — y lleva a «Mi rutina», que es donde vive el seguimiento');
+guardado.length = 0;
+ok(await pulsar('Usar esta rutina'), 'Fase A — ahí se puede crear una rutina con la plantilla');
+const conRut_fa = await esperarTexto(/¿Cómo ha ido\?/);
+ok(/¿Cómo ha ido\?/.test(conRut_fa), '⚠️ Fase A — y con Seguimiento encendido aparece «¿Cómo ha ido?»: el destino es el bueno');
+ok(guardado.some((g) => g && g.key === 'estiloHombre'), 'Fase A — crear la rutina se guarda, como siempre');
+
+/* Con Rutinas apagada, Seguimiento no abre nada ni enciende nada: lo dice. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Bienestar');
+await pulsar('Imagen personal');
+await pulsar('Barba');
+await esperarTexto(/Mi barba/);
+await page.locator('[role="switch"][aria-label="Rutinas"]').first().click();
+const sinRut_fa = await esperarTexto(/Se apunta en Mi rutina/);
+ok(/Se apunta en Mi rutina: actívala aquí abajo/.test(sinRut_fa),
+  'Fase A — con Rutinas apagada, Seguimiento sigue a la vista y dice que se activa abajo (no se oculta)');
+const esBoton_fa = await page.evaluate(() => {
+  const el = [...document.querySelectorAll('*')].find((x) => x.childElementCount === 0 && /Se apunta en Mi rutina/.test(x.textContent || ''));
+  return el ? !!el.closest('button') : null;
+});
+ok(esBoton_fa === false, 'Fase A — y no es un botón: no abre nada con las rutinas apagadas');
+ok(await page.locator('[role="switch"][aria-label="Rutinas"]').first().getAttribute('aria-checked') === 'false',
+  'Fase A — y Rutinas sigue apagada: la plaquita no ha encendido nada por él');
+
+/* 2 · La ficha de un apartado en Gestionar apartados. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Bienestar');
+await pulsar('Imagen personal');
+ok(await pulsar('Gestionar apartados'), 'Fase A — Gestionar apartados se abre');
+ok(await pulsar('Información de Pelo'), 'Fase A — se abre la ficha de Pelo');
+const fichaPelo_fa = await esperarTexto(/Pelo/);
+ok(!/El contenido de este apartado llega/.test(fichaPelo_fa) && !/fases?\s+\d/i.test(fichaPelo_fa),
+  '⚠️ Fase A — la ficha de Pelo ya no dice «llega en la fase 12»');
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Bienestar');
+await pulsar('Imagen personal');
+await pulsar('Gestionar apartados');
+ok(await pulsar('Información de Hábitos y rutinas'), 'Fase A — se abre la ficha de Hábitos y rutinas');
+const fichaHab_fa = await esperarTexto(/todavía no tiene pantalla propia/);
+ok(/Este apartado todavía no tiene pantalla propia\. Puedes tenerlo activado: no se pierde nada\./.test(fichaHab_fa),
+  '⚠️ Fase A — un apartado sin pantalla lo dice, sin prometer una fase, y sigue en el catálogo');
+ok(!/fases?\s+\d/i.test(fichaHab_fa), 'Fase A — y ninguna ficha abierta habla de fases');
+
+/* 3 · Los dos destinos que no tocaba ningún recorrido: Cuidado corporal y Estilo y armario. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Bienestar');
+await pulsar('Imagen personal');
+ok(await pulsar('Cuidado corporal'), 'Fase A — Cuidado corporal se puede tocar desde la portada');
+const cue_fa = await esperarTexto(/¿Qué quieres utilizar\?/);
+ok(/¿Qué quieres utilizar\?/.test(cue_fa) && /Cuidado específico/.test(cue_fa),
+  '⚠️ Fase A — y abre su pantalla, con sus propias casillas (es uno de los diez destinos)');
+
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Bienestar');
+await pulsar('Imagen personal');
+ok(await pulsar('Estilo y armario'), 'Fase A — Estilo y armario se puede tocar desde la portada');
+const arm_fa = await esperarTexto(/Camisa de la Fase A/);
+ok(/Camisa de la Fase A/.test(arm_fa), '⚠️ Fase A — y lleva al Armario de la aplicación, con sus prendas (el décimo destino)');
+
+/* 4 · Un apartado sin pantalla sigue en la portada y no se ha ocultado. */
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2000);
+await pulsar('Bienestar');
+await pulsar('Imagen personal');
+ok(/Hábitos y rutinas/.test(await esperarTexto(/Hábitos y rutinas/)),
+  'Fase A — Hábitos y rutinas sigue en la portada: la fase A no oculta nada');
+
+almacen.estiloHombre = ehAntes_fa;
+almacen.armario = armarioAntes_fa;
 
 /* ── 29 · CUERPO E HIGIENE (EH F18) ───────────────────────────────────────
    La fase que estuvo bloqueada por C-25 desde v1.67.0. Lo que importa es

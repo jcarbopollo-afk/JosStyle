@@ -117,9 +117,14 @@ export const PLAQUITAS_BARBA = [
      *"si ha activado 📈 Seguimiento, **podrá registrar** ¿cómo ha ido?"*, y eso
      vive dentro de la rutina, junto a lo que acaba de hacer. Una pantalla
      separada para pulsar una carita sería un clic de más y un sitio más donde
-     mirar. Se queda en el catálogo con su fase para no romper referencias. */
-  { id: 'seguimiento', nombre: 'Seguimiento', icono: '📈', fase: 21, listo: false, dentroDe: 'rutina' },
-  { id: 'productos', nombre: 'Productos', icono: '🛒', fase: 21, listo: false },
+     mirar. Se queda en el catálogo con su fase para no romper referencias.
+     🔓 Fase A de Imagen personal (2026-10-31) — y la plaquita **lleva allí**: abre
+     «Mi rutina», que es donde vive (`dentroDe`). Antes decía «Llega en la fase 21»
+     con la F21 ya hecha, y no hacía nada. */
+  { id: 'seguimiento', nombre: 'Seguimiento', icono: '📈', fase: 21, listo: true, dentroDe: 'rutina' },
+  /* 🔓 Fase A — `ProductosBarbaEH` existe desde la F20 (apartado 12) y su ruta
+     estaba cableada; solo faltaba esta bandera. */
+  { id: 'productos', nombre: 'Productos', icono: '🛒', fase: 21, listo: true },
 ];
 
 /* ===========================================================================

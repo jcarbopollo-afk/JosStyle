@@ -207,7 +207,8 @@ export const PREGUNTAS_PELO = [
     id: 'frecuenciaCorte',
     titulo: '¿Cada cuánto sueles cortártelo?',
     apartado: 13,
-    ayuda: 'Se usará para el calendario de peluquería, que llega en la fase 11.',
+    // 🔓 Fase A de Imagen personal — el calendario de peluquería (F11) ya existe.
+    ayuda: 'Se usa para el calendario de peluquería.',
     opciones: [
       { id: 'semana', nombre: 'Cada semana' },
       { id: '2_semanas', nombre: 'Cada 2 semanas' },

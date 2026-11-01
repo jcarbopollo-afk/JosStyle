@@ -260,7 +260,22 @@ export function recomendados(estado, { max = MAX_RECOMENDADOS } = {}) {
 
    ⚠️ Por eso la ficha lleva `contenido: false` y **dice en qué fase llega**: es
    la regla 8 otra vez. Enseñar una ficha que sugiere que hay algo detrás cuando
-   no lo hay es exactamente el control decorativo que el proyecto prohíbe. */
+   no lo hay es exactamente el control decorativo que el proyecto prohíbe.
+
+   🔓 Fase A de Imagen personal (2026-10-31) — `contenido: false` estaba escrito
+   para los 17, así que la ficha de Pelo decía «llega en la fase 12» con Pelo
+   hecho desde la F7. Ahora `contenido` sale de `APARTADOS_CON_DESTINO`: los
+   apartados que, al tocarlos, abren una pantalla que funciona —nueve propias y
+   Estilo y armario, que lleva al Armario—. Comprobado uno a uno en la Fase A
+   hasta el componente que se pinta, no por tener una ruta. La prueba de
+   Gestionar apartados exige que esta lista coincida con las ramas de
+   `abrirModulo` y con `FUENTES_DE_ESTADO`, para que no se desincronicen. Los
+   siete sin pantalla siguen en el catálogo, activables, y lo dicen sin fase. */
+export const APARTADOS_CON_DESTINO = Object.freeze([
+  'estilo', 'pelo', 'skincare', 'barba', 'sonrisa', 'perfumes', 'accesorios', 'gustos', 'higiene', 'cuerpo',
+]);
+
+export const AVISO_SIN_PANTALLA = 'Este apartado todavía no tiene pantalla propia. Puedes tenerlo activado: no se pierde nada.';
 
 export function fichaModulo(estado, id) {
   const cat = moduloEH(id);
@@ -274,9 +289,10 @@ export function fichaModulo(estado, id) {
     estadoTexto: guardado.activo ? 'Activado' : 'Desactivado',
     categoria: categoria ? categoria.nombre : '',
     categoriaIcono: categoria ? categoria.icono : '',
-    // Hoy ninguno tiene contenido: se construye en su fase, y aquí se dice cuál.
-    contenido: false,
-    avisoContenido: `El contenido de este apartado llega en la fase ${cat.fase}.`,
+    // 🔓 Fase A — los diez con destino tienen contenido y no llevan aviso; los siete
+    // sin pantalla dicen la verdad, sin prometer una fase.
+    contenido: APARTADOS_CON_DESTINO.includes(id),
+    avisoContenido: APARTADOS_CON_DESTINO.includes(id) ? '' : AVISO_SIN_PANTALLA,
     confirmarAlApagar: necesitaConfirmacion(id),
     tieneDatos: moduloTieneDatos(e, id),
   };

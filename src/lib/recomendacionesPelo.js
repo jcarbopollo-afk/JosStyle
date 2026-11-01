@@ -551,7 +551,8 @@ export const PUENTE_PRODUCTOS_PELO = {
   fase: 10,
   disponible: false,
   etiqueta: 'Ver productos',
-  nota: 'Los productos capilares se construyen en la fase 10.',
+  // 🔓 Fase A de Imagen personal — la F10 ya llegó: se dice dónde están.
+  nota: 'Tus productos capilares están en 🛒 Productos, en tu panel de pelo.',
 };
 
 /* ===========================================================================

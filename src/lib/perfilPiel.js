@@ -602,7 +602,9 @@ export function panelPiel(estado, datosGlobales = {}) {
     productos: datosPiel(estado).productos,
     // ⚠️ Si ha dicho que no usa productos, la pantalla no tiene que deducirlo.
     pideProductos: respuestaPiel(estado, 'usaProductos', datosGlobales).valores[0] !== 'no',
-    nota: auditarPiel().nota,
+    /* 🔓 Fase A de Imagen personal — la nota de la auditoría (arriba) se conserva tal
+       cual; lo que se LEE en pantalla dice dónde están, porque las fases 14 a 17 ya llegaron. */
+    nota: 'Tus rutinas, seguimiento, recomendaciones y productos están en tu panel de Skincare.',
   };
 }
 
