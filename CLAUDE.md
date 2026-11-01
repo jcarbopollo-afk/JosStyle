@@ -2278,14 +2278,16 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
-🧔 **IMAGEN PERSONAL — EL CICLO POSTERIOR A LA F65 (2026-11-01): B1–B8 APROBADAS, TODAVÍA SIN COMMIT NI PUSH.** Josué abrió un
+🧔 **IMAGEN PERSONAL — EL CICLO POSTERIOR A LA F65 (2026-11-01): B1–B8 APROBADAS Y B9 HECHA; FALTA FUSIONAR EN `main`.** Josué abrió un
 ciclo nuevo para reorganizar su navegación: la portada son ahora **seis tarjetas** (Ropa, Cuidado, Pelo, Fragancia, Accesorios y
-Funcionamiento) con **Hábitos y rutinas** aparte. **Rama de trabajo: `claude/imagen-personal-fase-a`** (la Fase A en el commit
-`7996c5b`; la Fase B —B1–B8 y las dos correcciones posteriores a B7— sin commit ni push, y nada en `main`). **Versión 3.161.3**, sin
+Funcionamiento) con **Hábitos y rutinas** aparte. **Rama: `claude/imagen-personal-integracion`**, basada en `main` (`ea7bc4a`) y
+**sin la PR #2 de chatbots**: la Fase A (`f8b37b3`), B1–B7 con sus correcciones (`4dc6772`), B8 (`e572ab7`) y una actualización
+documental; `verificar.sh` en verde (4144 casos de renderizado, 3891 en Chromium) y la vista previa de Vercel aprobada por él. Nada
+en `main` ni en producción. La rama anterior, `claude/imagen-personal-fase-a`, se conserva. **Versión 3.161.3**, sin
 subir. Referencia: **`docs/16_IMAGEN_PERSONAL_CICLO_POST_F65.md`** (decisiones, rutas, recorridos de la F51, qué está construido y
 qué falta) y **`docs/08_ESTILO_DE_HOMBRE_TECNICO.md`** (la técnica, regenerada). 🚨 **La F65 sigue congelada**: ni `docs/09` ni
-`cierre.js` se tocan, y ningún otro módulo (Armario, chatbots…) se modifica sin su autorización. Lo siguiente es **B9** —commits,
-push, vista previa y `main`— y lo autoriza él.
+`cierre.js` se tocan, y ningún otro módulo (Armario, chatbots…) se modifica sin su autorización. Lo siguiente es **fusionar la rama
+en `main`**, y lo autoriza él.
 
 🚨 **AHORA MISMO (2026-10-18): CUATRO PROMPTS DE JOSUÉ, EN ORDEN, UNO A UNO, CADA UNO A `main` CON `verificar.sh` EN
 VERDE.** Están copiados palabra por palabra en **`docs/14_PROMPTS_2026-10-18.md`** (con su tabla de estado): P1 selección

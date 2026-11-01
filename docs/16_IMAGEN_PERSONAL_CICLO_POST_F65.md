@@ -5,10 +5,13 @@
 > seis tarjetas)—. No es una fase 66: la F65 sigue **congelada** y su informe (`docs/09_ESTILO_DE_HOMBRE_CIERRE.md`,
 > generado por `src/lib/cierre.js`) **no se ha tocado** — describe el estado de la v3.0.0 y se lee como historia.
 >
-> **Estado (2026-11-01).** Versión **3.161.3** (sin subir). Todo vive en la rama `claude/imagen-personal-fase-a`: la
-> Fase A está en el commit `7996c5b`; la Fase B (B1–B7, las correcciones posteriores y esta documentación) está
-> construida y verificada en esa rama, **pendiente de commit, de llevarse a `main` y de desplegarse** (B9, que decide
-> Josué). `main` no tiene nada de este ciclo.
+> **Estado (2026-11-01).** Versión **3.161.3** (sin subir). B9 hecha: todo vive en la rama
+> **`claude/imagen-personal-integracion`**, basada en `main` (`ea7bc4a`) y **sin los commits de la PR #2 de chatbots**, en
+> tres commits de integración —la Fase A (`f8b37b3`), B1–B7 con sus correcciones (`4dc6772`) y la documentación B8
+> (`e572ab7`)— más esta actualización documental. `verificar.sh` completo en verde en esa rama (4144 casos de renderizado y
+> 3891 comprobaciones en Chromium). La vista previa de Vercel (https://jos-style-dvsmdyx4w-jcarbopollo-afks-projects.vercel.app) está generada y **Josué la ha aprobado
+> visualmente**. `main` y producción **todavía no tienen nada de este ciclo**: fusionar lo decide Josué. La rama
+> anterior, `claude/imagen-personal-fase-a`, se conserva como estaba (encima de la PR #2).
 >
 > **La técnica del módulo** sigue en `docs/08_ESTILO_DE_HOMBRE_TECNICO.md` (generado desde `src/lib/documentacionEH.js`,
 > que ya recoge la portada nueva). Esta nota cuenta **qué cambió en el ciclo, dónde está cada cosa y qué queda**.
@@ -49,7 +52,8 @@
 | **B6** | `RECORRIDOS` (F51) con la navegación de verdad; límites 3, 4 y 5, `maximoDe` y `demasiadoLargos` intactos. |
 | **B7** | `test-app-real` adaptado a la navegación nueva (resuelve los diez fallos que dejó B5 y un corte que ocultaba el resto del recorrido) y una sección nueva con siete tamaños de pantalla, activar/desactivar, ocultar, Hábitos, accesos rápidos, toques reales, movimiento reducido y consola. |
 | **Correcciones posteriores a B7** | El acceso rápido «🧴 Rutina facial» abre la rutina de Skincare directamente; las respuestas de `PREGUNTAS` dicen las rutas actuales. |
-| **B8** | Esta documentación: `docs/08` regenerado (textos de `documentacionEH.js`), esta nota, `CHANGELOG.md`, `HANDOFF.md` y la línea de `docs/00_INDICE.md`. |
+| **B8** | Esta documentación: `docs/08` regenerado (textos de `documentacionEH.js`), esta nota, `CHANGELOG.md`, `HANDOFF.md`, la línea de `docs/00_INDICE.md` y la sincronización de `docs/04` y `CLAUDE.md`. |
+| **B9** | Traslado a `claude/imagen-personal-integracion`, una rama basada en `main` (`ea7bc4a`) sin los ocho commits de la PR #2: la Fase A (`f8b37b3`), B1–B7 (`4dc6772`) y B8 (`e572ab7`). En `CHANGELOG.md` y `HANDOFF.md` se conservó solo la entrada de Imagen personal; `test-app-real.mjs` y `verificar.sh` quedan sin lo que añadía la PR #2. Después, una actualización documental con este estado. |
 
 ## 3 · Dónde está cada cosa (navegación vigente)
 
@@ -130,12 +134,15 @@ chatbots, ni otros módulos se han tocado.
 - `scripts/test-experiencia-real.mjs` (F51): los recorridos contra la vista y las respuestas de `PREGUNTAS` — **120**.
 - `scripts/test-app-real.mjs`: entra en cada apartado por su ruta nueva y, en su sección 34, mide la portada en siete
   tamaños (320, 375, 393 y 430 px, horizontal, iPad y escritorio), cuenta los toques de los recorridos, activa,
-  desactiva, oculta, prueba con «Reducir movimiento» y exige la consola limpia — **3927** comprobaciones en Chromium.
-- `bash scripts/verificar.sh` completo en verde al cerrar las correcciones posteriores a B7.
+  desactiva, oculta, prueba con «Reducir movimiento» y exige la consola limpia — **3891** comprobaciones en Chromium en la
+  rama de integración (en la rama anterior eran 3927: las 36 de más eran de «Completar entrenamiento», de la PR #2).
+- `bash scripts/verificar.sh` completo en verde en la rama de integración: 4144 casos de renderizado (4163 en la rama
+  anterior; los 19 de más eran de la PR #2) y 3891 en Chromium, sin un error de JavaScript.
 
 ## 7 · Lo que queda
 
-- **B9** (lo decide Josué): commits, push de la rama, vista previa y llevarlo a `main`.
+- **Fusionar en `main`** (lo decide Josué): la rama `claude/imagen-personal-integracion` está verificada y su vista previa
+  aprobada; ni `main` ni producción han cambiado.
 - **Verlo en el iPhone** (R1): todo lo anterior se ha probado en Chromium, no en Safari ni con VoiceOver.
 - La primera vez, Barba y Perfumes preguntan «¿Quieres utilizar este apartado?»: los recorridos miden el uso habitual.
 - Los siete apartados sin pantalla y las seis librerías sin conectar: abrirlos sería otro ciclo, que decide Josué.

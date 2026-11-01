@@ -1,10 +1,13 @@
 # CHANGELOG.md
 
-## Sin versión — Imagen personal: el ciclo posterior a la F65 (Fases A y B, la portada de seis tarjetas) en la rama `claude/imagen-personal-fase-a` (2026-11-01)
+## Sin versión — Imagen personal: el ciclo posterior a la F65 (Fases A y B, la portada de seis tarjetas) en la rama `claude/imagen-personal-integracion` (2026-11-01)
 
 > Ciclo nuevo abierto por Josué después de la EH F65, que **sigue congelada** (`docs/09` y `cierre.js` sin tocar). La Fase A
-> está en el commit `7996c5b`; la Fase B (B1–B8 y las correcciones posteriores a B7) está en la rama, **pendiente de commit,
-> de `main` y de despliegue** (B9). **Versión 3.161.3, sin subir.** Detalle completo: `docs/16_IMAGEN_PERSONAL_CICLO_POST_F65.md`.
+> se hizo en el commit `7996c5b` y la Fase B (B1–B8 y las correcciones posteriores a B7) en la rama `claude/imagen-personal-fase-a`,
+> encima de la PR #2. **B9** lo trasladó a `claude/imagen-personal-integracion`, basada en `main` (`ea7bc4a`) y sin la PR #2:
+> la Fase A (`f8b37b3`), B1–B7 (`4dc6772`), B8 (`e572ab7`) y una actualización documental. Vista previa de Vercel aprobada por
+> Josué; **pendiente de fusionar en `main`** y sin despliegue a producción. **Versión 3.161.3, sin subir.** Detalle completo:
+> `docs/16_IMAGEN_PERSONAL_CICLO_POST_F65.md`.
 
 ### ✨ Qué entra
 - **Fase A** — en Barba, «Productos» abre «Mis productos» y «Seguimiento» abre «Mi rutina»; los textos que prometían fases ya
@@ -37,11 +40,13 @@
 
 ### 🧪 Comprobado
 - `scripts/test-portada-eh.jsx` (nueva, 150), `test-experiencia-real.mjs` (120), `test-gestion-modulos.mjs` (195) y
-  `test-app-real.mjs` (3927 en Chromium, con la portada medida a 320, 375, 393, 430 px, horizontal, iPad y escritorio).
-- `bash scripts/verificar.sh` completo en verde al cerrar las correcciones posteriores a B7.
+  `test-app-real.mjs` (con la portada medida a 320, 375, 393, 430 px, horizontal, iPad y escritorio).
+- `bash scripts/verificar.sh` completo en verde al cerrar las correcciones posteriores a B7 (en la rama anterior, con la
+  PR #2 debajo: 4163 casos de renderizado y 3927 en Chromium) y otra vez en la rama de integración tras B9: **4144** casos de
+  renderizado y **3891** en Chromium; la diferencia son las pruebas de la PR #2, ninguna de Imagen personal.
 
 ### ⚠️ Lo que sigue abierto
-- **B9** (commits, push, vista previa, `main`) y **el iPhone** (R1): todo está probado en Chromium.
+- **Fusionar en `main`** (lo decide Josué) y **el iPhone** (R1): todo está probado en Chromium.
 - Los demás accesos rápidos («Afeitarme», «Mi pelo», «Elegir perfume») siguen abriendo su apartado, no su zona.
 - Siete apartados siguen sin pantalla propia y seis librerías sin conectar (CX-13); `docs/09` sigue describiendo la v3.0.0.
 
