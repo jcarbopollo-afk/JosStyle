@@ -224,6 +224,68 @@ export function puedeMover(estado, id) {
   return { arriba: i > 0, abajo: i !== -1 && i < visible.length - 1, posicion: i, de: visible.length };
 }
 
+/* ── 🔓 Fase B · B5 — mover DENTRO DE SU CATEGORÍA ─────────────────────────
+   Con la portada de seis tarjetas, el orden solo se ve entre los apartados de
+   una misma categoría: dentro de Cuidado y de Funcionamiento, en los grupos de
+   Gestionar y en «Mi estilo personal». Ropa, Pelo, Fragancia y Accesorios tienen
+   su tarjeta en un sitio fijo y son los únicos de su categoría, así que una
+   flecha que los moviera —o que hiciera saltar a otro por encima de ellos— sería
+   un movimiento que no se ve. Estas funciones mueven solo entre los de la misma
+   categoría, con el MISMO `reordenar` de siempre: lo guardado se conserva, y
+   `subirModulo`, `bajarModulo`, `moverA` y `puedeMover` siguen como estaban. */
+
+function hermanosDeCategoria(estado, id) {
+  const visible = ordenVisible(estado);
+  const m = moduloEH(id);
+  if (!m || !visible.includes(id)) return [];
+  return visible.filter((x) => moduloEH(x)?.categoria === m.categoria);
+}
+
+/** ¿Tiene sentido mover este apartado? Arriba / abajo y su sitio, dentro de su categoría. */
+export function puedeMoverEnSuCategoria(estado, id) {
+  const h = hermanosDeCategoria(estado, id);
+  const i = h.indexOf(id);
+  return { arriba: i > 0, abajo: i !== -1 && i < h.length - 1, posicion: i, de: h.length, mueve: h.length > 1 };
+}
+
+function moverEnSuCategoria(estado, id, delta) {
+  const e = normalizarEstiloHombre(estado);
+  const h = hermanosDeCategoria(e, id);
+  const i = h.indexOf(id);
+  const j = i + delta;
+  if (i === -1 || j < 0 || j >= h.length) return e;   // ya está en el borde de su grupo
+  const visible = ordenVisible(e);
+  const a = visible.indexOf(id);
+  const b = visible.indexOf(h[j]);
+  const nuevo = [...visible];
+  [nuevo[a], nuevo[b]] = [nuevo[b], nuevo[a]];
+  return reordenar(e, nuevo);
+}
+
+export const subirEnSuCategoria = (estado, id) => moverEnSuCategoria(estado, id, -1);
+export const bajarEnSuCategoria = (estado, id) => moverEnSuCategoria(estado, id, +1);
+
+/** «Este apartado pasa a ser el N.º `indice` de su categoría» (el «Mover» de la F31). */
+export function moverAEnSuCategoria(estado, id, indice) {
+  const e = normalizarEstiloHombre(estado);
+  const h = hermanosDeCategoria(e, id);
+  const i = h.indexOf(id);
+  const k = Math.floor(Number(indice));
+  if (i === -1 || !Number.isFinite(k) || k < 0 || k >= h.length || k === i) return e;
+  return moverA(e, id, ordenVisible(e).indexOf(h[k]));
+}
+
+/** Los apartados activos que se pueden ordenar, agrupados por su categoría. */
+export function gruposParaOrdenar(estado) {
+  const visible = ordenVisible(estado);
+  return CATEGORIAS_EH
+    .map((c) => ({ id: c.id, nombre: c.nombre, icono: c.icono, ids: visible.filter((x) => moduloEH(x)?.categoria === c.id) }))
+    .filter((g) => g.ids.length > 1);
+}
+
+/** ¿Hay algo que ordenar? Solo si alguna categoría tiene dos o más activos. */
+export const hayQueOrdenar = (estado) => gruposParaOrdenar(estado).length > 0;
+
 /* ===========================================================================
    5 · MÓDULOS RECOMENDADOS (apartado 11)
    ===========================================================================
@@ -260,7 +322,22 @@ export function recomendados(estado, { max = MAX_RECOMENDADOS } = {}) {
 
    ⚠️ Por eso la ficha lleva `contenido: false` y **dice en qué fase llega**: es
    la regla 8 otra vez. Enseñar una ficha que sugiere que hay algo detrás cuando
-   no lo hay es exactamente el control decorativo que el proyecto prohíbe. */
+   no lo hay es exactamente el control decorativo que el proyecto prohíbe.
+
+   🔓 Fase A de Imagen personal (2026-10-31) — `contenido: false` estaba escrito
+   para los 17, así que la ficha de Pelo decía «llega en la fase 12» con Pelo
+   hecho desde la F7. Ahora `contenido` sale de `APARTADOS_CON_DESTINO`: los
+   apartados que, al tocarlos, abren una pantalla que funciona —nueve propias y
+   Estilo y armario, que lleva al Armario—. Comprobado uno a uno en la Fase A
+   hasta el componente que se pinta, no por tener una ruta. La prueba de
+   Gestionar apartados exige que esta lista coincida con las ramas de
+   `abrirModulo` y con `FUENTES_DE_ESTADO`, para que no se desincronicen. Los
+   siete sin pantalla siguen en el catálogo, activables, y lo dicen sin fase. */
+export const APARTADOS_CON_DESTINO = Object.freeze([
+  'estilo', 'pelo', 'skincare', 'barba', 'sonrisa', 'perfumes', 'accesorios', 'gustos', 'higiene', 'cuerpo',
+]);
+
+export const AVISO_SIN_PANTALLA = 'Este apartado todavía no tiene pantalla propia. Puedes tenerlo activado: no se pierde nada.';
 
 export function fichaModulo(estado, id) {
   const cat = moduloEH(id);
@@ -274,9 +351,10 @@ export function fichaModulo(estado, id) {
     estadoTexto: guardado.activo ? 'Activado' : 'Desactivado',
     categoria: categoria ? categoria.nombre : '',
     categoriaIcono: categoria ? categoria.icono : '',
-    // Hoy ninguno tiene contenido: se construye en su fase, y aquí se dice cuál.
-    contenido: false,
-    avisoContenido: `El contenido de este apartado llega en la fase ${cat.fase}.`,
+    // 🔓 Fase A — los diez con destino tienen contenido y no llevan aviso; los siete
+    // sin pantalla dicen la verdad, sin prometer una fase.
+    contenido: APARTADOS_CON_DESTINO.includes(id),
+    avisoContenido: APARTADOS_CON_DESTINO.includes(id) ? '' : AVISO_SIN_PANTALLA,
     confirmarAlApagar: necesitaConfirmacion(id),
     tieneDatos: moduloTieneDatos(e, id),
   };

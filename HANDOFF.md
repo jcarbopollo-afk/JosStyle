@@ -2,6 +2,20 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (2026-11-01 — Imagen personal: el ciclo posterior a la F65, Fases A y B, en la rama `claude/imagen-personal-integracion`, basada en `main` y sin la PR #2; versión 3.161.3, sin subir; sin `main` y sin despliegue a producción):**
+> Josué abrió un ciclo nuevo tras la EH F65 (que **sigue congelada**: `docs/09` y `cierre.js` no se tocan) para reorganizar la
+> navegación. **La portada de Imagen personal son ahora seis tarjetas** —Ropa (abre el Armario y lleva el enlace a 👤 Mi
+> estilo), Cuidado (Higiene, Skincare, Barba, Sonrisa y Cuidado corporal), Pelo, Fragancia (Perfumes), Accesorios y
+> Funcionamiento (Mis gustos, Progreso, Educación, Productos y los bloques que antes estaban en la portada: Mi estilo
+> personal, Ideas, Mi progreso, Descubrir, Personalizar, Ordenar, las recomendaciones y Gestionar)—, con **Hábitos y rutinas**
+> aparte (sin pantalla propia) y los accesos rápidos debajo; «🧴 Rutina facial» abre la rutina de Skincare directamente.
+> Fitness, Sueño y Salud se gestionan desde Gestionar apartados. Ni un id ni un dato guardado cambia. Las rutas, los
+> recorridos de la F51, las respuestas de «¿Dónde está esto?», qué está construido y qué falta: **`docs/16_IMAGEN_PERSONAL_CICLO_POST_F65.md`**
+> (y la técnica, regenerada, en `docs/08`). B9 hecha: la Fase A (`f8b37b3`), B1–B7 (`4dc6772`) y B8 (`e572ab7`), más una
+> actualización documental, en una rama basada en `main` (`ea7bc4a`) sin los commits de la PR #2; `verificar.sh` completo en
+> verde (4144 casos de renderizado, 3891 en Chromium) y la vista previa de Vercel aprobada por Josué. Pendiente: **fusionar en
+> `main`** (lo decide Josué) y verlo en el iPhone.
+>
 > **📅 ACTUALIZACIÓN (v3.161.3 — Sueño: datos incompletos sin inventar y «Analizar mi sueño» como conversación; sin commit, push ni despliegue):**
 > La siesta sin contestar ya no es «no» (`null`), las horas ya no vienen puestas ni se rellenan (una noche sin las dos horas no
 > tiene duración y no entra en las cuentas de duración, lo demás sí), «la última noche» es la de fecha más reciente en la lista,

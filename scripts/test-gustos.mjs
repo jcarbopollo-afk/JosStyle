@@ -48,7 +48,9 @@ console.log('Test 1 — la plaquita y sus cuatro bloques');
 {
   ok(!!moduloEH('gustos'), 'el módulo está en el catálogo de la Fase 1');
   eq(moduloEH('gustos').icono, '❤️', 'con el icono del enunciado');
-  eq(moduloEH('gustos').categoria, 'bienestar', 'en la categoría de bienestar');
+  /* 🔓 Fase B de Imagen personal (2026-11-01) — estaba en `bienestar` (Personal);
+     ahora se organiza desde Funcionamiento (decisión de Josué). */
+  eq(moduloEH('gustos').categoria, 'funcionamiento', 'Fase B: en la categoría Funcionamiento');
   ok(moduloEH('gustos').terminos.includes('intereses'), '"intereses" lo encuentra en el buscador');
 
   /* ⚠️ Se comprueba QUE ESTÉN LOS QUE TIENEN QUE ESTAR, no cuántos hay: la F28

@@ -40,12 +40,19 @@ import { Card, PrimaryButton, Switch, TextInput } from '../components/ui';
 import {
   modulosActivos, todosLosModulos, alternarModulo, estadoPantalla,
   resumenEstiloHombre, normalizarEstiloHombre,
+  // 🔓 Fase B — la línea de respaldo de una tarjeta es la `sub` del catálogo.
+  moduloEH,
 } from '../lib/estiloDeHombre';
 import {
-  modulosAgrupados, resultadosAgrupados, avisoDesactivar, subirModulo, bajarModulo,
-  puedeMover, recomendados, fichaModulo, TEXTOS_GESTION, resumenGestion,
-  // EH F31, apartado 3 — *"y moverla"*: la función ya existía, escrita para esto.
-  moverA,
+  modulosAgrupados, resultadosAgrupados, avisoDesactivar,
+  recomendados, fichaModulo, TEXTOS_GESTION, resumenGestion,
+  // EH F31, apartado 3 — *"y moverla"*. 🔓 Fase B · B5 — subir, bajar, `moverA` y
+  // `puedeMover` (F2) siguen en la librería; la vista usa sus versiones dentro de
+  // la categoría de cada apartado, que es donde el orden se ve.
+  puedeMoverEnSuCategoria, subirEnSuCategoria, bajarEnSuCategoria, moverAEnSuCategoria,
+  gruposParaOrdenar, hayQueOrdenar,
+  // 🔓 Fase B — qué apartados tienen pantalla (la lista de la Fase A, una sola fuente).
+  APARTADOS_CON_DESTINO,
 } from '../lib/gestionModulos';
 import {
   pasoAsistente, puedeOmitir, TEXTO_OMITIR, estadoAsistente, normalizarAsistente,
@@ -203,6 +210,12 @@ import {
   // ── EH F31 ──
   cambiarTamano, alternarLinea, restablecerDiseno, personalizarAutomaticamente,
   panelPersonalizar, TEXTOS_MOVER,
+  // 🔓 Fase B — las seis tarjetas de la portada y el acceso aparte a Hábitos.
+  tarjetasDePortada,
+  // 🔓 Fase B · B4 — lo que hay dentro de Cuidado y de Funcionamiento.
+  contenidoDeCategoria,
+  // 🔓 Fase B · B5 — Ropa, Pelo, Fragancia y Accesorios: tarjeta fija.
+  tieneTarjetaFija,
 } from '../lib/pantallaEH';
 import {
   // ── EH F32 ──
@@ -359,6 +372,157 @@ export function Plaquita({
         </div>
       )}
     </Contenedor>
+  );
+}
+
+/* ===========================================================================
+   🔓 FASE B — LAS TARJETAS DE LA PORTADA (2026-11-01)
+   ===========================================================================
+   Seis tarjetas iguales —mismo tamaño, misma jerarquía—, en una cuadrícula de dos
+   columnas. Lo que dicen y a dónde llevan lo decide `tarjetasDePortada()`: aquí
+   solo se pinta.
+
+   ⚠️ El enlace discreto de Ropa a «👤 Mi estilo» es un botón HERMANO del principal,
+   nunca uno dentro de otro: un `<button>` dentro de otro no es HTML válido y WebKit
+   lo mide mal (es la lección del desplegable de Inicio, v3.157.0). */
+export function TarjetaPortadaEH({ tarjeta, accent, sub = null, onAbrir = null, enlace = null, onEnlace = null }) {
+  const Principal = onAbrir ? 'button' : 'div';
+  return (
+    <div
+      className="relative rounded-2xl h-full"
+      style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, minWidth: 0 }}
+    >
+      <Principal
+        {...(onAbrir ? { type: 'button', onClick: onAbrir } : {})}
+        className="w-full h-full rounded-2xl p-3 flex flex-col items-start gap-1 text-left"
+        style={{ minHeight: 112, minWidth: 0 }}
+      >
+        <span className="text-2xl leading-none" aria-hidden="true">{tarjeta.icono}</span>
+        <span className="text-sm font-semibold w-full truncate" style={{ color: COLORS.text }}>{tarjeta.nombre}</span>
+        {sub && (
+          <span className="text-[11px] leading-snug w-full line-clamp-2" style={{ color: COLORS.textMuted }}>{sub}</span>
+        )}
+        {/* El hueco del enlace, para que no tape nada y la tarjeta no cambie de alto. */}
+        {enlace && <span className="block h-5" aria-hidden="true" />}
+      </Principal>
+      {enlace && (
+        <button
+          type="button" onClick={onEnlace}
+          className="toque-44 absolute left-3 bottom-2 text-[11px] font-semibold"
+          style={{ color: accent }}
+        >
+          {enlace.icono} {enlace.nombre}
+          {enlace.detalle && <span style={{ color: COLORS.textMuted }}> · {enlace.detalle}</span>}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* 🔓 Fase B (decisión 4) — el acceso aparte a Hábitos y rutinas: ancho, debajo de
+   las seis, y **sin botón** mientras no tenga pantalla propia. Lo dice y ya: un
+   botón que no hace nada sería la regla 8. */
+export function AccesoHabitosEH({ habitos }) {
+  if (!habitos) return null;
+  return (
+    <div
+      role="group" aria-label={habitos.texto ? `${habitos.nombre}: ${habitos.texto}` : habitos.nombre}
+      className="rounded-2xl p-3 flex items-center gap-3"
+      style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}`, minWidth: 0 }}
+    >
+      <span className="text-2xl leading-none flex-shrink-0" aria-hidden="true">{habitos.icono}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold truncate" style={{ color: COLORS.text }}>{habitos.nombre}</p>
+        {habitos.texto && (
+          <p className="text-[11px]" style={{ color: COLORS.textMuted }}>{habitos.texto}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ===========================================================================
+   🔓 FASE B · B4 — LA PANTALLA DE UNA CATEGORÍA (Cuidado, Funcionamiento)
+   ===========================================================================
+   Lo que hay dentro lo decide `contenidoDeCategoria()`; aquí solo se pinta:
+   - sus apartados activos y no ocultos, en el orden que él eligió, con la MISMA
+     `Plaquita` de siempre (tamaño, líneas e insignia de la F31);
+   - un apartado sin pantalla propia lo dice y no se puede tocar (decisión G);
+   - los ocultos (F36) aparte: siguen funcionando, no se pintan, y se dice dónde
+     se vuelven a mostrar;
+   - los desactivados aparte, con «Activar» (decisión 6).
+   Ni un dato propio: abrir un apartado es el `abrirModulo` de siempre. */
+export function CategoriaEH({ contenido, accent, subDe = () => null, onAbrir, onActivar, onCerrar, hecho = null, extras = null, cuerpo = null }) {
+  if (!contenido) return null;
+  /* 🔓 Fase B · B5 — Funcionamiento recibe, además, los bloques que vivían en la
+     portada (`extras`, los mismos componentes de siempre) y, mientras se ordena,
+     la lista plana de la Fase 2 (`cuerpo`), que ocupa el sitio de las plaquitas. */
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <button onClick={onCerrar} className="p-1 -ml-1" aria-label="Volver">
+          <ArrowLeft size={16} style={{ color: COLORS.textMuted }} />
+        </button>
+        <p className="text-base font-semibold" style={{ color: COLORS.text }}>
+          <span aria-hidden="true">{contenido.icono}</span> {contenido.nombre}
+        </p>
+      </div>
+      <HechoEH mensaje={hecho} accent={accent} />
+
+      {cuerpo ? cuerpo : (<>
+      {contenido.visibles.length > 0 ? (
+        <div className="grid grid-cols-2 gap-1.5" data-categoria-eh={contenido.id}>
+          {contenido.visibles.map((m) => (
+            <div key={m.id} className={m.tamano && m.tamano.columnas === 2 ? 'col-span-2' : ''}>
+              <Plaquita
+                accent={accent}
+                modulo={m.insignia && m.conPantalla ? { ...m, nombre: `${m.insignia.icono} ${m.nombre}` } : m}
+                /* Sin pantalla propia: lo dice, y no se toca (decisión G). */
+                sub={m.conPantalla ? subDe(m.id) : m.texto}
+                tamano={m.tamano}
+                lineas={m.conPantalla && m.tieneLineas ? m.lineas : null}
+                onAbrir={m.conPantalla ? () => onAbrir(m.id) : null}
+                orden={null}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+          Todavía no tienes ningún apartado activado aquí.
+        </p>
+      )}
+
+      {contenido.ocultos.length > 0 && (
+        <p className="text-[11px]" style={{ color: COLORS.textMuted }}>
+          Ocultos: {contenido.ocultos.map((m) => m.nombre).join(' · ')}. Siguen funcionando; se vuelven a mostrar desde Gestionar apartados.
+        </p>
+      )}
+
+      {contenido.paraActivar.length > 0 && (
+        <Card>
+          <p className="text-sm font-semibold mb-1" style={{ color: COLORS.text }}>Sin activar</p>
+          <div className="space-y-1.5">
+            {contenido.paraActivar.map((m) => (
+              <div key={m.id} className="flex items-center gap-2">
+                <span className="text-base leading-none flex-shrink-0" aria-hidden="true">{m.icono}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs font-semibold truncate" style={{ color: COLORS.text }}>{m.nombre}</span>
+                  <span className="block text-[10px] truncate" style={{ color: COLORS.textMuted }}>{m.sub}</span>
+                </span>
+                <button onClick={() => onActivar(m.id)} aria-label={`Activar ${m.nombre}`}
+                  className="toque-44 text-[11px] font-semibold flex-shrink-0" style={{ color: accent }}>
+                  Activar
+                </button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+      </>)}
+
+      {extras}
+    </div>
   );
 }
 
@@ -3739,8 +3903,11 @@ export function ProductosPielEH({ estado, accent, datosGlobales = {}, onCambiar,
  * las dos que todavía no funcionan **dicen en qué fase llegan**, en vez de no
  * hacer nada al tocarlas.
  */
-export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil, onEliminarRegistro, onEliminarRutina }) {
-  const [zona, setZona] = useState(null);      // null | 'rutina' | 'seguimiento'
+export function PanelPiel({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onPerfil, onEliminarRegistro, onEliminarRutina, zonaInicial = null }) {
+  /* 🔓 Imagen personal · Fase B — el acceso rápido «🧴 Rutina facial» abre directamente
+     la rutina (`zonaInicial = 'rutina'`). Solo si esa plaquita existe: con las rutinas
+     apagadas se abre el panel, que es donde se encienden. Volver deja en el panel. */
+  const [zona, setZona] = useState(() => (zonaInicial === 'rutina' && parteActivaPiel(estado, 'rutinas') ? 'rutina' : null));      // null | 'rutina' | 'seguimiento'
   const prog = useMemo(() => progresoPiel(estado, datosGlobales), [estado, datosGlobales]);
   const rut = useMemo(() => resumenRutinasPiel(estado), [estado]);
   const hist = useMemo(() => historialPiel(estado), [estado]);
@@ -4508,7 +4675,14 @@ export function PanelBarba({ estado, accent, datosGlobales = {}, onCambiar, onCe
       ? 'Crea la primera'
       : `${rut.rutinas} ${rut.rutinas === 1 ? 'rutina' : 'rutinas'}`
         + (rut.hoy > 0 ? ` · ${rut.hechasHoy}/${rut.hoy} hoy` : ''),
+    /* 🔓 Fase A de Imagen personal — el seguimiento vive DENTRO de «Mi rutina»
+       (`dentroDe`), así que la plaquita lleva allí. Con las rutinas apagadas no
+       abre nada ni enciende nada por él: dice dónde está y que se activa abajo. */
+    seguimiento: parteActivaBarba(estado, 'rutinas')
+      ? 'Dentro de Mi rutina'
+      : 'Se apunta en Mi rutina: actívala aquí abajo',
   };
+  const seguimientoAbre = parteActivaBarba(estado, 'rutinas') ? () => setZona('rutina') : null;
 
   return (
     <div className="space-y-3">
@@ -4538,7 +4712,8 @@ export function PanelBarba({ estado, accent, datosGlobales = {}, onCambiar, onCe
                 onAbrir={p.listo
                   ? (p.id === 'perfil' ? onPerfil
                     : (p.id === 'rutina' ? () => setZona('rutina')
-                      : (p.id === 'productos' ? () => setZona('productos') : null)))
+                      : (p.id === 'productos' ? () => setZona('productos')
+                        : (p.id === 'seguimiento' ? seguimientoAbre : null))))
                   : null}
               />
             ))}
@@ -5703,7 +5878,7 @@ export function RecomendacionesPerfumesEH({ estado, accent, datosGlobales = {}, 
 }
 
 /** Apartado 1 de F13 — la entrada, con sus dos botones. */
-export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onEliminarRegistro, onEliminarRutina }) {
+export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCerrar, onEliminarRegistro, onEliminarRutina, zonaInicial = null }) {
   const [configurando, setConfigurando] = useState(false);
   const entrada = useMemo(() => estadoDeEntrada(estado, datosGlobales), [estado, datosGlobales]);
   /* ⚠️ Se calcula UNA vez, antes de cualquier `return` (regla 4): si se
@@ -5730,6 +5905,9 @@ export function SkincareEH({ estado, accent, datosGlobales = {}, onCambiar, onCe
         onPerfil={() => setConfigurando(true)}
         onEliminarRegistro={onEliminarRegistro}
         onEliminarRutina={onEliminarRutina}
+        /* 🔓 Fase B — la zona de entrada (acceso rápido), solo si ya estaba
+           configurado al abrir: si no, primero va su configuración, como siempre. */
+        zonaInicial={yaConfigurado ? zonaInicial : null}
       />
     );
   }
@@ -7316,27 +7494,37 @@ export function GestionarEstiloEH({
                 {m.insignia.icono} {m.insignia.nombre}
               </span>
             </span>
-            {/* Apartado 15 — el orden, con las flechas de la F2. */}
-            {m.activo && m.orden.de > 1 && (
+            {/* Apartado 15 — el orden, con las flechas de la F2. 🔓 Fase B · B5 — solo
+                dentro de su categoría, que es donde el orden se ve: Ropa, Pelo, Fragancia
+                y Accesorios (tarjeta fija) no tienen con quién intercambiarse. */}
+            {m.activo && puedeMoverEnSuCategoria(estado, m.id).mueve && (() => {
+              const ord = puedeMoverEnSuCategoria(estado, m.id);
+              return (
               <span className="flex flex-col flex-shrink-0">
-                <button onClick={() => onCambiar(subirModulo(estado, m.id))}
-                  disabled={!m.orden.arriba} aria-label={`Subir ${m.nombre}`}
-                  style={{ color: m.orden.arriba ? accent : COLORS.border }} className="p-0.5">
+                <button onClick={() => onCambiar(subirEnSuCategoria(estado, m.id))}
+                  disabled={!ord.arriba} aria-label={`Subir ${m.nombre}`}
+                  style={{ color: ord.arriba ? accent : COLORS.border }} className="p-0.5">
                   <ChevronUp size={14} />
                 </button>
-                <button onClick={() => onCambiar(bajarModulo(estado, m.id))}
-                  disabled={!m.orden.abajo} aria-label={`Bajar ${m.nombre}`}
-                  style={{ color: m.orden.abajo ? accent : COLORS.border }} className="p-0.5">
+                <button onClick={() => onCambiar(bajarEnSuCategoria(estado, m.id))}
+                  disabled={!ord.abajo} aria-label={`Bajar ${m.nombre}`}
+                  style={{ color: ord.abajo ? accent : COLORS.border }} className="p-0.5">
                   <ChevronDown size={14} />
                 </button>
               </span>
-            )}
+              );
+            })()}
           </div>
 
           {/* ── Apartados 2, 3, 4, 5 y 7 — las acciones, separadas ─────────── */}
           <div className="flex flex-wrap gap-1 mb-1">
             {m.activo ? (
               <>
+                {/* 🔓 Fase B · B5 (decisión B) — una tarjeta fija no se quita de la
+                    portada, así que «Ocultar» no haría lo que dice y no se ofrece. Si ya
+                    estaba oculto (guardado de antes), «Mostrar» sí se ofrece: lo devuelve a
+                    «Mi estilo personal». El valor guardado no se toca. */}
+                {(!tieneTarjetaFija(m.id) || m.oculto) && (
                 <button onClick={() => onCambiar(alternarOculto(estado, m.id))}
                   className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
                   style={{
@@ -7346,6 +7534,7 @@ export function GestionarEstiloEH({
                   }}>
                   {m.oculto ? TEXTOS_GESTION_EH.mostrar : TEXTOS_GESTION_EH.ocultar}
                 </button>
+                )}
                 <button onClick={() => desactivar(m.id)}
                   className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
                   style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}>
@@ -7388,6 +7577,12 @@ export function GestionarEstiloEH({
             {m.oculto ? TEXTOS_GESTION_EH.ocultarNoCambia
               : (m.activo ? m.nota : TEXTOS_GESTION_EH.reactivar)}
           </p>
+          {/* 🔓 B5 (decisión B) — y se dice por qué no hay «Ocultar». */}
+          {m.activo && !m.oculto && tieneTarjetaFija(m.id) && (
+            <p className="text-[10px]" data-sin-ocultar={m.id} style={{ color: COLORS.textMuted }}>
+              {TEXTOS_PANTALLA.ocultarFijo}
+            </p>
+          )}
 
           {/* Apartado 9 — *"cada componente puede controlarse independientemente"*. */}
           {abierto === m.id && m.partes.length > 0 && (
@@ -9702,9 +9897,12 @@ export function PersonalizarPlaquitas({
             <p className="text-sm font-semibold flex-1 min-w-0 truncate" style={{ color: COLORS.text }}>
               {m.nombre}
             </p>
-            <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
-              {m.posicion + 1}/{m.de}
-            </span>
+            {/* 🔓 B5 — su sitio dentro de su grupo, que es el que se ve. */}
+            {puedeMoverEnSuCategoria(estado, m.id).mueve && (
+              <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+                {puedeMoverEnSuCategoria(estado, m.id).posicion + 1}/{puedeMoverEnSuCategoria(estado, m.id).de}
+              </span>
+            )}
           </div>
           {/* Lo que se verá en la portada, tal cual, para que no lo adivine. */}
           {m.vista.length > 0 && (
@@ -9719,24 +9917,29 @@ export function PersonalizarPlaquitas({
           )}
 
           {/* ── Apartado 2 — ⋮⋮ Mover · 👁️ Ocultar ───────────────────────── */}
+          {/* 🔓 Fase B · B5 — subir, bajar y «Mover» solo dentro de su categoría, que
+              es donde el orden se ve. Las cuatro tarjetas fijas (y lo que es único en
+              su grupo) no tienen flechas: lo dicen. El orden guardado no se toca. */}
+          {(() => { const ord = puedeMoverEnSuCategoria(estado, m.id); return (
           <div className="flex flex-wrap items-center gap-1 mb-2">
+            {ord.mueve && (<>
             <button
-              onClick={() => onCambiar(subirModulo(estado, m.id))}
-              disabled={m.posicion === 0} aria-label={`Subir ${m.nombre}`}
+              onClick={() => onCambiar(subirEnSuCategoria(estado, m.id))}
+              disabled={!ord.arriba} aria-label={`Subir ${m.nombre}`}
               className="rounded-full p-1"
               style={{
-                color: m.posicion === 0 ? COLORS.border : accent,
+                color: !ord.arriba ? COLORS.border : accent,
                 border: `1px solid ${COLORS.border}`,
               }}
             >
               <ChevronUp size={14} />
             </button>
             <button
-              onClick={() => onCambiar(bajarModulo(estado, m.id))}
-              disabled={m.posicion === m.de - 1} aria-label={`Bajar ${m.nombre}`}
+              onClick={() => onCambiar(bajarEnSuCategoria(estado, m.id))}
+              disabled={!ord.abajo} aria-label={`Bajar ${m.nombre}`}
               className="rounded-full p-1"
               style={{
-                color: m.posicion === m.de - 1 ? COLORS.border : accent,
+                color: !ord.abajo ? COLORS.border : accent,
                 border: `1px solid ${COLORS.border}`,
               }}
             >
@@ -9744,18 +9947,22 @@ export function PersonalizarPlaquitas({
             </button>
             {/* ⚠️ Apartado 3 — mover a una posición concreta, con `moverA`. En un
                 iPhone se elige el destino tocando: las flechas se quedan. */}
-            {m.de > 1 && (
-              <button
-                onClick={() => setMoviendo(moviendo === m.id ? null : m.id)}
-                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                style={{
-                  background: moviendo === m.id ? hexToRgba(accent, 0.12) : COLORS.surface2,
-                  color: moviendo === m.id ? accent : COLORS.text,
-                  border: `1px solid ${moviendo === m.id ? accent : COLORS.border}`,
-                }}
-              >
-                {panel.textosMover.mover}
-              </button>
+            <button
+              onClick={() => setMoviendo(moviendo === m.id ? null : m.id)}
+              className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+              style={{
+                background: moviendo === m.id ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                color: moviendo === m.id ? accent : COLORS.text,
+                border: `1px solid ${moviendo === m.id ? accent : COLORS.border}`,
+              }}
+            >
+              {panel.textosMover.mover}
+            </button>
+            </>)}
+            {!ord.mueve && (
+              <span className="text-[10px] w-full" data-sin-orden={m.id} style={{ color: COLORS.textMuted }}>
+                {tieneTarjetaFija(m.id) ? TEXTOS_PANTALLA.ordenFijo : TEXTOS_PANTALLA.ordenSolo}
+              </span>
             )}
             <button
               onClick={() => quitar(m.id)}
@@ -9765,6 +9972,7 @@ export function PersonalizarPlaquitas({
               👁️ Quitar
             </button>
           </div>
+          ); })()}
 
           {moviendo === m.id && (
             <div className="mb-2">
@@ -9772,10 +9980,11 @@ export function PersonalizarPlaquitas({
                 {panel.textosMover.eligiendo}
               </p>
               <div className="flex flex-wrap gap-1">
-                {panel.modulos.map((otro, i) => (
+                {/* 🔓 B5 — los destinos son los sitios de su grupo. */}
+                {Array.from({ length: puedeMoverEnSuCategoria(estado, m.id).de }, (_, i) => ({ id: `${m.id}-${i}` })).map((otro, i) => (
                   <button
                     key={otro.id}
-                    onClick={() => { onCambiar(moverA(estado, m.id, i)); setMoviendo(null); }}
+                    onClick={() => { onCambiar(moverAEnSuCategoria(estado, m.id, i)); setMoviendo(null); }}
                     className="rounded-full px-2 py-1 text-[10px] font-semibold"
                     style={{ background: COLORS.surface2, color: COLORS.text, border: `1px solid ${COLORS.border}` }}
                   >
@@ -9794,7 +10003,15 @@ export function PersonalizarPlaquitas({
           )}
 
           {/* ── Apartado 4 — el tamaño, uno de tres ──────────────────────── */}
+          {/* 🔓 Fase B · B5 (decisión A) — Ropa, Pelo, Fragancia y Accesorios tienen su
+              tarjeta fija en la portada: un tamaño ahí no cambiaría nada, así que no se
+              ofrece y se dice. Lo guardado (`m.tamano`) no se toca. */}
           <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>{TEXTOS_PANTALLA.tamano}</p>
+          {m.tarjetaFija ? (
+            <p className="text-[10px] mb-2" data-tarjeta-fija={m.id} style={{ color: COLORS.textMuted }}>
+              {TEXTOS_PANTALLA.tarjetaFija}
+            </p>
+          ) : (
           <div className="flex flex-wrap gap-1 mb-2">
             {m.tamanos.map((t) => {
               const puesto = t.id === m.tamano.id;
@@ -9814,6 +10031,7 @@ export function PersonalizarPlaquitas({
               );
             })}
           </div>
+          )}
 
           {/* ── Apartado 5 — qué información aparece ─────────────────────── */}
           <p className="text-[10px] mb-1" style={{ color: COLORS.textMuted }}>
@@ -9974,6 +10192,9 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   const [perfumes, setPerfumes] = useState(false);       // F24
   const [accesorios, setAccesorios] = useState(false);   // F26
   const [gustos, setGustos] = useState(false);           // F27
+  /* 🔓 Fase B · B4 — la categoría abierta (Cuidado o Funcionamiento), o ninguna.
+     Mientras está puesta, cerrar un apartado abierto desde ella vuelve a ella. */
+  const [categoria, setCategoria] = useState(null);
   const [ordenando, setOrdenando] = useState(false);
   const [personalizando, setPersonalizando] = useState(false);   // F31, apartado 1
   /* F31, apartado 7 — *"si hay demasiados: Mostrar todos"*. Es de la sesión, no
@@ -9993,7 +10214,10 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
   /* F29 — *"cada apartado abre directamente su módulo correspondiente"*
      (apartado 1). ⚠️ Una línea por módulo, y **son los mismos `set*` que ya usan
      las plaquitas**: ni una pantalla paralela, ni una segunda navegación. */
-  const abrirModulo = (id) => {
+  /* 🔓 Fase B — `zona` (opcional) es la que declara un acceso rápido
+     (`ACCESOS_DISPONIBLES`). Hoy solo la usa «🧴 Rutina facial» → la rutina de
+     Skincare; los demás abren su apartado como siempre. */
+  const abrirModulo = (id, zona = null) => {
     /* ⚠️ **EH F41, apartado 10** — *"si intenta entrar desde un enlace: este
        apartado está desactivado"*. El estado lo dice la F36; aquí solo se para
        antes de abrir una pantalla que no debería verse.
@@ -10007,7 +10231,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     if (parado) return setBloqueado(parado);
     if (id === MODULO_EH_ESTILO) return onIr?.(DESTINO_ARMARIO);
     if (id === MODULO_PELO) return setPerfilPelo('panel');
-    if (id === MODULO_PIEL) return setSkincare(true);
+    if (id === MODULO_PIEL) return setSkincare(zona === 'rutina' ? 'rutina' : true);
     if (id === MODULO_BARBA) return setBarba(true);
     if (id === MODULO_SONRISA) return setSonrisa(true);
     if (id === MODULO_PERFUMES) return setPerfumes(true);
@@ -10104,6 +10328,17 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     () => panelPantalla(estado, { armario, datosGlobales, todosLosAccesos }),
     [estado, armario, datosGlobales, todosLosAccesos],
   );
+  /* 🔓 Fase B — las seis tarjetas y el acceso a Hábitos. ⚠️ Antes de cualquier
+     `return` (regla 4): es un hook. */
+  const portada = useMemo(
+    () => tarjetasDePortada(estado, { armario, datosGlobales }),
+    [estado, armario, datosGlobales],
+  );
+  // 🔓 Fase B · B4 — lo que hay dentro de la categoría abierta. Antes de los `return`.
+  const contenidoCategoria = useMemo(
+    () => (categoria ? contenidoDeCategoria(estado, categoria, { armario, datosGlobales }) : null),
+    [categoria, estado, armario, datosGlobales],
+  );
   const resumenPlaquitaArmario = estiloArmario && !estiloArmario.vacio
     ? `${estiloArmario.total} ${estiloArmario.total === 1 ? 'prenda' : 'prendas'}`
       + (estiloArmario.outfits > 0 ? ` · ${estiloArmario.outfits} ${estiloArmario.outfits === 1 ? 'outfit' : 'outfits'}` : '')
@@ -10153,6 +10388,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
         onCambiar={onCambiar} onCerrar={() => setSkincare(false)}
         onEliminarRegistro={onEliminarRegistro}
         onEliminarRutina={onEliminarRutinaPiel}
+        zonaInicial={skincare === 'rutina' ? 'rutina' : null}
       />
     );
   }
@@ -10388,6 +10624,257 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
     );
   }
 
+  /* 🔓 Fase B · B5 — los bloques que vivían en la portada, en Funcionamiento. Es un
+     TRASLADO: los mismos componentes, las mismas condiciones (también la de
+     `ordenando`), el mismo orden y los mismos manejadores. Cada uno tiene ahora un
+     único acceso, aquí; en la portada ya no se repiten. */
+  const bloquesFuncionamiento = (
+    <>
+      {/* ── EH F29 — 🧔 Mi estilo: el resumen de lo que ya hay ──────────
+          ⚠️ Con `ordenando` no se pinta: mientras reordena, la pantalla es
+          la de la Fase 2 y no conviene que compita con ella. */}
+      {!miEstiloPanel.oculto && !ordenando && miEstiloPanel.bloques.length > 0 && (
+        <Card>
+          <div className="flex items-center gap-2 mb-1">
+            <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>
+              {miEstiloPanel.titulo}
+            </p>
+            <button onClick={() => onCambiar(ocultarMiEstilo(estado))}
+              className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
+              {TEXTOS_MI_ESTILO.ocultar}
+            </button>
+          </div>
+          {/* Apartado 2 — las etiquetas, DERIVADAS de lo que ya dijo. */}
+          {miEstiloPanel.etiquetas.hay ? (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {miEstiloPanel.etiquetas.etiquetas.map((et) => (
+                <span key={et.id} className="rounded-full px-2 py-0.5"
+                  style={{
+                    background: et.suyo ? hexToRgba(accent, 0.12) : COLORS.surface2,
+                    border: `1px solid ${et.suyo ? accent : COLORS.border}`,
+                  }}>
+                  <span className="text-[10px] font-semibold"
+                    style={{ color: et.suyo ? accent : COLORS.textMuted }}>{et.nombre}</span>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+              {miEstiloPanel.etiquetas.texto}
+            </p>
+          )}
+          {/* Apartado 4 — los colores, los del Armario. Ni otro selector. */}
+          {miEstiloPanel.colores.length > 0 && (
+            <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
+              🎨 {miEstiloPanel.colores.map((c) => c.nombre).join(' · ')}
+            </p>
+          )}
+          {/* Apartado 1 — cada bloque abre su módulo. */}
+          {miEstiloPanel.bloques.map((b) => (
+            <div key={b.id} className="rounded-2xl p-2.5 mb-1"
+              style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
+              <div className="flex items-center gap-2">
+                <span className="text-sm leading-none" aria-hidden="true">{b.icono}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-semibold" style={{ color: COLORS.text }}>
+                    {b.nombre}
+                  </span>
+                  <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>
+                    {b.resumen}
+                  </span>
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {b.modulosActivos.map((m) => (
+                  <button key={m.id} onClick={() => abrirModulo(m.id)}
+                    className="rounded-full px-2 py-0.5"
+                    style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
+                    aria-label={`Abrir ${m.nombre}`}>
+                    {/* Apartado 13 — su estado, tal cual: 🟢 ⚪ ⚫ */}
+                    <span className="text-[10px] font-semibold" style={{ color: COLORS.text }}>
+                      {m.insignia.icono} {m.nombre}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          {/* ⚠️ **EH F34, apartado 1** — *"dentro de 🧔 Mi estilo añadir ⚙️ Mis
+              preferencias"*. También desde AQUÍ, y no solo desde la zona de
+              la Fase 6: aquélla **solo existe si "Estilo y armario" está
+              encendido**, y Mis preferencias agrupa los siete temas, así que
+              colgarla únicamente de ahí la dejaría inalcanzable para quien
+              no use el armario. Es la misma pantalla, con dos puertas. */}
+          <button onClick={() => setPreferencias(true)}
+            className="flex items-center gap-1.5 text-[11px] font-semibold mt-1"
+            style={{ color: accent }}>
+            {ZONA_PREFERENCIAS.icono} {ZONA_PREFERENCIAS.nombre}
+          </button>
+          {/* ⚠️ Apartados 11, 12 y 15 — el orden y qué aparece son de la
+              Fase 2. Se dice y se lleva allí, en vez de un segundo sistema. */}
+          <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
+            {TEXTOS_MI_ESTILO.dondeSeOrdena}
+          </p>
+          <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            {TEXTOS_MI_ESTILO.ocultarNoBorra}
+          </p>
+        </Card>
+      )}
+      {/* Apartado 10 — y se puede volver a enseñar cuando quiera. */}
+      {miEstiloPanel.oculto && !ordenando && (
+        <Card>
+          <button onClick={() => onCambiar(mostrarMiEstilo(estado))}
+            className="text-[11px] font-semibold" style={{ color: accent }}>
+            {TEXTOS_MI_ESTILO.mostrar}
+          </button>
+        </Card>
+      )}
+
+      {/* ── EH F32 — 💡 Ideas para ti ──────────────────────────────
+          Apartado 1: *"en la pantalla principal, OPCIONALMENTE"*. Con
+          `ordenando` no se pinta, igual que "Mi estilo". */}
+      {!ordenando && (
+        <IdeasEH
+          estado={estado} accent={accent} armario={armario}
+          datosGlobales={datosGlobales} objetivos={objetivos}
+          onCambiar={onCambiar}
+          /* ⚠️ Apartados 11 a 14 — cada idea abre un módulo QUE YA EXISTE.
+             Los de dentro de Estilo de hombre son los mismos `set*` de las
+             plaquitas; los de fuera van por `onIr`, la única navegación con
+             enlace directo de la aplicación. Ni una pantalla paralela. */
+          onAccion={(a) => {
+            if (!a) return;
+            if (a.destino === 'miEstilo') return setMiEstilo(true);
+            if (['skincare', 'pelo', 'barba', 'perfumes', 'accesorios', 'gustos'].includes(a.destino)) {
+              return abrirModulo(a.destino);
+            }
+            return onIr?.(a.destino);
+          }}
+        />
+      )}
+
+      {/* ── EH F35 — 📊 Mi progreso ────────────────────────────────
+          Apartado 1: *"opcional"*. Va debajo de las Ideas y encima de
+          Descubrir: lo suyo primero, la inspiración al final. */}
+      {!ordenando && (
+        <ProgresoEH
+          estado={estado} accent={accent} armario={armario}
+          datosGlobales={datosGlobales} rachas={rachas} objetivos={objetivos}
+          onCambiar={onCambiar} onIr={onIr}
+        />
+      )}
+
+      {/* ── EH F33 — ✨ Descubrir ──────────────────────────────────
+          Apartado 1: *"completamente opcional"*. Va debajo de las Ideas
+          porque aquéllas salen de sus datos y éstas no: primero lo suyo. */}
+      {!ordenando && (
+        <DescubrirEH
+          estado={estado} accent={accent} onCambiar={onCambiar}
+          /* Apartado 8 — *"se abre el módulo existente"*, el mismo camino
+             que usan las Ideas: ni una navegación nueva. */
+          onAccion={(a) => {
+            if (!a) return;
+            if (['skincare', 'pelo', 'barba', 'perfumes', 'accesorios', 'gustos'].includes(a.destino)) {
+              return abrirModulo(a.destino);
+            }
+            return onIr?.(a.destino);
+          }}
+        />
+      )}
+
+      {/* F6, apartado 1 — *"dentro de 👕 Estilo y Armario añadir una zona 👤 Mi
+          estilo. No crear otro apartado principal."* 🔓 Fase B (decisión 2.1) — el
+          acceso es ahora el enlace discreto DENTRO de la tarjeta Ropa: el mismo
+          destino (`setMiEstilo`), la misma condición (Estilo encendido) y el mismo
+          «N de M». Aquí ya no se repite, para no tener dos botones iguales. */}
+
+      {/* ⚠️ **F31, apartado 1** — *"⋮ Personalizar"*. Un solo botón que abre
+          el modo edición entero: tamaño, contenido, mover y quitar. Con nada
+          activo no se ofrece, porque no habría qué personalizar (regla 8). */}
+      {!ordenando && activos.length > 0 && (
+        <button
+          onClick={() => setPersonalizando(true)}
+          className="flex items-center gap-1.5 text-[11px] font-semibold mx-auto"
+          style={{ color: accent }}
+        >
+          {TEXTOS_PANTALLA.personalizar}
+        </button>
+      )}
+
+      {/* Apartado 9 de F2 — reordenar es un modo. Con un solo módulo activo
+          no se ofrece: dos flechas que no hacen nada. */}
+      {/* 🔓 B5 — solo si algún grupo tiene dos o más apartados: si no, no hay
+          nada que ordenar que se vea. */}
+      {hayQueOrdenar(estado) && (
+        <button
+          onClick={() => setOrdenando((v) => !v)}
+          className="flex items-center gap-1.5 text-[11px] font-semibold mx-auto"
+          style={{ color: ordenando ? accent : COLORS.textMuted }}
+        >
+          <ArrowUpDown size={12} /> {ordenando ? 'Listo' : 'Ordenar'}
+        </button>
+      )}
+
+      {/* Apartado 11 — informativo, nunca obligatorio, y sin IA. */}
+      {!ordenando && (
+        <Recomendados
+          estado={estado} accent={accent}
+          onAnadir={(id) => onCambiar(alternarModulo(estado, id, true))}
+        />
+      )}
+      {/* F1, apartado 6 — la opción de gestionar SIEMPRE está. */}
+      <button
+        onClick={() => setGestionando(true)}
+        className="flex items-center gap-1.5 text-[11px] font-semibold mx-auto"
+        style={{ color: accent }}
+      >
+        <Settings size={12} /> Gestionar apartados
+      </button>
+    </>
+  );
+  /* 🔓 B5 — y la lista plana de «Ordenar» (Fase 2), que mientras se ordena ocupa el
+     sitio de las plaquitas de Funcionamiento. */
+  const listaOrdenar = (
+    <div className="space-y-2">
+      <p className="text-[10px]" style={{ color: COLORS.textMuted }}>{TEXTOS_PANTALLA.ordenarExplica}</p>
+      {gruposParaOrdenar(estado).map((g) => (
+        <div key={g.id} data-ordenar-grupo={g.id}>
+          <p className="text-[10px] font-semibold mb-1" style={{ color: COLORS.textMuted }}>
+            <span aria-hidden="true">{g.icono}</span> {g.nombre}
+          </p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {g.ids.map((id) => activos.find((x) => x.id === id)).filter(Boolean).map((m) => (
+              <Plaquita
+                key={m.id} modulo={m} accent={accent} sub={null} onAbrir={null}
+                orden={puedeMoverEnSuCategoria(estado, m.id)}
+                onSubir={() => onCambiar(subirEnSuCategoria(estado, m.id))}
+                onBajar={() => onCambiar(bajarEnSuCategoria(estado, m.id))}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  /* 🔓 Fase B · B4 — la pantalla de Cuidado o de Funcionamiento. Va la ÚLTIMA de la
+     cadena: cualquier apartado o ajuste abierto desde ella se pinta por encima, y
+     al cerrarlo se vuelve aquí, porque `categoria` sigue puesta. */
+  if (categoria && contenidoCategoria && !gestionando) {
+    return (
+      <CategoriaEH
+        contenido={contenidoCategoria} accent={accent} hecho={hecho}
+        subDe={subDeModulo}
+        onAbrir={(id) => abrirModulo(id)}
+        onActivar={(id) => { onCambiar(alternarModulo(estado, id, true)); setHecho('activado'); }}
+        /* 🔓 B5 — salir de la categoría termina también el modo «Ordenar». */
+        onCerrar={() => { setCategoria(null); setOrdenando(false); }}
+        extras={contenidoCategoria.id === 'funcionamiento' ? bloquesFuncionamiento : null}
+        cuerpo={contenidoCategoria.id === 'funcionamiento' && ordenando ? listaOrdenar : null}
+      />
+    );
+  }
+
   if (gestionando) {
     return (
       <GestionarApartados
@@ -10398,6 +10885,43 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
       />
     );
   }
+
+  /* 🔓 Fase B · B3 — la línea secundaria de cada tarjeta. Sale de lo que ya
+     existe: las líneas de la F31 (decisión A) o el resumen de su apartado. */
+  const subDeTarjeta = (t) => {
+    if (t.tipo === 'categoria') {
+      return `${t.activos} de ${t.total} ${t.total === 1 ? 'apartado activo' : 'apartados activos'}`;
+    }
+    if (!t.activo) return 'Sin activar';
+    if (t.tipo === 'directa' && t.tieneLineas) {
+      // Una lista vacía es que él apagó todas sus líneas: entonces, ninguna.
+      return Array.isArray(t.lineas) ? (t.lineas.map((l) => l.texto).filter(Boolean).slice(0, 2).join(' · ') || null) : null;
+    }
+    return subDeModulo(t.modulo) || (moduloEH(t.modulo) && moduloEH(t.modulo).sub) || null;
+  };
+  /* 🔓 Fase B · B3 — las seis tarjetas, Hábitos y rutinas, debajo. Las de un solo
+     apartado se abren con `abrirModulo`, que ya pasa por la F41 si está apagado y
+     lleva Ropa al Armario. 🔓 B4 — Cuidado y Funcionamiento abren su pantalla de
+     categoría (`CategoriaEH`). */
+  const bloqueTarjetas = (
+    <>
+      <div className="grid grid-cols-2 auto-rows-fr gap-2" data-portada-eh="tarjetas">
+        {portada.tarjetas.map((t) => (
+          <TarjetaPortadaEH
+            key={t.id} tarjeta={t} accent={accent}
+            sub={subDeTarjeta(t)}
+            onAbrir={t.tipo === 'categoria' ? () => setCategoria(t.id) : () => abrirModulo(t.modulo)}
+            enlace={t.enlace ? {
+              ...t.enlace,
+              detalle: perfilEstilo && !perfilEstilo.vacio ? `${perfilEstilo.rellenos} de ${perfilEstilo.total}` : null,
+            } : null}
+            onEnlace={t.enlace ? () => setMiEstilo(true) : null}
+          />
+        ))}
+      </div>
+      <AccesoHabitosEH habitos={portada.habitos} />
+    </>
+  );
 
   return (
     <div className="space-y-3">
@@ -10437,7 +10961,10 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
       )}
       {pantalla === 'sin_modulos' ? (
         /* ⚠️ EH F30, apartado 13 — *"si alguien entra por primera vez, NO mostrar
-           30 módulos"*. Se le ofrecen TRES, y el botón de siempre debajo. */
+           30 módulos"*. Se le ofrecen TRES, y el botón de siempre debajo.
+           🔓 Fase B (decisión 6) — y las seis tarjetas están igual, sin nada activo. */
+        <>
+        {!ordenando && bloqueTarjetas}
         <Card className="text-center">
           <p className="text-2xl leading-none mb-2" aria-hidden="true">🧔</p>
           <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{TEXTOS_GESTION.vacioTitulo}</p>
@@ -10465,6 +10992,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
             {TEXTOS_PRIMER_USO.sinPresion}
           </p>
         </Card>
+        </>
       ) : (
         <>
           {/* ⚠️ **EH F41, apartados 4, 5 y 14** — lo que puede haber ido mal, con
@@ -10487,202 +11015,8 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
             />
           )}
 
-          {/* ── EH F29 — 🧔 Mi estilo: el resumen de lo que ya hay ──────────
-              ⚠️ Con `ordenando` no se pinta: mientras reordena, la pantalla es
-              la de la Fase 2 y no conviene que compita con ella. */}
-          {!miEstiloPanel.oculto && !ordenando && miEstiloPanel.bloques.length > 0 && (
-            <Card>
-              <div className="flex items-center gap-2 mb-1">
-                <p className="text-sm font-semibold flex-1" style={{ color: COLORS.text }}>
-                  {miEstiloPanel.titulo}
-                </p>
-                <button onClick={() => onCambiar(ocultarMiEstilo(estado))}
-                  className="text-[10px] font-semibold" style={{ color: COLORS.textMuted }}>
-                  {TEXTOS_MI_ESTILO.ocultar}
-                </button>
-              </div>
-              {/* Apartado 2 — las etiquetas, DERIVADAS de lo que ya dijo. */}
-              {miEstiloPanel.etiquetas.hay ? (
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {miEstiloPanel.etiquetas.etiquetas.map((et) => (
-                    <span key={et.id} className="rounded-full px-2 py-0.5"
-                      style={{
-                        background: et.suyo ? hexToRgba(accent, 0.12) : COLORS.surface2,
-                        border: `1px solid ${et.suyo ? accent : COLORS.border}`,
-                      }}>
-                      <span className="text-[10px] font-semibold"
-                        style={{ color: et.suyo ? accent : COLORS.textMuted }}>{et.nombre}</span>
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
-                  {miEstiloPanel.etiquetas.texto}
-                </p>
-              )}
-              {/* Apartado 4 — los colores, los del Armario. Ni otro selector. */}
-              {miEstiloPanel.colores.length > 0 && (
-                <p className="text-[10px] mb-2" style={{ color: COLORS.textMuted }}>
-                  🎨 {miEstiloPanel.colores.map((c) => c.nombre).join(' · ')}
-                </p>
-              )}
-              {/* Apartado 1 — cada bloque abre su módulo. */}
-              {miEstiloPanel.bloques.map((b) => (
-                <div key={b.id} className="rounded-2xl p-2.5 mb-1"
-                  style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm leading-none" aria-hidden="true">{b.icono}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[11px] font-semibold" style={{ color: COLORS.text }}>
-                        {b.nombre}
-                      </span>
-                      <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>
-                        {b.resumen}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {b.modulosActivos.map((m) => (
-                      <button key={m.id} onClick={() => abrirModulo(m.id)}
-                        className="rounded-full px-2 py-0.5"
-                        style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}` }}
-                        aria-label={`Abrir ${m.nombre}`}>
-                        {/* Apartado 13 — su estado, tal cual: 🟢 ⚪ ⚫ */}
-                        <span className="text-[10px] font-semibold" style={{ color: COLORS.text }}>
-                          {m.insignia.icono} {m.nombre}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {/* ⚠️ **EH F34, apartado 1** — *"dentro de 🧔 Mi estilo añadir ⚙️ Mis
-                  preferencias"*. También desde AQUÍ, y no solo desde la zona de
-                  la Fase 6: aquélla **solo existe si "Estilo y armario" está
-                  encendido**, y Mis preferencias agrupa los siete temas, así que
-                  colgarla únicamente de ahí la dejaría inalcanzable para quien
-                  no use el armario. Es la misma pantalla, con dos puertas. */}
-              <button onClick={() => setPreferencias(true)}
-                className="flex items-center gap-1.5 text-[11px] font-semibold mt-1"
-                style={{ color: accent }}>
-                {ZONA_PREFERENCIAS.icono} {ZONA_PREFERENCIAS.nombre}
-              </button>
-              {/* ⚠️ Apartados 11, 12 y 15 — el orden y qué aparece son de la
-                  Fase 2. Se dice y se lleva allí, en vez de un segundo sistema. */}
-              <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
-                {TEXTOS_MI_ESTILO.dondeSeOrdena}
-              </p>
-              <p className="text-[10px]" style={{ color: COLORS.textMuted }}>
-                {TEXTOS_MI_ESTILO.ocultarNoBorra}
-              </p>
-            </Card>
-          )}
-          {/* Apartado 10 — y se puede volver a enseñar cuando quiera. */}
-          {miEstiloPanel.oculto && !ordenando && (
-            <Card>
-              <button onClick={() => onCambiar(mostrarMiEstilo(estado))}
-                className="text-[11px] font-semibold" style={{ color: accent }}>
-                {TEXTOS_MI_ESTILO.mostrar}
-              </button>
-            </Card>
-          )}
-
-          {/* ── EH F32 — 💡 Ideas para ti ──────────────────────────────
-              Apartado 1: *"en la pantalla principal, OPCIONALMENTE"*. Con
-              `ordenando` no se pinta, igual que "Mi estilo". */}
-          {!ordenando && (
-            <IdeasEH
-              estado={estado} accent={accent} armario={armario}
-              datosGlobales={datosGlobales} objetivos={objetivos}
-              onCambiar={onCambiar}
-              /* ⚠️ Apartados 11 a 14 — cada idea abre un módulo QUE YA EXISTE.
-                 Los de dentro de Estilo de hombre son los mismos `set*` de las
-                 plaquitas; los de fuera van por `onIr`, la única navegación con
-                 enlace directo de la aplicación. Ni una pantalla paralela. */
-              onAccion={(a) => {
-                if (!a) return;
-                if (a.destino === 'miEstilo') return setMiEstilo(true);
-                if (['skincare', 'pelo', 'barba', 'perfumes', 'accesorios', 'gustos'].includes(a.destino)) {
-                  return abrirModulo(a.destino);
-                }
-                return onIr?.(a.destino);
-              }}
-            />
-          )}
-
-          {/* ── EH F35 — 📊 Mi progreso ────────────────────────────────
-              Apartado 1: *"opcional"*. Va debajo de las Ideas y encima de
-              Descubrir: lo suyo primero, la inspiración al final. */}
-          {!ordenando && (
-            <ProgresoEH
-              estado={estado} accent={accent} armario={armario}
-              datosGlobales={datosGlobales} rachas={rachas} objetivos={objetivos}
-              onCambiar={onCambiar} onIr={onIr}
-            />
-          )}
-
-          {/* ── EH F33 — ✨ Descubrir ──────────────────────────────────
-              Apartado 1: *"completamente opcional"*. Va debajo de las Ideas
-              porque aquéllas salen de sus datos y éstas no: primero lo suyo. */}
-          {!ordenando && (
-            <DescubrirEH
-              estado={estado} accent={accent} onCambiar={onCambiar}
-              /* Apartado 8 — *"se abre el módulo existente"*, el mismo camino
-                 que usan las Ideas: ni una navegación nueva. */
-              onAccion={(a) => {
-                if (!a) return;
-                if (['skincare', 'pelo', 'barba', 'perfumes', 'accesorios', 'gustos'].includes(a.destino)) {
-                  return abrirModulo(a.destino);
-                }
-                return onIr?.(a.destino);
-              }}
-            />
-          )}
-
-          {/* ── EH F30 — la pantalla principal ─────────────────────────
-              ⚠️ **Reordenando, la lista es PLANA**: es la pantalla de la Fase 2,
-              con sus flechas, y agruparla mientras se mueve confundiría. Fuera de
-              ese modo, las plaquitas van por secciones (apartado 3). */}
-          {ordenando ? (
-            <div className="grid grid-cols-2 gap-1.5">
-              {activos.map((m) => (
-                <Plaquita
-                  key={m.id} modulo={m} accent={accent} sub={null} onAbrir={null}
-                  orden={puedeMover(estado, m.id)}
-                  onSubir={() => onCambiar(subirModulo(estado, m.id))}
-                  onBajar={() => onCambiar(bajarModulo(estado, m.id))}
-                />
-              ))}
-            </div>
-          ) : (
-            pantallaPanel.secciones.map((sec) => (
-              <div key={sec.id}>
-                <p className="text-[11px] font-semibold mb-1" style={{ color: COLORS.textMuted }}>
-                  {sec.icono} {sec.nombre}
-                </p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {sec.modulos.map((m) => (
-                    /* ⚠️ **F31, apartado 4** — la grande ocupa las dos columnas.
-                       El número sale del tamaño, no de un `if` por cada id. */
-                    <div key={m.id} className={m.tamano.columnas === 2 ? 'col-span-2' : ''}>
-                      <Plaquita
-                        accent={accent}
-                        /* Apartado 5 — la indicación, solo en el que falta por configurar. */
-                        modulo={m.insignia ? { ...m, nombre: `${m.insignia.icono} ${m.nombre}` } : m}
-                        /* ⚠️ F31 — las líneas que él eligió; el `sub` de la F30 se
-                           queda de red por si un módulo todavía no tiene ninguna. */
-                        sub={subDeModulo(m.id)}
-                        tamano={m.tamano}
-                        lineas={m.tieneLineas ? m.lineas : null}
-                        onAbrir={() => abrirModulo(m.id)}
-                        orden={null}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
+          {/* 🔓 FASE B · B3 — las seis tarjetas y Hábitos y rutinas. */}
+          {!ordenando && bloqueTarjetas}
 
           {/* Apartado 9 — ⚡ accesos rápidos, los que él haya elegido. */}
           {!ordenando && pantallaPanel.accesos !== null && pantallaPanel.accesos.length > 0 && (
@@ -10699,7 +11033,7 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
               <div className="flex flex-wrap gap-1">
                 {/* ⚠️ F31, apartado 7 — se pintan los que caben, no los 50. */}
                 {pantallaPanel.visibles.lista.map((a) => (
-                  <button key={a.id} onClick={() => abrirModulo(a.modulo)}
+                  <button key={a.id} onClick={() => abrirModulo(a.modulo, a.zona)}
                     className="rounded-2xl px-2.5 py-1.5"
                     style={{ background: COLORS.surface2, border: `1px solid ${COLORS.border}` }}>
                     <span className="text-[11px] font-semibold" style={{ color: COLORS.text }}>
@@ -10755,85 +11089,19 @@ export default function EstiloHombreView({ estiloHombre, accent, datosGlobales =
               nada. */}
           {/* ⚠️ F5 — el armario YA tiene contenido, así que el aviso ya no puede
               decir "ninguno": dice cuántos faltan y no miente sobre el que hay. */}
-          {!ordenando && (() => {
-            const conArmario = activos.some((m) => m.id === MODULO_EH_ESTILO) && !!onIr;
-            const conPelo = activos.some((m) => m.id === MODULO_PELO);
-            /* ⚠️ F13 — Skincare ya tiene contenido, así que deja de contar como
-               pendiente. Un aviso que dice "el resto llega después" incluyendo
-               uno que YA funciona es exactamente la mentira que prohíbe la
-               regla 8, solo que en la otra dirección. */
-            const conPiel = activos.some((m) => m.id === MODULO_PIEL);
-            const pendientes = activos.length - (conArmario ? 1 : 0) - (conPelo ? 1 : 0) - (conPiel ? 1 : 0);
-            if (pendientes === 0) return null;
-            return (
-              <p className="text-[11px] text-center" style={{ color: COLORS.textMuted }}>
-                {conArmario || conPelo || conPiel
-                  ? 'El resto de apartados que has elegido llegan en las siguientes fases.'
-                  : 'De momento esto es solo tu espacio elegido: el contenido de cada apartado llega en las siguientes fases.'}
-              </p>
-            );
-          })()}
-
-          {/* F6, apartado 1 — *"dentro de 👕 Estilo y Armario añadir una zona 👤 Mi
-              estilo. No crear otro apartado principal."* Por eso el acceso está
-              debajo de las plaquitas y solo si ese apartado está encendido, no
-              como una plaquita más. */}
-          {!ordenando && activos.some((m) => m.id === MODULO_EH_ESTILO) && (
-            <button
-              onClick={() => setMiEstilo(true)}
-              className="flex items-center gap-1.5 text-[11px] font-semibold mx-auto"
-              style={{ color: accent }}
-            >
-              {ZONA_MI_ESTILO.icono} {ZONA_MI_ESTILO.nombre}
-              {perfilEstilo && !perfilEstilo.vacio && (
-                <span style={{ color: COLORS.textMuted }}>· {perfilEstilo.rellenos} de {perfilEstilo.total}</span>
-              )}
-            </button>
+          {/* 🔓 Fase B (decisión 8) — decía *«El resto de apartados que has elegido llegan
+              en las siguientes fases»*, y contaba como pendientes apartados que ya tienen
+              pantalla (Barba, Sonrisa, Perfumes…). Ahora cuenta los que de verdad no la
+              tienen (la lista de la Fase A) y lo dice sin prometer ninguna fase. */}
+          {!ordenando && activos.some((m) => !APARTADOS_CON_DESTINO.includes(m.id)) && (
+            <p className="text-[11px] text-center" style={{ color: COLORS.textMuted }}>
+              {TEXTOS_PANTALLA.algunosSinPantalla}
+            </p>
           )}
 
-          {/* ⚠️ **F31, apartado 1** — *"⋮ Personalizar"*. Un solo botón que abre
-              el modo edición entero: tamaño, contenido, mover y quitar. Con nada
-              activo no se ofrece, porque no habría qué personalizar (regla 8). */}
-          {!ordenando && activos.length > 0 && (
-            <button
-              onClick={() => setPersonalizando(true)}
-              className="flex items-center gap-1.5 text-[11px] font-semibold mx-auto"
-              style={{ color: accent }}
-            >
-              {TEXTOS_PANTALLA.personalizar}
-            </button>
-          )}
-
-          {/* Apartado 9 de F2 — reordenar es un modo. Con un solo módulo activo
-              no se ofrece: dos flechas que no hacen nada. */}
-          {gestion.puedeReordenar && (
-            <button
-              onClick={() => setOrdenando((v) => !v)}
-              className="flex items-center gap-1.5 text-[11px] font-semibold mx-auto"
-              style={{ color: ordenando ? accent : COLORS.textMuted }}
-            >
-              <ArrowUpDown size={12} /> {ordenando ? 'Listo' : 'Ordenar'}
-            </button>
-          )}
-
-          {/* Apartado 11 — informativo, nunca obligatorio, y sin IA. */}
-          {!ordenando && (
-            <Recomendados
-              estado={estado} accent={accent}
-              onAnadir={(id) => onCambiar(alternarModulo(estado, id, true))}
-            />
-          )}
         </>
       )}
 
-      {/* F1, apartado 6 — la opción de gestionar SIEMPRE está. */}
-      <button
-        onClick={() => setGestionando(true)}
-        className="flex items-center gap-1.5 text-[11px] font-semibold mx-auto"
-        style={{ color: accent }}
-      >
-        <Settings size={12} /> Gestionar apartados
-      </button>
     </div>
   );
 }

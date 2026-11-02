@@ -65,14 +65,17 @@
 
 import {
   normalizarEstiloHombre, guardarConfig, modulosActivos, moduloEH, CATEGORIAS_EH,
-  MODULOS_EH, IDS_EH, reordenar,
+  MODULOS_EH, IDS_EH, reordenar, todosLosModulos,
 } from './estiloDeHombre';
-import { modulosAgrupados, recomendados } from './gestionModulos';
+import { modulosAgrupados, recomendados, APARTADOS_CON_DESTINO } from './gestionModulos';
 import { estadoDeModulo, estadoModulo, MODULO_ANFITRION } from './miEstilo';
 /* ⚠️ EH F31, apartado 5 — **cada línea sale del `resumen…()` de su módulo**.
    Ni un dato nuevo, ni una copia: es la misma frontera que la Fase 30 puso para
    la línea única de la plaquita, solo que ahora él elige cuántas ve. */
-import { resumenEstiloArmario } from './armarioEnEstiloHombre';
+import { resumenEstiloArmario, MODULO_EH_ESTILO, DESTINO_ARMARIO } from './armarioEnEstiloHombre';
+/* 🔓 Fase B — el enlace discreto de Ropa a «👤 Mi estilo» es la zona de la F6, no
+   una nueva. `perfilEstilo.js` no importa esta librería, así que no hay ciclo. */
+import { ZONA_MI_ESTILO } from './perfilEstilo';
 import { progresoPelo } from './perfilCapilar';
 import { resumenPelo } from './rutinasPelo';
 import { resumenPiel } from './perfilPiel';
@@ -117,6 +120,19 @@ export const TEXTOS_PANTALLA = {
   // Apartado 8 — y se dice, porque es lo que le preocupa.
   ocultarNoBorra: 'Ocultar una plaquita no borra nada: sus datos siguen ahí.',
   listo: 'Listo',
+  /* 🔓 Fase B (decisiones 4 y G de Josué) — lo que dicen Hábitos y rutinas y los
+     apartados de Funcionamiento que todavía no tienen pantalla. Sin prometer fases. */
+  sinPantalla: 'Todavía no tiene pantalla propia',
+  /* 🔓 Fase B (decisión 8) — sustituye a «…llegan en las siguientes fases». */
+  algunosSinPantalla: 'Algunos apartados que tienes activados todavía no tienen pantalla propia: puedes tenerlos activados sin perder nada.',
+  /* 🔓 Fase B · B5 (decisión A) — lo que dice Personalizar de un apartado con
+     tarjeta fija en la portada, en lugar de ofrecer un tamaño que no se vería. */
+  tarjetaFija: 'En la portada tiene su propia tarjeta, de tamaño fijo. Su contenido sí se elige aquí.',
+  /* 🔓 B5 (corrección) — lo que se dice en lugar de flechas o «Ocultar» que no harían nada. */
+  ordenFijo: 'Su tarjeta tiene un sitio fijo en la portada: no hay nada que mover.',
+  ordenSolo: 'Es el único apartado de su grupo: no hay nada que ordenar.',
+  ordenarExplica: 'Se ordenan los apartados de dentro de cada grupo. Ropa, Pelo, Fragancia y Accesorios tienen su sitio fijo en la portada.',
+  ocultarFijo: 'Su tarjeta está siempre en la portada, así que ocultarlo no la quitaría. Si no lo quieres usar, puedes desactivarlo.',
 };
 
 /* ===========================================================================
@@ -125,6 +141,28 @@ export const TEXTOS_PANTALLA = {
    ⚠️ **La agrupación es la de la Fase 2.** `modulosAgrupados(estado, { soloActivos
    })` ya devuelve las categorías con sus módulos ordenados por el `orden` que él
    eligió, y **descarta las categorías vacías**: es literalmente el apartado 3. */
+
+/* 🔓 Fase B de Imagen personal (2026-11-01) — lo que necesita una plaquita para
+   pintarse, sacado de `seccionesDePantalla` **sin cambiar ni un campo** para que
+   la portada de hoy y las pantallas de categoría de la Fase B lean lo mismo. */
+function fichaDePlaquita(e, m, { armario = null, datosGlobales = {} } = {}) {
+  const est = estadoDeModulo(e, m.id, { armario, datosGlobales });
+  return {
+    ...m,
+    estado: est,
+    /* Apartado 5 — *"pero **no llenar la pantalla de indicadores**"*: solo se
+       marca el que está sin configurar. El que ya lo está no necesita nada. */
+    insignia: est === 'sin_configurar' ? estadoModulo(est) : null,
+    // ⚠️ F31 — su tamaño y sus líneas, las que él haya elegido.
+    tamano: tamanoDe(e, m.id),
+    lineas: contenidoDePlaquita(e, m.id, { armario, datosGlobales }),
+    /* ⚠️ Y si el módulo **declara** líneas. Sin esto, la pantalla no puede
+       distinguir *"las he apagado todas"* de *"este módulo todavía no
+       tiene ninguna", y enseñaría el resumen de la F30 en el primer caso:
+       justo lo que él acaba de decir que no quiere ver. */
+    tieneLineas: lineasDisponibles(m.id).length > 0,
+  };
+}
 
 export function seccionesDePantalla(estado, { armario = null, datosGlobales = {} } = {}) {
   const e = normalizarEstiloHombre(estado);
@@ -147,24 +185,7 @@ export function seccionesDePantalla(estado, { armario = null, datosGlobales = {}
          estando activo, así que sigue dando ideas (F32), tarjetas (F33) y
          métricas (F35). Filtrarlo también en aquéllas sería confundir ocultar
          con desactivar, que es justo lo que la F36 vino a separar. */
-      modulos: cat.modulos.filter((m) => !m.oculto).map((m) => {
-        const est = estadoDeModulo(e, m.id, { armario, datosGlobales });
-        return {
-          ...m,
-          estado: est,
-          /* Apartado 5 — *"pero **no llenar la pantalla de indicadores**"*: solo se
-             marca el que está sin configurar. El que ya lo está no necesita nada. */
-          insignia: est === 'sin_configurar' ? estadoModulo(est) : null,
-          // ⚠️ F31 — su tamaño y sus líneas, las que él haya elegido.
-          tamano: tamanoDe(e, m.id),
-          lineas: contenidoDePlaquita(e, m.id, { armario, datosGlobales }),
-          /* ⚠️ Y si el módulo **declara** líneas. Sin esto, la pantalla no puede
-             distinguir *"las he apagado todas"* de *"este módulo todavía no
-             tiene ninguna", y enseñaría el resumen de la F30 en el primer caso:
-             justo lo que él acaba de decir que no quiere ver. */
-          tieneLineas: lineasDisponibles(m.id).length > 0,
-        };
-      }),
+      modulos: cat.modulos.filter((m) => !m.oculto).map((m) => fichaDePlaquita(e, m, { armario, datosGlobales })),
       posicion: Math.min(...cat.modulos.filter((m) => !m.oculto).map((m) => posicion(m.id)), Infinity),
     }))
     // ⚠️ Y una sección cuyos módulos están TODOS ocultos tampoco se pinta.
@@ -174,6 +195,155 @@ export function seccionesDePantalla(estado, { armario = null, datosGlobales = {}
 
 /** Los tres grupos que el apartado 3 nombra, **por su id de la Fase 2**. */
 export const GRUPOS_DEL_ENUNCIADO = ['cuidado', 'estilo', 'bienestar'];
+
+/* ===========================================================================
+   1b · 🔓 FASE B — LAS SEIS TARJETAS Y LAS PANTALLAS DE CATEGORÍA (2026-11-01)
+   ===========================================================================
+   Josué decidió una portada con seis tarjetas fijas (Ropa, Cuidado, Pelo,
+   Fragancia, Accesorios y Funcionamiento) y un acceso aparte a Hábitos y
+   rutinas. **Las tarjetas son las categorías de `CATEGORIAS_EH` que llevan
+   `portada`**, y lo que hay dentro de cada una es la `categoria` de cada línea de
+   `MODULOS_EH`: ni una lista nueva, ni un mapa `id → tarjeta`.
+
+   Estas funciones **solo leen**: no guardan nada, no cambian ningún id ni
+   ninguna configuración, y no deciden la navegación —devuelven a dónde lleva
+   cada tarjeta y la vista lo hace con lo que ya existe (`abrirModulo`, que pasa
+   por la F41 si el apartado está desactivado). */
+
+/** Cuántos apartados tiene una categoría en el catálogo. */
+const apartadosDeCategoria = (catId) => MODULOS_EH.filter((m) => m.categoria === catId);
+
+/**
+ * Cómo se abre cada tarjeta:
+ * - `armario`   — Ropa: abre el Armario de la aplicación, a través de su apartado
+ *                 (`estilo`), para que la F41 pare antes si está desactivado.
+ * - `directa`   — una categoría con un solo apartado (Pelo, Fragancia,
+ *                 Accesorios): abre ese apartado, sin pantalla intermedia.
+ * - `categoria` — Cuidado y Funcionamiento: su pantalla de categoría.
+ */
+export const TIPOS_DE_TARJETA = ['armario', 'directa', 'categoria'];
+
+/** 🔓 B5 (decisión A) — ¿el apartado se abre desde una tarjeta fija de la portada?
+ *  Ropa, Pelo, Fragancia y Accesorios: su tamaño de plaquita no se aplica. */
+export function tieneTarjetaFija(moduloId) {
+  const m = MODULOS_EH.find((x) => x.id === moduloId);
+  const cat = m && CATEGORIAS_EH.find((c) => c.id === m.categoria);
+  return !!cat && Number.isInteger(cat.portada) && tipoDeTarjeta(cat) !== 'categoria';
+}
+
+function tipoDeTarjeta(cat) {
+  const mods = apartadosDeCategoria(cat.id);
+  if (mods.length === 1 && mods[0].id === MODULO_EH_ESTILO) return 'armario';
+  if (mods.length === 1) return 'directa';
+  return 'categoria';
+}
+
+/**
+ * Las seis tarjetas de la portada, en su orden fijo, y el acceso aparte a
+ * Hábitos y rutinas.
+ *
+ * ⚠️ Las seis salen **siempre** (decisión 6 de Josué): una categoría sin nada
+ * activado conserva su tarjeta, y dentro se puede activar. El estado de cada
+ * apartado se respeta al tocar, no escondiendo la tarjeta.
+ *
+ * ⚠️ En las tarjetas de un solo apartado, sus **líneas de contenido** (F31) son
+ * la línea secundaria (decisión A). Su tamaño de plaquita no se aplica —la
+ * tarjeta es fija—, pero **no se borra**: sigue guardado tal cual.
+ */
+export function tarjetasDePortada(estado, { armario = null, datosGlobales = {} } = {}) {
+  const e = normalizarEstiloHombre(estado);
+  const todos = todosLosModulos(e);
+  const tarjetas = CATEGORIAS_EH
+    .filter((c) => Number.isInteger(c.portada))
+    .sort((a, b) => a.portada - b.portada)
+    .map((cat) => {
+      const tipo = tipoDeTarjeta(cat);
+      const base = { id: cat.id, nombre: cat.nombre, icono: cat.icono, portada: cat.portada, tipo };
+      if (tipo === 'categoria') {
+        const mods = todos.filter((m) => m.categoria === cat.id);
+        return {
+          ...base,
+          modulo: null,
+          destino: null,
+          activos: mods.filter((m) => m.activo).length,
+          total: mods.length,
+          enlace: null,
+          lineas: null,
+          tieneLineas: false,
+        };
+      }
+      const m = todos.find((x) => x.categoria === cat.id);
+      const ficha = fichaDePlaquita(e, m, { armario, datosGlobales });
+      return {
+        ...base,
+        modulo: m.id,
+        /* Ropa lleva al Armario de la aplicación; las demás, a su propio apartado. */
+        destino: tipo === 'armario' ? DESTINO_ARMARIO : m.id,
+        activo: !!m.activo,
+        activos: m.activo ? 1 : 0,
+        total: 1,
+        /* 🔓 Decisión 2.1 — el enlace discreto de Ropa a «👤 Mi estilo» (F6), que a su
+           vez lleva a sus preferencias. Solo con el apartado encendido, como hoy. */
+        enlace: tipo === 'armario' && m.activo ? { ...ZONA_MI_ESTILO, destino: 'miEstilo' } : null,
+        lineas: ficha.lineas,
+        tieneLineas: ficha.tieneLineas,
+      };
+    });
+
+  const mh = todos.find((x) => x.id === 'habitos');
+  const habitos = mh ? {
+    id: mh.id,
+    nombre: mh.nombre,
+    icono: mh.icono,
+    activo: !!mh.activo,
+    /* Decisión 4 — se ve ya, dice la verdad y no simula abrir nada. */
+    conPantalla: APARTADOS_CON_DESTINO.includes(mh.id),
+    pulsable: APARTADOS_CON_DESTINO.includes(mh.id),
+    texto: APARTADOS_CON_DESTINO.includes(mh.id) ? null : TEXTOS_PANTALLA.sinPantalla,
+  } : null;
+
+  return { tarjetas, habitos };
+}
+
+/**
+ * Lo que se ve dentro de una tarjeta de categoría (Cuidado, Funcionamiento).
+ *
+ * - `visibles`   — los apartados activos y no ocultos, en el orden que él eligió,
+ *                  con la misma ficha que las plaquitas de hoy (estado, insignia,
+ *                  tamaño y líneas de la F31). Un apartado sin pantalla lo dice
+ *                  (`conPantalla: false` y `texto`) y no se puede abrir (decisión G).
+ * - `ocultos`    — los activos que él ocultó (F36): siguen funcionando y no se
+ *                  pintan, igual que hoy en la portada.
+ * - `paraActivar`— los que tiene apagados, para activarlos desde dentro (decisión 6).
+ *
+ * Devuelve `null` si la categoría no existe o no es una tarjeta de la portada.
+ */
+export function contenidoDeCategoria(estado, id, { armario = null, datosGlobales = {} } = {}) {
+  const cat = CATEGORIAS_EH.find((c) => c.id === id);
+  if (!cat || !Number.isInteger(cat.portada)) return null;
+  const e = normalizarEstiloHombre(estado);
+  const mods = todosLosModulos(e).filter((m) => m.categoria === cat.id);
+  const visibles = mods.filter((m) => m.activo && !m.oculto).map((m) => {
+    const conPantalla = APARTADOS_CON_DESTINO.includes(m.id);
+    return {
+      ...fichaDePlaquita(e, m, { armario, datosGlobales }),
+      conPantalla,
+      texto: conPantalla ? null : TEXTOS_PANTALLA.sinPantalla,
+    };
+  });
+  return {
+    id: cat.id,
+    nombre: cat.nombre,
+    icono: cat.icono,
+    portada: cat.portada,
+    visibles,
+    ocultos: mods.filter((m) => m.activo && m.oculto).map((m) => ({ id: m.id, nombre: m.nombre, icono: m.icono })),
+    paraActivar: MODULOS_EH
+      .filter((m) => m.categoria === cat.id && !mods.find((x) => x.id === m.id && x.activo))
+      .map((m) => ({ id: m.id, nombre: m.nombre, icono: m.icono, sub: m.sub })),
+    vacia: visibles.length === 0,
+  };
+}
 
 /* ===========================================================================
    2 · LOS ACCESOS RÁPIDOS (apartado 9)
@@ -958,6 +1128,10 @@ export function panelPersonalizar(estado, { armario = null, datosGlobales = {} }
         de: activos.length,
         tamano: tamanoDe(e, m.id),
         tamanos: TAMANOS_PLAQUITA,
+        /* 🔓 Fase B · B5 (decisión A) — Ropa, Pelo, Fragancia y Accesorios tienen
+           tarjeta fija en la portada: no se les ofrece un tamaño que no se vería.
+           ⚠️ Su tamaño guardado NO se borra ni se toca: `tamano` sigue saliendo. */
+        tarjetaFija: tieneTarjetaFija(m.id),
         lineas: disponibles.map((l) => ({ ...l, puesta: activas.includes(l.id) })),
         // ⚠️ Regla 8: sin líneas se dice, no se enseñan casillas vacías.
         sinLineas: disponibles.length === 0 ? SIN_LINEAS : null,

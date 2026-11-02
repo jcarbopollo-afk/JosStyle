@@ -64,7 +64,9 @@ console.log('\n🕶️  EH · Fase 26/65 — Accesorios y estilo personal\n');
 console.log('Test 1 — activar accesorios');
 {
   ok(!!moduloEH('accesorios'), 'el módulo está en el catálogo de la Fase 1');
-  eq(moduloEH('accesorios').categoria, 'estilo', 'y en la categoría de estilo');
+  /* 🔓 Fase B de Imagen personal (2026-11-01) — estaba en la categoría `estilo`; ahora
+     tiene su propia tarjeta de portada, Accesorios (decisión de Josué). */
+  eq(moduloEH('accesorios').categoria, 'accesorios', 'Fase B: y en su propia categoría, Accesorios');
   eq(moduloEH('accesorios').icono, '🕶️', 'con el icono del enunciado');
   ok(moduloEH('accesorios').terminos.includes('reloj'), '"reloj" lo encuentra en el buscador');
   ok(moduloEH('accesorios').terminos.includes('gafas'), 'y "gafas" también');

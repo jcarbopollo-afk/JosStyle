@@ -2278,6 +2278,17 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
+🧔 **IMAGEN PERSONAL — EL CICLO POSTERIOR A LA F65 (2026-11-01): B1–B8 APROBADAS Y B9 HECHA; FALTA FUSIONAR EN `main`.** Josué abrió un
+ciclo nuevo para reorganizar su navegación: la portada son ahora **seis tarjetas** (Ropa, Cuidado, Pelo, Fragancia, Accesorios y
+Funcionamiento) con **Hábitos y rutinas** aparte. **Rama: `claude/imagen-personal-integracion`**, basada en `main` (`ea7bc4a`) y
+**sin la PR #2 de chatbots**: la Fase A (`f8b37b3`), B1–B7 con sus correcciones (`4dc6772`), B8 (`e572ab7`) y una actualización
+documental; `verificar.sh` en verde (4144 casos de renderizado, 3891 en Chromium) y la vista previa de Vercel aprobada por él. Nada
+en `main` ni en producción. La rama anterior, `claude/imagen-personal-fase-a`, se conserva. **Versión 3.161.3**, sin
+subir. Referencia: **`docs/16_IMAGEN_PERSONAL_CICLO_POST_F65.md`** (decisiones, rutas, recorridos de la F51, qué está construido y
+qué falta) y **`docs/08_ESTILO_DE_HOMBRE_TECNICO.md`** (la técnica, regenerada). 🚨 **La F65 sigue congelada**: ni `docs/09` ni
+`cierre.js` se tocan, y ningún otro módulo (Armario, chatbots…) se modifica sin su autorización. Lo siguiente es **fusionar la rama
+en `main`**, y lo autoriza él.
+
 🚨 **AHORA MISMO (2026-10-18): CUATRO PROMPTS DE JOSUÉ, EN ORDEN, UNO A UNO, CADA UNO A `main` CON `verificar.sh` EN
 VERDE.** Están copiados palabra por palabra en **`docs/14_PROMPTS_2026-10-18.md`** (con su tabla de estado): P1 selección
 universal de fotos y archivos · P2 objetivo de agua con jarra animada · P3 estados de IA no disponible · P4 los dos bugs
@@ -3673,6 +3684,8 @@ correcciones, errores y ajustes imprescindibles (ver `src/lib/cierre.js`). Lo qu
 Entrega 2 es **solo Sonido F2** —la biblioteca—, y **depende de los archivos de audio que dará
 Josué**: no hay nada que yo pueda construir ahí sin ellos.
 El estado final del módulo está en `docs/09_ESTILO_DE_HOMBRE_CIERRE.md`: es lo único que queda de Estilo de Hombre. Ver `docs/07_CHECKLIST_ENTREGA2.md` y `especificaciones/`.
+🔓 **Y después de la F65, el ciclo de reorganización (2026-11-01):** la portada de seis tarjetas y las rutas de hoy están en
+`docs/16_IMAGEN_PERSONAL_CICLO_POST_F65.md`; `docs/09` describe la v3.0.0 y no se toca (ver «Lo que hay que hacer ahora»).
 
 ⚠️ **EH F1-F65 dejaron doscientas sesenta y dos cosas que cualquier cambio futuro tiene que respetar:**
 - **Añadir un módulo es añadir una línea a `MODULOS_EH`.** Categoría, confirmación, recomendación y

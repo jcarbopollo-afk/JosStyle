@@ -31,7 +31,12 @@ import {
   contenidoDePlaquita, SIN_LINEAS, MAX_ACCESOS_VISIBLES, accesosVisibles,
   TEXTOS_RESTABLECER, restablecerDiseno, CRITERIO_AUTOMATICO, TEXTOS_AUTOMATICO,
   personalizarAutomaticamente, TEXTOS_MOVER, panelPersonalizar,
+  tarjetasDePortada, contenidoDeCategoria, TIPOS_DE_TARJETA,
 } from '../src/lib/pantallaEH.js';
+import { alternarOculto } from '../src/lib/gestionEstilo.js';
+import { APARTADOS_CON_DESTINO } from '../src/lib/gestionModulos.js';
+import { DESTINO_ARMARIO } from '../src/lib/armarioEnEstiloHombre.js';
+import { ZONA_MI_ESTILO } from '../src/lib/perfilEstilo.js';
 
 let n = 0; let fallos = 0;
 const ok = (c, m) => { n += 1; if (c) console.log(`  ✓ ${m}`); else { fallos += 1; console.log(`  ✗ ${m}`); } };
@@ -66,26 +71,33 @@ console.log('\nTest 2 — ⚠️ ni una agrupación nueva');
     ok(!!categoriaEH(id), `⚠️ el grupo "${id}" del apartado 3 es una categoría de la F2`);
   });
   eq(categoriaEH('cuidado').nombre, 'Cuidado', 'y se llama como el enunciado');
-  eq(categoriaEH('estilo').nombre, 'Estilo', 'igual que el segundo');
+  /* 🔓 Fase B de Imagen personal (2026-11-01) — `estilo` se llama ahora «Ropa» por
+     fuera (la primera tarjeta de la portada); el id no se toca. */
+  eq(categoriaEH('estilo').nombre, 'Ropa', 'Fase B: el segundo se llama ahora «Ropa» (mismo id)');
   eq(categoriaEH('bienestar').nombre, 'Personal',
     '⚠️ y el tercero se renombró a "Personal", que es como lo llama Josué');
 
-  /* ⚠️ *"🧴 Cuidado: Skincare, Pelo, Cuerpo, Barba"* — Pelo y Barba están ahí. */
-  ['skincare', 'pelo', 'barba', 'cuerpo'].forEach((id) => {
-    eq(moduloEH(id).categoria, 'cuidado', `"${id}" está en Cuidado, como dice el apartado 3`);
+  /* ⚠️ *"🧴 Cuidado: Skincare, Pelo, Cuerpo, Barba"* — así lo pedía el apartado 3 de
+     la F30. 🔓 Fase B — Josué lo sustituyó por las seis tarjetas: Pelo tiene la suya,
+     Perfumes va a Fragancia, Accesorios a Accesorios y Mis gustos a Funcionamiento.
+     Se da la vuelta a cada línea, sin quitar ninguna. */
+  ['skincare', 'barba', 'cuerpo'].forEach((id) => {
+    eq(moduloEH(id).categoria, 'cuidado', `"${id}" está en Cuidado`);
   });
-  ['estilo', 'accesorios', 'perfumes'].forEach((id) => {
-    eq(moduloEH(id).categoria, 'estilo', `"${id}" está en Estilo`);
-  });
-  eq(moduloEH('gustos').categoria, 'bienestar', 'y Gustos, en Personal');
+  eq(moduloEH('pelo').categoria, 'pelo', 'Fase B: "pelo" tiene su propia tarjeta, Pelo');
+  eq(moduloEH('estilo').categoria, 'estilo', '"estilo" está en Ropa (la categoría `estilo`)');
+  eq(moduloEH('accesorios').categoria, 'accesorios', 'Fase B: "accesorios" tiene su tarjeta, Accesorios');
+  eq(moduloEH('perfumes').categoria, 'fragancia', 'Fase B: "perfumes" está en Fragancia');
+  eq(moduloEH('gustos').categoria, 'funcionamiento', 'Fase B: y Mis gustos, en Funcionamiento');
 
   const e = con(['estilo', 'accesorios', 'perfumes', 'skincare', 'pelo', 'barba', 'gustos']);
   const sec = seccionesDePantalla(e, { armario: ARM });
-  eq(sec.map((s) => s.nombre), ['Estilo', 'Cuidado', 'Personal'],
+  // 🔓 Fase B — las secciones son ahora las categorías nuevas, en el orden de sus módulos.
+  eq(sec.map((s) => s.nombre), ['Ropa', 'Accesorios', 'Fragancia', 'Cuidado', 'Pelo', 'Funcionamiento'],
     '⚠️ y la pantalla los agrupa así, con `modulosAgrupados` de la F2');
   eq(sec.map((s) => s.modulos.map((m) => m.nombre)),
-    [['Estilo y armario', 'Accesorios', 'Perfumes'], ['Skincare', 'Pelo', 'Barba'], ['Mis gustos']],
-    '⚠️ con exactamente los módulos que el apartado 3 pone en cada grupo');
+    [['Estilo y armario'], ['Accesorios'], ['Perfumes'], ['Skincare', 'Barba'], ['Pelo'], ['Mis gustos']],
+    '⚠️ con exactamente los módulos que cada categoría tiene en el catálogo');
   eq(sec.length, modulosAgrupados(e, { soloActivos: true }).length,
     'exactamente los que devuelve la función de la F2: ni uno más');
   eq(auditarPantalla(e).agrupacionesNuevas, 0, 'la auditoría: cero agrupaciones nuevas');
@@ -111,7 +123,8 @@ console.log('\nTest 3 — la pantalla crece con él');
     '*"si solo usa Skincare, solo verá Skincare"* (apartado 14)');
 
   const dos = alternarModulo(uno, 'perfumes', true);
-  eq(seccionesDePantalla(dos, { armario: ARM }).map((s) => s.nombre), ['Cuidado', 'Estilo'],
+  // 🔓 Fase B — la sección de Perfumes es ahora Fragancia.
+  eq(seccionesDePantalla(dos, { armario: ARM }).map((s) => s.nombre), ['Cuidado', 'Fragancia'],
     '⚠️ y al activar Perfumes, APARECE su sección (apartado 14)');
 
   const cinco = con(['skincare', 'pelo', 'estilo', 'perfumes', 'gustos']);
@@ -162,10 +175,11 @@ console.log('\nTest 5 — ⚠️ ni un orden ni un interruptor nuevos (D2-07)');
   /* Empieza con Estilo arriba, para que subir Skincare tenga algo que mover. */
   const e = con(['estilo', 'perfumes', 'skincare']);
   const antes = seccionesDePantalla(e, { armario: ARM }).map((s) => s.id);
-  eq(antes, ['estilo', 'cuidado'], 'de partida, Estilo va primero');
+  // 🔓 Fase B — Perfumes tiene ahora su sección (Fragancia), entre las dos de antes.
+  eq(antes, ['estilo', 'fragancia', 'cuidado'], 'de partida, Ropa (Estilo) va primero');
   const subido = subirModulo(subirModulo(e, 'skincare'), 'skincare');
   const despues = seccionesDePantalla(subido, { armario: ARM }).map((s) => s.id);
-  eq(despues, ['cuidado', 'estilo'],
+  eq(despues, ['cuidado', 'estilo', 'fragancia'],
     '⚠️ reordenar con `subirModulo` (F2) REORDENA las secciones (prueba 7)');
   ok(JSON.stringify(antes) !== JSON.stringify(despues), 'y el orden cambia de verdad');
 
@@ -313,7 +327,8 @@ console.log('\nTest 10 — el panel que dibuja la pantalla');
 {
   const e = alternarAcceso(con(['skincare', 'pelo', 'estilo', 'perfumes', 'gustos']), 'rutina_facial');
   const p = panelPantalla(e, { armario: ARM });
-  eq(p.secciones.length, 3, 'el panel trae sus tres secciones');
+  // 🔓 Fase B — eran tres (Cuidado, Estilo y Personal); con las categorías nuevas, cinco.
+  eq(p.secciones.length, 5, 'el panel trae sus cinco secciones (Fase B)');
   eq(p.accesos.length, 1, 'el acceso que eligió');
   ok(p.accesosDisponibles.length >= 1, 'y los que puede elegir');
   eq(p.verAccesos, true, 'con la zona encendida');
@@ -321,7 +336,7 @@ console.log('\nTest 10 — el panel que dibuja la pantalla');
   eq(p.inicial, null, 'y sin vacío inicial, porque tiene módulos');
 
   const r = resumenPantalla(e, { armario: ARM });
-  eq(r.secciones, 3, 'el resumen cuenta las secciones');
+  eq(r.secciones, 5, 'el resumen cuenta las secciones (Fase B: cinco)');
   eq(r.modulos, 5, 'y los módulos');
   eq(r.accesos, 1, 'los accesos');
   eq(r.vacio, false, 'y dice que no está vacío');
@@ -689,6 +704,116 @@ console.log('\nTest 19 — *"debe persistir entre sesiones y dispositivos"*');
   ok(textosDePantalla().length > 30, 'los textos nuevos también se barren');
   ok(!textosDePantalla().some((t) => /debes|tienes que|obligatorio|has fallado/i.test(t)),
     'y ninguno le manda ni le reprocha');
+}
+
+/* ===========================================================================
+   Test B2 — 🔓 FASE B DE IMAGEN PERSONAL: LAS SEIS TARJETAS Y LAS CATEGORÍAS
+   ===========================================================================
+   `tarjetasDePortada` y `contenidoDeCategoria` solo LEEN el catálogo y lo guardado
+   (una sola fuente: `CATEGORIAS_EH` + la `categoria` de cada línea de `MODULOS_EH`). */
+console.log('\nTest B2 — Fase B: tarjetas de portada y contenido de cada categoría');
+{
+  const e = con(['estilo', 'skincare', 'pelo', 'gustos', 'educacion']);
+  const antes = JSON.stringify(e);
+  const { tarjetas, habitos } = tarjetasDePortada(e, { armario: ARM });
+  ok(JSON.stringify(e) === antes, 'B2: leer las tarjetas no cambia el estado (no se guarda nada)');
+
+  // 1 · Seis, en su orden, con su forma de abrirse.
+  eq(tarjetas.map((t) => t.nombre), ['Ropa', 'Cuidado', 'Pelo', 'Fragancia', 'Accesorios', 'Funcionamiento'],
+    'B2: las seis tarjetas, en el orden aprobado');
+  eq(tarjetas.map((t) => t.portada), [1, 2, 3, 4, 5, 6], 'B2: con su posición de la 1 a la 6');
+  eq(tarjetas.map((t) => t.tipo), ['armario', 'categoria', 'directa', 'directa', 'directa', 'categoria'],
+    'B2: Ropa abre el Armario; Pelo, Fragancia y Accesorios, su apartado; Cuidado y Funcionamiento, su categoría');
+  ok(tarjetas.every((t) => TIPOS_DE_TARJETA.includes(t.tipo)), 'B2: cada tipo es uno de los declarados');
+  eq(tarjetas.map((t) => t.modulo), ['estilo', null, 'pelo', 'perfumes', 'accesorios', null],
+    'B2: cada tarjeta directa dice qué apartado abre');
+  eq(tarjetas.map((t) => t.destino), [DESTINO_ARMARIO, null, 'pelo', 'perfumes', 'accesorios', null],
+    'B2: Ropa → Armario de la aplicación; las directas → su apartado; sin pantallas intermedias');
+  eq(tarjetas.map((t) => [t.activos, t.total]), [[1, 1], [1, 5], [1, 1], [0, 1], [0, 1], [2, 4]],
+    'B2: cuántos de sus apartados están activos');
+
+  // 2 · Las seis salen siempre (decisión 6), aunque no haya nada activo.
+  const vacio = tarjetasDePortada(nuevo(), { armario: ARM }).tarjetas;
+  eq(vacio.map((t) => t.nombre), tarjetas.map((t) => t.nombre), 'B2: sin nada activado, las seis tarjetas siguen ahí');
+  eq(tarjetasDePortada(con(TODOS), { armario: ARM }).tarjetas.length, 6, 'B2: con todo activado, también seis');
+
+  // 3 · El estado de activación se respeta, sin esconder la tarjeta.
+  const fr = (est) => tarjetasDePortada(est, { armario: ARM }).tarjetas.find((t) => t.id === 'fragancia');
+  eq(fr(e).activo, false, 'B2: Fragancia con Perfumes apagado sigue en su sitio, marcada como no activa');
+  eq(fr(alternarModulo(e, 'perfumes', true)).activo, true, 'B2: y al activarlo, se marca como activa');
+  eq(tarjetasDePortada(alternarModulo(e, 'estilo', false), { armario: ARM }).tarjetas[0].activo, false,
+    'B2: Ropa con Estilo apagado conserva su tarjeta (la F41 se encargará al tocarla)');
+
+  // 4 · El enlace discreto de Ropa a «👤 Mi estilo» (F6), solo con Estilo encendido.
+  eq(tarjetas[0].enlace && tarjetas[0].enlace.id, ZONA_MI_ESTILO.id, 'B2: Ropa lleva el enlace a «Mi estilo» (la zona de la F6)');
+  eq(tarjetas[0].enlace && tarjetas[0].enlace.destino, 'miEstilo', 'B2: …que abre Mi estilo, desde donde se llega a sus preferencias');
+  eq(tarjetasDePortada(alternarModulo(e, 'estilo', false), { armario: ARM }).tarjetas[0].enlace, null,
+    'B2: con Estilo apagado no se ofrece el enlace, como hoy');
+  ok(tarjetas.slice(1).every((t) => t.enlace === null), 'B2: ninguna otra tarjeta lleva ese enlace');
+
+  // 5 · Decisión A — las líneas de contenido (F31) de las directas; el tamaño no se borra.
+  const pelo = tarjetas.find((t) => t.id === 'pelo');
+  eq(pelo.lineas, contenidoDePlaquita(e, 'pelo', { armario: ARM }), 'B2: las líneas de Pelo son las de su plaquita (F31)');
+  const conTam = cambiarTamano(e, 'pelo', 'grande');
+  const guardado = JSON.stringify(conTam);
+  tarjetasDePortada(conTam, { armario: ARM });
+  ok(JSON.stringify(conTam) === guardado, 'B2: un tamaño guardado no se toca al leer las tarjetas');
+  eq(tamanoDe(conTam, 'pelo'), tamanoDe(cambiarTamano(e, 'pelo', 'grande'), 'pelo'), 'B2: …y sigue guardado igual');
+
+  // 6 · Hábitos y rutinas: acceso aparte, honesto y sin simular abrir nada.
+  eq(habitos.id, 'habitos', 'B2: el acceso aparte es el apartado Hábitos y rutinas');
+  eq(habitos.pulsable, false, 'B2: no se puede pulsar: todavía no tiene pantalla');
+  eq(habitos.texto, 'Todavía no tiene pantalla propia', 'B2: …y lo dice con esas palabras');
+  eq(tarjetasDePortada(alternarModulo(e, 'habitos', true), { armario: ARM }).habitos.texto, habitos.texto,
+    'B2: activado o no, dice lo mismo');
+  ok(!tarjetas.some((t) => t.id === 'bienestar' || t.modulo === 'habitos'), 'B2: y no es una de las seis tarjetas');
+
+  // 7 · Cuidado: el orden suyo, lo oculto aparte y lo apagado para activar.
+  const cu = (est) => contenidoDeCategoria(est, 'cuidado', { armario: ARM });
+  const e2 = con(['higiene', 'skincare', 'barba']);
+  eq(cu(e2).visibles.map((m) => m.id), ['higiene', 'skincare', 'barba'], 'B2: Cuidado enseña sus activos en el orden que él eligió');
+  eq(cu(subirModulo(e2, 'barba')).visibles.map((m) => m.id), ['higiene', 'barba', 'skincare'],
+    'B2: reordenar con la F2 cambia el orden dentro de la categoría');
+  const oc = alternarOculto(e2, 'skincare');
+  eq(cu(oc).visibles.map((m) => m.id), ['higiene', 'barba'], 'B2: un apartado oculto (F36) no se pinta…');
+  eq(cu(oc).ocultos.map((m) => m.id), ['skincare'], 'B2: …pero sigue ahí, y se dice cuál');
+  eq(cu(e2).paraActivar.map((m) => m.id), ['cuerpo', 'sonrisa'], 'B2: los apagados se ofrecen para activar desde dentro');
+  eq(cu(alternarModulo(e2, 'sonrisa', true)).visibles.map((m) => m.id).includes('sonrisa'), true,
+    'B2: y al activarlo pasa a verse');
+  eq(cu(nuevo()).vacia, true, 'B2: sin nada activo, la categoría está vacía…');
+  eq(cu(nuevo()).paraActivar.length, 5, 'B2: …y ofrece activar sus cinco apartados');
+
+  // 8 · Funcionamiento: lo que no tiene pantalla lo dice (decisión G).
+  const fu = contenidoDeCategoria(con(['gustos', 'progreso', 'educacion', 'productos']), 'funcionamiento', { armario: ARM });
+  eq(fu.visibles.map((m) => [m.id, m.conPantalla]),
+    [['gustos', true], ['progreso', false], ['educacion', false], ['productos', false]],
+    'B2: Mis gustos tiene pantalla; Progreso, Educación y Productos todavía no');
+  ok(fu.visibles.filter((m) => !m.conPantalla).every((m) => m.texto === 'Todavía no tiene pantalla propia'),
+    'B2: …y los tres lo dicen con la misma frase que Hábitos');
+  ok(fu.visibles.filter((m) => m.conPantalla).every((m) => m.texto === null), 'B2: el que tiene pantalla no lleva aviso');
+  ok(fu.visibles.every((m) => m.conPantalla === APARTADOS_CON_DESTINO.includes(m.id)),
+    'B2: «tiene pantalla» sale de la lista de la Fase A, no de una segunda');
+
+  // 9 · Lo que no es tarjeta no tiene pantalla de categoría; Fitness, Sueño y Salud no salen.
+  ['fisico', 'salud', 'bienestar', 'conocimiento', 'compras', 'no-existe'].forEach((id) => {
+    eq(contenidoDeCategoria(e, id), null, `B2: «${id}» no es una tarjeta de la portada`);
+  });
+  const todo = con(TODOS);
+  const enTarjetas = tarjetasDePortada(todo, { armario: ARM }).tarjetas.flatMap((t) => (
+    t.tipo === 'categoria' ? contenidoDeCategoria(todo, t.id).visibles.map((m) => m.id) : [t.modulo]));
+  ok(!['fitness', 'sueno', 'salud', 'habitos'].some((id) => enTarjetas.includes(id)),
+    'B2: Fitness, Sueño, Salud y Hábitos no aparecen en ninguna tarjeta');
+  eq([...enTarjetas, 'fitness', 'sueno', 'salud', 'habitos'].sort(), [...TODOS].sort(),
+    '⚠️ B2: entre las seis tarjetas, Gestionar (Fitness, Sueño, Salud) y Hábitos están los 17 apartados, cada uno una vez');
+
+  // 10 · La ficha de cada plaquita es la misma que la de la portada de hoy.
+  const seccion = seccionesDePantalla(e2, { armario: ARM }).find((sx) => sx.id === 'cuidado');
+  eq(cu(e2).visibles.map(({ conPantalla, texto, ...resto }) => resto), seccion.modulos,
+    'B2: Cuidado pinta exactamente la misma ficha de plaquita que la portada de hoy');
+
+  // 11 · Ni una promesa de fase.
+  const textos = JSON.stringify([tarjetas, habitos, fu, cu(e2)]);
+  ok(!/fase \d|siguientes fases|próximamente/i.test(textos), 'B2: ningún texto promete una fase');
 }
 
 console.log(`\n${fallos === 0 ? '✅' : '❌'} ${n - fallos}/${n} comprobaciones\n`);

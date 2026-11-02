@@ -88,6 +88,19 @@ export const TIPOS_DE_ACCION = [
 export const tipoDeAccion = (id) => TIPOS_DE_ACCION.find((t) => t.id === id) || null;
 export const maximoDe = (tipo) => tipoDeAccion(tipo)?.maximo ?? 3;
 
+/* 🔓 Imagen personal · Fase B · B6 — los recorridos, con la navegación de verdad.
+   La portada es ahora de seis tarjetas (Ropa, Cuidado, Pelo, Fragancia, Accesorios
+   y Funcionamiento): Pelo, Fragancia y Accesorios abren su apartado; Cuidado y
+   Funcionamiento abren su pantalla de categoría (`CategoriaEH`), donde están sus
+   apartados y —en Funcionamiento— Personalizar, Ordenar, Gestionar, Mi progreso y
+   «Mi estilo personal». Cada paso se ha comprobado en `EstiloHombreView.jsx` y en
+   el recorrido de Chromium de la Fase B. Los tipos, los límites (3, 4 y 5),
+   `maximoDe` y `demasiadoLargos` NO cambian: con la navegación nueva, ninguno se
+   pasa de su límite. Y se corrigen tres pasos que ya no eran verdad antes de la
+   Fase B: la estrella de un perfume vive dentro de «Mi colección»; el
+   recordatorio no existe en las rutinas de Skincare (sí en las de Barba,
+   decisión E); y «Ocultar» está en «🧩 Gestionar apartados» de Personalizar, no
+   en el «Gestionar apartados» de los interruptores. */
 export const RECORRIDOS = [
   {
     id: 'anadir_perfume',
@@ -95,7 +108,7 @@ export const RECORRIDOS = [
     tipo: 'puntual',
     delEnunciado: true,
     pasos: [
-      { toca: 'La plaquita 🌫️ Perfumes', abre: 'PerfumesEH' },
+      { toca: 'La tarjeta 🌫️ Fragancia', abre: 'PerfumesEH' },
       { toca: 'Mi colección', abre: null },
       { toca: 'Añadir perfume', abre: null },
     ],
@@ -105,9 +118,12 @@ export const RECORRIDOS = [
     accion: 'Marcar un perfume como favorito',
     tipo: 'diaria',
     delEnunciado: true,
+    /* 🔓 B6 — el corazón «Favorito» está dentro de «Mi colección», no en la
+       pantalla de entrada de Perfumes: eran tres toques, no dos. */
     pasos: [
-      { toca: 'La plaquita 🌫️ Perfumes', abre: 'PerfumesEH' },
-      { toca: 'La estrella del perfume', abre: null },
+      { toca: 'La tarjeta 🌫️ Fragancia', abre: 'PerfumesEH' },
+      { toca: 'Mi colección', abre: null },
+      { toca: 'El corazón «Favorito» del perfume', abre: null },
     ],
   },
   {
@@ -116,11 +132,14 @@ export const RECORRIDOS = [
     tipo: 'diaria',
     delEnunciado: true,
     pasos: [
-      { toca: 'La plaquita 🧴 Skincare', abre: 'SkincareEH' },
-      { toca: 'Rutinas', abre: 'RutinasPielEH' },
+      { toca: 'La tarjeta 🧴 Cuidado', abre: 'CategoriaEH' },
+      { toca: 'La plaquita Skincare', abre: 'SkincareEH' },
+      { toca: 'Mi rutina', abre: 'RutinasPielEH' },
     ],
-    /* ⚠️ Y con el acceso rápido de la F29 encendido, **uno**: la zona ⚡ lleva
-       directo a `skincare · rutina`. Eso es lo que hace que valga la pena. */
+    /* ⚠️ Con el acceso rápido «🧴 Rutina facial» puesto, **uno**: el acceso abre
+       directamente la rutina de Skincare (su zona `rutina`, que la portada pasa a
+       `abrirModulo`). 🔓 B6 dijo «dos» porque entonces la zona no se usaba; la
+       corrección posterior a B7 la hace llegar. */
     atajo: 'rutina_facial',
   },
   {
@@ -128,10 +147,14 @@ export const RECORRIDOS = [
     accion: 'Ocultar un módulo de la pantalla',
     tipo: 'ajuste',
     delEnunciado: true,
+    /* 🔓 B6 — «Ocultar» vive en la pantalla de la F36 (`GestionarEstiloEH`), que
+       se abre desde Personalizar. Y solo en los apartados de Cuidado y
+       Funcionamiento: una tarjeta fija no se oculta (decisión B). */
     pasos: [
-      { toca: 'Gestionar apartados', abre: 'GestionarApartados' },
-      { toca: 'El apartado', abre: null },
-      { toca: 'Ocultar', abre: null },
+      { toca: 'La tarjeta ⚙️ Funcionamiento', abre: 'CategoriaEH' },
+      { toca: '⋮ Personalizar', abre: 'PersonalizarPlaquitas' },
+      { toca: '🧩 Gestionar apartados', abre: 'GestionarEstiloEH' },
+      { toca: '👁️ Ocultar, en el apartado', abre: null },
     ],
   },
   {
@@ -139,11 +162,13 @@ export const RECORRIDOS = [
     accion: 'Crear un recordatorio de una rutina',
     tipo: 'puntual',
     delEnunciado: true,
+    /* 🔓 B6 (decisión E) — las rutinas de Skincare no tienen recordatorio; las de
+       Barba sí («Recordármelo», en cada rutina de «Mi rutina»). */
     pasos: [
-      { toca: 'La plaquita del módulo', abre: 'PanelPiel' },
-      { toca: 'Rutinas', abre: 'RutinasPielEH' },
-      { toca: 'La rutina', abre: null },
-      { toca: 'Recordarme', abre: null },
+      { toca: 'La tarjeta 🧴 Cuidado', abre: 'CategoriaEH' },
+      { toca: 'La plaquita Barba', abre: 'BarbaEH' },
+      { toca: 'Mi rutina', abre: 'RutinasBarbaEH' },
+      { toca: 'Recordármelo, en la rutina', abre: null },
     ],
   },
   /* Los siguientes no los nombra el enunciado, pero son los que él hace: si uno
@@ -154,7 +179,7 @@ export const RECORRIDOS = [
     accion: 'Ver qué me recomienda',
     tipo: 'diaria',
     pasos: [
-      { toca: 'La plaquita del módulo', abre: 'PanelPelo' },
+      { toca: 'La tarjeta 💇 Pelo', abre: 'PanelPelo' },
       { toca: 'Recomendaciones', abre: 'RecomendacionesPeloEH' },
     ],
   },
@@ -163,7 +188,7 @@ export const RECORRIDOS = [
     accion: 'Buscar cualquier cosa por su nombre',
     tipo: 'diaria',
     pasos: [
-      { toca: 'La lupa', abre: 'BuscadorEstiloEH' },
+      { toca: '🔍 Buscar en Imagen personal', abre: 'BuscadorEstiloEH' },
       { toca: 'Escribir y tocar el resultado', abre: null },
     ],
   },
@@ -181,19 +206,25 @@ export const RECORRIDOS = [
     id: 'cambiar_tamano',
     accion: 'Cambiar el tamaño de una plaquita',
     tipo: 'ajuste',
+    /* 🔓 B6 — en Personalizar los tamaños de cada apartado están a la vista, sin
+       abrirlo. Y solo en los de Cuidado y Funcionamiento: una tarjeta fija no
+       tiene tamaño (decisión A). */
     pasos: [
-      { toca: 'Personalizar pantalla', abre: 'PersonalizarPlaquitas' },
-      { toca: 'El apartado', abre: null },
-      { toca: 'El tamaño', abre: null },
+      { toca: 'La tarjeta ⚙️ Funcionamiento', abre: 'CategoriaEH' },
+      { toca: '⋮ Personalizar', abre: 'PersonalizarPlaquitas' },
+      { toca: 'El tamaño, en el apartado', abre: null },
     ],
   },
   {
     id: 'cambiar_preferencias',
     accion: 'Cambiar mis preferencias',
     tipo: 'ajuste',
+    /* 🔓 B6 — «Mis datos» no lleva a Preferencias. Se llega por «⚙️ Mis
+       preferencias», en el bloque «Mi estilo personal» de Funcionamiento (o por
+       Ropa → 👤 Mi estilo → Mis preferencias, un toque más). */
     pasos: [
-      { toca: 'Mis datos', abre: 'MisDatosEH' },
-      { toca: 'Preferencias', abre: 'PreferenciasEH' },
+      { toca: 'La tarjeta ⚙️ Funcionamiento', abre: 'CategoriaEH' },
+      { toca: '⚙️ Mis preferencias', abre: 'PreferenciasEH' },
       { toca: 'La preferencia', abre: null },
     ],
   },
@@ -201,18 +232,21 @@ export const RECORRIDOS = [
     id: 'ver_progreso',
     accion: 'Ver cómo voy',
     tipo: 'puntual',
+    /* 🔓 B6 — «📊 Mi progreso» (ProgresoEH) se ve al abrir Funcionamiento. */
     pasos: [
-      { toca: 'Progreso', abre: 'ProgresoEH' },
+      { toca: 'La tarjeta ⚙️ Funcionamiento', abre: 'CategoriaEH' },
     ],
   },
   {
     id: 'apagar_apartado',
     accion: 'Desactivar un apartado entero',
     tipo: 'ajuste',
+    /* 🔓 B6 — en «Gestionar apartados» cada apartado es un interruptor: se toca
+       el suyo, sin abrirlo, y si tiene datos se confirma. */
     pasos: [
+      { toca: 'La tarjeta ⚙️ Funcionamiento', abre: 'CategoriaEH' },
       { toca: 'Gestionar apartados', abre: 'GestionarApartados' },
-      { toca: 'El apartado', abre: null },
-      { toca: 'Desactivar', abre: null },
+      { toca: 'El interruptor del apartado', abre: null },
       { toca: 'Confirmar', abre: null },
     ],
   },
@@ -250,13 +284,16 @@ export const componentesQueAbren = () => [
    la palabra que uno escribiría. Si hay que saber el nombre interno del módulo
    para dar con algo, no es evidente. */
 
+/* 🔓 Imagen personal · Fase B — las respuestas dicen el camino de la portada de seis
+   tarjetas (B3–B5), el mismo que los recorridos de B6. Solo cambia el texto de la
+   ruta: ids, módulos, búsquedas y recorridos son los de siempre. */
 export const PREGUNTAS = [
-  { id: 'perfume', pregunta: '¿Dónde añadiría un perfume?', respuesta: 'En la plaquita 🌫️ Perfumes', modulo: 'perfumes', buscando: 'perfume', recorrido: 'anadir_perfume', delEnunciado: true },
-  { id: 'preferencias', pregunta: '¿Dónde cambiaría mis preferencias?', respuesta: 'En 👤 Mis datos → Preferencias', modulo: null, buscando: null, recorrido: 'cambiar_preferencias', delEnunciado: true },
-  { id: 'ocultar', pregunta: '¿Dónde ocultaría un módulo?', respuesta: 'En ⚙️ Gestionar apartados', modulo: null, buscando: null, recorrido: 'ocultar_modulo', delEnunciado: true },
-  { id: 'pelo', pregunta: '¿Dónde apunto qué corte me hice?', respuesta: 'En la plaquita 💇 Pelo', modulo: 'pelo', buscando: 'corte', recorrido: null },
-  { id: 'piel', pregunta: '¿Dónde está mi rutina de cara?', respuesta: 'En la plaquita 🧴 Skincare', modulo: 'skincare', buscando: 'rutina', recorrido: 'abrir_rutina' },
-  { id: 'unas', pregunta: '¿Dónde apunto lo de las uñas?', respuesta: 'En 🧼 Higiene → Manos, uñas y pies', modulo: 'higiene', buscando: 'uñas', recorrido: null },
+  { id: 'perfume', pregunta: '¿Dónde añadiría un perfume?', respuesta: 'En la tarjeta 🌫️ Fragancia', modulo: 'perfumes', buscando: 'perfume', recorrido: 'anadir_perfume', delEnunciado: true },
+  { id: 'preferencias', pregunta: '¿Dónde cambiaría mis preferencias?', respuesta: 'En ⚙️ Funcionamiento → ⚙️ Mis preferencias', modulo: null, buscando: null, recorrido: 'cambiar_preferencias', delEnunciado: true },
+  { id: 'ocultar', pregunta: '¿Dónde ocultaría un módulo?', respuesta: 'En ⚙️ Funcionamiento → ⋮ Personalizar → 🧩 Gestionar apartados', modulo: null, buscando: null, recorrido: 'ocultar_modulo', delEnunciado: true },
+  { id: 'pelo', pregunta: '¿Dónde apunto qué corte me hice?', respuesta: 'En la tarjeta 💇 Pelo', modulo: 'pelo', buscando: 'corte', recorrido: null },
+  { id: 'piel', pregunta: '¿Dónde está mi rutina de cara?', respuesta: 'En la tarjeta 🧴 Cuidado → Skincare', modulo: 'skincare', buscando: 'rutina', recorrido: 'abrir_rutina' },
+  { id: 'unas', pregunta: '¿Dónde apunto lo de las uñas?', respuesta: 'En la tarjeta 🧴 Cuidado → 🧼 Higiene → Manos, uñas y pies', modulo: 'higiene', buscando: 'uñas', recorrido: null },
   { id: 'papelera', pregunta: '¿Dónde está lo que borré?', respuesta: 'En Ajustes → Papelera', modulo: null, buscando: null, recorrido: 'recuperar_borrado' },
 ];
 
