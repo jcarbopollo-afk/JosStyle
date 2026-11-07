@@ -2,6 +2,18 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (2026-11-01 — Imagen personal: el ciclo posterior a la F65, Fases A y B, en la rama `claude/imagen-personal-fase-a`; versión 3.161.3, sin subir; Fase B sin commit, sin `main` y sin despliegue):**
+> Josué abrió un ciclo nuevo tras la EH F65 (que **sigue congelada**: `docs/09` y `cierre.js` no se tocan) para reorganizar la
+> navegación. **La portada de Imagen personal son ahora seis tarjetas** —Ropa (abre el Armario y lleva el enlace a 👤 Mi
+> estilo), Cuidado (Higiene, Skincare, Barba, Sonrisa y Cuidado corporal), Pelo, Fragancia (Perfumes), Accesorios y
+> Funcionamiento (Mis gustos, Progreso, Educación, Productos y los bloques que antes estaban en la portada: Mi estilo
+> personal, Ideas, Mi progreso, Descubrir, Personalizar, Ordenar, las recomendaciones y Gestionar)—, con **Hábitos y rutinas**
+> aparte (sin pantalla propia) y los accesos rápidos debajo; «🧴 Rutina facial» abre la rutina de Skincare directamente.
+> Fitness, Sueño y Salud se gestionan desde Gestionar apartados. Ni un id ni un dato guardado cambia. Las rutas, los
+> recorridos de la F51, las respuestas de «¿Dónde está esto?», qué está construido y qué falta: **`docs/16_IMAGEN_PERSONAL_CICLO_POST_F65.md`**
+> (y la técnica, regenerada, en `docs/08`). `verificar.sh` completo en verde. Pendiente: **B9** (commits, push, vista previa y
+> `main`, lo decide Josué) y verlo en el iPhone.
+>
 > **📅 ACTUALIZACIÓN (2026-10-31 — Chatbots, Fase 2.x integrada en la rama local `claude/chatbots-fase-2x`; sin push, sin `main`, sin despliegue y sin cambio de versión):**
 > Las Fases 2.1 y 2.2, B0, B1, B2, las correcciones del paso 4 de la recuperación y E2 están en la rama local
 > `claude/chatbots-fase-2x`, creada desde `14f225c` (la rama `claude/jc-fitness-spec-analysis-oe8iyz`, con C, H-25 y «Completar
