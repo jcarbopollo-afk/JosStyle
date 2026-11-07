@@ -106,10 +106,27 @@ export const NOMBRE_ANTERIOR_ESTILO = 'Estilo de' + ' hombre';
 
    Por eso son una etiqueta en el catálogo y **nada más**: no tienen estado, no
    se guardan, no se activan ni se desactivan. Una categoría sin módulos
-   simplemente no se pinta. */
+   simplemente no se pinta.
+
+   🔓 **Fase B de Imagen personal (2026-11-01)** — las seis tarjetas de la portada
+   son **estas mismas categorías**, no una lista aparte: las que llevan `portada`
+   (su posición, de 1 a 6) son tarjeta, y el resto se quedan como estaban. Así
+   Gestionar apartados y la portada leen la MISMA lista, y no hay un segundo mapa
+   `id → categoría` (F2, apartado 15).
+   - `estilo` se llama **Ropa** por fuera; el id no se toca.
+   - `pelo`, `fragancia`, `accesorios` y `funcionamiento` son nuevas.
+   - `fisico` y `salud` (Fitness, Sueño y Salud) y `bienestar` (Hábitos y rutinas,
+     que tiene su acceso aparte en la portada) **no son tarjeta**, por decisión de
+     Josué: siguen en Gestionar apartados, activables y desactivables.
+   - `conocimiento` y `compras` se quedan **vacías y en el catálogo** durante esta
+     fase, por decisión de Josué. Una categoría vacía no se pinta. */
 export const CATEGORIAS_EH = [
-  { id: 'estilo', nombre: 'Estilo', icono: '👕' },
-  { id: 'cuidado', nombre: 'Cuidado', icono: '🧴' },
+  { id: 'estilo', nombre: 'Ropa', icono: '👕', portada: 1 },
+  { id: 'cuidado', nombre: 'Cuidado', icono: '🧴', portada: 2 },
+  { id: 'pelo', nombre: 'Pelo', icono: '💇', portada: 3 },
+  { id: 'fragancia', nombre: 'Fragancia', icono: '🌫️', portada: 4 },
+  { id: 'accesorios', nombre: 'Accesorios', icono: '🕶️', portada: 5 },
+  { id: 'funcionamiento', nombre: 'Funcionamiento', icono: '⚙️', portada: 6 },
   { id: 'fisico', nombre: 'Físico', icono: '🏋️' },
   { id: 'salud', nombre: 'Salud', icono: '❤️' },
   /* ⚠️ EH F30, apartado 3 — el enunciado llama **"Personal"** a este grupo
@@ -139,8 +156,12 @@ export const MODULOS_EH = [
   { id: 'estilo', nombre: 'Estilo y armario', icono: '👕', sub: 'Cómo vestir', fase: 2, categoria: 'estilo', confirmar: true, terminos: ['ropa', 'armario', 'outfit', 'vestir', 'prendas', 'moda'] },
   /* ⚠️ EH F30, apartado 3 — *"🧴 Cuidado: Skincare, Pelo, Cuerpo, Barba"*. Pelo y
      Barba pasan a `cuidado` porque **es donde Josué los pone**; la agrupación de la
-     pantalla principal es la de la F2, no una segunda. */
-  { id: 'pelo', nombre: 'Pelo', icono: '💇', sub: 'Corte y cuidado', fase: 12, categoria: 'cuidado', confirmar: true, terminos: ['pelo', 'cabello', 'corte', 'peluqueria', 'peluquería', 'champu', 'champú'] },
+     pantalla principal es la de la F2, no una segunda.
+     🔓 Fase B de Imagen personal (2026-11-01) — Pelo tiene ahora su propia tarjeta
+     (`categoria: 'pelo'`), por decisión de Josué; Barba sigue en Cuidado. Perfumes
+     pasa a `fragancia`, Accesorios a `accesorios`, y Mis gustos, Progreso, Educación
+     y Productos a `funcionamiento`. Fitness, Sueño, Salud y Hábitos no cambian. */
+  { id: 'pelo', nombre: 'Pelo', icono: '💇', sub: 'Corte y cuidado', fase: 12, categoria: 'pelo', confirmar: true, terminos: ['pelo', 'cabello', 'corte', 'peluqueria', 'peluquería', 'champu', 'champú'] },
   { id: 'barba', nombre: 'Barba', icono: '🧔', sub: 'Afeitado y forma', fase: 15, categoria: 'cuidado', confirmar: true, terminos: ['barba', 'pelo', 'afeitado', 'afeitar', 'bigote', 'cuchilla'] },
   { id: 'skincare', nombre: 'Skincare', icono: '🧴', sub: 'Mi cuidado facial', fase: 6, categoria: 'cuidado', confirmar: true, recomendado: true, terminos: ['piel', 'cara', 'facial', 'crema', 'acne', 'acné', 'rutina'] },
   { id: 'higiene', nombre: 'Higiene', icono: '🧼', sub: 'Rutina diaria', fase: 18, categoria: 'cuidado', terminos: ['higiene', 'ducha', 'dientes', 'boca', 'manos', 'uñas', 'unas'] },
@@ -150,22 +171,22 @@ export const MODULOS_EH = [
      de extensión que construyó F1, y no hace falta ni un `case` ni un `if`. */
   { id: 'sonrisa', nombre: 'Sonrisa', icono: '😁', sub: 'Higiene bucal', fase: 23, categoria: 'cuidado', terminos: ['sonrisa', 'dientes', 'boca', 'bucal', 'dental', 'dentista', 'cepillo', 'muelas'] },
   // ⚠️ EH F24 — otra línea, y ya está. Sin `case` y sin `if`.
-  { id: 'perfumes', nombre: 'Perfumes', icono: '🌫️', sub: 'Tus fragancias', fase: 24, categoria: 'estilo', terminos: ['perfume', 'perfumes', 'colonia', 'fragancia', 'fragancias', 'aroma', 'olor'] },
+  { id: 'perfumes', nombre: 'Perfumes', icono: '🌫️', sub: 'Tus fragancias', fase: 24, categoria: 'fragancia', terminos: ['perfume', 'perfumes', 'colonia', 'fragancia', 'fragancias', 'aroma', 'olor'] },
   /* ⚠️ EH F26 — otra línea, y ya está. Su `fase` coincide con la de Fitness a
      propósito: el número dice **en qué fase llega su pantalla**, y la 26 trae la
      de Accesorios; la de Fitness sigue siendo una estimación de la F1. */
-  { id: 'accesorios', nombre: 'Accesorios', icono: '🕶️', sub: 'Relojes, gafas y detalles', fase: 26, categoria: 'estilo', terminos: ['accesorio', 'accesorios', 'reloj', 'relojes', 'gafas', 'pulsera', 'pulseras', 'collar', 'collares', 'anillo', 'anillos', 'gorra', 'gorras'] },
+  { id: 'accesorios', nombre: 'Accesorios', icono: '🕶️', sub: 'Relojes, gafas y detalles', fase: 26, categoria: 'accesorios', terminos: ['accesorio', 'accesorios', 'reloj', 'relojes', 'gafas', 'pulsera', 'pulseras', 'collar', 'collares', 'anillo', 'anillos', 'gorra', 'gorras'] },
   { id: 'fitness', nombre: 'Fitness', icono: '🏋️', sub: 'Físico y postura', fase: 26, categoria: 'fisico', terminos: ['fisico', 'físico', 'postura', 'entrenar', 'gimnasio', 'musculo', 'músculo'] },
   /* ⚠️ EH F27 — otra línea. ⚠️ Sus nombres viven en el REGISTRO de la F4
      (`intereses` y `quiereHacer`, desde la F6): este módulo guarda la ficha de
      cada cosa, no una segunda lista. */
-  { id: 'gustos', nombre: 'Mis gustos', icono: '❤️', sub: 'Lo que te gusta y lo que quieres hacer', fase: 27, categoria: 'bienestar', terminos: ['gustos', 'gusta', 'intereses', 'interes', 'interés', 'aficiones', 'hobbies', 'quiero hacer', 'experiencias'] },
+  { id: 'gustos', nombre: 'Mis gustos', icono: '❤️', sub: 'Lo que te gusta y lo que quieres hacer', fase: 27, categoria: 'funcionamiento', terminos: ['gustos', 'gusta', 'intereses', 'interes', 'interés', 'aficiones', 'hobbies', 'quiero hacer', 'experiencias'] },
   { id: 'sueno', nombre: 'Sueño', icono: '😴', sub: 'Descanso y aspecto', fase: 30, categoria: 'fisico', terminos: ['sueño', 'sueno', 'dormir', 'descanso', 'ojeras', 'cansancio'] },
   { id: 'salud', nombre: 'Salud', icono: '🧬', sub: 'Lo que se nota fuera', fase: 33, categoria: 'salud', confirmar: true, terminos: ['salud', 'medico', 'médico', 'revision', 'revisión', 'dental', 'vista'] },
   { id: 'habitos', nombre: 'Hábitos y rutinas', icono: '🧠', sub: 'Lo de cada día', fase: 37, categoria: 'bienestar', recomendado: true, terminos: ['habito', 'hábito', 'habitos', 'hábitos', 'rutina', 'rutinas', 'constancia'] },
-  { id: 'progreso', nombre: 'Progreso', icono: '📊', sub: 'Cómo vas', fase: 45, categoria: 'bienestar', confirmar: true, terminos: ['progreso', 'evolucion', 'evolución', 'fotos', 'estadisticas', 'estadísticas'] },
-  { id: 'educacion', nombre: 'Educación', icono: '📚', sub: 'Aprender a cuidarte', fase: 50, categoria: 'conocimiento', recomendado: true, terminos: ['educacion', 'educación', 'guias', 'guías', 'aprender', 'consejos'] },
-  { id: 'productos', nombre: 'Productos', icono: '🛒', sub: 'Lo que usas', fase: 55, categoria: 'compras', confirmar: true, terminos: ['productos', 'comprar', 'compras', 'marcas', 'farmacia'] },
+  { id: 'progreso', nombre: 'Progreso', icono: '📊', sub: 'Cómo vas', fase: 45, categoria: 'funcionamiento', confirmar: true, terminos: ['progreso', 'evolucion', 'evolución', 'fotos', 'estadisticas', 'estadísticas'] },
+  { id: 'educacion', nombre: 'Educación', icono: '📚', sub: 'Aprender a cuidarte', fase: 50, categoria: 'funcionamiento', recomendado: true, terminos: ['educacion', 'educación', 'guias', 'guías', 'aprender', 'consejos'] },
+  { id: 'productos', nombre: 'Productos', icono: '🛒', sub: 'Lo que usas', fase: 55, categoria: 'funcionamiento', confirmar: true, terminos: ['productos', 'comprar', 'compras', 'marcas', 'farmacia'] },
 ];
 
 export const moduloEH = (id) => MODULOS_EH.find((m) => m.id === id) || null;

@@ -22,25 +22,37 @@
 | **Datos** | Una clave de Supabase, `estiloHombre`, con un objeto por módulo. | `src/lib/estiloDeHombre.js` |
 | **Catálogo** | Los módulos son LÍNEAS de `MODULOS_EH`. Añadir uno es añadir una línea. | `src/lib/estiloDeHombre.js` |
 | **Motores** | Rutinas, recomendaciones, productos y cuestionarios: compartidos, nunca duplicados. | `src/lib/motor*.js` |
-| **Pantalla** | Una vista con un componente por apartado. | `src/views/EstiloHombreView.jsx` |
+| **Pantalla** | Una vista con un componente por apartado. La portada (Fase B, posterior a la F65): cabecera, buscador, bienvenida y avisos, seis tarjetas en 2 × 3 —Ropa (abre el Armario y lleva el enlace a 👤 Mi estilo), Cuidado, Pelo, Fragancia, Accesorios y Funcionamiento—, debajo el acceso a Hábitos y rutinas (sin pantalla propia, sin botón) y los accesos rápidos. Cuidado y Funcionamiento abren su pantalla de categoría (`CategoriaEH`); Pelo, Fragancia y Accesorios, su apartado. El acceso rápido «🧴 Rutina facial» abre directamente la rutina de Skincare. Fitness, Sueño y Salud solo se gestionan desde Gestionar apartados. Rutas: `docs/16_IMAGEN_PERSONAL_CICLO_POST_F65.md`. | `src/views/EstiloHombreView.jsx` |
 | **Revisores** | Las fases 43-53 no añaden funciones: comprueban las que hay. | `src/lib/{privacidad,rendimiento,coherenciaVisual,...}` |
 
 ## 2 · Mapa de módulos
 
 *Derivado de `MODULOS_EH`. Añadir un módulo es añadir una línea allí; aquí aparece solo.*
 
-**👕 Estilo**
+**👕 Ropa**
 - 👕 Estilo y armario *(F2)*
-- 🌫️ Perfumes *(F24)*
-- 🕶️ Accesorios *(F26)*
 
 **🧴 Cuidado**
-- 💇 Pelo *(F12)*
 - 🧔 Barba *(F15)*
 - 🧴 Skincare *(F6)*
 - 🧼 Higiene *(F18)*
 - 🧍 Cuidado corporal *(F21)*
 - 😁 Sonrisa *(F23)*
+
+**💇 Pelo**
+- 💇 Pelo *(F12)*
+
+**🌫️ Fragancia**
+- 🌫️ Perfumes *(F24)*
+
+**🕶️ Accesorios**
+- 🕶️ Accesorios *(F26)*
+
+**⚙️ Funcionamiento**
+- ❤️ Mis gustos *(F27)*
+- 📊 Progreso *(F45)*
+- 📚 Educación *(F50)*
+- 🛒 Productos *(F55)*
 
 **🏋️ Físico**
 - 🏋️ Fitness *(F26)*
@@ -50,24 +62,16 @@
 - 🧬 Salud *(F33)*
 
 **❤️ Personal**
-- ❤️ Mis gustos *(F27)*
 - 🧠 Hábitos y rutinas *(F37)*
-- 📊 Progreso *(F45)*
-
-**📚 Conocimiento**
-- 📚 Educación *(F50)*
-
-**🛒 Compras**
-- 🛒 Productos *(F55)*
 
 **Pantallas que no son un módulo:**
 
-- **Descubrir** *(F32)* — Tarjetas de ideas que se pueden rechazar.
-- **Preferencias** *(F38)* — Lo que ha contestado, editable y borrable.
-- **Buscador** *(F39)* — Busca en todos los apartados a la vez.
-- **Gestionar apartados** *(F36)* — Encender, apagar, ocultar y reordenar.
-- **Progreso** *(F35)* — Métricas sin puntuaciones ni porcentajes.
-- **Mis datos** *(F43)* — Qué se guarda, cómo se exporta y cómo se borra.
+- **Descubrir** *(F32)* — Tarjetas de ideas que se pueden rechazar. Está en Funcionamiento, junto a 💡 Ideas para ti.
+- **Preferencias** *(F38)* — Lo que ha contestado, editable y borrable. Se abre con ⚙️ Mis preferencias, en el bloque «Mi estilo personal» de Funcionamiento (o desde Ropa → 👤 Mi estilo).
+- **Buscador** *(F39)* — Busca en todos los apartados a la vez. Está arriba, en la portada (🔍 Buscar en Imagen personal).
+- **Gestionar apartados** *(F36)* — Encender y apagar (interruptores): botón Gestionar apartados de Funcionamiento. Ocultar y reordenar: ⋮ Personalizar → 🧩 Gestionar apartados. Las cuatro tarjetas fijas (Ropa, Pelo, Fragancia y Accesorios) no ofrecen ocultar ni flechas; se reordena dentro de cada categoría.
+- **Progreso** *(F35)* — Métricas sin puntuaciones ni porcentajes. Es el bloque 📊 Mi progreso de Funcionamiento (el apartado Progreso del catálogo todavía no tiene pantalla propia).
+- **Mis datos** *(F43)* — Qué se guarda, cómo se exporta y cómo se borra. Se abre desde Gestionar apartados (botón Mis datos).
 
 ## 3 · Dependencias globales
 
@@ -95,7 +99,7 @@
 | peso | 🌍 global | salud | `salud` |
 | perfil | 🌍 global | perfil | `perfil` |
 | objetivos | 🌍 global | objetivos | `objetivos` |
-| entrenamientos | 🌍 global | entreno | `calistenia` |
+| entrenamientos | 🌍 global | entreno | `fitness` |
 | sueno | 🌍 global | sueno | `sueno` |
 | nutricion | 🌍 global | nutricion | `nutricion` |
 | diario | 🌍 global | diario | `diario` |
@@ -131,7 +135,7 @@
 
 > 🚨 Una colección nueva que se pueda borrar necesita su entrada en `CATALOGO_PAPELERA`. Sin ella, el borrado es IRREVERSIBLE y no lo avisa nadie: ya pasó con las rutinas de Skincare, las de Pelo y los perfumes por probar.
 
-La papelera global cubre **59 colecciones**, de las cuales **21** son de Imagen personal.
+La papelera global cubre **63 colecciones**, de las cuales **24** son de Imagen personal.
 
 ## 7 · Estructura de datos
 
@@ -216,7 +220,7 @@ Build de Vite, las comprobaciones de Node, los casos de renderizado, las reglas 
 
 ## 15 · Historial de cambios
 
-- **Dónde:** CHANGELOG.md, una entrada por fase, y `docs/02_ORDEN_DE_FASES.md`, una fila por versión.
+- **Dónde:** CHANGELOG.md, una entrada por fase, y `docs/02_ORDEN_DE_FASES.md`, una fila por versión. Lo posterior a la F65 (el ciclo de reorganización: Fases A y B) va en el CHANGELOG y en `docs/16_IMAGEN_PERSONAL_CICLO_POST_F65.md`; las 65 fases originales no se reescriben.
 - **Formato:** vX.Y.0 — EH Fase N/65: qué se construyó, qué se decidió y qué se encontró.
 
 > ⚠️ Una fase sin entrada en el CHANGELOG no está terminada.

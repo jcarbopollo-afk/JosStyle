@@ -192,7 +192,9 @@ console.log('\n⚡ EH · Fase 61/65 — Acciones rápidas e inteligentes\n');
     '⚠️ decisión 2 — los recorridos son los de la F51, importados: no hay dos tablas de toques');
   ok(FRECUENTES().every((r) => r.tipo === 'diaria'),
     'y "frecuente" quiere decir lo que la F51 llama "de todos los días"');
-  eq(toquesDe('marcar_favorito'), 2, 'marcar favorito sigue costando dos');
+  /* 🔓 Fase B · B6 — el corazón está dentro de «Mi colección»: tres toques, dentro
+     del objetivo de 1–3 de las frecuentes. */
+  eq(toquesDe('marcar_favorito'), 3, 'marcar favorito cuesta tres (Fragancia → Mi colección → Favorito)');
 
   eq(APARTADOS_ACCIONES.length, 17, 'los diecisiete apartados');
   eq(auditarAcciones().sinCumplir, [5, 6, 12, 13],

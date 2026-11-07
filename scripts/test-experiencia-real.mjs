@@ -59,8 +59,11 @@ console.log('\n🧭 EH · Fase 51/65 — Control de calidad de la experiencia re
   eq(RECORRIDOS_DEL_ENUNCIADO,
     ['anadir_perfume', 'marcar_favorito', 'abrir_rutina', 'ocultar_modulo', 'crear_recordatorio'],
     'los cinco del enunciado, con su nombre');
-  eq(toquesDe('marcar_favorito'), 2, 'marcar favorito: dos toques');
-  eq(toquesDe('abrir_rutina'), 2, 'abrir la rutina: dos');
+  /* 🔓 Fase B · B6 — con la portada de seis tarjetas, y con lo que la vista hace de
+     verdad: el favorito está dentro de «Mi colección» (tres, no dos) y la rutina
+     facial pasa por la tarjeta Cuidado (tres). Los límites no cambian. */
+  eq(toquesDe('marcar_favorito'), 3, 'marcar favorito: tres toques (Fragancia → Mi colección → Favorito)');
+  eq(toquesDe('abrir_rutina'), 3, 'abrir la rutina: tres (Cuidado → Skincare → Mi rutina)');
   eq(toquesDe('anadir_perfume'), 3, 'añadir un perfume: tres');
   ok(RECORRIDOS.filter((r) => r.tipo === 'diaria').every((r) => r.pasos.length <= 3),
     '⚠️ y ninguna de las de todos los días pasa de tres');
@@ -80,7 +83,96 @@ console.log('\n🧭 EH · Fase 51/65 — Control de calidad de la experiencia re
   ok(RECORRIDOS.every((r) => r.pasos.length === toquesDe(r.id)),
     '⚠️ los toques SON los pasos: no hay un número aparte que se quede desfasado');
   ok(recorrido('abrir_rutina').atajo === 'rutina_facial',
-    'y la rutina de hoy cuesta uno con el acceso rápido de la F29');
+    'y con el acceso rápido «🧴 Rutina facial» la rutina de hoy cuesta uno: abre la rutina directamente');
+}
+
+/* ---------------------------------------------------------------------------
+   1b · 🔓 FASE B · B6 — LOS RECORRIDOS, CONTRA LA NAVEGACIÓN DE VERDAD
+   --------------------------------------------------------------------------- */
+{
+  console.log('\n1b · Fase B · B6 — los recorridos con la portada de seis tarjetas');
+  /* Los límites y los motores protegidos, tal cual estaban. */
+  eq(TIPOS_DE_ACCION, [
+    { id: 'diaria', nombre: 'De todos los días', maximo: 3 },
+    { id: 'puntual', nombre: 'De vez en cuando', maximo: 4 },
+    { id: 'ajuste', nombre: 'De configurar una vez', maximo: 5 },
+  ], '🔒 TIPOS_DE_ACCION intacto: 3, 4 y 5');
+  eq(['diaria', 'puntual', 'ajuste', 'nada'].map(maximoDe), [3, 4, 5, 3], '🔒 maximoDe intacto');
+  ok(demasiadoLargos.toString().includes('r.pasos.length > maximoDe(r.tipo)'), '🔒 demasiadoLargos mide lo mismo que antes');
+  eq(demasiadoLargos(), [], 'y con la navegación nueva ninguno se pasa de su límite');
+
+  const vistaDe = (fn) => {
+    const i = VISTA.indexOf(`export function ${fn}(`);
+    const f = VISTA.indexOf('\nexport function ', i + 10);
+    return i >= 0 ? VISTA.slice(i, f > i ? f : undefined) : '';
+  };
+  const pasos = (id) => recorrido(id).pasos.map((p) => p.abre).filter(Boolean);
+  // Recordatorio — decisión E: Cuidado → Barba → Mi rutina → Recordármelo.
+  eq(pasos('crear_recordatorio'), ['CategoriaEH', 'BarbaEH', 'RutinasBarbaEH'], 'recordatorio: Cuidado → Barba → Mi rutina');
+  ok(/Recordármelo/.test(vistaDe('RutinasBarbaEH')), '…y «Recordármelo» existe en las rutinas de Barba');
+  ok(!/Recordármelo|alternarRecordatorio/.test(vistaDe('RutinasPielEH')),
+    '…y no en las de Skincare (por eso el recorrido no pasa por Skincare)');
+  ok(/zona === 'rutina'[\s\S]*<RutinasBarbaEH/.test(vistaDe('PanelBarba')), '…«Mi rutina» de Barba abre RutinasBarbaEH');
+  eq(toquesDe('crear_recordatorio'), 4, '…cuatro toques: lo que permite una acción de vez en cuando');
+  // Favorito — dentro de «Mi colección».
+  const perfumes = vistaDe('PerfumesEH');
+  ok(/zona === 'coleccion'/.test(perfumes) && perfumes.indexOf('aria-label={`Favorito ${p.nombre}`}') > perfumes.indexOf("zona === 'coleccion'"),
+    'favorito: el corazón está dentro de «Mi colección»');
+  // Rutina facial — Cuidado → Skincare → Mi rutina.
+  eq(pasos('abrir_rutina'), ['CategoriaEH', 'SkincareEH', 'RutinasPielEH'], 'rutina facial: Cuidado → Skincare → Mi rutina');
+  // Ocultar — Funcionamiento → Personalizar → 🧩 Gestionar apartados (F36).
+  eq(pasos('ocultar_modulo'), ['CategoriaEH', 'PersonalizarPlaquitas', 'GestionarEstiloEH'], 'ocultar: Funcionamiento → Personalizar → 🧩 Gestionar apartados');
+  ok(/alternarOculto/.test(vistaDe('GestionarEstiloEH')) && !/alternarOculto/.test(vistaDe('GestionarApartados')),
+    '…porque «Ocultar» está en la pantalla de la F36, no en la de los interruptores');
+  ok(/onClick=\{onGestionar\}/.test(vistaDe('PersonalizarPlaquitas')), '…y Personalizar tiene el botón que la abre');
+  // Preferencias — por «⚙️ Mis preferencias», no por Mis datos.
+  ok(!/Preferencias|setPreferencias/.test(vistaDe('MisDatosEH')), 'preferencias: Mis datos no lleva a Preferencias…');
+  ok(/const bloquesFuncionamiento = \([\s\S]*setPreferencias\(true\)[\s\S]*\n  \);/.test(VISTA),
+    '…«⚙️ Mis preferencias» está en Funcionamiento');
+  // Funcionamiento enseña Mi progreso, Personalizar y Gestionar apartados.
+  const func = (VISTA.match(/const bloquesFuncionamiento = \([\s\S]*?\n  \);/) || [''])[0];
+  ok(/<ProgresoEH/.test(func) && /setPersonalizando\(true\)/.test(func) && /setGestionando\(true\)/.test(func),
+    'Funcionamiento tiene Mi progreso, ⋮ Personalizar y Gestionar apartados (los primeros pasos de cuatro recorridos)');
+  // La portada: las tarjetas que nombran los recorridos existen.
+  const tarjetas = RECORRIDOS.flatMap((r) => r.pasos.map((p) => p.toca)).filter((t) => t.startsWith('La tarjeta'));
+  ok(tarjetas.every((t) => /La tarjeta \S+ (Cuidado|Pelo|Fragancia|Funcionamiento|Ropa|Accesorios)$/.test(t)),
+    `cada «tarjeta» nombrada es una de las seis (${[...new Set(tarjetas)].length} distintas)`);
+  ok(!RECORRIDOS.some((r) => r.pasos.some((p) => /plaquita 🌫️ Perfumes|plaquita 🧴 Skincare|La plaquita del módulo|La lupa/.test(p.toca))),
+    'ningún recorrido empieza ya por una plaquita de la portada que no existe');
+}
+
+/* ---------------------------------------------------------------------------
+   1c · 🔓 FASE B — LAS RESPUESTAS DE «¿DÓNDE ESTÁ?» CON LA NAVEGACIÓN DE AHORA
+   --------------------------------------------------------------------------- */
+{
+  console.log('\n1c · Fase B — las respuestas de PREGUNTAS dicen el camino de verdad');
+  const r = Object.fromEntries(PREGUNTAS.map((p) => [p.id, p.respuesta]));
+  ok(!PREGUNTAS.some((p) => /plaquita|Mis datos|^En ⚙️ Gestionar apartados$|^En 🧼 Higiene/.test(p.respuesta)),
+    'ninguna respuesta habla ya de una plaquita de la portada, de «Mis datos → Preferencias» ni de rutas viejas');
+  eq(r.perfume, 'En la tarjeta 🌫️ Fragancia', 'perfume → la tarjeta Fragancia');
+  eq(r.preferencias, 'En ⚙️ Funcionamiento → ⚙️ Mis preferencias', 'preferencias → Funcionamiento → Mis preferencias');
+  eq(r.ocultar, 'En ⚙️ Funcionamiento → ⋮ Personalizar → 🧩 Gestionar apartados', 'ocultar → Funcionamiento → Personalizar → 🧩 Gestionar apartados');
+  eq(r.pelo, 'En la tarjeta 💇 Pelo', 'corte → la tarjeta Pelo');
+  eq(r.piel, 'En la tarjeta 🧴 Cuidado → Skincare', 'rutina de cara → Cuidado → Skincare');
+  eq(r.unas, 'En la tarjeta 🧴 Cuidado → 🧼 Higiene → Manos, uñas y pies', 'uñas → Cuidado → Higiene → Manos, uñas y pies');
+  eq(r.papelera, 'En Ajustes → Papelera', 'la papelera sigue en Ajustes (fuera de Imagen personal)');
+  /* Y lo que no es texto, igual que antes: el buscador y los recorridos lo usan. */
+  eq(PREGUNTAS.map((p) => [p.id, p.modulo, p.buscando, p.recorrido, !!p.delEnunciado]), [
+    ['perfume', 'perfumes', 'perfume', 'anadir_perfume', true],
+    ['preferencias', null, null, 'cambiar_preferencias', true],
+    ['ocultar', null, null, 'ocultar_modulo', true],
+    ['pelo', 'pelo', 'corte', null, false],
+    ['piel', 'skincare', 'rutina', 'abrir_rutina', false],
+    ['unas', 'higiene', 'uñas', null, false],
+    ['papelera', null, null, 'recuperar_borrado', false],
+  ], 'ids, módulos, búsquedas y recorridos, intactos');
+  /* La respuesta y su recorrido empiezan por la misma tarjeta. */
+  const primera = (id) => (recorrido(id)?.pasos[0]?.toca || '');
+  ok(['perfume', 'preferencias', 'ocultar', 'piel'].every((id) => {
+    const p = PREGUNTAS.find((x) => x.id === id);
+    const tarjeta = (primera(p.recorrido).match(/(Fragancia|Funcionamiento|Cuidado|Pelo)/) || [])[1];
+    return !!tarjeta && p.respuesta.includes(tarjeta);
+  }), 'cada respuesta empieza por la misma tarjeta que su recorrido de la F51');
 }
 
 /* ---------------------------------------------------------------------------

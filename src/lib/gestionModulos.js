@@ -224,6 +224,68 @@ export function puedeMover(estado, id) {
   return { arriba: i > 0, abajo: i !== -1 && i < visible.length - 1, posicion: i, de: visible.length };
 }
 
+/* ── 🔓 Fase B · B5 — mover DENTRO DE SU CATEGORÍA ─────────────────────────
+   Con la portada de seis tarjetas, el orden solo se ve entre los apartados de
+   una misma categoría: dentro de Cuidado y de Funcionamiento, en los grupos de
+   Gestionar y en «Mi estilo personal». Ropa, Pelo, Fragancia y Accesorios tienen
+   su tarjeta en un sitio fijo y son los únicos de su categoría, así que una
+   flecha que los moviera —o que hiciera saltar a otro por encima de ellos— sería
+   un movimiento que no se ve. Estas funciones mueven solo entre los de la misma
+   categoría, con el MISMO `reordenar` de siempre: lo guardado se conserva, y
+   `subirModulo`, `bajarModulo`, `moverA` y `puedeMover` siguen como estaban. */
+
+function hermanosDeCategoria(estado, id) {
+  const visible = ordenVisible(estado);
+  const m = moduloEH(id);
+  if (!m || !visible.includes(id)) return [];
+  return visible.filter((x) => moduloEH(x)?.categoria === m.categoria);
+}
+
+/** ¿Tiene sentido mover este apartado? Arriba / abajo y su sitio, dentro de su categoría. */
+export function puedeMoverEnSuCategoria(estado, id) {
+  const h = hermanosDeCategoria(estado, id);
+  const i = h.indexOf(id);
+  return { arriba: i > 0, abajo: i !== -1 && i < h.length - 1, posicion: i, de: h.length, mueve: h.length > 1 };
+}
+
+function moverEnSuCategoria(estado, id, delta) {
+  const e = normalizarEstiloHombre(estado);
+  const h = hermanosDeCategoria(e, id);
+  const i = h.indexOf(id);
+  const j = i + delta;
+  if (i === -1 || j < 0 || j >= h.length) return e;   // ya está en el borde de su grupo
+  const visible = ordenVisible(e);
+  const a = visible.indexOf(id);
+  const b = visible.indexOf(h[j]);
+  const nuevo = [...visible];
+  [nuevo[a], nuevo[b]] = [nuevo[b], nuevo[a]];
+  return reordenar(e, nuevo);
+}
+
+export const subirEnSuCategoria = (estado, id) => moverEnSuCategoria(estado, id, -1);
+export const bajarEnSuCategoria = (estado, id) => moverEnSuCategoria(estado, id, +1);
+
+/** «Este apartado pasa a ser el N.º `indice` de su categoría» (el «Mover» de la F31). */
+export function moverAEnSuCategoria(estado, id, indice) {
+  const e = normalizarEstiloHombre(estado);
+  const h = hermanosDeCategoria(e, id);
+  const i = h.indexOf(id);
+  const k = Math.floor(Number(indice));
+  if (i === -1 || !Number.isFinite(k) || k < 0 || k >= h.length || k === i) return e;
+  return moverA(e, id, ordenVisible(e).indexOf(h[k]));
+}
+
+/** Los apartados activos que se pueden ordenar, agrupados por su categoría. */
+export function gruposParaOrdenar(estado) {
+  const visible = ordenVisible(estado);
+  return CATEGORIAS_EH
+    .map((c) => ({ id: c.id, nombre: c.nombre, icono: c.icono, ids: visible.filter((x) => moduloEH(x)?.categoria === c.id) }))
+    .filter((g) => g.ids.length > 1);
+}
+
+/** ¿Hay algo que ordenar? Solo si alguna categoría tiene dos o más activos. */
+export const hayQueOrdenar = (estado) => gruposParaOrdenar(estado).length > 0;
+
 /* ===========================================================================
    5 · MÓDULOS RECOMENDADOS (apartado 11)
    ===========================================================================
