@@ -6,6 +6,7 @@ import {
   entorno as entornoPorId, equipo as equipoPorId, dificultad as dificultadPorId,
 } from './ejercicios';
 import { GRUPOS_MUSCULARES } from './fitness';
+import { repeticionesGuardadas } from './numerosFitness';
 
 /* Entrega 4 · Fase 33/45 — «Sistema avanzado de sustitución de ejercicios».
    ═══════════════════════════════════════════════════════════════════════════
@@ -618,8 +619,8 @@ export function configuracionRecomendada(actual, original, nuevo) {
   return {
     series: enteroONull(a.series),
     modo,
-    repeticiones: cambiaMedida || modo === 'tiempo' ? null : enteroONull(reps),
-    repsHasta: cambiaMedida || modo === 'tiempo' ? null : enteroONull(a.repsHasta),
+    repeticiones: cambiaMedida || modo === 'tiempo' ? null : repeticionesGuardadas(reps),
+    repsHasta: cambiaMedida || modo === 'tiempo' ? null : repeticionesGuardadas(a.repsHasta),
     duracion: cambiaMedida || modo !== 'tiempo' ? null : enteroONull(a.duracion),
     /* El peso era del otro ejercicio. */
     peso: null,

@@ -53,7 +53,7 @@ export const CAPAS_FITNESS = Object.freeze([
   {
     id: 'modelo', nombre: 'Modelo y puerta de carga',
     que: 'La forma de lo guardado, sus constantes y sus normalizadores (regla 5).',
-    archivos: ['src/lib/fitness.js', 'src/lib/ejercicios.js', 'src/lib/planes.js', 'src/lib/persistenciaFitness.js'],
+    archivos: ['src/lib/fitness.js', 'src/lib/ejercicios.js', 'src/lib/planes.js', 'src/lib/persistenciaFitness.js', 'src/lib/migracionFitnessV2.js', 'src/lib/migracionFitnessV3.js'],
   },
   {
     id: 'motores', nombre: 'Motores',
@@ -63,13 +63,17 @@ export const CAPAS_FITNESS = Object.freeze([
       'src/lib/tuPlan.js', 'src/lib/planificacionSemanal.js', 'src/lib/actividadEntrenamiento.js',
       'src/lib/sustitucion.js', 'src/lib/clasificacion.js', 'src/lib/colaClasificacion.js',
       'src/lib/constructor.js', 'src/lib/plantillas.js', 'src/lib/entrenamiento.js', 'src/lib/finalizacion.js',
+      /* Fitness 3/8 — las rutinas cíclicas, lo predeterminado y la biblioteca de plantillas. */
+      'src/lib/rutinasCiclicas.js',
+      /* Fitness 4/8 — el cumplimiento, los descansos y la recuperación, y «Completar entrenamiento». */
+      'src/lib/cumplimientoFitness.js', 'src/lib/completarEntrenamiento.js',
     ],
   },
   {
     id: 'lecturas', nombre: 'Lecturas (lo que se deriva para una pantalla)',
     que: 'Redactan lo que dicen los motores, sin decidir nada nuevo: los «selectores» del apartado 21.',
     archivos: [
-      'src/lib/historial.js', 'src/lib/progresoEjercicios.js', 'src/lib/progresoMuscular.js', 'src/lib/detalleEjercicio.js',
+      'src/lib/historial.js', 'src/lib/anotacionesFitness.js', 'src/lib/disciplinaFitness.js', 'src/lib/progresoEjercicios.js', 'src/lib/progresoMuscular.js', 'src/lib/detalleEjercicio.js',
       'src/lib/pantallaRangos.js', 'src/lib/detalleMuscular.js', 'src/lib/explicacionRangos.js',
       'src/lib/contribucionMuscular.js', 'src/lib/historialRangos.js', 'src/lib/siguienteRango.js',
       'src/lib/resumenRangos.js', 'src/lib/resumenProgreso.js', 'src/lib/objetivosFitness.js',
@@ -100,7 +104,7 @@ export const CAPAS_FITNESS = Object.freeze([
       'src/views/BibliotecaPlanesView.jsx', 'src/views/ConstructorView.jsx', 'src/views/EjerciciosView.jsx',
       'src/views/EntrenamientoVivoView.jsx', 'src/views/FinalizacionView.jsx', 'src/views/HistorialView.jsx',
       'src/views/ProgresoView.jsx', 'src/views/RangosView.jsx', 'src/views/DetalleMuscularView.jsx',
-      'src/views/ClasificacionView.jsx',
+      'src/views/ClasificacionView.jsx', 'src/views/EditorRutinaView.jsx',
     ],
   },
   {
@@ -114,6 +118,7 @@ export const CAPAS_FITNESS = Object.freeze([
       'src/components/resumenRangos.jsx', 'src/components/areaSegura.jsx', 'src/components/actividadEntrenamiento.jsx',
       'src/components/planificacionSemanal.jsx', 'src/components/colaClasificacion.jsx', 'src/components/estadosFitness.jsx',
       'src/components/piezasFitness.jsx', 'src/components/iconosFitness.jsx', 'src/components/diagnosticoCatalogo.jsx',
+      'src/components/cumplimientoFitness.jsx', 'src/components/progresionFitness.jsx', 'src/components/disciplinaFitness.jsx',
     ],
   },
 ]);

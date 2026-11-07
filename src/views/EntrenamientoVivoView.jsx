@@ -35,11 +35,17 @@
      interruptores de Ajustes y, si el dispositivo no puede, no pasa nada.
    =========================================================================== */
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useId } from 'react';
 import {
   ChevronLeft, ChevronRight, Check, Circle, Plus, Minus, X, Timer, Repeat, BookOpen,
-  StickyNote, Pause, Play, RotateCcw, Dumbbell, Undo2,
+  StickyNote, Pause, Play, RotateCcw, Dumbbell, Undo2, ArrowUp, ClipboardList, History, MoreHorizontal,
 } from 'lucide-react';
+import { TEXTOS_ANOTACIONES } from '../lib/anotacionesFitness';
+import { Plegable } from '../components/layoutMotion';
+/* 🔓 Fitness 5/8 — la progresión: medias repeticiones y propuestas. */
+import { leerRepeticiones, textoReps, decimal } from '../lib/numerosFitness';
+import { resultadoFrenteAPropuesta, TEXTOS_PROGRESION } from '../lib/progresion';
+import { LineaPropuesta, MarcaProgreso } from '../components/progresionFitness';
 import { useDeslizarParaCambiar } from '../components/gestosMotion';
 import { IconoQueCambia } from '../components/motion';
 import { COLORS } from '../tokens';
@@ -82,7 +88,6 @@ import { pasarAFinalizacion } from '../lib/finalizacion';
 import { emitir } from '../lib/eventos';
 import { PROPS_CAMPO_NUMERICO } from '../lib/movilFitness';
 /* 🧹 FIT F44 (apartado 39) — números como se leen en español: 62,5 y no 62.5, de un solo sitio. */
-import { decimal } from '../lib/numerosFitness';
 import { desplazarHasta } from '../lib/accesibilidadMotion';
 
 /* ⚠️ Cada cuánto se redibuja el reloj. **Solo redibuja**: la cuenta la lleva
@@ -269,9 +274,18 @@ export function HuecoAnatomico({ ficha, accent, compacto = false }) {
 /* ── Un campo numérico (F7 apartados 15 y 16 · F9 apartados 8, 9 y 37) ─────
    ⚠️ Lleva **su propio texto mientras se escribe** y guarda en cada tecla: un
    «62,» a medio teclear se pinta tal cual y se guarda como 62 (F7). */
-function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal: conDecimal = false }) {
-  const [texto, setTexto] = useState(valor === null || valor === undefined ? '' : String(valor));
+function CampoNumero({
+  valor, placeholder, onConfirmar, etiqueta, decimal: conDecimal = false,
+  /* 🔓 Fitness 5/8 (prompt 5 §7 y §8) — `revisarTexto` dice qué está mal (nunca
+     corrige: 8,2 no se redondea), y `propuesta` es el valor recomendado, que se
+     ve DETRÁS, en verde suave, mientras él no escriba el suyo. */
+  revisarTexto = null, propuesta = null, mejora = false, formatear = null,
+}) {
+  const aTexto = (v) => (v === null || v === undefined ? '' : (formatear ? formatear(v) : String(v)));
+  const [texto, setTexto] = useState(aTexto(valor));
   const [tocando, setTocando] = useState(false);
+  const [error, setError] = useState('');
+  const idAyuda = useId();
   /* 🐛 FIT F40 (apartados 29, 32 y 33) — lo escrito se guarda UNA vez, no en
      cada tecla: `pendiente` es lo que falta por confirmar y `reloj` su retardo.
      ⚠️ `alConfirmar` es la función del último pintado: al confirmar tarde, la
@@ -281,8 +295,16 @@ function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal: conDe
   const alConfirmar = useRef(onConfirmar);
   alConfirmar.current = onConfirmar;
 
+  /* Un valor nuevo que llega de fuera (los ± o el guardado) manda y limpia el
+     error; si no ha cambiado, un error se queda a la vista con lo que escribió. */
+  const valorPrevio = useRef(valor);
   useEffect(() => {
-    if (!tocando) setTexto(valor === null || valor === undefined ? '' : String(valor));
+    const cambio = valorPrevio.current !== valor;
+    valorPrevio.current = valor;
+    if (tocando) return;
+    if (cambio) { setTexto(aTexto(valor)); setError(''); return; }
+    if (!error) setTexto(aTexto(valor));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valor, tocando]);
 
   const confirmar = (v) => {
@@ -290,6 +312,9 @@ function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal: conDe
     reloj.current = null;
     pendiente.current = null;
     const t = String(v ?? '').trim();
+    const motivo = revisarTexto ? revisarTexto(t) : null;
+    if (motivo) { setError(motivo); return; }
+    setError('');
     alConfirmar.current(t === '' ? null : t.replace(',', '.'));
   };
   const confirmarLuego = (v) => {
@@ -315,14 +340,20 @@ function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal: conDe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const conPropuesta = propuesta !== null && propuesta !== undefined && propuesta !== '';
+  const verPropuesta = conPropuesta && texto === '';
+  const ayuda = error || (conPropuesta ? `Propuesta: ${propuesta}` : '');
   return (
+    <div className="relative min-w-0">
     <input
       type="text"
       inputMode={conDecimal ? 'decimal' : 'numeric'}
       {...PROPS_CAMPO_NUMERICO}
       value={texto}
       aria-label={etiqueta}
-      placeholder={placeholder}
+      aria-invalid={error ? true : undefined}
+      aria-describedby={ayuda ? idAyuda : undefined}
+      placeholder={conPropuesta ? '' : placeholder}
       /* 🚨 F9, apartado 37 — *"el teclado no debe ocultar el campo activo"*. En
          un iPhone el teclado tarda en subir, así que se centra el campo cuando ya
          ha subido y no antes: hacerlo al instante lo dejaría debajo igualmente. */
@@ -331,7 +362,7 @@ function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal: conDe
         const el = ev.currentTarget;
         setTimeout(() => { desplazarHasta(el, { block: 'center' }); }, 300);
       }}
-      onChange={(ev) => { setTexto(ev.target.value); confirmarLuego(ev.target.value); }}
+      onChange={(ev) => { setTexto(ev.target.value); setError(''); confirmarLuego(ev.target.value); }}
       /* Al salir del campo se guarda YA —y solo si hay algo pendiente: salir
          sin haber escrito no es un cambio—. */
       onBlur={(ev) => { setTocando(false); if (reloj.current) confirmar(ev.target.value); }}
@@ -340,11 +371,42 @@ function CampoNumero({ valor, placeholder, onConfirmar, etiqueta, decimal: conDe
       className="w-full h-11 rounded-xl text-center text-base font-bold outline-none toque-44"
       style={{
         background: COLORS.surface2,
-        border: `1px solid ${COLORS.border}`,
+        border: `1px solid ${error ? COLORS.negative : COLORS.border}`,
         color: COLORS.text,
       }}
     />
+    {/* La propuesta, de fondo: en verde suave, con su flecha si es una mejora.
+        Nunca parece un valor hecho (no es negrita, ni del color del texto), y
+        en cuanto él escribe, desaparece debajo de lo suyo. */}
+    {verPropuesta && (
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center gap-0.5 text-base font-semibold tabular-nums"
+        style={{ color: hexToRgba(COLORS.positive, 0.7) }}
+      >
+        {propuesta}
+        {mejora && <ArrowUp size={12} />}
+      </span>
+    )}
+    {ayuda && (
+      <span id={idAyuda} className={error ? 'block text-[10px] leading-tight mt-0.5 text-center' : 'sr-only'} style={error ? { color: COLORS.negative } : undefined}>
+        {ayuda}
+      </span>
+    )}
+    </div>
   );
+}
+
+/* 🔓 Fitness 5/8 — lo que se valida y lo que se enseña de la propuesta. */
+const validarRepsEnVivo = (t) => {
+  const r = leerRepeticiones(t);
+  return r.ok ? null : 'Entera o media: 8 u 8,5';
+};
+function propuestaDeFila(f, porTiempo) {
+  const p = f && f.plan && f.plan.propuesta;
+  if (!p) return null;
+  if (porTiempo) return p.duracion ? `${p.duracion}` : null;
+  return p.reps ? textoReps(p.reps) : null;
 }
 
 /* ── − paso + (F9 apartado 10) ─────────────────────────────────────────── */
@@ -418,6 +480,8 @@ export function TablaSeries({
                   {activa && (
                     <p className="text-[10px] font-bold uppercase leading-none mt-0.5" style={{ color: acentoLegible(accent) }}>Ahora</p>
                   )}
+                  {/* 🔓 Fitness 5/8 — si la hecha supera su propuesta, se dice discretamente. */}
+                  {hecha && <MarcaProgreso supera={resultadoFrenteAPropuesta(f).estado === 'supera'} />}
                   {/* F9 apartado 28 — *"marcarse como añadida"*. */}
                   {f.origen === 'anadida' && !activa && (
                     <p className="text-[10px] font-bold uppercase leading-none mt-0.5" style={{ color: COLORS.textMuted }}>Extra</p>
@@ -439,6 +503,12 @@ export function TablaSeries({
                       valor={porTiempo ? f.hecho.duracion : f.hecho.reps}
                       placeholder={f.planificado || '—'}
                       etiqueta={porTiempo ? `Segundos de la serie ${f.numero}` : `Repeticiones de la serie ${f.numero}`}
+                      /* 🔓 Fitness 5/8 — repeticiones enteras o de media en media (8,5). */
+                      decimal={!porTiempo}
+                      revisarTexto={porTiempo ? null : validarRepsEnVivo}
+                      formatear={porTiempo ? null : textoReps}
+                      propuesta={propuestaDeFila(f, porTiempo)}
+                      mejora={!!(f.plan && f.plan.propuesta && f.plan.propuesta.mejora)}
                       onConfirmar={(v) => onEditar(f.id, { [campoMedida]: v })}
                     />
                   </>
@@ -845,6 +915,9 @@ export default function EntrenamientoVivoView({
      por lo mismo que el objetivo: el ejercicio cambia dentro de esta pantalla
      y quien tiene el historial es Fitness. */
   ultimaVezDe = null,
+  /* 🔓 Fitness 6/8 — la nota anterior de esta línea, las antiguas y la indicación
+     de la plantilla, como FUNCIÓN: quien tiene el historial es Fitness. */
+  anotacionesDe = null,
 }) {
   /* Qué panel está abierto: estado de la pantalla, jamás un dato (EH F40). */
   const [panel, setPanel] = useState(null); // 'tutorial' | 'reemplazar' | 'notas' | 'descanso'
@@ -870,6 +943,23 @@ export default function EntrenamientoVivoView({
   );
   const filas = useMemo(() => filasDeSeries(ejercicio), [ejercicio]);
   const activaId = useMemo(() => serieActiva(ejercicio), [ejercicio]);
+  /* 🔓 Fitness 6/8 — lo de antes de ESTA línea. Se calcula por ejercicio, no en cada
+     tecla: la nota de hoy no cambia lo de antes. */
+  const anotaciones = useMemo(
+    () => (anotacionesDe && ejercicio ? anotacionesDe(ejercicio) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [anotacionesDe, ejercicio ? ejercicio.id : null],
+  );
+  /* Las antiguas, solo si él las pide (⋯), y se cierran al cambiar de ejercicio. */
+  const [antiguasDe, setAntiguasDe] = useState(null);
+  /* 🔓 Fitness 5/8 (prompt 5 §9) — si una serie se queda por debajo de su
+     propuesta, una frase amable UNA vez por entrenamiento (estado de la
+     pantalla, no se guarda): en el primer ejercicio donde pase, y ya está. */
+  const [noPasaNadaEn, setNoPasaNadaEn] = useState(null);
+  const quedoPorDebajo = filas.some((f) => f.estado === 'hecha' && resultadoFrenteAPropuesta(f).estado === 'por_debajo');
+  useEffect(() => {
+    if (quedoPorDebajo && noPasaNadaEn === null && ejercicio) setNoPasaNadaEn(ejercicio.id);
+  }, [quedoPorDebajo, noPasaNadaEn, ejercicio]);
   const carrusel = useMemo(() => carruselDeSesion(sesion, propios), [sesion, propios]);
   const progreso = useMemo(() => progresoSesion(sesion), [sesion]);
   const total = ejerciciosDeSesion(sesion).length;
@@ -930,6 +1020,19 @@ export default function EntrenamientoVivoView({
   useEffect(() => () => guardarNotaPendiente(),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []);
+  /* 🔓 Fitness 6/8 (prompt 6 §10) — una interrupción (salir a la pantalla de inicio
+     del iPhone, cerrar la pestaña) guarda lo que quede de la nota, como los campos
+     de las series (F40). */
+  useEffect(() => {
+    const alEsconder = () => { if (document.visibilityState === 'hidden') guardarNotaPendiente(); };
+    document.addEventListener('visibilitychange', alEsconder);
+    window.addEventListener('pagehide', guardarNotaPendiente);
+    return () => {
+      document.removeEventListener('visibilitychange', alEsconder);
+      window.removeEventListener('pagehide', guardarNotaPendiente);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* …y **se guarda sola** al dejar de escribir (*"Guardar automáticamente si es
      posible"*). ⚠️ Se compara con lo guardado ya recortado: si no, un espacio
@@ -1238,6 +1341,55 @@ export default function EntrenamientoVivoView({
             />
           )}
 
+          {/* 🔓 Fitness 6/8 — lo de antes, discreto y solo si existe: la indicación
+              permanente de la plantilla y la nota de la última vez (con su fecha),
+              y ⋯ para las antiguas. Nada se copia a la nota de hoy. */}
+          {anotaciones && (anotaciones.indicacion || anotaciones.anterior) && (
+            <div className="px-1 space-y-1">
+              {anotaciones.indicacion && (
+                <p className="text-xs flex items-start gap-1.5" style={{ color: COLORS.textMuted }}>
+                  <ClipboardList size={12} className="shrink-0 mt-px" aria-hidden="true" />
+                  <span className="min-w-0"><span className="font-semibold">{TEXTOS_ANOTACIONES.indicacion}:</span> {anotaciones.indicacion}</span>
+                </p>
+              )}
+              {anotaciones.anterior && (
+                <div className="flex items-start gap-1.5">
+                  <History size={12} className="shrink-0 mt-0.5" aria-hidden="true" style={{ color: COLORS.textMuted }} />
+                  <p className="text-xs min-w-0 flex-1" style={{ color: COLORS.textMuted }}>
+                    <span className="font-semibold">{TEXTOS_ANOTACIONES.anterior} · {anotaciones.anterior.fechaTexto}:</span>{' '}
+                    «{anotaciones.anterior.texto}»
+                  </p>
+                  {anotaciones.anteriores.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setAntiguasDe(antiguasDe === ejercicio.id ? null : ejercicio.id)}
+                      aria-label={antiguasDe === ejercicio.id ? TEXTOS_ANOTACIONES.ocultarAnteriores : TEXTOS_ANOTACIONES.verAnteriores}
+                      aria-expanded={antiguasDe === ejercicio.id}
+                      className="w-8 h-8 -my-2 rounded-lg flex items-center justify-center shrink-0 toque-44"
+                      style={{ color: COLORS.textMuted }}
+                    >
+                      <MoreHorizontal size={16} aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              )}
+              <Plegable abierto={!!anotaciones.anterior && antiguasDe === ejercicio.id}>
+                {() => (
+                  <ul className="mt-1 space-y-1.5 pl-4" aria-label={TEXTOS_ANOTACIONES.tituloAnteriores}>
+                    {anotaciones.anteriores.map((n) => (
+                      <li key={n.sesionId} className="text-xs" style={{ color: COLORS.text }}>
+                        <span className="font-semibold" style={{ color: COLORS.textMuted }}>
+                          {n.fechaTexto}{n.entrenamiento ? ` · ${n.entrenamiento}` : ''}
+                        </span>
+                        <span className="block">{n.texto}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Plegable>
+            </div>
+          )}
+
           {/* F7 apartado 27 · F9 apartado 23 — la nota, que se guarda sola. */}
           {panel === 'notas' && (
             <Card>
@@ -1247,6 +1399,7 @@ export default function EntrenamientoVivoView({
                 placeholder="Mejor agarre hoy…"
                 aria-label="Nota de este ejercicio"
                 rows={3}
+                maxLength={1000}
               />
               <p className="text-[10px] mt-1" style={{ color: COLORS.textMuted }}>
                 {nota.trim() === (ejercicio.notas || '') ? 'Guardada' : 'Guardando…'}
@@ -1275,6 +1428,8 @@ export default function EntrenamientoVivoView({
 
           {/* F9 apartado 2 — la tabla, que es la protagonista. */}
           <Card>
+            {/* 🔓 Fitness 5/8 — una frase, solo si hay propuesta. */}
+            <LineaPropuesta filas={filas} />
             <TablaSeries
               filas={filas}
               accent={accent}
@@ -1289,6 +1444,9 @@ export default function EntrenamientoVivoView({
               onRecuperar={(serieId) => guardar(recuperarSerie(sesion, ejercicio.id, serieId))}
               onAnadir={() => guardar(anadirSerie(sesion, ejercicio.id))}
             />
+            {ejercicio && noPasaNadaEn === ejercicio.id && quedoPorDebajo && (
+              <p className="text-xs mt-3" style={{ color: COLORS.textMuted }}>{TEXTOS_PROGRESION.noPasaNada}</p>
+            )}
           </Card>
 
           <div className="flex gap-2">

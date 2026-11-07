@@ -563,10 +563,16 @@ ok(DECISIONES_FIT31.some((d) => /iniciadaEn/.test(d.porque) && /guardadaEn/.test
   '…incluido que los campos del apartado 2 son los que YA existían (startTime = iniciadaEn…)');
 
 const COMP = leer('src/components/actividadEntrenamiento.jsx');
-const COMPONENTES = ['TrainingActivitySummary', 'TrainingActivityCalendar', 'TrainingActivityDay', 'TrainingFrequencyCard',
+/* 🔓 Fitness 8/8 — el calendario de actividad (semana y mes, y su día) se unificó con
+   el de cumplimiento del Historial (Josué: un solo calendario). Se da la vuelta: los
+   seis que siguen, escritos de verdad, y los dos del calendario, en el unificado. */
+const COMPONENTES = ['TrainingActivitySummary', 'TrainingFrequencyCard',
   'TrainingRecentSessions', 'TrainingRecentSessionCard', 'TrainingPlanAdherence', 'TrainingPeriodSelector'];
 const faltan = COMPONENTES.filter((c) => !new RegExp(`export function ${c}\\b`).test(COMP));
-ok(faltan.length === 0, `🚨 Los ocho componentes del apartado 35, escritos de verdad${faltan.length ? ` (faltan ${faltan.join(', ')})` : ''}`);
+ok(faltan.length === 0, `🚨 Los seis componentes de la actividad que siguen, escritos de verdad${faltan.length ? ` (faltan ${faltan.join(', ')})` : ''}`);
+const UNIFICADO = leer('src/components/disciplinaFitness.jsx');
+ok(!/export function TrainingActivity(Calendar|Day)\b/.test(COMP) && /export function CalendarioCumplimiento\b/.test(UNIFICADO) && /onVista/.test(UNIFICADO),
+  '🚨 Fitness 8/8 — un solo calendario: el de Progreso ya no existe y el unificado tiene la vista de semana');
 const COMP_CODIGO = sinComentarios(COMP);
 /* ⚠️ `d.sesiones` SÍ aparece, y es correcto: es la lista que el resumen ya
    trae dentro de cada día. Lo prohibido es leer las del `fitness`. */
@@ -575,8 +581,10 @@ ok(/resumenDeActividad/.test(COMP_CODIGO) && !LEE_SESIONES.test(COMP_CODIGO),
   '🚨 Los componentes NO cuentan: piden el resumen y no leen ni las sesiones ni el historial (apartado 20)');
 ok(LEE_SESIONES.test('const x = fitness.sesiones.filter(Boolean);') && LEE_SESIONES.test('(fitness || {}).sesiones'),
   '…y el barrido SÍ caza una lectura de verdad (EH F42)');
-ok(/aria-label=\{dia\.etiqueta\}/.test(COMP) && /sr-only/.test(COMP),
-  '🚨 Cada día se lee con palabras: `aria-label` si es botón, texto oculto si no (apartado 37)');
+/* 🔓 Fitness 8/8 — el día lo pinta el calendario unificado: su etiqueta dice la fecha,
+   el estado y, con palabras, lo que se entrenó (`textoDeRegistradas`, «2 entrenamientos: …»). */
+ok(/aria-label=\{`\$\{diaYMes\(celda\.fecha\)\}: \$\{celda\.nombre\}/.test(UNIFICADO) && /textoDeRegistradas\(registradas\)/.test(UNIFICADO),
+  '🚨 Cada día se lee con palabras: la fecha, su estado y lo que se entrenó (apartado 37, en el calendario unificado)');
 ok(/toque-44/.test(COMP), '…y los controles llevan su zona de toque (EH F42)');
 ok(!/COLORS\.negative|COLORS\.danger|#[0-9a-f]{6}/i.test(COMP_CODIGO),
   '🚨 Ni un color de error ni un hex suelto: un día sin registro no es un fallo (apartados 6, 7 y regla 2)');

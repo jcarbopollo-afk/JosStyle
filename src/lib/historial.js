@@ -6,9 +6,10 @@ import { resumenPlanificado, resumenRealizado, cabeceraEnSesion } from './entren
 import { ENTORNOS, nombreSinCatalogo } from './ejercicios';
 import { planPorId, planActivoDe, CATALOGO_PLANES } from './planes';
 /* 🔓 FIT F11 — la comparación con la vez anterior, discreta (su apartado 34). */
-import { comparacionEnSesion } from './progresion';
+import { comparacionEnSesion, resultadoFrenteAPropuesta, plantillaDeSesion } from './progresion';
+import { notasDeLinea } from './anotacionesFitness';
 /* 🧹 FIT F44 (apartado 39) — el número con coma, de un solo sitio. */
-import { decimal } from './numerosFitness';
+import { decimal, textoReps } from './numerosFitness';
 
 /* Entrega 4 · Fase 10/45 — «Historial de entrenamientos y detalle de sesiones».
    ═══════════════════════════════════════════════════════════════════════════
@@ -173,6 +174,8 @@ export const ORDENES_HISTORIAL = [
 
 export const FILTROS_POR_DEFECTO = Object.freeze({
   busqueda: '', fecha: 'todos', desde: '', hasta: '', plan: 'todos', entorno: 'todos', orden: 'recientes',
+  /* 🔓 Fitness 7/8 — el historial de una plantilla concreta. */
+  plantilla: 'todas',
 });
 
 /** ¿Hay algo que limpiar? (apartado 34). ⚠️ Una búsqueda de solo espacios no
@@ -180,7 +183,8 @@ export const FILTROS_POR_DEFECTO = Object.freeze({
 export function hayFiltros(f = {}) {
   const x = { ...FILTROS_POR_DEFECTO, ...f };
   return texto(x.busqueda) !== ''
-    || x.fecha !== 'todos' || x.plan !== 'todos' || x.entorno !== 'todos' || x.orden !== 'recientes';
+    || x.fecha !== 'todos' || x.plan !== 'todos' || x.entorno !== 'todos' || x.orden !== 'recientes'
+    || x.plantilla !== 'todas';
 }
 
 /** Apartado 10 — *"tolerante a mayúsculas/minúsculas"* y a acentos: «pierna»
@@ -265,8 +269,19 @@ export function fichaDeHistorial(sesion, { fitness = {}, propios = [], planes = 
     entornoNombre: nombreEntorno(entorno),
     plan: relacionConPlan(sesion, fitness),
     textoBusqueda: normalizarBusqueda(`${r.nombre} ${texto(sesion.descripcion)}`),
+    /* 🔓 Fitness 7/8 (prompt 7 §6) — de qué plantilla fue (por id: dos plantillas
+       con el mismo nombre, o una copia, no se mezclan; una eliminada sigue aquí) y
+       de qué tipo (lo que escribió la Fase 4 al empezar; lo de antes, sin tipo:
+       no se inventa). */
+    plantillaId: plantillaDeSesion(sesion, fitness),
+    clase: CLASES_FICHA[texto(sesion.diaDePlan?.clase)] ? texto(sesion.diaDePlan.clase) : null,
+    claseTexto: CLASES_FICHA[texto(sesion.diaDePlan?.clase)] || '',
+    completar: sesion.completadaCon === 'completar',
   };
 }
+
+/* 🔓 Fitness 7/8 — el tipo de una sesión, en palabras (el de la Fase 4). */
+const CLASES_FICHA = Object.freeze({ prevista: 'Planificado', recuperacion: 'Recuperación', libre: 'Libre' });
 
 export const HISTORIAL_VACIO = {
   titulo: 'Aún no tienes entrenamientos',
@@ -307,6 +322,8 @@ export function consultarHistorial(fichas, filtros = {}, { hoy = todayISO() } = 
     /* ⚠️ Una sesión sin entorno no desaparece con «Todos», y no entra en uno
        concreto: no se sabe de dónde era, y adivinarlo sería inventar. */
     if (f.entorno !== 'todos' && x.entorno !== f.entorno) return false;
+    /* 🔓 Fitness 7/8 — por plantilla, por su id (nunca por el nombre). */
+    if (f.plantilla !== 'todas' && x.plantillaId !== f.plantilla) return false;
     return true;
   });
 
@@ -347,8 +364,37 @@ export function consultarHistorial(fichas, filtros = {}, { hoy = todayISO() } = 
     sinResultados: todas.length > 0 && ordenadas.length === 0,
     opcionesPlan: conDatos('plan', FILTROS_PLAN),
     opcionesEntorno: conDatos('entorno', FILTROS_ENTORNO),
+    opcionesPlantilla: opcionesDePlantilla(todas),
     rango: { desde, hasta },
   };
+}
+
+/**
+ * 🔓 Fitness 7/8 (prompt 7 §6) — las plantillas que tienen ejecuciones, para el
+ * filtro «Plantilla». Cada una por su id, con el nombre de su ejecución más
+ * reciente (si se eliminó la plantilla, sigue saliendo: sus sesiones son
+ * historia) y cuántas tiene. Si dos se llaman igual, se dice cuál es cuál.
+ */
+export function opcionesDePlantilla(fichas) {
+  const por = new Map();
+  for (const x of lista(fichas)) {
+    if (!x || !x.plantillaId) continue;
+    const ya = por.get(x.plantillaId);
+    if (!ya) por.set(x.plantillaId, { id: x.plantillaId, nombre: x.nombre, cuantas: 1, ultima: x.fecha || '' });
+    else {
+      ya.cuantas += 1;
+      if ((x.fecha || '') > ya.ultima) { ya.ultima = x.fecha || ''; ya.nombre = x.nombre; }
+    }
+  }
+  const out = [...por.values()].sort((a, b) => (a.ultima < b.ultima ? 1 : a.ultima > b.ultima ? -1 : 0));
+  const veces = new Map();
+  out.forEach((o) => veces.set(o.nombre, (veces.get(o.nombre) || 0) + 1));
+  const vistos = new Map();
+  return [{ id: 'todas', nombre: 'Todas' }, ...out.map((o) => {
+    const n = (vistos.get(o.nombre) || 0) + 1;
+    vistos.set(o.nombre, n);
+    return { id: o.id, nombre: veces.get(o.nombre) > 1 ? `${o.nombre} (${n})` : o.nombre, cuantas: o.cuantas };
+  })];
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -375,7 +421,16 @@ export function filaDeSerieHistorial(fila, { corporal = false } = {}) {
       : (corporal && fila.estado === 'hecha' ? 'Corporal' : '—'),
     medida: porTiempo
       ? (fila.hecho?.duracion ? `${fila.hecho.duracion} s` : '—')
-      : (fila.hecho?.reps ? `${fila.hecho.reps}` : '—'),
+      : (fila.hecho?.reps ? textoReps(fila.hecho.reps) : '—'),
+    /* 🔓 Fitness 5/8 (prompt 5 §12) — lo que se propuso aquel día, al lado de lo
+       que hizo y nunca en su lugar. `null` si no hubo propuesta. */
+    propuesta: (() => {
+      const r = resultadoFrenteAPropuesta(fila);
+      if (r.estado === 'sin_propuesta') return null;
+      const p = r.propuesta;
+      const valor = porTiempo ? (p.duracion ? `${p.duracion} s` : '') : (p.reps ? textoReps(p.reps) : '');
+      return valor ? { texto: `Propuesta: ${valor}`, estado: r.estado } : null;
+    })(),
   };
 }
 
@@ -388,7 +443,7 @@ export function realizadoEnDetalle(ejercicioSesion) {
     .filter((s) => s.estado === 'hecha')
     .map((s) => {
       if (s.modo === 'tiempo') return s.hecho?.duracion ? `${s.hecho.duracion} s` : '—';
-      const reps = s.hecho?.reps ? `${s.hecho.reps}` : '—';
+      const reps = s.hecho?.reps ? textoReps(s.hecho.reps) : '—';
       const p = s.hecho?.peso;
       if (p !== null && p !== undefined && p > 0) return `${reps} × ${decimal(p)} kg`;
       return corporal ? `${reps} × peso corporal` : reps;
@@ -438,6 +493,10 @@ export function detalleDeSesion(sesion, { fitness = {}, propios = [], planes = C
       existe: res.existe !== false,
       filas: filasDeSeries(e).map((f) => filaDeSerieHistorial(f, { corporal })),
       comparacion: comparacionDiscreta(comparacionEnSesion(fitness, sesion.id, e.exerciseId, { propios })),
+      /* 🔓 Fitness 6/8 (prompt 6 §6 y §7) — las anotaciones de esa línea ANTERIORES a
+         esta sesión (nunca las de después), para consultarlas desde aquí. La nota de
+         esta ejecución sigue siendo `notas`, la suya. */
+      notasAnteriores: notasDeLinea(fitness, sesion, e, { hasta: sesion }),
     };
   });
 
@@ -467,6 +526,14 @@ export function detalleDeSesion(sesion, { fitness = {}, propios = [], planes = C
       ? texto(sesion.diaDePlan.nombre) : '',
     notas: r.notas,
     ejercicios,
+    /* 🔓 Fitness 4/8 (prompt 4 §9) — las dos fechas de una recuperación y cómo se
+       registró. Se leen de la sesión: no se calcula nada aquí. */
+    cumplimiento: {
+      fecha: sesion.fecha,
+      clase: texto(sesion.diaDePlan?.clase) || null,
+      fechaPrevista: texto(sesion.diaDePlan?.fechaPrevista) || null,
+      completadaCon: sesion.completadaCon || null,
+    },
   };
 }
 

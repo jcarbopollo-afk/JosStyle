@@ -168,8 +168,10 @@ ok(/aviso\.error\s*\?\s*'alert'\s*:\s*'status'/.test(quickAdd) && /AlertTriangle
 ok(resultadoDeGuardado(undefined).ok && resultadoDeGuardado({ ok: true }).ok && !resultadoDeGuardado({ ok: false, error: 'x' }).ok,
   '`resultadoDeGuardado`: sin nada que leer no se inventa un fallo; `{ ok: false }` sí lo es');
 const app = leer('src/App.jsx');
-ok(/const guardarFitness = async \(next\) => \{ setFitness\(next\); return saveData\(uidUser, 'fitness', next\); \};/.test(app),
-  '🚨 `guardarFitness` de App.jsx DEVUELVE lo que dice `saveData` (antes se lo tragaba)');
+/* 🔓 Fitness 3/8 — con la guardia de versión delante (en solo lectura devuelve un fallo
+   y no guarda), pero el camino normal sigue devolviendo lo que dice `saveData`. */
+ok(/const guardarFitness = async \(next\) => \{\s*if \(fitnessSoloLecturaRef\.current\) return NO_GUARDA_FITNESS;\s*setFitness\(next\);\s*return saveData\(uidUser, 'fitness', next\);\s*\};/.test(app),
+  '🚨 `guardarFitness` de App.jsx DEVUELVE lo que dice `saveData` (antes se lo tragaba), con la guardia de versión delante');
 const fv = leer('src/views/FitnessView.jsx');
 /* 🔓 FIT F41 — la promesa se muda con el código (F38 → F20): el aviso sale de
    `avisoDeFallo`, que distingue «sin espacio», y SIEMPRE devuelve uno de los
@@ -253,7 +255,10 @@ ok(/fit-miniatura/.test(vivo), 'Cambiar de ejercicio: la miniatura crece con sua
 ok(/fin \? 'fit-descanso-fin' : 'fit-entra'/.test(vivo), 'El descanso entra al empezar y da un pulso al terminar (apartado 9)');
 ok(/fit-entra[^>]*>\s*En lugar de \{ficha\.sustituyeA\} · solo en este entrenamiento/.test(vivo),
   '«En lugar de X · solo en este entrenamiento» (F33) entra con suavidad (apartado 37)');
-ok(/<div key=\{area\} className="fit-entra">/.test(fv), 'Cambiar de área en Fitness: una entrada corta (apartado 4)');
+/* 🔓 Fitness 4/8 — la `key` lleva también un contador para poder abrir el Historial
+   desde el aviso de «ya entrenaste hoy» estando ya en Entrenamiento; sigue siendo la
+   misma entrada corta al cambiar de área. */
+ok(/<div key=\{`\$\{area\}-\$\{reabrir\}`\} className="fit-entra">/.test(fv), 'Cambiar de área en Fitness: una entrada corta (apartado 4)');
 /* 🐛 Era una lista escrita a mano de cinco archivos, y se dejó fuera las dos
    hojas de Rangos (la explicación y el historial): lo que se barre ahora es
    CADA velo `fixed inset-0` de los archivos de Fitness, sin comentarios. */

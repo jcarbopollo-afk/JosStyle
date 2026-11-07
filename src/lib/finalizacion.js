@@ -6,6 +6,7 @@ import {
   ejerciciosDeSesion, duracionCreible, reloj, reanudarSesion,
 } from './entrenamiento';
 
+import { textoReps } from './numerosFitness';
 /* Entrega 4 · Fase 8/45 — «Finalización y guardado del entrenamiento».
    ═══════════════════════════════════════════════════════════════════════════
 
@@ -152,8 +153,9 @@ export function resumenDeEjercicio(ejercicio, propios = []) {
   const pesos = hechas.map((s) => s.hecho?.peso).filter((v) => v !== null && v !== undefined);
   const reps = hechas.map((s) => s.hecho?.reps).filter((v) => v !== null && v !== undefined);
   const duraciones = hechas.map((s) => s.hecho?.duracion).filter((v) => v !== null && v !== undefined);
-  const rango = (l) => (l.length === 0 ? '' : (Math.min(...l) === Math.max(...l)
-    ? `${Math.min(...l)}` : `${Math.min(...l)}–${Math.max(...l)}`));
+  /* 🔓 Fitness 5/8 — las repeticiones con media se escriben con coma («8,5–10»). */
+  const rango = (l, f = (x) => `${x}`) => (l.length === 0 ? '' : (Math.min(...l) === Math.max(...l)
+    ? f(Math.min(...l)) : `${f(Math.min(...l))}–${f(Math.max(...l))}`));
 
   const ej = ejercicioPorId(e.exerciseId, propios);
   return {
@@ -169,7 +171,7 @@ export function resumenDeEjercicio(ejercicio, propios = []) {
     omitidas: omitidas.length,
     anadidas: anadidas.length,
     peso: rango(pesos),
-    reps: rango(reps),
+    reps: rango(reps, textoReps),
     duracion: rango(duraciones),
     modo: e.modo,
     notas: texto(e.notas),

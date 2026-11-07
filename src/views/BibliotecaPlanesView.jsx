@@ -32,7 +32,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useScrollAlVolver } from '../components/scrollAlVolver';
-import { ArrowLeft, Search, Star, Check, Copy, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowLeft, Search, Star, Check, Copy, SlidersHorizontal, X, Plus, Pencil, Trash2, Play } from 'lucide-react';
 import { LatidoAlMarcar } from '../components/motion';
 import { COLORS } from '../tokens';
 import { PastillaFiltro as Pastilla } from '../components/piezasFitness';
@@ -49,6 +49,7 @@ import {
   ESTADO_SIN_RESULTADOS, ESTADO_SIN_FAVORITOS, ESTADO_ERROR_PLANES,
 } from '../lib/planes';
 import { PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
+import { EXPLICACIONES_RUTINA } from '../lib/rutinasCiclicas';
 
 /* Los tres filtros de detalle del apartado 7 que no son la barra de categorías.
    ⚠️ Es una lista, no tres bloques de JSX repetidos: así el día que haya un
@@ -115,7 +116,7 @@ export function TarjetaPlan({ plan, accent, activo = false, favorito = false, on
       {/* ⚠️ Solo se rotula el activo si lo es: una etiqueta «no activo» en los
           dieciséis restantes sería ruido. */}
       {activo && (
-        <p className="text-[11px] font-semibold mt-2" style={{ color: acentoLegible(accent) }}>Es tu plan actual</p>
+        <p className="text-[11px] font-semibold mt-2" style={{ color: acentoLegible(accent) }}>Es tu rutina activa</p>
       )}
     </Card>
   );
@@ -157,12 +158,78 @@ export function ConfirmarCambioDePlan({ actual, nuevo, onCancelar, onConfirmar }
 /* ── El detalle de un plan (apartados 11, 12 y 13) ─────────────────────────
    Cabecera · información rápida · objetivo · distribución muscular · la semana
    · los ejercicios del día que se toque. */
+/* 🔓 Fitness 3/8 — la confirmación de eliminar una rutina, en la propia pantalla
+   (sin `fixed inset-0`, regla 3). Dice si es la activa, qué no se toca y dónde
+   se recupera: va a Eliminados recientemente, así que prometer más sería mentir. */
+export function ConfirmarEliminarRutina({ aviso, nombre, onCancelar, onEliminar }) {
+  const a = aviso || { titulo: `¿Eliminar «${nombre}»?`, que: '', seQueda: '', vuelve: '', confirmar: 'Eliminar rutina' };
+  return (
+    <Card style={{ border: `1px solid ${COLORS.negative}` }}>
+      <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{a.titulo}</p>
+      {a.que && <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{a.que}</p>}
+      {a.seQueda && <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{a.seQueda}</p>}
+      {a.vuelve && <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>{a.vuelve}</p>}
+      <div className="flex gap-2 mt-3">
+        <GhostBtn onClick={onCancelar}>Cancelar</GhostBtn>
+        <button
+          onClick={onEliminar}
+          aria-label={`Confirmar eliminar ${nombre}`}
+          className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold toque-44 toque-destructivo"
+          style={{ background: COLORS.surface2, color: COLORS.negative, border: `1px solid ${COLORS.negative}` }}
+        >
+          <Trash2 size={14} />
+          {a.confirmar}
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+/* 🔓 Fitness 3/8 — una rutina suya en la biblioteca: nombre, días, si es la activa y
+   sus acciones (activar, editar, duplicar, eliminar), a la vista y con su nombre. */
+export function TarjetaRutina({
+  ficha, accent, aviso = null, onActivar = null, onEditar = null, onDuplicar = null, onEliminar = null,
+}) {
+  const [borrando, setBorrando] = useState(false);
+  if (!ficha) return null;
+  return (
+    <Card style={ficha.activa ? { border: `1px solid ${accent}` } : undefined}>
+      <p className="text-sm font-bold truncate" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>{ficha.nombre}</p>
+      <p className="text-xs" style={{ color: COLORS.textMuted }}>{ficha.texto}</p>
+      {ficha.activa && (
+        <p className="text-[11px] font-semibold mt-1" style={{ color: acentoLegible(accent) }}>Es tu rutina activa</p>
+      )}
+      {!ficha.activa && !ficha.activable && ficha.motivo && (
+        <p className="text-[11px] mt-1" style={{ color: COLORS.textMuted }}>{ficha.motivo}</p>
+      )}
+      <div className="flex gap-2 flex-wrap mt-3">
+        {!ficha.activa && ficha.activable && onActivar && (
+          <GhostBtn icon={Play} onClick={onActivar}>Activar</GhostBtn>
+        )}
+        {onEditar && <GhostBtn icon={Pencil} onClick={onEditar}>Editar</GhostBtn>}
+        {onDuplicar && <GhostBtn icon={Copy} onClick={onDuplicar}>Duplicar</GhostBtn>}
+        {onEliminar && <GhostBtn icon={Trash2} onClick={() => setBorrando(true)}>Eliminar</GhostBtn>}
+      </div>
+      {borrando && onEliminar && (
+        <div className="mt-3">
+          <ConfirmarEliminarRutina aviso={aviso} nombre={ficha.nombre} onCancelar={() => setBorrando(false)} onEliminar={() => { setBorrando(false); onEliminar(); }} />
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export function DetallePlan({
   plan, accent, activo = false, favorito = false,
   onVolver, onUsar, onPersonalizar, onFavorito,
+  /* 🔓 Fitness 3/8 — una rutina predeterminada también se edita (su copia, con el
+     mismo id), se duplica y se elimina (prompt 3 §3). Sin quien las escuche, no
+     se pintan (regla 8). */
+  onEditar = null, onDuplicar = null, onEliminar = null, avisoEliminar = null,
 }) {
   const [dia, setDia] = useState(null);
   const [verPersonalizar, setVerPersonalizar] = useState(false);
+  const [borrando, setBorrando] = useState(false);
   const ficha = fichaDePlan(plan);
 
   if (!ficha.id) {
@@ -183,11 +250,11 @@ export function DetallePlan({
     <div className="space-y-4">
       <button
         onClick={onVolver}
-        aria-label="Volver a la biblioteca de planes"
+        aria-label="Volver a la biblioteca de rutinas"
         className="inline-flex items-center gap-1.5 pl-2.5 pr-3.5 py-1.5 rounded-full text-sm font-semibold toque-44 active:opacity-60"
         style={{ color: COLORS.textMuted, background: hexToRgba(COLORS.border, 0.35) }}
       >
-        <ArrowLeft size={16} /> Más planes
+        <ArrowLeft size={16} /> Rutinas
       </button>
 
       {/* Cabecera (apartado 11). */}
@@ -243,13 +310,20 @@ export function DetallePlan({
         {/* Apartado 14: usar el plan. ⚠️ Y NADA de «Empezar entrenamiento». */}
         <div className="flex gap-2 flex-wrap mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           {activo ? (
-            <p className="text-xs font-semibold py-2" style={{ color: acentoLegible(accent) }}>Ya es tu plan actual</p>
+            <p className="text-xs font-semibold py-2" style={{ color: acentoLegible(accent) }}>Ya es tu rutina activa</p>
           ) : (
-            <PrimaryButton accent={accent} icon={Check} onClick={onUsar}>Usar este plan</PrimaryButton>
+            <PrimaryButton accent={accent} icon={Check} onClick={onUsar}>Activar esta rutina</PrimaryButton>
           )}
+          {onEditar && <GhostBtn icon={Pencil} onClick={onEditar}>Editar</GhostBtn>}
+          {onDuplicar && <GhostBtn icon={Copy} onClick={onDuplicar}>Duplicar</GhostBtn>}
           <GhostBtn icon={Copy} onClick={() => setVerPersonalizar((v) => !v)}>Personalizar</GhostBtn>
+          {onEliminar && <GhostBtn icon={Trash2} onClick={() => setBorrando(true)}>Eliminar</GhostBtn>}
         </div>
       </Card>
+
+      {borrando && onEliminar && (
+        <ConfirmarEliminarRutina aviso={avisoEliminar} nombre={ficha.nombre} onCancelar={() => setBorrando(false)} onEliminar={() => { setBorrando(false); onEliminar(); }} />
+      )}
 
       {/* Apartado 15: antes de copiar, qué va a pasar. ⚠️ No es una
           confirmación de las de asustar — no se pierde nada y lo creado se
@@ -392,6 +466,13 @@ export function DetallePlan({
 export default function BibliotecaPlanesView({
   planes = CATALOGO_PLANES, fitness = {}, accent,
   onVolver = null, onUsar = null, onPersonalizar = null, onFavorito = null,
+  /* 🔓 Fitness 3/8 — la biblioteca de RUTINAS (prompt 3 §3). `propias` son las
+     fichas de sus rutinas (`fichaDeRutina`); `activa`, la rutina activa sea cual
+     sea (`{ id, nombre }`), para el aviso de cambio; y las acciones, por id.
+     Sin quien las escuche, no se pinta nada de esto (regla 8). */
+  propias = [], activa = null,
+  onCrearRutina = null, onEditarRutina = null, onDuplicarRutina = null, onEliminarRutina = null,
+  avisoEliminarRutina = null,
 }) {
   const [consulta, setConsulta] = useState('');
   const [filtros, setFiltros] = useState({
@@ -405,6 +486,8 @@ export default function BibliotecaPlanesView({
   useScrollAlVolver(abierto);
 
   const activoId = planActivoDe(fitness)?.planId || null;
+  /* Lo que está activo, aunque no sea de esta lista (una rutina suya). */
+  const actualDe = () => (activoId ? (planPorId(activoId, planes) || (activa && activa.id === activoId ? activa : null)) : null);
 
   const visibles = useMemo(() => {
     const base = planesVisibles(planes, { consulta, ...filtros });
@@ -456,8 +539,12 @@ export default function BibliotecaPlanesView({
           onVolver={() => setAbierto(null)}
           onFavorito={onFavorito ? () => onFavorito(abierto) : null}
           onPersonalizar={onPersonalizar ? () => onPersonalizar(abierto) : null}
+          onEditar={onEditarRutina ? () => onEditarRutina(abierto) : null}
+          onDuplicar={onDuplicarRutina ? () => onDuplicarRutina(abierto) : null}
+          onEliminar={onEliminarRutina ? () => { onEliminarRutina(abierto); setAbierto(null); } : null}
+          avisoEliminar={avisoEliminarRutina ? avisoEliminarRutina(abierto) : null}
           onUsar={() => {
-            const actual = activoId ? planPorId(activoId, planes) : null;
+            const actual = actualDe();
             /* Solo se pregunta si había otro (apartado 14). */
             if (actual && actual.id !== abierto) { setCambiando({ actual, nuevo: plan }); return; }
             onUsar && onUsar(abierto, { confirmado: false });
@@ -482,14 +569,49 @@ export default function BibliotecaPlanesView({
 
       {confirmacion}
 
+      {/* 🔓 Fitness 3/8 — la biblioteca de rutinas: qué es una rutina, las suyas
+          (crear, activar, editar, duplicar, eliminar) y las predeterminadas. */}
+      <SectionTitle sub={EXPLICACIONES_RUTINA.rutina}>Rutinas</SectionTitle>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Tus rutinas</p>
+          {onCrearRutina && <GhostBtn icon={Plus} onClick={onCrearRutina}>Crear rutina</GhostBtn>}
+        </div>
+        {propias.length === 0 ? (
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>
+            Todavía no has creado ninguna. Crea la tuya, o elige una de las predeterminadas de abajo.
+          </p>
+        ) : propias.map((f) => (
+          <TarjetaRutina
+            key={f.id}
+            ficha={f}
+            accent={accent}
+            aviso={avisoEliminarRutina ? avisoEliminarRutina(f.id) : null}
+            onActivar={onUsar ? () => {
+              const actual = actualDe();
+              if (actual && actual.id !== f.id) { setCambiando({ actual, nuevo: { id: f.id, nombre: f.nombre } }); return; }
+              onUsar(f.id, { confirmado: false });
+            } : null}
+            onEditar={onEditarRutina ? () => onEditarRutina(f.id) : null}
+            onDuplicar={onDuplicarRutina ? () => onDuplicarRutina(f.id) : null}
+            onEliminar={onEliminarRutina ? () => onEliminarRutina(f.id) : null}
+          />
+        ))}
+      </div>
+
+      <div className="pt-2">
+        <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Rutinas predeterminadas</p>
+        <p className="text-xs" style={{ color: COLORS.textMuted }}>Listas para usar. Puedes editarlas, duplicarlas o eliminarlas.</p>
+      </div>
+
       {/* Apartado 6: el buscador. */}
       <div className="flex items-center gap-2">
         <div className="flex-1">
           <TextInput
             value={consulta}
             onChange={(ev) => setConsulta(ev.target.value)}
-            placeholder="Buscar un plan"
-            aria-label="Buscar un plan"
+            placeholder="Buscar una rutina"
+            aria-label="Buscar una rutina"
             {...PROPS_CAMPO_BUSQUEDA}
           />
         </div>
@@ -508,7 +630,7 @@ export default function BibliotecaPlanesView({
             activa={filtros.entorno === p.id}
             cuantos={p.cuenta}
             accent={accent}
-            label={`Ver planes de ${p.nombre.toLowerCase()}`}
+            label={`Ver rutinas de ${p.nombre.toLowerCase()}`}
             onClick={() => setFiltros((f) => ({ ...f, entorno: p.id }))}
           >
             {p.nombre}
@@ -550,7 +672,7 @@ export default function BibliotecaPlanesView({
             <Pastilla
               activa={soloGuardados}
               accent={accent}
-              label="Ver solo los planes guardados"
+              label="Ver solo las rutinas guardadas"
               onClick={() => setSoloGuardados((v) => !v)}
             >
               Guardados

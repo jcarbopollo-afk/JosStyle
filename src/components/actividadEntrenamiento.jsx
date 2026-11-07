@@ -1,12 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, History, CalendarDays } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { ChevronRight, History, CalendarDays } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { OpcionSegmentada } from './piezasFitness';
 import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba, todayISO } from '../lib/helpers';
 import { Card, GhostBtn } from './ui';
 import {
-  resumenDeActividad, mesDeActividad, sesionesDelDiaDeActividad,
+  resumenDeActividad,
   PERIODOS_ACTIVIDAD, PERIODO_ACTIVIDAD_POR_DEFECTO,
 } from '../lib/actividadEntrenamiento';
 import { CATALOGO_PLANES } from '../lib/planes';
@@ -15,8 +15,8 @@ import { CATALOGO_PLANES } from '../lib/planes';
    ENTREGA 4 · FASE 31/45 — LA ACTIVIDAD DE ENTRENAMIENTO
 
    🚨 **AQUÍ NO SE CUENTA NADA** (apartado 20: *"No calcular estos valores
-   directamente dentro de componentes"*). Todo llega de `resumenDeActividad` y
-   `mesDeActividad`; estos componentes dibujan.
+   directamente dentro de componentes"*). Todo llega de `resumenDeActividad`;
+   estos componentes dibujan.
 
    ⚠️ **Y NI UN COLOR AGRESIVO NI UN DÍA «MALO»** (apartados 6, 7 y 27): un día
    con entrenamiento lleva una marca discreta del acento, uno sin registro un
@@ -45,144 +45,13 @@ export function TrainingPeriodSelector({ periodos = PERIODOS_ACTIVIDAD, valor, o
   );
 }
 
-/* ── TrainingActivityDay (apartados 6, 28, 30 y 37) ────────────────────────
-   Un día: su letra o su número, y una marca. Solo un día con entrenamiento es
-   un botón (apartado 30: *"Desde un día sin entrenamiento: no hacer nada
-   especial"*); los demás se leen igual, con su frase entera. */
-function Marca({ estado, accent }) {
-  if (estado === 'entrenado') {
-    return <span className="block w-2 h-2 rounded-full mx-auto" style={{ background: accent }} aria-hidden="true" />;
-  }
-  if (estado === 'descanso') {
-    return <span className="block w-2 h-2 rounded-full mx-auto" style={{ border: `1.5px solid ${COLORS.textMuted}` }} aria-hidden="true" />;
-  }
-  return (
-    <span className="block text-[11px] leading-none text-center" style={{ color: COLORS.textMuted, opacity: estado === 'futuro' ? 0.4 : 0.75 }} aria-hidden="true">
-      {estado === 'futuro' ? '·' : '—'}
-    </span>
-  );
-}
-
-export function TrainingActivityDay({ dia, accent, arriba = 'letra', seleccionado = false, onElegir = null }) {
-  const cabeza = arriba === 'numero' ? dia.numero : dia.corto;
-  const contenido = (
-    <>
-      <span
-        className="block text-[11px] font-bold"
-        style={{ color: dia.esHoy ? acentoLegible(accent) : COLORS.textMuted, textDecoration: dia.esHoy ? 'underline' : 'none' }}
-        aria-hidden="true"
-      >
-        {cabeza}
-      </span>
-      <span className="block mt-1.5 h-2.5"><Marca estado={dia.estado} accent={accent} /></span>
-    </>
-  );
-  const fondo = seleccionado ? hexToRgba(accent, 0.2) : 'transparent';
-  if (dia.navegable && onElegir) {
-    return (
-      <button
-        onClick={() => onElegir(dia)}
-        aria-label={dia.etiqueta}
-        aria-current={dia.esHoy ? 'date' : undefined}
-        aria-pressed={seleccionado}
-        className="rounded-xl py-1.5 toque-44 active:scale-95 w-full"
-        style={{ background: fondo }}
-      >
-        {contenido}
-      </button>
-    );
-  }
-  return (
-    <div className="rounded-xl py-1.5 w-full text-center" aria-current={dia.esHoy ? 'date' : undefined}>
-      <span className="sr-only">{dia.etiqueta}</span>
-      {contenido}
-    </div>
-  );
-}
-
-/* ── TrainingActivityCalendar (apartados 6, 7 y 36) ────────────────────────
-   Compacto: la semana en una fila de siete. El mes es **opcional** y se abre a
-   un toque; es una cuadrícula de siete columnas que cabe en 375 px sin
-   arrastrar la página (GE F1). */
-export function TrainingActivityCalendar({
-  dias, mes = null, vista = 'semana', onVista = null, onMes = null, accent,
-  seleccionado = null, onElegir = null,
-}) {
-  return (
-    <div>
-      {onVista && (
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <p className="text-[11px] font-bold uppercase tracking-wider" style={titulo}>
-            {vista === 'mes' && mes ? mes.titulo : 'Esta semana'}
-          </p>
-          <button
-            onClick={() => onVista(vista === 'mes' ? 'semana' : 'mes')}
-            aria-label={vista === 'mes' ? 'Ver solo esta semana' : 'Ver el mes entero'}
-            className="text-xs font-semibold inline-flex items-center gap-1 py-1.5 toque-44"
-            style={{ color: acentoLegible(accent) }}
-          >
-            <CalendarDays size={14} aria-hidden="true" /> {vista === 'mes' ? 'Semana' : 'Mes'}
-          </button>
-        </div>
-      )}
-      {vista === 'mes' && mes ? (
-        <>
-          <div className="flex items-center justify-between mb-1">
-            <button
-              onClick={() => onMes && onMes(mes.anterior)}
-              aria-label="Mes anterior"
-              className="w-9 h-9 rounded-xl flex items-center justify-center toque-44 active:scale-90"
-              style={{ color: COLORS.textMuted }}
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-            </button>
-            <p className="text-xs" style={{ color: COLORS.textMuted }}>{mes.texto}</p>
-            <button
-              onClick={() => onMes && mes.haySiguiente && onMes(mes.siguiente)}
-              disabled={!mes.haySiguiente}
-              aria-label="Mes siguiente"
-              className="w-9 h-9 rounded-xl flex items-center justify-center toque-44 active:scale-90 disabled:opacity-30"
-              style={{ color: COLORS.textMuted }}
-            >
-              <ChevronRight size={16} aria-hidden="true" />
-            </button>
-          </div>
-          <div className="grid grid-cols-7 gap-1" role="group" aria-label={`Actividad de ${mes.titulo}`}>
-            {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((l, i) => (
-              <span key={`c${i}`} className="text-[10px] font-bold text-center" style={titulo} aria-hidden="true">{l}</span>
-            ))}
-            {mes.celdas.map((d, i) => (d ? (
-              <TrainingActivityDay
-                key={d.fecha}
-                dia={d}
-                accent={accent}
-                arriba="numero"
-                seleccionado={seleccionado === d.fecha}
-                onElegir={onElegir}
-              />
-            ) : <span key={`v${i}`} aria-hidden="true" />))}
-          </div>
-        </>
-      ) : (
-        <div className="grid grid-cols-7 gap-1" role="group" aria-label="Actividad de esta semana">
-          {dias.map((d) => (
-            <TrainingActivityDay
-              key={d.fecha}
-              dia={d}
-              accent={accent}
-              seleccionado={seleccionado === d.fecha}
-              onElegir={onElegir}
-            />
-          ))}
-        </div>
-      )}
-      {/* La leyenda, con palabras (apartado 37): el guion no es un fallo. */}
-      <p className="text-[10px] mt-2" style={{ color: COLORS.textMuted }}>
-        ● entrenamiento · ○ sin entrenamiento planificado · — sin entrenamiento registrado
-      </p>
-    </div>
-  );
-}
+/* 🔓 FITNESS 8/8 — EL CALENDARIO DE ACTIVIDAD SE UNIFICÓ CON EL DE CUMPLIMIENTO.
+   `TrainingActivityDay` y `TrainingActivityCalendar` (la semana y el mes de la
+   F31) se retiraron: Josué pidió un solo calendario, el de Historial
+   (`CalendarioCumplimiento`, en `disciplinaFitness.jsx`), y ése recoge lo que
+   tenían —la vista de semana, los entrenamientos registrados de cada día con sus
+   nombres (también antes del seguimiento) y los días con varios para elegir—.
+   El resumen de abajo lleva a él con «Ver el calendario». */
 
 /* ── TrainingFrequencyCard (apartados 8 y 9) ───────────────────────────────
    Una frase de constancia y, solo con historial suficiente, la media. Ni un
@@ -285,18 +154,7 @@ export function TrainingActivitySummary({
   fitness, periodo = PERIODO_ACTIVIDAD_POR_DEFECTO, hoy = todayISO(), planes = CATALOGO_PLANES,
   accent, onVerSesion = null, onVerHistorial = null, conRecientes = true,
 }) {
-  const [vista, setVista] = useState('semana');
-  const [mesClave, setMesClave] = useState(null);
-  const [diaElegido, setDiaElegido] = useState(null);
   const r = useMemo(() => resumenDeActividad(fitness, { periodo, hoy, planes }), [fitness, periodo, hoy, planes]);
-  const mes = useMemo(
-    () => (vista === 'mes' ? mesDeActividad(fitness, { mes: mesClave, hoy, planes }) : null),
-    [fitness, vista, mesClave, hoy, planes],
-  );
-  const delDia = useMemo(
-    () => (diaElegido ? sesionesDelDiaDeActividad(fitness, diaElegido, { hoy, planes }) : []),
-    [fitness, diaElegido, hoy, planes],
-  );
 
   if (!r.hay) {
     return (
@@ -306,13 +164,6 @@ export function TrainingActivitySummary({
       </Card>
     );
   }
-
-  /* Apartado 30 — un día con un entrenamiento abre su detalle; con varios, se
-     enseñan debajo y se elige. */
-  const elegirDia = (d) => {
-    if (d.sesiones.length === 1 && onVerSesion) { onVerSesion(d.sesiones[0].id); return; }
-    setDiaElegido(diaElegido === d.fecha ? null : d.fecha);
-  };
 
   return (
     <div className="space-y-3">
@@ -352,24 +203,26 @@ export function TrainingActivitySummary({
         {/* 3 · Cómo va el plan (apartados 11-14), si se puede calcular. */}
         {r.plan && <div className="mt-3"><TrainingPlanAdherence plan={r.plan} accent={accent} /></div>}
 
-        {/* 4 · Cómo se distribuye (apartados 6 y 7). */}
-        <div className="mt-3">
-          <TrainingActivityCalendar
-            dias={r.semana.dias}
-            mes={mes}
-            vista={vista}
-            onVista={(v) => { setVista(v); setDiaElegido(null); }}
-            onMes={setMesClave}
-            accent={accent}
-            seleccionado={diaElegido}
-            onElegir={elegirDia}
-          />
-          {delDia.length > 1 && (
-            <div className="mt-2 rounded-2xl px-3" style={{ background: hexToRgba(COLORS.border, 0.25) }}>
-              {delDia.map((t) => <TrainingRecentSessionCard key={t.id} tarjeta={t} accent={accent} onVer={onVerSesion} />)}
-            </div>
-          )}
-        </div>
+        {/* 4 · Cómo se distribuye (apartados 6 y 7). 🔓 Fitness 8/8 — en el calendario
+            unificado del Historial, con sus estados de cumplimiento: aquí, el acceso. */}
+        {onVerHistorial && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={onVerHistorial}
+              aria-label="Ver el calendario de cumplimiento"
+              className="w-full flex items-center gap-2 text-left toque-44 rounded-xl px-3 py-2"
+              style={{ background: hexToRgba(COLORS.border, 0.25) }}
+            >
+              <CalendarDays size={16} aria-hidden="true" style={{ color: acentoLegible(accent) }} />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold" style={{ color: COLORS.text }}>Ver el calendario</span>
+                <span className="block text-[11px]" style={{ color: COLORS.textMuted }}>Cada día, con lo que entrenaste, tus descansos y lo que queda por recuperar.</span>
+              </span>
+              <ChevronRight size={18} aria-hidden="true" style={{ color: COLORS.textMuted }} />
+            </button>
+          </div>
+        )}
 
         {/* 5 · Constancia y media (apartados 8 y 9), del periodo elegido. */}
         <div className="mt-3">

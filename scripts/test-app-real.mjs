@@ -6376,8 +6376,27 @@ ok(h_chat && /Sueño · el registro de esa noche/.test(h_chat.texto), '…y dice
 h_chat = await preguntar_chat('¿y anteayer?', new RegExp(duraciones_chat[1]));
 ok(h_chat && h_chat.texto.includes(duraciones_chat[1]) && /Fatal/.test(h_chat.texto), `🚨 CHAT F2 · seguimiento: «¿y anteayer?» → ${duraciones_chat[1]} y la cara que puso`);
 h_chat = await preguntar_chat('¿y la semana pasada?', /semana pasada/);
-ok(h_chat && /No tienes noches registradas la semana pasada/.test(h_chat.texto) && !/terminó el lunes/.test(h_chat.texto.split('¿y la semana pasada?').pop()),
-  '🐛 CHAT F2 · «¿y la semana pasada?» tras una noche → la media de esa semana (sin noches), no la noche de su lunes (H-25)');
+/* 🐛 PD-07 (2026-11-03) — lo esperado se CALCULA, no se da por hecho. Las noches sembradas son la de ayer y la de
+   anteayer, así que un lunes caen las dos en «la semana pasada», un martes una y el resto de días ninguna: la versión
+   anterior esperaba siempre «No tienes noches» y salía roja los lunes y los martes con el asistente bien. El periodo
+   es el que la propia aplicación llama «la semana pasada» (`interpretarFechas`) y la media, la suya (`mediaDeMinutos`,
+   `textoMinutos`). Lo que protege H-25 no cambia: contesta la SEMANA y no pregunta qué día ni da la noche de su lunes. */
+const semana_chat = await page.evaluate(async (sembradas) => {
+  const { interpretarFechas } = await import('/src/lib/fechasConversacion.js');
+  const { mediaDeMinutos, textoMinutos } = await import('/src/lib/sueno.js');
+  const { todayISO } = await import('/src/lib/helpers.js');
+  const p = interpretarFechas('la semana pasada', todayISO())[0];
+  const dentro = (sembradas || []).filter((r) => r.fecha >= p.desde && r.fecha <= p.hasta && r.horaDormir && r.horaDespertar);
+  return { n: dentro.length, media: dentro.length >= 2 ? textoMinutos(mediaDeMinutos(dentro)) : null };
+}, almacen.sueno);
+const respuesta_semana_chat = (h_chat && h_chat.texto || '').split('¿y la semana pasada?').pop();
+const esperada_semana_chat = semana_chat.n === 0
+  ? /No tienes noches registradas la semana pasada/.test(respuesta_semana_chat)
+  : semana_chat.n === 1
+    ? /solo una noche tiene las dos horas/.test(respuesta_semana_chat) && /no hay media que calcular/.test(respuesta_semana_chat)
+    : respuesta_semana_chat.includes(`has dormido de media ${semana_chat.media} por noche`);
+ok(h_chat && /[Ll]a semana pasada/.test(respuesta_semana_chat) && !/¿Qué día/.test(respuesta_semana_chat) && esperada_semana_chat,
+  `🐛 CHAT F2 · «¿y la semana pasada?» tras una noche → la media de esa semana (${semana_chat.n} noche(s) sembrada(s) en ella), no la noche de su lunes (H-25)`);
 h_chat = await preguntar_chat('apúntame que dormí 8 horas', /no puedo apuntar/);
 ok(h_chat && /no puedo apuntar, cambiar ni borrar nada/.test(h_chat.texto), '🚨 CHAT F2 · una orden de escribir se niega y dice dónde se hace');
 /* D10 — un mensaje solo de signos se contesta (antes la caja se vaciaba y no aparecía nada). */
@@ -7586,8 +7605,8 @@ ok(barra_fit.length === 5, `⚠️ la barra de abajo sigue con sus cinco pestañ
    último que queda), para que una ausencia no salga verde por haber mirado antes. */
 ok(/Tu Plan/i.test(enFitness), '…y la estructura nueva: «Tu Plan» (apartado 12)');
 const entreno_fit1 = await esperarTexto(/Historial/);
-ok(/Secciones/.test(entreno_fit1) && /Más planes/.test(entreno_fit1) && /Ejercicios/.test(entreno_fit1) && /Historial/.test(entreno_fit1),
-  '⚠️ el área de Entrenamiento abre por defecto, con Secciones: Más planes, Ejercicios e Historial');
+ok(/Secciones/.test(entreno_fit1) && /Rutinas/.test(entreno_fit1) && /Ejercicios/.test(entreno_fit1) && /Historial/.test(entreno_fit1),
+  '⚠️ el área de Entrenamiento abre por defecto, con Secciones: Rutinas (antes «Más planes», Fitness 3/8), Ejercicios e Historial');
 ok(!/Handstand|Planche|Front Lever|Back Lever|Human Flag|Muscle Up|L-Sit/i.test(entreno_fit1),
   '🧹 FIT F1 — ni una tarjeta de habilidad de calistenia (bloque quitado a petición de Josué, 2026-10-19)');
 ok(!/Habilidades/.test(entreno_fit1) && !/Calistenia y fútbol/i.test(entreno_fit1) && !/Fútbol/.test(entreno_fit1)
@@ -8154,13 +8173,13 @@ ok(desborde_fit4.ancho <= desborde_fit4.ventana + 1,
 console.log('\n── FIT F5 · La biblioteca de planificaciones ──');
 ok(await pulsar('Volver a Entrenamiento'), 'FIT F5 — se vuelve al área de Entrenamiento');
 const area_fit5 = await esperarTexto(/Tu Plan/i);
-ok(/Más planes/i.test(area_fit5),
-  '🚨 FIT F5 — «Más planes» se ofrece desde Entrenamiento (apartado 20)');
+ok(/Rutinas/.test(area_fit5),
+  '🚨 FIT F5 — la biblioteca («Rutinas» desde la Fitness 3/8) se ofrece desde Entrenamiento (apartado 20)');
 
 /* Apartado 20: sin plan elegido, Tu Plan lleva a la biblioteca. */
 /* ⚠️ Y desde la FIT F6 el botón del estado vacío se llama «Explorar planes»,
    que son las palabras del apartado 2 de esa fase. */
-ok(await pulsar('Explorar planes'), 'se entra a la biblioteca desde Tu Plan');
+ok(await pulsar('Ver rutinas'), 'se entra a la biblioteca desde Tu Plan («Ver rutinas» desde la Fitness 3/8)');
 const bib_fit5 = await esperarTexto(/PPL/i);
 ok(/PPL Est/i.test(bib_fit5), '🚨 FIT F5 — aparecen planes de verdad (apartado 24)');
 ok(/Gimnasio/i.test(bib_fit5) && /Calistenia/i.test(bib_fit5) && /Casa/i.test(bib_fit5),
@@ -8176,25 +8195,25 @@ ok(!/Empezar entrenamiento/i.test(bib_fit5),
   '🚨 FIT F5 — en la biblioteca se ELIGE un plan, no se entrena un día (apartado 14)');
 
 /* Apartado 3 — las categorías filtran de verdad. */
-ok(await pulsar('Ver planes de calistenia'), 'se filtra por Calistenia (apartado 3)');
+ok(await pulsar('Ver rutinas de calistenia'), 'se filtra por Calistenia (apartado 3)');
 await page.waitForTimeout(400);
 const soloCali_fit5 = await ver();
 ok(!/PPL Est/i.test(soloCali_fit5),
   '🚨 FIT F5 — y el filtro filtra: el plan de gimnasio deja de verse');
 ok(/Calistenia/i.test(soloCali_fit5), '…y quedan los de calistenia');
-ok(await pulsar('Ver planes de todos'), 'se vuelve a Todos');
+ok(await pulsar('Ver rutinas de todos'), 'se vuelve a Todos');
 await page.waitForTimeout(400);
 ok(/PPL Est/i.test(await ver()), '…y vuelven todos (apartado 3)');
 
 /* Apartado 6 — la búsqueda. */
-ok(await esperarCampo('Buscar un plan'), 'la biblioteca tiene su buscador (apartado 6)');
-ok(await escribirCampo('Buscar un plan', 'calistenia'), 'se busca «calistenia»');
+ok(await esperarCampo('Buscar una rutina'), 'la biblioteca tiene su buscador (apartado 6)');
+ok(await escribirCampo('Buscar una rutina', 'calistenia'), 'se busca «calistenia»');
 await page.waitForTimeout(500);
 ok(!/PPL Est/i.test(await ver()), '🚨 FIT F5 — la búsqueda por entorno encuentra (apartado 6)');
-ok(await escribirCampo('Buscar un plan', 'zzzz'), 'se busca algo que no existe');
+ok(await escribirCampo('Buscar una rutina', 'zzzz'), 'se busca algo que no existe');
 await page.waitForTimeout(500);
-const vacio_fit5 = await esperarTexto(/No encontramos planes/i);
-ok(/No encontramos planes/i.test(vacio_fit5),
+const vacio_fit5 = await esperarTexto(/No encontramos rutinas/i);
+ok(/No encontramos rutinas/i.test(vacio_fit5),
   '🚨 FIT F5 — y sin resultados se dice, con las palabras del apartado 17');
 ok(/Quitar los filtros/i.test(vacio_fit5),
   '🚨 …y CON SALIDA: un vacío sin botón es una pantalla rota (EH F41)');
@@ -8222,7 +8241,7 @@ ok(/×/.test(dia_fit5), '…con sus series y repeticiones');
 
 /* Apartado 14 — elegir el plan. Con ninguno puesto NO pregunta. */
 const antesUsar_fit5 = guardado.filter((g) => g && g.key === 'fitness').length;
-ok(await pulsar('Usar este plan'), 'se elige el plan (apartado 14)');
+ok(await pulsar('Activar esta rutina'), 'se elige la rutina (apartado 14; antes «Usar este plan»)');
 await page.waitForTimeout(800);
 const escrituras_fit5 = guardado.filter((g) => g && g.key === 'fitness');
 ok(escrituras_fit5.length > antesUsar_fit5, '…y se guarda de verdad en `app_data`');
@@ -8233,26 +8252,26 @@ ok(!activo_fit5?.dias && !activo_fit5?.nombre,
   '🚨 …y se guarda el ID, no una copia del plan: con copia, corregir un ejercicio no le llegaría');
 
 /* Apartado 14 — y con otro ya puesto, SÍ pregunta. */
-ok(await pulsar('Volver a la biblioteca de planes'), 'se vuelve a la biblioteca');
+ok(await pulsar('Volver a la biblioteca de rutinas'), 'se vuelve a la biblioteca');
 await esperarTexto(/PPL/i);
 ok(await pulsar('Abrir Upper / Lower'), 'se abre otro plan');
 await esperarTexto(/La semana/i);
-ok(await pulsar('Usar este plan'), 'se pulsa usarlo');
-const confirma_fit5 = await esperarTexto(/¿Cambiar tu plan actual\?/i);
-ok(/¿Cambiar tu plan actual\?/i.test(confirma_fit5),
-  '🚨 FIT F5 — con otro plan activo, pregunta antes de reemplazarlo (apartado 14)');
+ok(await pulsar('Activar esta rutina'), 'se pulsa activarla');
+const confirma_fit5 = await esperarTexto(/¿Cambiar tu rutina activa\?/i);
+ok(/¿Cambiar tu rutina activa\?/i.test(confirma_fit5),
+  '🚨 FIT F5 — con otra rutina activa, pregunta antes de reemplazarla (apartado 14; «rutina» desde la Fitness 3/8)');
 ok(/PPL Est/i.test(confirma_fit5),
   '⚠️ …diciendo CUÁL se va: «tu plan actual» a secas no deja decidir (EH F62)');
-ok(/sigue en la biblioteca/i.test(confirma_fit5),
-  '⚠️ …y que no se pierde nada, porque un plan prediseñado no se borra');
+ok(/sigue en tu biblioteca/i.test(confirma_fit5),
+  '⚠️ …y que no se pierde nada, porque una rutina predeterminada no se borra al cambiar');
 ok(await pulsar('Cancelar'), 'se cancela el cambio (apartado 24)');
 await page.waitForTimeout(600);
 const trasCancelar_fit5 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.planActivo;
 ok(trasCancelar_fit5?.planId === 'ppl-estetico',
   '🚨 FIT F5 — y al cancelar NO se ha cambiado nada: sigue el de antes');
 
-ok(await pulsar('Usar este plan'), 'se vuelve a pulsar');
-await esperarTexto(/¿Cambiar tu plan actual\?/i);
+ok(await pulsar('Activar esta rutina'), 'se vuelve a pulsar');
+await esperarTexto(/¿Cambiar tu rutina activa\?/i);
 ok(await pulsar('Confirmar cambiar a Upper / Lower'), 'y esta vez se confirma');
 await page.waitForTimeout(800);
 const trasCambiar_fit5 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value?.planActivo;
@@ -8294,7 +8313,7 @@ ok(await pulsar('Volver a Entrenamiento'), 'se vuelve al área');
 const tuPlan_fit5 = await esperarTexto(/Tu Plan/i);
 ok(/Upper \/ Lower/.test(tuPlan_fit5),
   '🚨 FIT F5 — «Tu Plan» enseña el plan elegido, resuelto contra la biblioteca (apartado 20)');
-ok(/Quitar el plan/i.test(tuPlan_fit5), '…y se puede dejar de tenerlo puesto');
+ok(/Quitar la rutina/i.test(tuPlan_fit5), '…y se puede dejar de tenerlo puesto');
 /* 🔓 Esta comprobación decía lo contrario hasta la F7, y estaba escrita a
    propósito para este momento: guardaba la promesa, ahora vigila que se cumpla
    (E3 F44, y ya van varias). */
@@ -8343,7 +8362,7 @@ ok(/Tus plantillas/i.test(tuplan_fit6),
   '🚨 …y el acceso a Tus plantillas, en la misma pantalla (apartado 11)');
 ok(/Activo desde el/i.test(tuplan_fit6),
   '🚨 FIT F6 — y la fecha de activación, que es lo que pide el apartado 17');
-ok(/Cambiar plan/i.test(tuplan_fit6), '…y se puede cambiar de plan (apartado 4)');
+ok(/Cambiar de rutina/i.test(tuplan_fit6), '…y se puede cambiar de rutina (apartado 4)');
 
 /* 🔓 El apartado 6 de la F6 pedía NO empezar nada *"si todavía no puede existir
    una acción funcional completa"*. Con la FIT F7 existe, así que la promesa se
@@ -8359,6 +8378,8 @@ ok(/Ver entrenamiento/i.test(tuplan_fit6),
    nombre: se buscan por el nombre seguido del número del día. */
 const diasSemana_fit6 = await page.evaluate(() => {
   const botones = [...document.querySelectorAll('button[aria-label]')]
+    /* 🔓 Fitness 4/8 — la ventana «Últimos 7 días» también nombra cada día: se mide la semana. */
+    .filter((b) => !b.closest('[aria-label="Cumplimiento de los últimos siete días"]'))
     .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo) \d/.test(b.getAttribute('aria-label') || ''));
   return {
     cuantos: botones.length,
@@ -8410,12 +8431,14 @@ ok(await pulsar('Bienestar') && await pulsar('Fitness'),
   `FIT F6 — se vuelve con el plan activado el lunes (${lunesDeLaSemana_fit6})`);
 await esperarTexto(/Tu semana/i);
 const semanaDesdeLunes_fit6 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
-  .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo) \d/.test(b.getAttribute('aria-label') || ''))
+  /* 🔓 Fitness 4/8 — la ventana «Últimos 7 días» también nombra cada día: se mide la semana. */
+    .filter((b) => !b.closest('[aria-label="Cumplimiento de los últimos siete días"]'))
+    .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo) \d/.test(b.getAttribute('aria-label') || ''))
   .map((b) => b.getAttribute('aria-label')));
 ok(semanaDesdeLunes_fit6.length === 7,
   `🚨 FIT F6 — la semana sigue teniendo siete días (${semanaDesdeLunes_fit6.length})`);
 /* 🔓 FIT F32 — un día antes de cualquier plan conocido dice «Sin datos del plan». */
-ok(!semanaDesdeLunes_fit6.some((e) => /Sin datos del plan/i.test(e)),
+ok(!semanaDesdeLunes_fit6.some((e) => /Sin datos de la rutina/i.test(e)),
   '🚨 FIT F6 — y con el plan empezado el lunes ya no hay ningún día «antes de empezar»');
 
 /* Apartado 9 — tocar un día abre su sesión, con los ejercicios de siempre. */
@@ -8442,7 +8465,7 @@ ok(/Upper \/ Lower · Upper A/.test(tuplan_fit6) || /plantilla/i.test(tuplan_fit
   '…y se ven en Tu Plan, sin duplicar su gestión (apartado 11)');
 
 /* Apartado 19: cambiar de plan no borra ni el anterior ni las plantillas. */
-ok(await pulsar('Cambiar plan'), 'se pulsa «Cambiar plan» (apartado 4)');
+ok(await pulsar('Cambiar de rutina'), 'se pulsa «Cambiar de rutina» (apartado 4)');
 const bibVuelta_fit6 = await esperarTexto(/PPL/i);
 ok(/PPL Est/i.test(bibVuelta_fit6), '🚨 FIT F6 — y lleva a la biblioteca (apartado 4)');
 ok(await pulsar('Volver a Entrenamiento'), 'se vuelve');
@@ -9035,7 +9058,9 @@ ok(!/sin guardar/i.test(terminado_fit7), '…ni terminar de guardarla');
 
 /* 🔓 FIT F6 → F8 — el estado «Completado» de un día, que nació apagado. */
 const semana_fit8 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
-  .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo) \d/.test(b.getAttribute('aria-label') || ''))
+  /* 🔓 Fitness 4/8 — la ventana «Últimos 7 días» también nombra cada día: se mide la semana. */
+    .filter((b) => !b.closest('[aria-label="Cumplimiento de los últimos siete días"]'))
+    .filter((b) => /^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo) \d/.test(b.getAttribute('aria-label') || ''))
   .map((b) => b.getAttribute('aria-label')));
 ok(semana_fit8.length === 7, 'la semana sigue teniendo sus siete días');
 /* 🔓 FIT F32 — ese día, si el plan no tenía sesión, es «Entrenamiento extra». */
@@ -9059,7 +9084,30 @@ const empezarComoSea_fit7 = async () => {
   if (!await pulsar('Ver Push')) return false;
   return pulsar('Empezar entrenamiento');
 };
-ok(await empezarComoSea_fit7(), 'se empieza otra para medir el ancho (desde Tu Plan o desde una plantilla)');
+/* 🔓 Fitness 4/8 (prompt 4 §3.2, caso 8) — hoy ya tiene su entrenamiento (el de la F8),
+   así que «Empezar» ya NO crea otro: lo dice. Se da la vuelta a lo que hacía esta línea
+   («se empieza otra»), no se borra. Y la pantalla de series se mide sobre uno empezado
+   AYER y sin terminar, sembrado aquí: continuarlo no crea nada nuevo. Se marca una serie
+   para que la aplicación lo guarde, que es lo que lee la F10 («hay otra EN CURSO»). */
+ok(await empezarComoSea_fit7() && /Ya entrenaste hoy/.test(await esperarTexto(/Ya entrenaste hoy/) || ''),
+  '🔓 Fitness 4/8 — con el de hoy ya guardado, «Empezar» no crea otro: «Ya entrenaste hoy»');
+{
+  const actual = almacen.fitness || {};
+  const f8 = (actual.sesiones || []).find((x) => x && x.estado === 'completada' && x.nombre === 'Push — Fuerza');
+  const d = new Date(); d.setDate(d.getDate() - 1);
+  if (f8) {
+    const ayer = {
+      ...f8, id: 'fit7-ancho', nombre: 'Push', fecha: d.toLocaleDateString('sv-SE'), estado: 'en_curso',
+      iniciadaEn: Date.now() - 1800000, terminadaEn: null, guardadaEn: null, actual: 0, diaDePlan: null,
+      origen: { ...f8.origen, ejercicios: (f8.origen.ejercicios || []).map((e) => ({ ...e, series: (e.series || []).map((x) => ({ ...x, estado: 'pendiente', hecho: { reps: null, duracion: null, peso: null } })) })) },
+    };
+    almacen.fitness = { ...actual, sesiones: [...(actual.sesiones || []), ayer] };
+  }
+  await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(2000);
+}
+ok(await pulsar('Bienestar') && await pulsar('Fitness') && await pulsar('Continuar entrenamiento'),
+  'se continúa uno empezado ayer y sin terminar, para medir el ancho');
 await esperarTexto(/Terminar/i);
 const desborde_fit7 = await page.evaluate(() => ({
   ancho: document.documentElement.scrollWidth, ventana: window.innerWidth,
@@ -9074,6 +9122,9 @@ const toques_fit7 = await page.evaluate(() => {
 });
 ok(toques_fit7.length > 0 && toques_fit7.every((h) => h >= 44),
   `🚨 FIT F7 — y los controles de una serie miden los 44 px de EH F42 (${toques_fit7.join(', ')} px, apartado 33)`);
+ok(await pulsar('Marcar la serie 1') || await page.evaluate(() => { const x = document.querySelector('button[aria-label^="Marcar la serie"]'); if (x) x.click(); return !!x; }),
+  '…se marca una serie (la aplicación la guarda)');
+await page.waitForTimeout(800);
 ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), 'se sale de la que sobraba');
 await page.waitForTimeout(400);
 
@@ -11069,6 +11120,24 @@ const etiquetasSemana_fit31 = () => page.evaluate(() => {
   const grupo = document.querySelector('[aria-label="Actividad de esta semana"]');
   return grupo ? [...grupo.children].map((el) => el.getAttribute('aria-label') || (el.querySelector('.sr-only') || {}).textContent || '') : [];
 });
+/* 🔓 Fitness 8/8 — el calendario de Progreso se unificó con el del Historial: lo que
+   aquella semana decía de cada día se mide ahora en el unificado, en su vista de
+   semana. De cada día se espera lo que se entrenó, con las palabras de la F31
+   («entrenamiento Push», «2 entrenamientos: Legs y Core»), y nada inventado. */
+const etiquetasUnificadas_fit31 = () => page.evaluate(() => {
+  const g = [...document.querySelectorAll('[role="grid"]')].find((x) => /^Calendario: /.test(x.getAttribute('aria-label') || ''));
+  return g ? [...g.querySelectorAll('button[aria-label]')].map((b) => b.getAttribute('aria-label')) : [];
+});
+const queSeEntreno_fit31 = (f) => {
+  const del = [...(porDia_fit31.get(f) || [])].sort((a, b) => a.iniciadaEn - b.iniciadaEn);
+  if (!del.length) return '';
+  return del.length === 1 ? `entrenamiento ${del[0].nombre}` : `${del.length} entrenamientos: ${del.map((x) => x.nombre).join(' y ')}`;
+};
+const semanaUnificadaBien_fit31 = (etiquetas) => etiquetas.length === 7 && etiquetas.every((e, i) => {
+  const f = masDias_fit31(lunes_fit31, i);
+  const que = queSeEntreno_fit31(f);
+  return e.startsWith(`${diaYMes_fit31(f)}: `) && (que ? e.includes(que) : !/entrenamientos?[\s:]/.test(e.replace(/^[^:]*: /, '')));
+});
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
@@ -11088,12 +11157,11 @@ ok(resumen_fit31.includes(`${cuenta_fit31(enSemana_fit31)} · semana en curso`),
 ok(resumen_fit31.includes(`La semana pasada: ${cuenta_fit31(pasada_fit31)}`),
   `FIT F31 — …y «La semana pasada: ${cuenta_fit31(pasada_fit31)}» (prueba 5)`);
 
-/* 3 · Cómo se reparte (apartados 6, 28, 29 y 37), día a día. */
-const semana_fit31 = await etiquetasSemana_fit31();
-eqReal(semana_fit31, etiquetasEsperadas_fit31(false),
-  '🚨 FIT F31 — los siete días, CON PALABRAS, tal y como salen del escenario (apartados 6 y 37)');
-ok(semana_fit31.length === 7 && !semana_fit31.some((e) => /descanso/i.test(e)),
-  '🚨 FIT F31 — …y sin plan NINGÚN día dice «descanso»: sin registro no es descanso (apartados 28 y 29)');
+/* 3 · Cómo se reparte (apartados 6, 28, 29 y 37), día a día. 🔓 Fitness 8/8 — Progreso
+   ya no tiene su calendario: lleva al unificado. La semana se mide allí (más abajo). */
+ok((await etiquetasSemana_fit31()).length === 0 && await page.evaluate(() => !!document.querySelector('button[aria-label="Ver el calendario de cumplimiento"]')),
+  '🚨 FIT 8/8 — Progreso ya no pinta un segundo calendario: tiene el acceso «Ver el calendario» al unificado');
+ok(etiquetasEsperadas_fit31(false).length === 7, '…(las palabras que la F31 esperaba de cada día siguen calculadas aquí, para el unificado)');
 
 /* 4 · Constancia (apartado 8), con «Todo»: empezó hace 10 días. */
 const diasActivos_fit31 = porDia_fit31.size;
@@ -11122,12 +11190,31 @@ ok(/Actividad reciente/i.test(recientes_fit31) && /Parcial/.test(recientes_fit31
 ok(!/%/.test(recientes_fit31.slice(recientes_fit31.search(/Último entrenamiento/i), recientes_fit31.search(/Actividad reciente/i) + 400)),
   '🚨 FIT F31 — ni un «%» en toda la actividad (apartados 8, 14 y 40)');
 
-/* 7 · Un día con dos sesiones enseña las dos (apartado 30). */
-ok(await pulsarQueEmpiece_fit10(`${diaYMes_fit31(hoy_fit31)} — 2 entrenamientos`), 'FIT F31 — se toca hoy, que tiene dos entrenamientos');
+/* 7 · Un día con dos sesiones enseña las dos (apartado 30). 🔓 Fitness 8/8 — en el
+   calendario unificado: se entra desde Progreso, se mira la semana y se toca hoy. */
+ok(await pulsar('Ver el calendario de cumplimiento'), 'FIT 8/8 — desde Progreso, «Ver el calendario» abre el calendario unificado');
+await esperarTexto(/Disciplina|Calendario/);
+ok(await pulsar('Ver solo una semana'), 'FIT 8/8 — …y su vista de semana (la que tenía Progreso)');
 await page.waitForTimeout(400);
-const dosHoy_fit31 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Ver el entrenamiento: Hoy"]')].length);
-ok(dosHoy_fit31 === 4,
-  `🚨 FIT F31 — …y salen los dos para elegir, además de en la actividad reciente (${dosHoy_fit31} botones «Ver» de hoy)`);
+const unificada_fit31 = await etiquetasUnificadas_fit31();
+ok(semanaUnificadaBien_fit31(unificada_fit31),
+  `🚨 FIT 8/8 — los siete días de la semana dicen, CON PALABRAS, lo que se entrenó (lo de la F31, sin perder nada) — ${JSON.stringify(unificada_fit31)}`);
+ok(!unificada_fit31.some((e) => /Perdido|Descanso sacrificado/.test(e)),
+  '🚨 FIT 8/8 — …y sin rutina ni seguimiento ningún día sale perdido ni sacrificado: no se inventa (PD-09)');
+const hoyU_fit31 = unificada_fit31.find((e) => e.startsWith(`${diaYMes_fit31(hoy_fit31)}: `)) || '';
+ok(!!hoyU_fit31 && await pulsar(hoyU_fit31), 'FIT 8/8 — se toca hoy, que tiene dos entrenamientos');
+await page.waitForTimeout(500);
+const dosHoy_fit31 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Ver entrenamiento: "]')].length);
+ok(dosHoy_fit31 === 2,
+  `🚨 FIT 8/8 — …y en su detalle salen los dos para elegir (${dosHoy_fit31})`);
+ok(await pulsar('Ver el mes entero'), 'FIT 8/8 — y el mes entero');
+await page.waitForTimeout(400);
+const mesU_fit31 = await etiquetasUnificadas_fit31();
+const diasMesU_fit31 = [...porDia_fit31.keys()].filter((f) => f.slice(0, 7) === hoy_fit31.slice(0, 7)).length;
+ok(mesU_fit31.filter((e) => /entrenamientos?[\s:]/.test(e.replace(/^[^:]*: /, ''))).length === diasMesU_fit31,
+  `🚨 FIT 8/8 — el mes marca los ${diasMesU_fit31} días con entrenamiento del mes, como el de Progreso (apartado 7)`);
+ok(await pulsar('Volver a Progreso'), 'FIT 8/8 — y se vuelve a Progreso');
+await esperarTexto(/Último entrenamiento/i);
 
 /* 8 · De la actividad al detalle, y vuelta (apartados 17 y 30). */
 const legs_fit31 = masDias_fit31(hoy_fit31, -3);
@@ -11143,17 +11230,11 @@ ok(await pulsar('Volver a Progreso'), '…y se vuelve a Progreso');
 await page.waitForTimeout(500);
 if (!/Último entrenamiento/i.test(await ver())) { await pulsar('Resumen'); await page.waitForTimeout(400); }
 
-/* 9 · La vista mensual (apartado 7). */
-ok(await pulsarQueEmpiece_fit10('Ver el mes entero'), 'FIT F31 — se abre el mes');
-await page.waitForTimeout(400);
-const mesVisible_fit31 = await page.evaluate(() => {
-  const g = [...document.querySelectorAll('[role="group"]')].find((x) => /^Actividad de [A-ZÁÉÍÓÚ]/.test(x.getAttribute('aria-label') || '') && !/esta semana/.test(x.getAttribute('aria-label')));
-  return g ? { nombre: g.getAttribute('aria-label'), dias: g.querySelectorAll('button[aria-label]').length } : null;
-});
-const diasMes_fit31 = [...porDia_fit31.keys()].filter((f) => f.slice(0, 7) === hoy_fit31.slice(0, 7)).length;
-ok(mesVisible_fit31 && mesVisible_fit31.dias === diasMes_fit31,
-  `🚨 FIT F31 — el mes, con una marca por día con entrenamiento (${mesVisible_fit31 && mesVisible_fit31.dias} de ${diasMes_fit31}) (apartado 7)`);
-ok(await pulsarQueEmpiece_fit10('Ver solo esta semana'), '…y se vuelve a la semana');
+/* 9 · La vista mensual (apartado 7). 🔓 Fitness 8/8 — medida en el unificado, en el
+   paso 7: el mes marca los mismos días con entrenamiento. Aquí, que Progreso no la
+   duplica. */
+ok(await page.evaluate(() => ![...document.querySelectorAll('[role="group"]')].some((x) => /^Actividad de /.test(x.getAttribute('aria-label') || ''))),
+  '🚨 FIT 8/8 — Progreso no tiene un mes propio: la información no se repite en dos pantallas');
 
 /* 10 · «Ver historial» → la misma sesión, en el Historial (apartados 18 y 34). */
 ok(await pulsar('Ver historial'), 'FIT F31 — «Ver historial» (apartado 18)');
@@ -11174,8 +11255,15 @@ ok(/L Push · M Pull · X Legs · V Upper · S Lower/.test(tuPlan_fit31),
   '🚨 FIT F31 — …con la estructura REAL del plan: «L Push · M Pull · X Legs · V Upper · S Lower» (apartado 12)');
 ok(await pulsar('Progreso'), '…y en Progreso, con el plan');
 await esperarTexto(/Último entrenamiento/i);
-eqReal(await etiquetasSemana_fit31(), etiquetasEsperadas_fit31(true),
-  '🚨 FIT F31 — con plan, SOLO el jueves y el domingo ya pasados pueden decir «sin entrenamiento planificado» (apartado 28 y F32)');
+/* 🔓 Fitness 8/8 — con plan, en el calendario unificado: lo entrenado sigue igual y,
+   como el seguimiento empezó al cargar, ningún día pasado se inventa como perdido. */
+ok(await pulsar('Ver el calendario de cumplimiento') && await pulsar('Ver solo una semana'), 'FIT 8/8 — el calendario unificado, con el plan');
+await page.waitForTimeout(400);
+const conPlanU_fit31 = await etiquetasUnificadas_fit31();
+ok(semanaUnificadaBien_fit31(conPlanU_fit31) && !conPlanU_fit31.some((e) => /Perdido|Descanso sacrificado/.test(e)),
+  `🚨 FIT 8/8 — con plan: los mismos entrenamientos por día, y nada perdido antes del seguimiento (apartado 28, F32 y PD-09) — ${JSON.stringify(conPlanU_fit31)}`);
+ok(etiquetasEsperadas_fit31(true).filter((e) => /sin entrenamiento planificado/.test(e)).length <= 2, '…(con plan, la F31 solo esperaba jueves y domingo sin entrenamiento planificado)');
+ok(await pulsar('Volver a Progreso'), '…y se vuelve a Progreso');
 
 /* Apartado 36 — a 375 px, sin arrastrar la página de lado. */
 const ancho_fit31 = await page.evaluate(() => ({ a: document.documentElement.scrollWidth, v: window.innerWidth }));
@@ -11330,12 +11418,12 @@ ok(await pulsar('Volver a Tu Plan'), '…y el botón dice adónde vuelve: «Volv
 await esperarTexto(/Tu semana/i);
 
 /* 5 · CAMBIAR DE PLAN NO REESCRIBE EL PASADO (apartado 22 — C-39). */
-ok(await pulsar('Cambiar plan'), 'FIT F32 — «Cambiar plan»');
+ok(await pulsar('Cambiar de rutina'), 'FIT F32 — «Cambiar de rutina»');
 await esperarTexto(/PPL/i);
 ok(await pulsar('Abrir Upper / Lower'), '…se abre Upper / Lower');
 await esperarTexto(/La semana/i);
-ok(await pulsar('Usar este plan'), '…«Usar este plan»');
-await esperarTexto(/¿Cambiar tu plan actual\?/i);
+ok(await pulsar('Activar esta rutina'), '…«Activar esta rutina»');
+await esperarTexto(/¿Cambiar tu rutina activa\?/i);
 ok(await pulsar('Confirmar cambiar a Upper / Lower'), '…y se confirma');
 await page.waitForTimeout(900);
 const trasCambio_fit32 = guardado.filter((g) => g && g.key === 'fitness').at(-1)?.value || {};
@@ -11355,7 +11443,7 @@ await esperarTexto(/Tu semana/i);
 const cambiada_fit32 = await etiquetasDeLaSemana_fit32('Esta semana');
 eqReal(cambiada_fit32, semanaSinSesiones_fit32(lunes_fit32, (f, i) => (f < hoy_fit32 ? PPL_fit32[i] : UL_fit32[i])),
   '🚨 FIT F32 — esta semana: lo que ya pasó sigue con el PPL y desde hoy manda Upper / Lower (apartado 22)');
-const aviso_fit32 = /Esta semana cambiaste de plan: «PPL Estético» y después «Upper \/ Lower»\./.test(await ver());
+const aviso_fit32 = /Esta semana cambiaste de rutina: «PPL Estético» y después «Upper \/ Lower»\./.test(await ver());
 ok(hoy_fit32 === lunes_fit32 ? !aviso_fit32 : aviso_fit32,
   `FIT F32 — ${hoy_fit32 === lunes_fit32 ? 'hoy es lunes: la semana entera es del plan nuevo y no hay aviso' : 'y la semana dice que cambió de plan'} (apartado 22)`);
 ok(await pulsar('Semana anterior'), 'FIT F32 — y la semana pasada, tras el cambio y tras recargar…');
@@ -12176,11 +12264,11 @@ ok(!/\bXP\b|puntos|confeti/i.test(bien_fit37), '…y sin XP, ni puntos, ni confe
 
 /* 4 · ACTIVAR UN PLAN SE CONFIRMA (apartados 24 y 36). */
 ok(await pulsar('Volver a Tu Plan'), 'FIT F37 — de vuelta a Tu Plan');
-ok(await pulsar('Explorar planes'), '…a la biblioteca de planes');
+ok(await pulsar('Ver rutinas'), '…a la biblioteca de rutinas');
 await esperarTexto(/PPL/i);
 ok(await pulsar('Abrir PPL Estético'), '…se abre uno');
 await esperarTexto(/La semana/i);
-ok(await pulsar('Usar este plan'), '…«Usar este plan»');
+ok(await pulsar('Activar esta rutina'), '…«Activar esta rutina»');
 const activado_fit37 = await esperarTexto(/Plan activado/);
 const anunciado_fit37 = await page.evaluate(() => [...document.querySelectorAll('[role="status"]')]
   .some((e) => /Plan activado/.test(e.innerText)));
@@ -12389,7 +12477,7 @@ await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2200);
 const erroresAntes_fit39 = errores.length;
 ok(await aFitness_fit39(), 'FIT F39 — 1 · un usuario recién llegado entra en Fitness');
-ok(/Aún no tienes un plan/.test(await esperarTexto(/Aún no tienes un plan/)) && (await roto_fit39()).length === 0,
+ok(/Aún no tienes una rutina/.test(await esperarTexto(/Aún no tienes una rutina/)) && (await roto_fit39()).length === 0,
   '…y la pantalla dice qué hacer, sin un «NaN» ni un «undefined» (apartados 2 y 3)');
 ok(await pulsar('Rangos') && /Sin Rango/.test(await esperarTexto(/Sin Rango/)), 'FIT F39 — 2 · ve Rangos sin datos: «Sin Rango»');
 ok((await roto_fit39()).length === 0, '…sin nada roto');
@@ -13020,7 +13108,9 @@ const contrasteDe_fit42 = (selector, texto) => page.evaluate(({ selector, texto 
     color: getComputedStyle(el).color,
   };
 }, { selector, texto });
-const CHOCA_fit42 = /\b(sesi[oó]n(?:es)?|workouts?|rutinas?)\b/i;
+/* FIT 3/8: «rutina» es ya el nombre oficial del ciclo (prompt 1, §4, y `TERMINOS_FITNESS`), así que no choca;
+   «sesión» y «workout» siguen sin leerse. */
+const CHOCA_fit42 = /\b(sesi[oó]n(?:es)?|workouts?)\b/i;
 const EMOJI_fit42 = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2B50}\u{2B55}]/u;
 
 /* 1 · LA MISMA CABECERA EN LAS TRES ÁREAS (apartado 50). */
@@ -13117,7 +13207,8 @@ ok(pequenas_fit42.length === 0,
 const conEmoji_fit42 = Object.entries(pantallas_fit42).filter(([, p]) => EMOJI_fit42.test(p.texto)).map(([n]) => n);
 ok(conEmoji_fit42.length === 0, `FIT F42 — ni un emoji haciendo de icono (apartado 31)${conEmoji_fit42.length ? ` — ${conEmoji_fit42}` : ''}`);
 const conChoque_fit42 = Object.entries(pantallas_fit42).map(([n, p]) => [n, (p.texto.match(CHOCA_fit42) || [])[0]]).filter(([, w]) => w);
-ok(conChoque_fit42.length === 0, `FIT F42 — una palabra por concepto: ni «sesión» ni «rutina» (apartado 57)${conChoque_fit42.length ? ` — ${JSON.stringify(conChoque_fit42)}` : ''}`);
+ok(conChoque_fit42.length === 0, `FIT F42 — una palabra por concepto: ni «sesión» ni «workout» (apartado 57; «rutina» es el ciclo desde FIT 3/8)${conChoque_fit42.length ? ` — ${JSON.stringify(conChoque_fit42)}` : ''}`);
+ok(CHOCA_fit42.test('Cerrar la sesión') && CHOCA_fit42.test('Workout') && !CHOCA_fit42.test('Tu rutina activa'), '…y la comprobación sigue cazando «sesión» y «workout» sin cazar «rutina»');
 
 /* 6 · Y EN CLARO (apartado 56): el acento legible también ahí. */
 almacen.ajustes = conTema_fit42('claro');
@@ -13499,10 +13590,22 @@ await recargar_fit45();
 ok(await aFitness_fit39() && await pulsar('Abrir Historial') && /Release F45/.test(await esperarTexto(/Release F45/)), 'FIT F45 · 20-21 — se recarga y el historial sigue');
 ok(completadas_fit45().length === 1, '…con UNA sesión, no dos');
 
-/* 49 · LA REPETICIÓN: un segundo entrenamiento se ACUMULA. */
+/* 49 · LA REPETICIÓN: un segundo entrenamiento se ACUMULA.
+   🔓 Fitness 4/8 (prompt 4 §3.2) — pero ya no el MISMO día: solo hay un entrenamiento por
+   fecha. Se comprueba que repetirlo hoy se niega, y la repetición se hace con el primero
+   pasado a AYER (sembrado aquí). Lo que protege el apartado 49 —que el segundo se suma en el
+   historial, la actividad y el objetivo— sigue igual. */
 ok(await aFitness_fit39() && await pulsar('Ver Release F45'), 'FIT F45 — repetición: se vuelve a empezar el mismo entrenamiento (apartado 49)');
 await page.waitForTimeout(400);
-ok(await pulsar('Ver Release F45') && await pulsar('Empezar entrenamiento') && await hayMarcar_fit45(), '…empieza');
+ok(await pulsar('Ver Release F45') && await pulsar('Empezar entrenamiento') && /Ya entrenaste hoy/.test(await esperarTexto(/Ya entrenaste hoy/) || ''),
+  '🔓 Fitness 4/8 — el mismo día, no: «Ya entrenaste hoy» (una sesión por fecha)');
+ok(completadas_fit45().length === 1 && enCurso_fit45().length === 0, '…y no se ha creado ninguna');
+const ayer_fit45 = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toLocaleDateString('sv-SE'); })();
+const lunesHoy_fit45 = new Date().getDay() === 1;
+almacen.fitness = { ...almacen.fitness, sesiones: (almacen.fitness.sesiones || []).map((x) => (x && x.estado === 'completada' ? { ...x, fecha: ayer_fit45 } : x)) };
+await recargar_fit45();
+ok(await aFitness_fit39() && await pulsar('Ver Release F45') && await pulsar('Ver Release F45') && await pulsar('Empezar entrenamiento') && await hayMarcar_fit45(),
+  '…con el primero hecho ayer, hoy sí empieza');
 await page.waitForTimeout(500);
 ok(enCurso_fit45().length === 1 && (enCurso_fit45()[0].origen?.ejercicios || []).every((e) => (e.series || []).every((s) => s.estado !== 'hecha')),
   '…como un entrenamiento NUEVO: la de antes ya está completada, así que no se continúa');
@@ -13518,8 +13621,10 @@ await esperarTexto(/Release F45/);
 const enHistorial_fit45 = await page.evaluate(() => [...document.querySelectorAll('button[aria-label]')]
   .filter((b) => /Release F45/.test(b.getAttribute('aria-label'))).length);
 ok(enHistorial_fit45 >= 2, `…con los dos (${enHistorial_fit45})`);
-ok(await aFitness_fit39() && await pulsar('Progreso') && (await esperarTexto(/2 entrenamientos · semana en curso/)).includes('2 entrenamientos · semana en curso'),
-  '🚨 …la actividad los suma: «2 entrenamientos · semana en curso» (apartado 49)');
+/* Un lunes, el de ayer es de la semana pasada: la semana en curso solo tiene el de hoy. */
+const semana_fit45 = lunesHoy_fit45 ? '1 entrenamiento · semana en curso' : '2 entrenamientos · semana en curso';
+ok(await aFitness_fit39() && await pulsar('Progreso') && (await esperarTexto(new RegExp(semana_fit45))).includes(semana_fit45),
+  `🚨 …la actividad los suma: «${semana_fit45}» (apartado 49)`);
 ok(await pulsar('Objetivos') && /42,5 \/ 50/.test(await esperarTexto(/42,5 \/ 50/)),
   '🚨 …y el objetivo sube con la mejor marca: «42,5 / 50» (apartado 49)');
 
@@ -13534,6 +13639,633 @@ const nuevos_fit45 = errores.slice(erroresAntes_fit45);
 ok(nuevos_fit45.length === 0, `🚨 FIT F45 — y ni un error en la consola en todo el release${nuevos_fit45.length ? `: ${nuevos_fit45.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
 almacen.fitness = fitnessDeAntes_fit45;
 almacen.saludFotos = fotosDeAntes_fit45;
+
+/* ── FIT 3/8 · Rutinas cíclicas y biblioteca de plantillas (Fitness 3/8, prompt 3) ──
+   Con el dedo, en un iPhone pequeño: crear una rutina de 3 días (todos sin decidir), no poder
+   guardarla incompleta, repetir una plantilla en dos días, activarla, ver la plantilla «en tu
+   rutina activa», eliminarla (sus días pasan a descanso), recuperarla desde Ajustes → Eliminados
+   recientemente y devolverla a sus días, y recargar sin perder nada. El escenario es suyo: se
+   siembra y se deja como estaba (E3 F6). */
+console.log('\n── FIT 3/8 · Rutinas cíclicas y biblioteca de plantillas ──');
+const fitnessDeAntes_f3r = almacen.fitness;
+const papeleraDeAntes_f3r = almacen.papelera;
+const erroresAntes_f3r = errores.length;
+const HOY_F3R = new Date().toLocaleDateString('sv-SE');
+almacen.fitness = {
+  sesiones: [], planActivo: null, planesAnteriores: [], objetivos: [], clasificaciones: [], ejercicios: [], cuarentena: [],
+  rutinas: [], predeterminadasRetiradas: { rutinas: [], plantillas: [] },
+  plantillas: [{
+    id: 'f3r-mipush', nombre: 'Mi Push F3', descripcion: '', entorno: 'gym', frecuencia: null, duracion: null, thumbnail: '',
+    ejercicios: [{ id: 'f3r-l1', exerciseId: 'press-banca-barra', orden: 0, series: 3, repeticiones: 8, peso: null, descanso: 90, notas: '', config: {}, modo: 'reps' }],
+    meta: {}, creadoEn: HOY_F3R, editadoEn: HOY_F3R,
+  }],
+};
+almacen.papelera = { elementos: [], retencionDias: 30 };
+const cuenta_f3r = () => almacen.fitness || {};
+const rutina_f3r = () => (cuenta_f3r().rutinas || []).find((r) => r && r.nombre === 'Mi ciclo F3') || null;
+const anchoBien_f3r = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+await page.setViewportSize({ width: 375, height: 667 });
+await recargar_fit45();
+
+ok(await aFitness_fit39() && await pulsar('Abrir Rutinas'), 'FIT 3/8 — se abre la biblioteca de rutinas desde Entrenamiento');
+const bib_f3r = await esperarTexto(/Tus rutinas/);
+ok(/Tus rutinas/.test(bib_f3r || '') && /Rutinas predeterminadas/.test(bib_f3r || '') && /PPL Est/.test(bib_f3r || ''),
+  '…con «Tus rutinas» y las predeterminadas (las de siempre siguen ahí, D-05)');
+ok(/ciclo de días que se repite/.test(bib_f3r || ''), '…y explica qué es una rutina (prompt 3 §12)');
+ok(await anchoBien_f3r(), '…sin salirse de lado en un iPhone pequeño');
+
+ok(await pulsar('Crear rutina') && /Nueva rutina/.test(await esperarTexto(/Nueva rutina/) || ''), 'FIT 3/8 — «Crear rutina» abre el editor');
+ok(await escribirCampo('Nombre de la rutina', 'Mi ciclo F3'), '…se le pone nombre');
+await page.waitForTimeout(300);
+for (let i = 0; i < 4; i += 1) await pulsar('Un día menos');
+const tres_f3r = await ver();
+ok(/3 días/.test(tres_f3r) && /Día 3: Sin decidir/.test(await page.evaluate(() => [...document.querySelectorAll('button')].map((b) => b.getAttribute('aria-label') || '').join('|'))),
+  '🚨 FIT 3/8 — 3 días, y todos SIN decidir (ni entreno ni descanso de oficio)');
+ok(await anchoBien_f3r(), '…y el editor no se sale de lado');
+ok(await pulsar('Día 1: Sin decidir') && await pulsar('Asignar Mi Push F3'), 'Día 1: entrenamiento con «Mi Push F3»');
+ok(await pulsar('Día 2: Sin decidir') && await pulsar('Descanso'), 'Día 2: descanso');
+ok(await pulsar('Guardar rutina'), 'se intenta guardar con el día 3 sin decidir');
+const falta_f3r = await esperarTexto(/Falta decidir el día 3/);
+ok(/Falta decidir el día 3/.test(falta_f3r || '') && !rutina_f3r(),
+  '🚨 FIT 3/8 — no se guarda incompleta, y dice qué día falta (prompt 3 §4)');
+ok(await pulsar('Día 3: Sin decidir') && await pulsar('Asignar Mi Push F3'), 'Día 3: la MISMA plantilla otra vez (prompt 3 §5)');
+ok(await pulsar('Guardar rutina') && /Tus rutinas/.test(await esperarTexto(/Mi ciclo F3/) || ''), '…y se guarda y vuelve a la biblioteca');
+await page.waitForTimeout(500);
+const r_f3r = rutina_f3r();
+ok(r_f3r && r_f3r.dias.length === 3 && r_f3r.dias.map((d) => d.tipo).join(',') === 'entreno,descanso,entreno'
+  && r_f3r.dias[0].plantillaId === 'f3r-mipush' && r_f3r.dias[2].plantillaId === 'f3r-mipush',
+  `🚨 FIT 3/8 — guardada en la cuenta: 3 días, la plantilla repetida en el 1 y el 3 (${JSON.stringify(r_f3r && r_f3r.dias.map((d) => d.tipo))})`);
+
+ok(await pulsar('Activar'), 'FIT 3/8 — se activa la rutina');
+await page.waitForTimeout(700);
+ok(cuenta_f3r().planActivo && cuenta_f3r().planActivo.planId === r_f3r.id && cuenta_f3r().planActivo.origen === 'rutina'
+  && cuenta_f3r().planActivo.inicioCiclo === HOY_F3R,
+  '🚨 …y es la activa, empezando hoy por el día 1');
+ok(/Es tu rutina activa/.test(await ver()), '…y la biblioteca lo dice');
+ok(await pulsar('Volver a Entrenamiento') && /Mi ciclo F3/.test(await esperarTexto(/Mi ciclo F3/) || ''), 'Tu Plan enseña la rutina activa');
+ok(/Mi Push F3/.test(await ver()), '…y hoy toca «Mi Push F3» (día 1)');
+
+/* En uso, y eliminar la plantilla de la rutina activa. */
+ok(await pulsar('Ver Mi Push F3') && /plantilla/i.test(await esperarTexto(/plantilla/i) || ''), 'FIT 3/8 — se abre la biblioteca de plantillas');
+ok(/En tu rutina activa/.test(await ver()), '🚨 FIT 3/8 — la plantilla se ve «En tu rutina activa» (prompt 3 §8)');
+ok(await anchoBien_f3r(), '…sin salirse de lado');
+ok(await pulsar('Acciones de Mi Push F3') && await pulsar('Eliminar'), 'se pide eliminarla');
+const conf_f3r = await esperarTexto(/pasarán a ser de descanso/);
+ok(/rutina activa/.test(conf_f3r || '') && /los días 1, 3 pasarán a ser de descanso/.test(conf_f3r || ''),
+  '🚨 FIT 3/8 — la confirmación dice que está en la rutina activa y qué días pasan a descanso (prompt 3 §9)');
+ok(await pulsar('Confirmar eliminar Mi Push F3'), '…y se confirma');
+await page.waitForTimeout(800);
+const trasBorrar_f3r = rutina_f3r();
+ok(trasBorrar_f3r && trasBorrar_f3r.dias.every((d) => d.tipo === 'descanso'),
+  '🚨 FIT 3/8 — los días de la rutina activa que la usaban pasan a descanso');
+ok(!(cuenta_f3r().plantillas || []).some((p) => p && p.id === 'f3r-mipush'), '…y la plantilla sale de la biblioteca');
+const entrada_f3r = ((almacen.papelera || {}).elementos || []).find((e) => e.modulo === 'fitness' && e.coleccion === 'plantillas' && e.idOriginal === 'f3r-mipush');
+ok(entrada_f3r && (entrada_f3r.datos.meta.huecos || []).length === 2, '…y va a Eliminados recientemente entera, con dónde estaba');
+ok((cuenta_f3r().planesAnteriores || []).length === 0 || (cuenta_f3r().planesAnteriores || []).every((a) => a.planId !== r_f3r.id || a.dias.some((d) => !d.descanso)),
+  '…sin reescribir el pasado (el tramo de antes, si lo hay, conserva sus días de entreno)');
+
+/* Recuperar desde Ajustes, y devolverla a sus días. */
+ok(await pulsar('Ajustes') && await pulsar('Eliminados recientemente'), 'FIT 3/8 — Ajustes → Eliminados recientemente');
+await esperarTexto(/Mi Push F3/);
+const recuperada_f3r = await page.evaluate(() => {
+  const fila = [...document.querySelectorAll('li, div')].reverse().find((el) => /Mi Push F3/.test(el.innerText || '') && el.querySelector('button[aria-label="Recuperar"]'));
+  const b = fila && fila.querySelector('button[aria-label="Recuperar"]');
+  if (!b) return false;
+  b.click();
+  return true;
+});
+await page.waitForTimeout(800);
+ok(recuperada_f3r && (cuenta_f3r().plantillas || []).some((p) => p && p.id === 'f3r-mipush'), '🚨 FIT 3/8 — se recupera desde la papelera general');
+ok(await aFitness_fit39() && await pulsar('Ver Mi Push F3'), 'se vuelve a la plantilla');
+ok(await pulsar('Ver Mi Push F3') && /Volver a ponerla/.test(await esperarTexto(/Volver a ponerla/) || ''),
+  '…y su ficha ofrece devolverla a sus días, que siguen de descanso');
+ok(await pulsar('Volver a ponerla'), '…y se acepta');
+await page.waitForTimeout(800);
+const devuelta_f3r = rutina_f3r();
+ok(devuelta_f3r && devuelta_f3r.dias.map((d) => d.tipo).join(',') === 'entreno,descanso,entreno' && devuelta_f3r.dias[0].plantillaId === 'f3r-mipush',
+  '🚨 FIT 3/8 — vuelve a los días 1 y 3, y el 2 sigue de descanso');
+
+/* Recargar: nada se pierde. */
+await recargar_fit45();
+ok(await aFitness_fit39() && /Mi ciclo F3/.test(await esperarTexto(/Mi ciclo F3/) || ''), 'FIT 3/8 — al recargar, la rutina sigue activa');
+ok(await pulsar('Abrir Rutinas') && /Mi ciclo F3/.test(await esperarTexto(/Mi ciclo F3/) || '') && /PPL Est/.test(await ver()),
+  '…y en la biblioteca, con las predeterminadas');
+const nuevos_f3r = errores.slice(erroresAntes_f3r);
+ok(nuevos_f3r.length === 0, `🚨 FIT 3/8 — ni un error en la consola${nuevos_f3r.length ? `: ${nuevos_f3r.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
+almacen.fitness = fitnessDeAntes_f3r;
+almacen.papelera = papeleraDeAntes_f3r;
+
+/* ── FIT 4/8 · Cumplimiento, descansos y recuperación (Fitness 4/8, prompt 4) ──
+   Una rutina suya de tres días (Push · Pull · descanso) activada hace cuatro días,
+   con una sesión libre en el descanso de anteayer. Hoy toca Pull y hay tres
+   pendientes: el recomendado es el más antiguo, y elegir otro avisa ANTES de qué
+   caducaría. Se recupera uno empezándolo, no se puede empezar un segundo el mismo
+   día, se descarta (libera la fecha, PD-10) y se recupera otro con «Completar
+   entrenamiento»: completa, sin valores y con sus dos fechas en el historial. Las
+   fechas se calculan desde hoy: pasa igual cualquier día (la lección de H-25). */
+console.log('\n── FIT 4/8 · Cumplimiento, descansos y recuperación ──');
+const fitnessDeAntes_f4r = almacen.fitness;
+const erroresAntes_f4r = errores.length;
+const HOY_F4R = new Date().toLocaleDateString('sv-SE');
+const hace_f4r = (n) => { const d = new Date(`${HOY_F4R}T12:00:00`); d.setDate(d.getDate() - n); return d.toLocaleDateString('sv-SE'); };
+const linea_f4r = (id, ex) => ({ id, exerciseId: ex, orden: 0, series: 2, repeticiones: 8, peso: null, descanso: 90, notas: '', config: {}, modo: 'reps' });
+const plantilla_f4r = (id, nombre, ex) => ({ id, nombre, descripcion: '', entorno: 'gym', frecuencia: null, duracion: null, thumbnail: '', ejercicios: [linea_f4r(`${id}-l1`, ex)], meta: {}, creadoEn: hace_f4r(10), editadoEn: hace_f4r(10) });
+const serie_f4r = (id) => ({ id, origen: 'planificada', estado: 'hecha', modo: 'reps', plan: { reps: 8, repsHasta: null, duracion: null, peso: null }, hecho: { reps: 8, duracion: null, peso: 20 } });
+almacen.fitness = {
+  version: 2,
+  cumplimientoDesde: hace_f4r(4),
+  sesiones: [{
+    id: 'f4r-libre', planId: 'f4r-push', nombre: 'F4 Push', fecha: hace_f4r(2), estado: 'completada', iniciadaEn: Date.now() - 2 * 86400000, terminadaEn: Date.now() - 2 * 86400000 + 3600000, guardadaEn: Date.now() - 2 * 86400000 + 3600000,
+    origen: { tipo: 'plantilla', id: 'f4r-push', ejercicios: [{ id: 'f4r-e1', exerciseId: 'press-banca-barra', orden: 0, series: [serie_f4r('f4r-s1'), serie_f4r('f4r-s2')], notas: '', descanso: 90, modo: 'reps', sustituyeA: null, linea: null }] },
+    diaDePlan: { planId: 'f4r-push', tipo: 'plantilla', diaId: 'f4r-push', nombre: 'F4 Push', plantillaId: 'f4r-push', posicion: null, fechaPrevista: null, clase: 'libre' },
+    completadaCon: 'directo',
+  }],
+  planActivo: { planId: 'f4r-ciclo', origen: 'rutina', desde: hace_f4r(4), inicioCiclo: hace_f4r(4) },
+  planesAnteriores: [], objetivos: [], clasificaciones: [], ejercicios: [], cuarentena: [],
+  predeterminadasRetiradas: { rutinas: [], plantillas: [] },
+  plantillas: [plantilla_f4r('f4r-push', 'F4 Push', 'press-banca-barra'), plantilla_f4r('f4r-pull', 'F4 Pull', 'remo-barra')],
+  rutinas: [{
+    id: 'f4r-ciclo', nombre: 'Ciclo F4', descripcion: '', origen: 'propia', creadaEn: hace_f4r(10), editadaEn: hace_f4r(10), meta: {},
+    dias: [{ id: 'f4r-d1', tipo: 'entreno', plantillaId: 'f4r-push' }, { id: 'f4r-d2', tipo: 'entreno', plantillaId: 'f4r-pull' }, { id: 'f4r-d3', tipo: 'descanso', plantillaId: null }],
+  }],
+};
+const cuenta_f4r = () => almacen.fitness || {};
+const deHoy_f4r = () => (cuenta_f4r().sesiones || []).filter((x) => x && x.fecha === HOY_F4R);
+const anchoBien_f4r = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+await page.setViewportSize({ width: 375, height: 667 });
+await recargar_fit45();
+
+ok(await aFitness_fit39(), 'FIT 4/8 — se entra en Fitness → Entrenamiento');
+const tarjeta_f4r = await esperarTexto(/tienes entrenamientos pendientes/);
+ok(/Hoy toca «F4 Pull», y tienes entrenamientos pendientes/.test(tarjeta_f4r || ''),
+  '🚨 FIT 4/8 — Tu Plan dice qué toca hoy y que hay pendientes (prompt 4 §10)');
+ok(/Puedes hacer el de hoy o recuperar uno pendiente/.test(tarjeta_f4r || ''), '…y que puede elegir libremente (§6.B)');
+const recomendado_f4r = `«F4 Push» del ${await page.evaluate((f) => { const m = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; const [y, mm, d] = f.split('-').map(Number); return `${d} de ${m[mm - 1]}`; }, hace_f4r(4))}`;
+ok((tarjeta_f4r || '').includes(recomendado_f4r) && /Recomendado: es el más antiguo/.test(tarjeta_f4r || ''),
+  `🚨 FIT 4/8 — recomienda el más antiguo, el más próximo a caducar (D-05): ${recomendado_f4r}`);
+ok(/Si haces el de hoy, caducarán/.test(tarjeta_f4r || ''),
+  '🚨 FIT 4/8 — y avisa de lo que se perdería si hace el de hoy (dos ya tienen un entrenamiento después)');
+ok(/Últimos 7 días/.test(await ver()), 'FIT 4/8 — la ventana de los últimos siete días');
+const dias_f4r = await page.evaluate(() => [...document.querySelectorAll('[aria-label="Cumplimiento de los últimos siete días"] button')].map((b) => b.getAttribute('aria-label')));
+ok(dias_f4r.length === 7 && /Hoy$/.test(dias_f4r[6]) && /Descanso sacrificado$/.test(dias_f4r[4]) && /Pendiente de recuperar$/.test(dias_f4r[2]),
+  `🚨 FIT 4/8 — siete días hasta hoy: hoy «Hoy», el descanso entrenado en rojo, los no hechos pendientes (${dias_f4r.map((x) => (x || '').split(': ')[1]).join(' · ')})`);
+await page.evaluate(() => document.querySelectorAll('[aria-label="Cumplimiento de los últimos siete días"] button')[4].click());
+ok(/Entrenaste en un día de descanso/.test(await esperarTexto(/Entrenaste en un día de descanso/) || ''), '…y al tocar un día dice por qué tiene ese color (§4)');
+ok(await anchoBien_f4r(), '…sin salirse de lado en un iPhone pequeño');
+
+/* Elegir uno que no es el recomendado: las consecuencias antes de confirmar (§7). */
+const elegirSegundo_f4r = await page.evaluate(() => {
+  const bs = [...document.querySelectorAll('button')].filter((b) => (b.innerText || '').trim() === 'Elegir');
+  if (bs.length < 2) return false;
+  bs[1].click();
+  return true;
+});
+const conse_f4r = await esperarTexto(/Si lo recuperas hoy/);
+ok(elegirSegundo_f4r && /«F4 Pull», el de hoy, quedará pendiente/.test(conse_f4r || '') && /«F4 Push» del .* caducará/.test(conse_f4r || ''),
+  '🚨 FIT 4/8 — elegir el segundo explica ANTES que el de hoy quedará pendiente y que el más antiguo caducará (§7)');
+ok(await pulsar('Empezar la recuperación') && await hayMarcar_fit45(), 'FIT 4/8 — «Empezar la recuperación» abre el entrenamiento');
+await page.waitForTimeout(600);
+const rec_f4r = deHoy_f4r()[0];
+ok(deHoy_f4r().length === 1 && rec_f4r.diaDePlan && rec_f4r.diaDePlan.clase === 'recuperacion' && rec_f4r.diaDePlan.fechaPrevista === hace_f4r(3)
+  && rec_f4r.diaDePlan.plantillaId === 'f4r-pull' && rec_f4r.diaDePlan.planId === 'f4r-ciclo',
+  `🚨 FIT 4/8 — la sesión es de hoy y recupera el ${hace_f4r(3)}: dos fechas, su rutina y su plantilla (§9) — ${JSON.stringify(rec_f4r && rec_f4r.diaDePlan)}`);
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), '…se sale dejándolo en curso');
+await page.waitForTimeout(500);
+
+/* Una sesión por día: «Empezar» el de hoy no crea otra (§3.2, caso 8). */
+const empezarHoy_f4r = (await pulsar('Empezar entrenamiento', 2500)) || (await pulsar('Ver F4 Pull') && await pulsar('Empezar entrenamiento'));
+const aviso_f4r = await esperarTexto(/Ya tienes un entrenamiento empezado hoy/);
+ok(empezarHoy_f4r && /Ya tienes un entrenamiento empezado hoy/.test(aviso_f4r || '') && /Solo se registra un entrenamiento por día/.test(aviso_f4r || ''),
+  '🚨 FIT 4/8 — con uno empezado hoy, «Empezar» no crea otro: lo dice (caso 8)');
+ok(deHoy_f4r().length === 1, '…y en la cuenta sigue habiendo una sola sesión de hoy');
+ok(await pulsar('Entendido'), '…se cierra el aviso');
+
+/* Descartarla libera la fecha (PD-10), y se recupera otro con «Completar entrenamiento». */
+ok(await pulsar('Descartar entrenamiento') && await pulsar('Descartar el entrenamiento en curso'), 'FIT 4/8 — se descarta la recuperación empezada');
+await page.waitForTimeout(700);
+ok(deHoy_f4r().every((x) => x.estado === 'descartada'), '…queda descartada (no se borra)');
+const elegirPrimero_f4r = await page.evaluate(() => {
+  const b = [...document.querySelectorAll('button')].find((x) => (x.innerText || '').trim() === 'Elegir');
+  if (!b) return false;
+  b.click();
+  return true;
+});
+await esperarTexto(/Si lo recuperas hoy/);
+const completarRec_f4r = elegirPrimero_f4r && await page.evaluate(() => {
+  const caja = [...document.querySelectorAll('div')].reverse().find((el) => /Si lo recuperas hoy/.test(el.innerText || '') && el.querySelector('button'));
+  const b = caja && [...caja.querySelectorAll('button')].find((x) => /Completar entrenamiento/.test(x.innerText || ''));
+  if (!b) return false;
+  b.click();
+  return true;
+});
+await page.waitForTimeout(800);
+const hecha_f4r = deHoy_f4r().find((x) => x.estado === 'completada');
+const series_f4r = hecha_f4r ? hecha_f4r.origen.ejercicios.flatMap((e) => e.series) : [];
+ok(completarRec_f4r && hecha_f4r && hecha_f4r.completadaCon === 'completar' && hecha_f4r.diaDePlan.clase === 'recuperacion' && hecha_f4r.diaDePlan.fechaPrevista === hace_f4r(4),
+  '🚨 FIT 4/8 — PD-10: la descartada liberó el día, y «Completar entrenamiento» recupera el más antiguo (D-03)');
+ok(series_f4r.length > 0 && series_f4r.every((x) => x.estado === 'hecha' && x.hecho.reps === null && x.hecho.peso === null),
+  '🚨 FIT 4/8 — todas las series hechas y ni un peso ni una repetición inventados (D-03)');
+ok(/queda recuperado/.test(await ver()), '…y la pantalla lo confirma');
+const dias2_f4r = await page.evaluate(() => [...document.querySelectorAll('[aria-label="Cumplimiento de los últimos siete días"] button')].map((b) => b.getAttribute('aria-label')));
+ok(/Recuperado$/.test(dias2_f4r[2] || ''), `🚨 FIT 4/8 — ese día pasa a verde, «Recuperado» (caso 1) — ${dias2_f4r[2]}`);
+
+/* «Completar entrenamiento» el mismo día otra vez: no se puede (una por fecha). */
+ok(await pulsar('Completar entrenamiento'), 'FIT 4/8 — se abre «Completar entrenamiento»');
+await esperarTexto(/¿Qué entrenamiento hiciste\?/);
+ok(await pulsar('Completar «F4 Push» hoy'), '…y se intenta otro hoy');
+ok(/ya está registrado hoy/.test(await esperarTexto(/ya está registrado hoy/) || ''), '🚨 FIT 4/8 — no deja un segundo el mismo día, y dice por qué');
+ok(deHoy_f4r().filter((x) => x.estado === 'completada').length === 1, '…y la cuenta sigue con uno');
+ok(await pulsar('Cancelar'), '…se cancela');
+
+/* El historial enseña las dos fechas y cómo se registró (§9). */
+ok(await pulsar('Abrir Historial'), 'FIT 4/8 — Historial');
+ok(await pulsar('F4 Push'), '…se abre el recuperado (el más reciente va primero)');
+const det_f4r = await esperarTexto(/Recuperación: debía hacerse/);
+ok(/Recuperación: debía hacerse el .* y se hizo el /.test(det_f4r || '') && /Completado con «Completar entrenamiento»/.test(det_f4r || ''),
+  '🚨 FIT 4/8 — el historial dice la fecha prevista, la real y que se completó con «Completar entrenamiento»');
+
+/* Recargar: lo mismo. */
+await recargar_fit45();
+ok(await aFitness_fit39() && /Últimos 7 días/.test(await esperarTexto(/Últimos 7 días/) || ''), 'FIT 4/8 — al recargar sigue la ventana');
+const dias3_f4r = await page.evaluate(() => [...document.querySelectorAll('[aria-label="Cumplimiento de los últimos siete días"] button')].map((b) => b.getAttribute('aria-label')));
+ok(JSON.stringify(dias3_f4r) === JSON.stringify(dias2_f4r), '🚨 …con los mismos estados: nada se guarda aparte, todo se deriva de las sesiones');
+/* 🔓 Fitness 5/8 — lo sembrado en la versión 2 pasa por la M2 al cargar y queda en la 3
+   (sin tocar ni una sesión): la fecha de entrada en vigor se conserva. */
+ok(cuenta_f4r().cumplimientoDesde === hace_f4r(4) && cuenta_f4r().version === 3 && cuenta_f4r().preferencias && cuenta_f4r().preferencias.progresion === 'manual',
+  '…y la fecha de entrada en vigor se conserva; la M2 la sube a la 3, en Manual');
+const nuevos_f4r = errores.slice(erroresAntes_f4r);
+ok(nuevos_f4r.length === 0, `🚨 FIT 4/8 — ni un error en la consola${nuevos_f4r.length ? `: ${nuevos_f4r.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
+almacen.fitness = fitnessDeAntes_f4r;
+
+/* ── FIT 5/8 · Progresión: Manual, Progresivo y Experto (Fitness 5/8, prompt 5) ──
+   Una plantilla suya («F5 Push», press de banca 3 × 8–12 a 60 kg) hecha hace dos días
+   con 10 · 9 · 8. En Manual no se propone nada; se elige Experto en Tu Plan, se empieza
+   la plantilla y cada serie trae su propuesta DE FONDO (10,5 · 9,5 · 8,5), separada de lo
+   hecho. 8,2 se rechaza sin redondear, 8,5 se guarda tal cual, superar la propuesta se
+   dice discretamente y quedarse por debajo da la frase amable una vez. Fechas desde hoy. */
+console.log('\n── FIT 5/8 · Progresión: Manual, Progresivo y Experto ──');
+const fitnessDeAntes_f5r = almacen.fitness;
+const erroresAntes_f5r = errores.length;
+const HOY_F5R = new Date().toLocaleDateString('sv-SE');
+const hace_f5r = (n) => { const d = new Date(`${HOY_F5R}T12:00:00`); d.setDate(d.getDate() - n); return d.toLocaleDateString('sv-SE'); };
+const linea_f5r = { id: 'f5-push-l1', exerciseId: 'press-banca-barra', orden: 0, series: 3, repeticiones: 8, repsHasta: 12, peso: 60, descanso: 90, notas: '', config: {}, modo: 'reps', tipoCarga: 'externo' };
+const serie_f5r = (id, reps) => ({ id, origen: 'planificada', estado: 'hecha', modo: 'reps', plan: { reps: 8, repsHasta: 12, duracion: null, peso: 60 }, hecho: { reps, duracion: null, peso: 60 } });
+almacen.fitness = {
+  version: 3,
+  cumplimientoDesde: hace_f5r(10),
+  preferencias: { progresion: 'manual' },
+  sesiones: [{
+    id: 'f5r-antes', planId: 'f5-push', nombre: 'F5 Push', fecha: hace_f5r(2), estado: 'completada',
+    iniciadaEn: Date.now() - 2 * 86400000, terminadaEn: Date.now() - 2 * 86400000 + 3600000, guardadaEn: Date.now() - 2 * 86400000 + 3600000,
+    origen: { tipo: 'plantilla', id: 'f5-push', ejercicios: [{ id: 'f5r-e1', exerciseId: 'press-banca-barra', orden: 0, series: [serie_f5r('f5r-s1', 10), serie_f5r('f5r-s2', 9), serie_f5r('f5r-s3', 8)], notas: '', descanso: 90, modo: 'reps', sustituyeA: null, linea: { id: 'f5-push-l1', progresion: true, series: 3, repeticiones: 8, repsHasta: 12, duracion: null, peso: 60, tipoCarga: 'externo' } }] },
+    diaDePlan: { planId: 'f5-push', tipo: 'plantilla', diaId: 'f5-push', nombre: 'F5 Push', plantillaId: 'f5-push', posicion: null, fechaPrevista: null, clase: 'libre' },
+    completadaCon: 'directo',
+  }],
+  planActivo: null, planesAnteriores: [], objetivos: [], clasificaciones: [], ejercicios: [], cuarentena: [], rutinas: [],
+  predeterminadasRetiradas: { rutinas: [], plantillas: [] },
+  plantillas: [{ id: 'f5-push', nombre: 'F5 Push', descripcion: '', entorno: 'gym', frecuencia: null, duracion: null, thumbnail: '', ejercicios: [linea_f5r], meta: {}, creadoEn: hace_f5r(10), editadoEn: hace_f5r(10) }],
+};
+const cuenta_f5r = () => almacen.fitness || {};
+const deHoy_f5r = () => (cuenta_f5r().sesiones || []).filter((x) => x && x.fecha === HOY_F5R);
+const seriesHoy_f5r = () => { const s = deHoy_f5r()[0]; return s ? s.origen.ejercicios[0].series : []; };
+await page.setViewportSize({ width: 375, height: 667 });
+await recargar_fit45();
+
+ok(await aFitness_fit39(), 'FIT 5/8 — se entra en Fitness → Entrenamiento');
+ok(!!await esperarTexto(/Progresión/), 'FIT 5/8 — Tu Plan enseña el modo de progresión');
+const pulsadoManual_f5r = await page.evaluate(() => {
+  const b = document.querySelector('button[aria-label="Progresión: Manual"]');
+  return !!b && b.getAttribute('aria-pressed') === 'true';
+});
+ok(pulsadoManual_f5r && /Tú decides todos los pesos y repeticiones/.test(await ver()), '🚨 FIT 5/8 — por defecto, Manual: no se propone nada (§3.1)');
+ok(await pulsar('Progresión: Experto'), 'FIT 5/8 — se elige Experto');
+await page.waitForTimeout(600);
+ok(cuenta_f5r().preferencias && cuenta_f5r().preferencias.progresion === 'experto', '🚨 FIT 5/8 — el modo se guarda en `preferencias.progresion` (global, PD-13)');
+ok(/un objetivo para cada serie/i.test(await ver()), '…y dice qué hace');
+
+const empezo_f5r = (await pulsar('Ver F5 Push')) && ((await pulsar('Empezar entrenamiento', 2500)) || ((await pulsar('Ver F5 Push')) && (await pulsar('Empezar entrenamiento'))));
+ok(empezo_f5r && await hayMarcar_fit45(), 'FIT 5/8 — se empieza «F5 Push»');
+await page.waitForTimeout(700);
+const propHoy_f5r = seriesHoy_f5r().map((x) => x.plan && x.plan.propuesta && x.plan.propuesta.reps);
+ok(JSON.stringify(propHoy_f5r) === '[10.5,9.5,8.5]' && seriesHoy_f5r().every((x) => x.hecho.reps === null && x.plan.reps === 8 && x.estado === 'pendiente'),
+  `🚨 FIT 5/8 — Experto: una propuesta por serie (10 · 9 · 8 → 10,5 · 9,5 · 8,5) en \`plan.propuesta\`, sin tocar lo hecho (§3.3 y §9) — ${JSON.stringify(propHoy_f5r)}`);
+ok((deHoy_f5r()[0].origen.ejercicios[0].linea || {}).id === 'f5-push-l1', '…y la sesión sabe de qué línea es (identidad estable, §5)');
+const fondo_f5r = await page.evaluate(() => {
+  const i = document.querySelector('input[aria-label="Repeticiones de la serie 1"]');
+  if (!i) return null;
+  const ayuda = document.getElementById(i.getAttribute('aria-describedby') || '');
+  const sobre = i.parentElement && i.parentElement.querySelector('span[aria-hidden="true"]');
+  return { valor: i.value, placeholder: i.placeholder, ayuda: ayuda && ayuda.textContent, fondo: sobre && sobre.textContent, modo: i.inputMode };
+});
+ok(fondo_f5r && fondo_f5r.valor === '' && fondo_f5r.placeholder === '' && /10,5/.test(fondo_f5r.fondo || '') && fondo_f5r.ayuda === 'Propuesta: 10,5' && fondo_f5r.modo === 'decimal',
+  `🚨 FIT 5/8 — la propuesta va DE FONDO en el campo (no es un valor hecho), se anuncia a VoiceOver y el teclado es decimal (§7) — ${JSON.stringify(fondo_f5r)}`);
+ok(/Propuesta de mejora en verde/.test(await ver()), '…con una sola frase que dice que es solo una guía');
+
+const escribir_f5r = async (n, texto) => {
+  const sel = `input[aria-label="Repeticiones de la serie ${n}"]`;
+  await page.click(sel);
+  await page.fill(sel, texto);
+  await page.press(sel, 'Enter');
+  await page.waitForTimeout(500);
+};
+await escribir_f5r(1, '8,2');
+const malo_f5r = await page.evaluate(() => {
+  const i = document.querySelector('input[aria-label="Repeticiones de la serie 1"]');
+  return { invalido: i && i.getAttribute('aria-invalid'), texto: document.body.innerText };
+});
+ok(malo_f5r.invalido === 'true' && /Entera o media: 8 u 8,5/.test(malo_f5r.texto) && seriesHoy_f5r()[0].hecho.reps === null,
+  '🚨 FIT 5/8 — 8,2 se rechaza: lo dice, el campo queda marcado y NO se guarda ni se redondea (§8)');
+await escribir_f5r(1, '11');
+ok(seriesHoy_f5r()[0].hecho.reps === 11 && seriesHoy_f5r()[0].plan.propuesta.reps === 10.5, '🚨 FIT 5/8 — lo que él escribe manda: hecho 11, propuesta 10,5 (por separado)');
+ok(await pulsar('Marcar la serie 1 como hecha'), 'FIT 5/8 — marca la serie 1');
+ok(/Has progresado/.test(await esperarTexto(/Has progresado/) || ''), '🚨 FIT 5/8 — superar la propuesta se dice discretamente (§7)');
+await escribir_f5r(2, '8,5');
+ok(seriesHoy_f5r()[1].hecho.reps === 8.5, '🚨 FIT 5/8 — 8,5 se guarda como 8,5 (medias repeticiones, §8)');
+ok(await pulsar('Marcar la serie 2 como hecha'), 'FIT 5/8 — marca la serie 2 (8,5, por debajo de 9,5)');
+ok(/No pasa nada\. No todos los días se mejora/.test(await esperarTexto(/No pasa nada/) || ''), '🚨 FIT 5/8 — quedarse por debajo: la frase amable, sin reproches (§9)');
+ok(seriesHoy_f5r()[1].hecho.reps === 8.5 && seriesHoy_f5r()[1].plan.propuesta.reps === 9.5, '…y el resultado real se queda en 8,5 (nunca se escribe la propuesta como hecha)');
+ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'FIT 5/8 — la tabla con propuestas cabe en un iPhone pequeño');
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), 'FIT 5/8 — se sale dejándolo en curso');
+await page.waitForTimeout(500);
+ok(JSON.stringify((cuenta_f5r().sesiones || []).find((x) => x.id === 'f5r-antes').origen.ejercicios[0].series.map((x) => x.hecho.reps)) === '[10,9,8]',
+  '🚨 FIT 5/8 — la sesión de antes no se ha tocado (historial íntegro)');
+
+/* Volver a Manual: ninguna propuesta nueva. */
+await recargar_fit45();
+ok(await aFitness_fit39() && await pulsar('Progresión: Manual'), 'FIT 5/8 — se vuelve a Manual');
+await page.waitForTimeout(600);
+ok(cuenta_f5r().preferencias.progresion === 'manual' && cuenta_f5r().version === 3, '…se guarda, y la cuenta sigue en la versión 3');
+const nuevos_f5r = errores.slice(erroresAntes_f5r);
+ok(nuevos_f5r.length === 0, `🚨 FIT 5/8 — ni un error en la consola${nuevos_f5r.length ? `: ${nuevos_f5r.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
+almacen.fitness = fitnessDeAntes_f5r;
+
+/* ── FIT 6/8 · Anotaciones por ejercicio (Fitness 6/8, prompt 6) ──
+   «F6 Push» con DOS líneas del mismo ejercicio (press de banca) —la primera con una
+   indicación permanente en la plantilla— y tres sesiones de antes: hace seis días
+   (nota en las dos líneas), hace tres (nota solo en la primera) y hace dos (sin
+   notas). Una copia de la plantilla tiene una sesión con su propia nota, que no debe
+   aparecer. Al empezar: la indicación aparte, la nota anterior de CADA línea con su
+   fecha, ⋯ con las antiguas de la más reciente a la más antigua, y la nota de hoy
+   vacía, que se guarda sola y también al interrumpir. Fechas desde hoy (H-25). */
+console.log('\n── FIT 6/8 · Anotaciones por ejercicio ──');
+const fitnessDeAntes_f6r = almacen.fitness;
+const erroresAntes_f6r = errores.length;
+const HOY_F6R = new Date().toLocaleDateString('sv-SE');
+const hace_f6r = (n) => { const d = new Date(`${HOY_F6R}T12:00:00`); d.setDate(d.getDate() - n); return d.toLocaleDateString('sv-SE'); };
+const lin_f6r = (id, notas = '') => ({ id, exerciseId: 'press-banca-barra', orden: 0, series: 1, repeticiones: 8, repsHasta: null, peso: 60, descanso: 90, notas, config: {}, modo: 'reps', tipoCarga: 'externo' });
+const ejS_f6r = (sid, i, lineaId, nota) => ({
+  id: `${sid}-e${i}`, exerciseId: 'press-banca-barra', orden: i, notas: nota, descanso: 90, modo: 'reps', sustituyeA: null,
+  series: [{ id: `${sid}-s${i}`, origen: 'planificada', estado: 'hecha', modo: 'reps', plan: { reps: 8, repsHasta: null, duracion: null, peso: 60 }, hecho: { reps: 8, duracion: null, peso: 60 } }],
+  linea: { id: lineaId, progresion: true, series: 1, repeticiones: 8, repsHasta: null, duracion: null, peso: 60, tipoCarga: 'externo' },
+});
+const ses_f6r = (sid, plantillaId, dias, notas, lineas = ['f6-l1', 'f6-l2']) => ({
+  id: sid, planId: plantillaId, nombre: 'F6 Push', fecha: hace_f6r(dias), estado: 'completada',
+  iniciadaEn: Date.now() - dias * 86400000, terminadaEn: Date.now() - dias * 86400000 + 3600000, guardadaEn: Date.now() - dias * 86400000 + 3600000,
+  origen: { tipo: 'plantilla', id: plantillaId, ejercicios: lineas.map((l, i) => ejS_f6r(sid, i, l, notas[i] || '')) },
+  diaDePlan: { planId: plantillaId, tipo: 'plantilla', diaId: plantillaId, nombre: 'F6 Push', plantillaId, posicion: null, fechaPrevista: null, clase: 'libre' },
+  completadaCon: 'directo',
+});
+almacen.fitness = {
+  version: 3, cumplimientoDesde: hace_f6r(10), preferencias: { progresion: 'manual' },
+  sesiones: [
+    ses_f6r('f6r-a', 'f6-push', 6, ['Antigua de la primera', 'Antigua de la segunda']),
+    ses_f6r('f6r-b', 'f6-push', 3, ['Reciente de la primera', '']),
+    ses_f6r('f6r-c', 'f6-push', 2, ['', '']),
+    ses_f6r('f6r-copia', 'f6-copia', 1, ['De la copia', 'De la copia'], ['f6c-l1', 'f6c-l2']),
+  ],
+  planActivo: null, planesAnteriores: [], objetivos: [], clasificaciones: [], ejercicios: [], cuarentena: [], rutinas: [],
+  predeterminadasRetiradas: { rutinas: [], plantillas: [] },
+  plantillas: [
+    { id: 'f6-push', nombre: 'F6 Push', descripcion: '', entorno: 'gym', frecuencia: null, duracion: null, thumbnail: '', ejercicios: [lin_f6r('f6-l1', 'Codos a 45°'), { ...lin_f6r('f6-l2'), orden: 1 }], meta: {}, creadoEn: hace_f6r(10), editadoEn: hace_f6r(10) },
+    { id: 'f6-copia', nombre: 'F6 Push (copia)', descripcion: '', entorno: 'gym', frecuencia: null, duracion: null, thumbnail: '', ejercicios: [lin_f6r('f6c-l1'), { ...lin_f6r('f6c-l2'), orden: 1 }], meta: {}, creadoEn: hace_f6r(10), editadoEn: hace_f6r(10) },
+  ],
+};
+const cuenta_f6r = () => almacen.fitness || {};
+const hoySes_f6r = () => (cuenta_f6r().sesiones || []).find((x) => x && x.fecha === HOY_F6R);
+const fecha_f6r = (n) => { const m = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; const [, mm, d] = hace_f6r(n).split('-').map(Number); return `${d} de ${m[mm - 1]}`; };
+await page.setViewportSize({ width: 375, height: 667 });
+await recargar_fit45();
+
+ok(await aFitness_fit39(), 'FIT 6/8 — se entra en Fitness → Entrenamiento');
+const empezo_f6r = (await pulsar('Ver F6 Push')) && ((await pulsar('Empezar entrenamiento', 2500)) || ((await pulsar('Ver F6 Push')) && (await pulsar('Empezar entrenamiento'))));
+ok(empezo_f6r && await hayMarcar_fit45(), 'FIT 6/8 — se empieza «F6 Push»');
+await page.waitForTimeout(600);
+const txt1_f6r = await ver();
+ok(/Indicación de la plantilla: Codos a 45°/.test(txt1_f6r), '🚨 FIT 6/8 — la nota permanente de la plantilla sale aparte, como «Indicación de la plantilla» (§8)');
+ok(txt1_f6r.includes(`Nota anterior · ${fecha_f6r(3)}: «Reciente de la primera»`), `🚨 FIT 6/8 — la nota de la última vez de ESTA línea, con su fecha (§5) — ${fecha_f6r(3)}`);
+ok(!/De la copia/.test(txt1_f6r) && !/Antigua de la segunda/.test(txt1_f6r), '🚨 …sin las de la plantilla duplicada ni las de la otra línea del mismo ejercicio (§9)');
+ok(hoySes_f6r() && hoySes_f6r().origen.ejercicios.every((e) => e.notas === ''), '🚨 FIT 6/8 — la anotación de hoy empieza VACÍA en cada ejercicio: no se copia nada');
+ok(await pulsar('Ver notas anteriores de este ejercicio'), 'FIT 6/8 — ⋯ abre las notas anteriores');
+await page.waitForTimeout(500);
+const lista_f6r = await page.evaluate(() => { const u = document.querySelector('ul[aria-label="Notas anteriores"]'); return u ? u.innerText : ''; });
+ok(lista_f6r.indexOf('Reciente de la primera') > -1 && lista_f6r.indexOf('Antigua de la primera') > lista_f6r.indexOf('Reciente de la primera') && !/segunda|copia/.test(lista_f6r),
+  `🚨 FIT 6/8 — de la más reciente a la más antigua, solo de esta línea (§6) — ${JSON.stringify(lista_f6r)}`);
+ok(await pulsar('Notas'), 'FIT 6/8 — se abre la nota de hoy');
+const campo_f6r = 'textarea[aria-label="Nota de este ejercicio"]';
+ok(await page.$eval(campo_f6r, (t) => t.value) === '', '…con el campo vacío');
+await page.fill(campo_f6r, 'Hoy, mejor agarre');
+await page.waitForTimeout(1400);
+ok(hoySes_f6r().origen.ejercicios[0].notas === 'Hoy, mejor agarre' && hoySes_f6r().origen.ejercicios[1].notas === '', '🚨 FIT 6/8 — se guarda sola, sin finalizar, y solo en ese ejercicio (§10)');
+await page.fill(campo_f6r, 'Hoy, mejor agarre y más rápido');
+await page.evaluate(() => {
+  Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+  document.dispatchEvent(new Event('visibilitychange'));
+});
+await page.waitForTimeout(300);
+await page.evaluate(() => { delete document.visibilityState; });
+ok(hoySes_f6r().origen.ejercicios[0].notas === 'Hoy, mejor agarre y más rápido', '🚨 FIT 6/8 — una interrupción (salir al inicio del iPhone) guarda lo escrito antes del retardo');
+ok((cuenta_f6r().sesiones || []).find((x) => x.id === 'f6r-b').origen.ejercicios[0].notas === 'Reciente de la primera', '…y la sesión anterior no se ha tocado');
+ok(/Indicación de la plantilla/.test(await ver()) && (cuenta_f6r().plantillas[0].ejercicios[0].notas === 'Codos a 45°'), '…ni la nota de la plantilla');
+ok(await pulsar('Cerrar'), 'FIT 6/8 — se cierra la nota');
+ok(await pulsar('Siguiente'), 'FIT 6/8 — al segundo ejercicio (el mismo press, otra línea)');
+await page.waitForTimeout(600);
+const txt2_f6r = await ver();
+ok(txt2_f6r.includes(`Nota anterior · ${fecha_f6r(6)}: «Antigua de la segunda»`) && !/Reciente de la primera/.test(txt2_f6r.split('Nota anterior')[1] || ''),
+  '🚨 FIT 6/8 — la segunda línea tiene SU nota anterior (la del día que la escribió), no la de la primera');
+ok(!/Ver notas anteriores de este ejercicio/.test(await page.evaluate(() => [...document.querySelectorAll('button')].map((b) => b.getAttribute('aria-label') || '').join('|'))), '…y sin ⋯ cuando solo hay una');
+ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'FIT 6/8 — cabe en un iPhone pequeño');
+ok(await pulsar('Salir del entrenamiento') && await pulsar('Salir'), 'FIT 6/8 — se sale dejándolo en curso');
+await recargar_fit45();
+ok(hoySes_f6r() && hoySes_f6r().origen.ejercicios[0].notas === 'Hoy, mejor agarre y más rápido', '🚨 FIT 6/8 — al recargar, la nota sigue (persistencia)');
+const nuevos_f6r = errores.slice(erroresAntes_f6r);
+ok(nuevos_f6r.length === 0, `🚨 FIT 6/8 — ni un error en la consola${nuevos_f6r.length ? `: ${nuevos_f6r.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
+almacen.fitness = fitnessDeAntes_f6r;
+
+/* ── FIT 7/8 · Historial y estadísticas (Fitness 7/8, prompt 7) ──
+   «Ciclo F7» (Push · Pull · descanso) activado hace siete días: el Push de hace 7
+   cumplido; el Pull de hace 6 recuperado hace 5, en un descanso (sacrificado); el
+   Push de hace 4 parcial; el Pull de hace 3 cumplido; el descanso de hace 2
+   respetado; el Push de ayer pendiente y hoy, hoy. Se comprueban el porcentaje con
+   su fórmula, el cambio de periodo, el calendario (colores, hoy, un pendiente), el
+   detalle de una recuperación que abre su entrenamiento y vuelve donde estaba, el
+   filtro por plantilla y el ancho de un iPhone. Fechas desde hoy (H-25). */
+console.log('\n── FIT 7/8 · Historial y estadísticas ──');
+const fitnessDeAntes_f7r = almacen.fitness;
+const erroresAntes_f7r = errores.length;
+const HOY_F7R = new Date().toLocaleDateString('sv-SE');
+const hace_f7r = (n) => { const d = new Date(`${HOY_F7R}T12:00:00`); d.setDate(d.getDate() - n); return d.toLocaleDateString('sv-SE'); };
+const linea_f7r = (id, ex) => ({ id, exerciseId: ex, orden: 0, series: 2, repeticiones: 8, peso: null, descanso: 90, notas: '', config: {}, modo: 'reps' });
+const plantilla_f7r = (id, nombre, ex) => ({ id, nombre, descripcion: '', entorno: 'gym', frecuencia: null, duracion: null, thumbnail: '', ejercicios: [linea_f7r(`${id}-l1`, ex)], meta: {}, creadoEn: hace_f7r(20), editadoEn: hace_f7r(20) });
+const serie_f7r = (id, hecha = true) => ({ id, origen: 'planificada', estado: hecha ? 'hecha' : 'pendiente', modo: 'reps', plan: { reps: 8, repsHasta: null, duracion: null, peso: null }, hecho: hecha ? { reps: 8, duracion: null, peso: 20 } : { reps: null, duracion: null, peso: null } });
+const DIA_F7R = { 'f7r-push': ['f7r-d1', 0, 'F7 Push', 'press-banca-barra'], 'f7r-pull': ['f7r-d2', 1, 'F7 Pull', 'remo-barra'] };
+const ses_f7r = (sid, plantillaId, dias, { clase = 'prevista', prevista = dias, parcial = false } = {}) => {
+  const [diaId, posicion, nombre, ex] = DIA_F7R[plantillaId];
+  const t = Date.now() - dias * 86400000;
+  return {
+    id: sid, planId: 'f7r-ciclo', nombre, fecha: hace_f7r(dias), estado: 'completada', iniciadaEn: t, terminadaEn: t + 3600000, guardadaEn: t + 3600000,
+    origen: { tipo: 'rutina', id: diaId, ejercicios: [{ id: `${sid}-e1`, exerciseId: ex, orden: 0, series: [serie_f7r(`${sid}-s1`), serie_f7r(`${sid}-s2`, !parcial)], notas: '', descanso: 90, modo: 'reps', sustituyeA: null, linea: { id: `${plantillaId}-l1`, progresion: true, series: 2, repeticiones: 8, repsHasta: null, duracion: null, peso: null, tipoCarga: 'externo' } }] },
+    diaDePlan: { planId: 'f7r-ciclo', tipo: 'rutina', diaId, nombre, plantillaId, posicion, fechaPrevista: hace_f7r(prevista), clase },
+    completadaCon: 'directo',
+  };
+};
+almacen.fitness = {
+  version: 3, cumplimientoDesde: hace_f7r(7), preferencias: { progresion: 'manual' },
+  sesiones: [
+    ses_f7r('f7r-a', 'f7r-push', 7),
+    ses_f7r('f7r-b', 'f7r-pull', 5, { clase: 'recuperacion', prevista: 6 }),
+    ses_f7r('f7r-c', 'f7r-push', 4, { parcial: true }),
+    ses_f7r('f7r-d', 'f7r-pull', 3),
+  ],
+  planActivo: { planId: 'f7r-ciclo', origen: 'rutina', desde: hace_f7r(7), inicioCiclo: hace_f7r(7) },
+  planesAnteriores: [], objetivos: [], clasificaciones: [], ejercicios: [], cuarentena: [],
+  predeterminadasRetiradas: { rutinas: [], plantillas: [] },
+  plantillas: [plantilla_f7r('f7r-push', 'F7 Push', 'press-banca-barra'), plantilla_f7r('f7r-pull', 'F7 Pull', 'remo-barra')],
+  rutinas: [{
+    id: 'f7r-ciclo', nombre: 'Ciclo F7', descripcion: '', origen: 'propia', creadaEn: hace_f7r(20), editadaEn: hace_f7r(20), meta: {},
+    dias: [{ id: 'f7r-d1', tipo: 'entreno', plantillaId: 'f7r-push' }, { id: 'f7r-d2', tipo: 'entreno', plantillaId: 'f7r-pull' }, { id: 'f7r-d3', tipo: 'descanso', plantillaId: null }],
+  }],
+};
+const fitnessF7_f8r = JSON.parse(JSON.stringify(almacen.fitness));
+const dym_f7r = (n) => { const m = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; const [, mm, d] = hace_f7r(n).split('-').map(Number); return `${d} de ${m[mm - 1]}`; };
+const celda_f7r = (n) => page.evaluate((pref) => { const b = [...document.querySelectorAll('button[aria-label]')].find((x) => x.getAttribute('aria-label').startsWith(pref)); return b ? b.getAttribute('aria-label') : ''; }, `${dym_f7r(n)}: `);
+/* Lleva el calendario al mes de esa fecha (puede ser el anterior: depende del día de hoy). */
+const alMesDe_f7r = async (n) => {
+  if (await celda_f7r(n)) return;
+  await pulsar('Ver el mes anterior'); await page.waitForTimeout(300);
+  if (await celda_f7r(n)) return;
+  await pulsar('Ver el mes siguiente'); await pulsar('Ver el mes siguiente'); await page.waitForTimeout(300);
+};
+const anchoBien_f7r = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+await page.setViewportSize({ width: 375, height: 667 });
+await recargar_fit45();
+
+ok(await aFitness_fit39() && await pulsar('Abrir Historial'), 'FIT 7/8 — Entrenamiento → Historial');
+const txt1_f7r = await esperarTexto(/Disciplina/);
+ok(/Disciplina/.test(txt1_f7r || '') && /75 %/.test(txt1_f7r || '') && /4,5 de 6 días evaluados cumplidos/.test(txt1_f7r || ''),
+  `🚨 FIT 7/8 — últimos 30 días: 75 % (4,5 de 6: el parcial cuenta medio; el pendiente y hoy no cuentan) — ${JSON.stringify((txt1_f7r || '').match(/Disciplina[\s\S]{0,160}/)?.[0])}`);
+ok(/Previstos/.test(txt1_f7r) && /Perdidos/.test(txt1_f7r) && /Descansos sacrificados/.test(txt1_f7r) && /Racha actual/.test(txt1_f7r), 'FIT 7/8 — los indicadores de disciplina y la racha (§10)');
+ok(await pulsar('¿Cómo se calcula?') && /Cumplidos ÷ días evaluados/.test(await esperarTexto(/Cumplidos ÷ días evaluados/) || ''), 'FIT 7/8 — la fórmula se lee en la propia pantalla (§10)');
+ok(await pulsar('Últimos 7 días') && /70 %/.test(await esperarTexto(/70 %/) || '') && /3,5 de 5 días evaluados/.test(await ver()), '🚨 FIT 7/8 — al cambiar de periodo cambian las cifras: 7 días, 70 % (§9)');
+ok(await pulsar('Elegir fechas') && /Elige las dos fechas/.test(await esperarTexto(/Elige las dos fechas/) || ''), 'FIT 7/8 — «Elegir fechas» pide las dos fechas antes de contar');
+await page.fill('input[aria-label="Desde"]', hace_f7r(3));
+await page.fill('input[aria-label="Hasta"]', hace_f7r(2));
+ok(/100 %/.test(await esperarTexto(/100 %/) || ''), 'FIT 7/8 — un periodo elegido a mano (un cumplido y un descanso respetado): 100 %');
+ok(await pulsar('Últimos 30 días'), '…y se vuelve a los últimos 30 días');
+
+const hoyCelda_f7r = await celda_f7r(0);
+ok(/: Hoy \(hoy/.test(hoyCelda_f7r) && await page.evaluate(() => !!document.querySelector('button[aria-current="date"]')), `🚨 FIT 7/8 — el calendario marca hoy (§4) — ${hoyCelda_f7r}`);
+ok(/Pendiente de recuperar/.test(await celda_f7r(1)), 'FIT 7/8 — ayer, pendiente de recuperar (aún no es rojo)');
+await alMesDe_f7r(5);
+ok(/Descanso sacrificado/.test(await celda_f7r(5)) && /recupera el/.test(await celda_f7r(5)), `🚨 FIT 7/8 — el descanso usado para recuperar sale sacrificado y dice qué recuperó — ${await celda_f7r(5)}`);
+await alMesDe_f7r(6);
+const recup_f7r = await celda_f7r(6);
+ok(/: Recuperado/.test(recup_f7r), `🚨 FIT 7/8 — el día recuperado sale «Recuperado» (verde con su icono) — ${recup_f7r}`);
+await alMesDe_f7r(4);
+ok(/: Parcial/.test(await celda_f7r(4)), 'FIT 7/8 — el parcial, «Parcial»');
+await alMesDe_f7r(6);
+ok(!!recup_f7r && await pulsar(recup_f7r), 'FIT 7/8 — se toca el día recuperado');
+const det_f7r = await esperarTexto(new RegExp(`Recuperado el ${dym_f7r(5)}`));
+ok(new RegExp(`Recuperado el ${dym_f7r(5)}: F7 Pull`).test(det_f7r || '') && /Previsto: F7 Pull · Ciclo F7/.test(det_f7r || ''),
+  '🚨 FIT 7/8 — el detalle del día: qué tocaba (rutina y plantilla) y cuándo se recuperó (§5)');
+ok(await pulsar(`Recuperado el ${dym_f7r(5)}: F7 Pull`) && /Recuperación/.test(await esperarTexto(/Recuperación/) || ''), 'FIT 7/8 — abre el entrenamiento de la recuperación, con su tipo');
+ok(await pulsar('Volver al historial'), '…y se vuelve al historial');
+ok(new RegExp(`Recuperado el ${dym_f7r(5)}`).test(await esperarTexto(new RegExp(`Recuperado el ${dym_f7r(5)}`)) || ''), '🚨 FIT 7/8 — al volver, el calendario sigue en ese día y con su detalle abierto');
+ok(await anchoBien_f7r(), '🚨 FIT 7/8 — a 375 px no se sale de lado');
+await page.setViewportSize({ width: 320, height: 640 });
+await page.waitForTimeout(400);
+ok(await anchoBien_f7r(), 'FIT 7/8 — ni a 320 px (el calendario cabe)');
+await page.setViewportSize({ width: 375, height: 667 });
+
+ok(await pulsar('Filtros'), 'FIT 7/8 — se abren los filtros');
+ok(await pulsar('F7 Push'), 'FIT 7/8 — se filtra por la plantilla «F7 Push»');
+await page.waitForTimeout(500);
+const tarjetas_f7r = await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Abrir F7"]')].map((b) => b.getAttribute('aria-label')));
+ok(tarjetas_f7r.length === 2 && tarjetas_f7r.every((x) => /F7 Push/.test(x)), `🚨 FIT 7/8 — el historial de UNA plantilla: sus dos sesiones (§6) — ${JSON.stringify(tarjetas_f7r)}`);
+const parcial_f7r = await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Abrir F7 Push"]')].map((b) => /Parcial/.test(b.innerText)));
+ok(parcial_f7r.length === 2 && parcial_f7r.filter(Boolean).length === 1, `FIT 7/8 — cada ejecución dice su estado: una de las dos fue parcial (§6) — ${JSON.stringify(parcial_f7r)}`);
+const nuevos_f7r = errores.slice(erroresAntes_f7r);
+ok(nuevos_f7r.length === 0, `🚨 FIT 7/8 — ni un error en la consola${nuevos_f7r.length ? `: ${nuevos_f7r.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
+ok(JSON.stringify(almacen.fitness.sesiones.map((x) => x.id)) === JSON.stringify(['f7r-a', 'f7r-b', 'f7r-c', 'f7r-d']), '🚨 FIT 7/8 — mirar la disciplina no escribe nada en las sesiones');
+almacen.fitness = fitnessDeAntes_f7r;
+
+/* ── FIT 8/8 · Integración: el calendario unificado, la racha única y el iPhone ──
+   El escenario de la FIT 7/8 (Ciclo F7) con dos rachas en la pantalla Rachas: una de
+   entrenamiento —con una marca a mano en el día sacrificado, que con seguimiento ya
+   no cuenta— y otra de sueño. La racha de Fitness (Historial y cabecera) y la global
+   de entrenamiento tienen que decir lo mismo: 3 (parcial, cumplido y descanso
+   respetado; el sacrificado la corta; el pendiente de ayer y hoy no la cortan). La de
+   sueño no cambia. Y nada de la vista se guarda. Fechas desde hoy (H-25). */
+console.log('\n── FIT 8/8 · Integración: calendario unificado, racha única y iPhone ──');
+const fitnessDeAntes_f8r = almacen.fitness;
+const rachasDeAntes_f8r = almacen.rachas;
+const erroresAntes_f8r = errores.length;
+almacen.fitness = JSON.parse(JSON.stringify(fitnessF7_f8r));
+almacen.rachas = {
+  definiciones: [
+    { id: 'f8r-entreno', tipo: 'training', nombre: 'Entrenar F8', icono: 'entreno', regla: { clase: 'diaria' }, creadaEn: hace_f7r(30), activa: true },
+    { id: 'f8r-sueno', tipo: 'sleep', nombre: 'Dormir F8', icono: 'sueno', regla: { clase: 'diaria' }, creadaEn: hace_f7r(30), activa: true },
+  ],
+  eventos: [
+    { id: 'f8r-m1', rachaId: 'f8r-entreno', fecha: hace_f7r(5), valor: 1, registradoEn: new Date().toISOString(), origen: 'manual', origenId: null },
+    ...[1, 2, 3].map((n) => ({ id: `f8r-s${n}`, rachaId: 'f8r-sueno', fecha: hace_f7r(n), valor: 1, registradoEn: new Date().toISOString(), origen: 'manual', origenId: null })),
+  ],
+};
+const rachasGuardadas_f8r = JSON.stringify(almacen.rachas);
+await page.setViewportSize({ width: 375, height: 667 });
+await recargar_fit45();
+
+ok(await aFitness_fit39(), 'FIT 8/8 — se entra en Fitness');
+ok(/3 días seguidos/.test(await esperarTexto(/días? seguidos/) || ''), '🚨 FIT 8/8 — la cabecera de Fitness: «3 días seguidos» (la racha con el criterio de Fitness)');
+ok(await pulsar('Abrir Historial'), 'FIT 8/8 — Historial');
+const hist_f8r = await esperarTexto(/Racha actual/);
+ok(/3 días\s*Racha actual/.test(hist_f8r || ''), `🚨 FIT 8/8 — la racha del Historial dice lo mismo: 3 días — ${JSON.stringify((hist_f8r || '').match(/[^\n]*\n*Racha actual/)?.[0])}`);
+ok(await pulsar('Ver solo una semana'), 'FIT 8/8 — el calendario, en semana');
+await page.waitForTimeout(400);
+const sem_f8r = await etiquetasUnificadas_fit31();
+ok(sem_f8r.length === 7 && sem_f8r.some((e) => /: Hoy \(hoy/.test(e)) && sem_f8r.some((e) => /Pendiente de recuperar/.test(e)), `🚨 FIT 8/8 — la semana: hoy y el pendiente de ayer, con sus estados — ${JSON.stringify(sem_f8r)}`);
+for (const [w, h] of [[320, 640], [393, 852], [430, 932], [375, 667]]) {
+  await page.setViewportSize({ width: w, height: h });
+  await page.waitForTimeout(300);
+  ok(await anchoBien_f7r(), `🚨 FIT 8/8 — Historial (disciplina, calendario y lista) cabe a ${w} px`);
+}
+ok(await pulsar('Ver el mes entero'), 'FIT 8/8 — …y otra vez el mes');
+ok(await pulsar('Volver a Entrenamiento'), 'FIT 8/8 — y se vuelve a Entrenamiento');
+ok(await pulsar('Progreso'), 'FIT 8/8 — Progreso');
+await esperarTexto(/Último entrenamiento/i);
+ok(await page.evaluate(() => !!document.querySelector('button[aria-label="Ver el calendario de cumplimiento"]')) && (await etiquetasUnificadas_fit31()).length === 0,
+  '🚨 FIT 8/8 — en Progreso, el acceso al calendario y ningún calendario propio');
+for (const w of [320, 430]) {
+  await page.setViewportSize({ width: w, height: 800 });
+  await page.waitForTimeout(300);
+  ok(await anchoBien_f7r(), `FIT 8/8 — Progreso cabe a ${w} px`);
+}
+await page.setViewportSize({ width: 375, height: 667 });
+ok(await pulsar('Vida') && await pulsar('Productividad') && await pulsar('Rachas'), 'FIT 8/8 — la pantalla Rachas');
+await esperarTexto(/Entrenar F8/);
+ok(await pulsar('Entrenar F8'), 'FIT 8/8 — la racha de entrenamiento');
+const det_f8r = await esperarTexto(/Se lleva sola desde Fitness/);
+ok(/Se lleva sola desde Fitness/.test(det_f8r || '') && /Según tu rutina de Fitness/.test(det_f8r || ''), '🚨 FIT 8/8 — se lleva sola desde Fitness, y lo dice con su criterio');
+ok(/Mejor racha\s*3 días/.test(det_f8r || ''), '🚨 FIT 8/8 — la global de entrenamiento: 3, como Fitness (la marca a mano del día sacrificado no cuenta)');
+ok(!/Marcar hoy/.test(det_f8r || ''), '🚨 FIT 8/8 — y no se puede marcar a mano (sería un segundo criterio para el mismo día)');
+ok(await pulsar('Todas las rachas') && await pulsar('Dormir F8'), 'FIT 8/8 — la racha de sueño');
+const sueno_f8r = await esperarTexto(/Mejor racha/);
+ok(/Mejor racha\s*3 días/.test(sueno_f8r || '') && /Marcar hoy|Día completado/.test(sueno_f8r || '') && !/Se lleva sola desde Fitness/.test(sueno_f8r || ''),
+  '🚨 FIT 8/8 — la de sueño sigue como siempre: sus 3 días, a mano');
+ok(JSON.stringify(almacen.rachas) === rachasGuardadas_f8r, '🚨 FIT 8/8 — lo guardado de las rachas no ha cambiado: la vista de Fitness nunca se guarda');
+const nuevos_f8r = errores.slice(erroresAntes_f8r);
+ok(nuevos_f8r.length === 0, `🚨 FIT 8/8 — ni un error en la consola${nuevos_f8r.length ? `: ${nuevos_f8r.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
+almacen.fitness = fitnessDeAntes_f8r;
+almacen.rachas = rachasDeAntes_f8r;
 
 await page.setViewportSize({ width: 1280, height: 900 });
 

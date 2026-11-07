@@ -194,11 +194,11 @@ ok(Object.values(CAPAS).length >= 7 && /export const CAPAS/.test(leer('src/token
 
 /* ═════════════════════════════════════════════════════════════════════════ */
 console.log('\n── 5. Una palabra por concepto (apartado 57) ──');
-ok(igual(terminosQueChocan('Descartar sesión · 3 sesiones · Tus rutinas · Workout'), ['sesión', 'sesiones', 'rutinas', 'Workout']),
-  'Caza «sesión», «sesiones», «rutina» y «workout»');
+ok(igual(terminosQueChocan('Descartar sesión · 3 sesiones · Tus rutinas · Workout'), ['sesión', 'sesiones', 'Workout']),
+  'Caza «sesión», «sesiones» y «workout» — y desde la Fitness 3/8 ya no «rutina»: es el término oficial del ciclo de días (prompt 1 §4)');
 ok(terminosQueChocan('Tu entrenamiento está en curso. Posesiones. Rutinario').length === 0,
   '…y no lo que solo las contiene («posesiones», «rutinario»)');
-ok(TERMINOS_FITNESS.map((t) => t.se_dice).join(',') === 'entrenamiento,plantilla', 'Entrenamiento y plantilla');
+ok(TERMINOS_FITNESS.map((t) => t.se_dice).join(',') === 'entrenamiento,plantilla,rutina', 'Entrenamiento, plantilla y rutina (Fitness 3/8)');
 {
   const textos = [
     AVISO_SALIR, avisoDeRecuperacion({ id: 's', estado: 'en_curso', iniciadaEn: Date.now() - 3600000, origen: { ejercicios: [] } }),

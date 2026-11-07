@@ -207,12 +207,18 @@ export const MINIATURA_FOTO = 'aspect-square object-cover';
    `sesion` —es la clave guardada desde la F7, y los ids no se renombran (FIT
    F1)—; lo que cambia es lo que se lee. */
 
+/* 🔓 Fitness 3/8 — «rutina» deja de chocar: el prompt 1 §4 la hace el término
+   OFICIAL de otro concepto, el ciclo de 1 a 30 días que se repite (lo que hasta
+   ahora la pantalla llamaba «plan»). Lo que él se construye sigue siendo una
+   **plantilla**, y llamarla «rutina» sí sería mezclar dos cosas: eso lo vigilan
+   las pruebas de la Fase 3 sobre las pantallas de plantillas. */
 export const TERMINOS_FITNESS = [
   { concepto: 'Lo que se entrena y queda en el historial', se_dice: 'entrenamiento', no: ['sesión', 'sesiones', 'workout', 'workouts'] },
-  { concepto: 'Lo que él se construye y reutiliza', se_dice: 'plantilla', no: ['rutina', 'rutinas'] },
+  { concepto: 'Lo que él se construye y reutiliza', se_dice: 'plantilla', no: [] },
+  { concepto: 'El ciclo de días que se repite (1 a 30)', se_dice: 'rutina', no: [] },
 ];
 
-const PALABRA_QUE_CHOCA = /\b(sesi[oó]n(?:es)?|workouts?|rutinas?)\b/gi;
+const PALABRA_QUE_CHOCA = /\b(sesi[oó]n(?:es)?|workouts?)\b/gi;
 
 /** Las palabras de `TERMINOS_FITNESS` que no deberían leerse, en un texto ya pintado. */
 export function terminosQueChocan(texto) {

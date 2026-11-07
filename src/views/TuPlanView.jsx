@@ -34,7 +34,7 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  ChevronRight, Dumbbell, Plus, Repeat, Calendar, X, Play,
+  ChevronRight, Dumbbell, Plus, Repeat, Calendar, X, Play, CheckCheck,
 } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { acentoLegible } from '../lib/acabadoFitness';
@@ -48,6 +48,17 @@ import { resumenDeActividad } from '../lib/actividadEntrenamiento';
 import { TrainingPlanAdherence } from '../components/actividadEntrenamiento';
 /* 🔓 FIT F32 — la planificación semanal: la lectura y los componentes. */
 import { planificacionDeTuPlan, PLAN_INVALIDO } from '../lib/planificacionSemanal';
+import {
+  ventanaDeSieteDias, ventanaConDatos, opcionesDeRecuperacion, consecuenciasDeElegir,
+} from '../lib/cumplimientoFitness';
+import { opcionesParaCompletar } from '../lib/completarEntrenamiento';
+import { modoDeProgresion } from '../lib/progresion';
+import { SelectorProgresion } from '../components/progresionFitness';
+import { diaYMes } from '../lib/fechasFitness';
+import {
+  VentanaCumplimiento, TarjetaRecuperacion, CompletarEntrenamientoTarjeta,
+} from '../components/cumplimientoFitness';
+import { Plegable } from '../components/layoutMotion';
 import {
   TrainingWeekView, WeekNavigation, TrainingDayCard, PlanSinPlanificacion,
 } from '../components/planificacionSemanal';
@@ -276,8 +287,76 @@ export default function TuPlanView({
   /* 🔓 FIT F32 — abrir una sesión hecha (su detalle del Historial, apartado 37)
      y arreglar un plan que no se puede repartir (apartado 23). */
   onVerSesion = null, onEditarPlan = null,
+  /* 🔓 Fitness 4/8 — recuperar un pendiente (empezándolo o completándolo) y
+     «Completar entrenamiento» para uno hecho fuera de la aplicación. */
+  onRecuperar = null, onCompletarRecuperacion = null, onCompletar = null,
+  /* 🔓 Fitness 5/8 — el modo de progresión (global, PD-13). */
+  onCambiarModoProgresion = null,
 }) {
   const [rutinaDelProximo, setRutinaDelProximo] = useState(false);
+  /* 🔓 Fitness 4/8 — el cumplimiento lo calcula el motor (una fuente de verdad);
+     aquí solo se pinta. Hooks antes de los `return` (regla 4). */
+  const opcionesFecha = hoy ? { hoy } : {};
+  const ventana = useMemo(() => ventanaDeSieteDias(fitness, opcionesFecha), [fitness, hoy]); // eslint-disable-line react-hooks/exhaustive-deps
+  const recuperacion = useMemo(() => opcionesDeRecuperacion(fitness, opcionesFecha), [fitness, hoy]); // eslint-disable-line react-hooks/exhaustive-deps
+  const consecuenciasDeHoy = useMemo(
+    () => (recuperacion.disponible ? consecuenciasDeElegir(fitness, { tipo: recuperacion.descansoHoy ? 'libre' : 'previsto' }, opcionesFecha) : null),
+    [fitness, hoy, recuperacion], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const paraCompletar = useMemo(() => opcionesParaCompletar(fitness), [fitness]);
+  const [completando, setCompletando] = useState(false);
+  const [errorCompletar, setErrorCompletar] = useState('');
+  const [avisoCompletar, setAvisoCompletar] = useState('');
+  const hoyEfectivo = recuperacion.hoy;
+  const consecuencias = (pendiente) => consecuenciasDeElegir(fitness, { tipo: 'recuperar', pendiente }, opcionesFecha);
+  const completarRecuperacion = onCompletarRecuperacion ? (pendiente) => {
+    const r = onCompletarRecuperacion(pendiente);
+    setAvisoCompletar(r && r.ok ? `«${pendiente.nombre}» del ${diaYMes(pendiente.fecha)} queda recuperado.` : ((r && r.mensaje) || ''));
+  } : null;
+  /* El bloque de cumplimiento y recuperación: solo si hay algo que decir. */
+  const bloqueCumplimiento = (
+    <>
+      {avisoCompletar && (
+        <p role="status" className="text-xs" style={{ color: COLORS.textMuted }}>{avisoCompletar}</p>
+      )}
+      <TarjetaRecuperacion
+        opciones={recuperacion}
+        consecuencias={consecuencias}
+        consecuenciasDeHoy={consecuenciasDeHoy}
+        accent={accent}
+        onEmpezar={onRecuperar}
+        onCompletar={completarRecuperacion}
+      />
+      {ventanaConDatos(ventana) && <VentanaCumplimiento dias={ventana} />}
+    </>
+  );
+  /* «Completar entrenamiento» (D-03): un botón que abre la tarjeta en su sitio. */
+  /* 🔓 Fitness 5/8 — Manual, Progresivo o Experto. */
+  const bloqueProgresion = onCambiarModoProgresion ? (
+    <SelectorProgresion modo={modoDeProgresion(fitness)} accent={accent} onCambiar={onCambiarModoProgresion} />
+  ) : null;
+  const bloqueCompletar = onCompletar ? (
+    <div>
+      {!completando && (
+        <GhostBtn icon={CheckCheck} onClick={() => { setErrorCompletar(''); setCompletando(true); }}>Completar entrenamiento</GhostBtn>
+      )}
+      <Plegable abierto={completando}>
+        {() => (
+          <CompletarEntrenamientoTarjeta
+            opciones={paraCompletar}
+            hoy={hoyEfectivo}
+            accent={accent}
+            error={errorCompletar}
+            onCancelar={() => setCompletando(false)}
+            onCompletar={(opcion, fecha) => {
+              const r = onCompletar(opcion, fecha);
+              if (r && r.ok) { setCompletando(false); setErrorCompletar(''); } else setErrorCompletar((r && r.mensaje) || 'No se ha podido registrar.');
+            }}
+          />
+        )}
+      </Plegable>
+    </div>
+  ) : null;
   const [semanaVista, setSemanaVista] = useState(null);
   const [diaElegido, setDiaElegido] = useState(null);
   const v = useMemo(() => tuPlan(fitness, hoy ? { hoy } : {}), [fitness, hoy]);
@@ -297,6 +376,9 @@ export default function TuPlanView({
       <div className="space-y-4">
         <SectionTitle sub="Lo que estás entrenando ahora">Tu Plan</SectionTitle>
         <SinPlan accent={accent} onExplorar={onExplorar} onCrear={onCrear} />
+        {bloqueCumplimiento}
+        {paraCompletar.length > 0 && bloqueCompletar}
+        {bloqueProgresion}
         <SeccionPlantillas datos={v.plantillas} accent={accent} onVerTodas={onVerPlantillas} onCrear={onCrear} />
       </div>
     );
@@ -338,12 +420,12 @@ export default function TuPlanView({
         )}
         {(onCambiarPlan || onQuitar) && (
           <div className="flex gap-2 flex-wrap mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
-            {onCambiarPlan && <GhostBtn icon={Repeat} onClick={onCambiarPlan}>Cambiar plan</GhostBtn>}
+            {onCambiarPlan && <GhostBtn icon={Repeat} onClick={onCambiarPlan}>Cambiar de rutina</GhostBtn>}
             {/* ⚠️ «Quitar el plan» existe desde la F5 y **no se pierde al
                 rediseñar esta pantalla**: reorganizar no es eliminar (GE F1).
                 El apartado 19 solo prohíbe borrar el plan o las plantillas, y
                 esto no borra nada: deja de estar activo. */}
-            {onQuitar && <GhostBtn icon={X} onClick={onQuitar}>Quitar el plan</GhostBtn>}
+            {onQuitar && <GhostBtn icon={X} onClick={onQuitar}>Quitar la rutina</GhostBtn>}
           </div>
         )}
       </Card>
@@ -373,8 +455,9 @@ export default function TuPlanView({
   const rutinaSel = diaSel && diaSel.acciones.verRutina && diaSel.relacion !== 'coincide'
     ? sesionDelDia(v.plan, diaSel.planificado.indice, v.propios)
     : null;
+  /* 🔓 Fitness 4/8 — con su fecha: empezar un día pasado pendiente es recuperarlo. */
   const empezarDia = (d) => (onEmpezar && d && d.planificado && d.planificado.indice !== null
-    ? () => onEmpezar(d.planificado.indice)
+    ? () => onEmpezar(d.planificado.indice, d.fecha)
     : null);
   const irASemana = (lunes) => { setSemanaVista(lunes); setDiaElegido(null); };
 
@@ -384,7 +467,7 @@ export default function TuPlanView({
           lo hizo, si entrenó sin plan o si el plan no tiene nada hoy. */}
       {p.hoyAparte && p.hoy && (
         <div>
-          <SectionTitle sub="Lo que dice tu plan de hoy">Hoy</SectionTitle>
+          <SectionTitle sub="Lo que dice tu rutina de hoy">Hoy</SectionTitle>
           {p.hoy.estado === 'unplanned' ? <DescansoHoy accent={accent} /> : (
             <TrainingDayCard
               dia={p.hoy}
@@ -395,6 +478,10 @@ export default function TuPlanView({
           )}
         </div>
       )}
+
+      {/* 🔓 Fitness 4/8 — lo pendiente y los últimos siete días, arriba: es lo que
+          decide qué hacer hoy (prompt 4 §10). Sin pendientes no se dice nada. */}
+      {bloqueCumplimiento}
 
       {/* 2 · Lo siguiente que toca (apartado 21 de la F6 y 9-10 de la F32). */}
       {proximo && (
@@ -420,11 +507,14 @@ export default function TuPlanView({
         </div>
       )}
 
+      {bloqueCompletar}
+      {bloqueProgresion}
+
       {cabecera}
 
       {/* 3 · La semana (apartados 7 y 8 de la F6; 3, 14-16 y 22 de la F32). */}
       <div>
-        <SectionTitle sub="Toca un día para ver qué tenía el plan y qué hiciste">Tu semana</SectionTitle>
+        <SectionTitle sub="Toca un día para ver qué tenía la rutina y qué hiciste">Tu semana</SectionTitle>
         {v.sinSemana ? (
           <Card>
             <p className="text-sm font-bold" style={{ color: COLORS.text }}>Todavía no se puede repartir la semana</p>
@@ -559,7 +649,7 @@ function SeccionPlantillas({ datos, accent, onVerTodas, onCrear }) {
                     .filter(Boolean).join(' · ')}
                 </p>
                 {p.esActiva && (
-                  <p className="text-[11px] font-semibold mt-0.5" style={{ color: acentoLegible(accent) }}>Es tu plan actual</p>
+                  <p className="text-[11px] font-semibold mt-0.5" style={{ color: acentoLegible(accent) }}>Es tu rutina activa</p>
                 )}
               </div>
               {onVerTodas && <ChevronRight size={16} style={{ color: COLORS.textMuted }} aria-hidden="true" />}

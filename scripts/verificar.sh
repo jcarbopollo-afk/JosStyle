@@ -1127,6 +1127,59 @@ else
   fallo "Falla la gestión de plantillas"; grep '✗' /tmp/jc_plantillas.log
 fi
 
+# Fitness 3/8 — las rutinas cíclicas (1 a 30 días) y la biblioteca de plantillas: lo
+# predeterminado conservado con sus ids, el ciclo, activar y cambiar sin perder nada,
+# en uso, borrar una plantilla de la rutina activa (días a descanso), la papelera sin
+# pisar asignaciones y la guardia de versión. El prompt 3 §14, en Node.
+if node --import ./scripts/resolver-vite.mjs scripts/test-rutinas-ciclicas.mjs >/tmp/jc_rutinas_ciclicas.log 2>&1; then
+  ok "Rutinas y plantillas (Fitness 3/8) — $(grep -c '✓' /tmp/jc_rutinas_ciclicas.log) comprobaciones"
+else
+  fallo "Fallan las rutinas cíclicas"; grep '✗' /tmp/jc_rutinas_ciclicas.log
+fi
+
+# 🔓 Fitness 4/8 — cumplimiento, descansos y recuperación: la caducidad por dos
+# entrenamientos posteriores (D-02), los catorce casos del prompt 4, una sesión por
+# fecha, «Completar entrenamiento» (D-03) y la migración M1, todo con fechas fijas.
+if node --import ./scripts/resolver-vite.mjs scripts/test-cumplimiento-fitness.mjs >/tmp/jc_cumplimiento.log 2>&1; then
+  ok "Cumplimiento y recuperación (Fitness 4/8) — $(grep -c '✓' /tmp/jc_cumplimiento.log) comprobaciones"
+else
+  fallo "Falla el cumplimiento de Fitness"; grep '✗' /tmp/jc_cumplimiento.log
+fi
+
+# 🔓 Fitness 5/8 — la progresión: Manual, Progresivo y Experto, el interruptor por
+# línea, la comparación por plantilla y línea, las medias repeticiones y la M2.
+if node --import ./scripts/resolver-vite.mjs scripts/test-progresion-fitness.mjs >/tmp/jc_progresion_fit.log 2>&1; then
+  ok "Progresión (Fitness 5/8) — $(grep -c '✓' /tmp/jc_progresion_fit.log) comprobaciones"
+else
+  fallo "Falla la progresión de Fitness"; grep '✗' /tmp/jc_progresion_fit.log
+fi
+
+# 🔓 Fitness 6/8 — las anotaciones por ejercicio: la nota de la última vez de esa
+# línea, las antiguas, el historial, las líneas repetidas, las copias y lo de antes.
+if node --import ./scripts/resolver-vite.mjs scripts/test-anotaciones-fitness.mjs >/tmp/jc_anotaciones_fit.log 2>&1; then
+  ok "Anotaciones (Fitness 6/8) — $(grep -c '✓' /tmp/jc_anotaciones_fit.log) comprobaciones"
+else
+  fallo "Fallan las anotaciones de Fitness"; grep '✗' /tmp/jc_anotaciones_fit.log
+fi
+
+# 🔓 Fitness 7/8 — historial y estadísticas: los periodos y sus límites, la fórmula
+# del cumplimiento, la racha, el calendario del mes, el detalle de un día, el
+# historial de cada plantilla y la evolución por plantilla (sin contar nada dos veces).
+if node --import ./scripts/resolver-vite.mjs scripts/test-disciplina-fitness.mjs >/tmp/jc_disciplina_fit.log 2>&1; then
+  ok "Historial y estadísticas (Fitness 7/8) — $(grep -c '✓' /tmp/jc_disciplina_fit.log) comprobaciones"
+else
+  fallo "Fallan el historial y las estadísticas de Fitness"; grep '✗' /tmp/jc_disciplina_fit.log
+fi
+
+# 🔓 Fitness 8/8 — la integración: las siete fases sobre el mismo escenario, la racha
+# de Fitness y la global de entrenamiento idénticas (una sola fuente), el calendario
+# unificado (sin perder lo del de Progreso), sesiones antiguas y el versionado.
+if node --import ./scripts/resolver-vite.mjs scripts/test-integracion-final-fitness.mjs >/tmp/jc_integracion_final_fit.log 2>&1; then
+  ok "Integración final de Fitness (Fitness 8/8) — $(grep -c '✓' /tmp/jc_integracion_final_fit.log) comprobaciones"
+else
+  fallo "Falla la integración final de Fitness"; grep '✗' /tmp/jc_integracion_final_fit.log
+fi
+
 # FIT F5 — la biblioteca de planificaciones. Lo que más se vigila son dos cosas
 # que el enunciado subraya: que cada plan esté compuesto por ejercicios que
 # EXISTEN en el catálogo de la F2 (las 297 líneas, una a una) y que personalizar

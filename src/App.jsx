@@ -63,6 +63,7 @@ import { verificarBiometria } from './lib/biometria';
 import { crearPinHash, verificarPin } from './lib/pin';
 import { calcularResumenModulo } from './lib/resumenesHub';
 import { DEFAULT_FITNESS } from './lib/fitness';
+import { prepararEliminarRutina, prepararEliminarPlantilla } from './lib/rutinasCiclicas';
 /* 🎂 Cumpleaños (Mente, 2026-10-18) — su clave propia de `app_data`, con su puerta de carga. */
 import { DEFAULT_CUMPLEANOS, normalizarCumpleanos, eventosDeCumpleanos, cumpleanosActivo } from './lib/cumpleanos';
 import CumpleanosView from './views/CumpleanosView';
@@ -80,7 +81,8 @@ import { crearFotoProgreso, normalizarFotosProgreso, editarFotoProgreso } from '
    las repeticiones, las series marcadas y las notas. Se llama SIEMPRE a la
    última. */
 import { normalizarFitnessConSesiones } from './lib/entrenamiento';
-import { migrarFitness, apartarLoQueNoCarga } from './lib/persistenciaFitness';
+import { migrarFitness, apartarLoQueNoCarga, conEntradaEnVigor } from './lib/persistenciaFitness';
+import { CLAVE_RESPALDO_V1 } from './lib/migracionFitnessV2';
 import { eventosDerivados } from './lib/calendarioIntegracion';
 import { normalizarFondo, resolverFondo, estilosDeFondo, estilosDeVelo, estilosDeLuminosidad } from './lib/fondos';
 import { urlFirmada, urlEnCache } from './lib/imagenes';
@@ -91,7 +93,8 @@ import { emitir } from './lib/eventos';
 /* E3 F25 (PR F3) — el contador por día se recalcula desde las sesiones, y la
    configuración se normaliza antes de guardarla. */
 import { contadorDesdeSesiones, normalizarConfig as normalizarConfigPomodoro, iniciarSesion as iniciarSesionPomodoro } from './lib/pomodoro';
-import { ESTADO_INICIAL, normalizarEstado, panelRachas, crearRacha as crearRachaServicio, completarDia as completarDiaServicio, deshacerDia as deshacerDiaServicio, eliminarRacha as eliminarRachaServicio } from './lib/rachasServicio';
+import { diasDeActividadDeEntrenamiento } from './lib/disciplinaFitness';
+import { ESTADO_INICIAL, normalizarEstado, panelRachas, proyectarRachasDeEntrenamiento, crearRacha as crearRachaServicio, completarDia as completarDiaServicio, deshacerDia as deshacerDiaServicio, eliminarRacha as eliminarRachaServicio } from './lib/rachasServicio';
 import { GAMIFICACION_INICIAL, normalizarGamificacion, evaluar as evaluarRachas, olvidarRacha as olvidarRachaGamificacion } from './lib/rachasGamificacion';
 import { PinGate, EntradaPin, VerificacionPinModal, CrearPinModal, RecuperarPinModal, SuggestionsButton, UniversalSearchModal, Esqueleto, TextoDeBoton } from './components/ui';
 import HubView from './views/HubView';
@@ -541,6 +544,15 @@ export default function App() {
      NO se toca** — son las siete habilidades de siempre, y moverlas habría sido
      una migración a cambio de nada. */
   const [fitness, setFitness] = useState(DEFAULT_FITNESS);
+  /* 🚨 Fitness 3/8 — LA GUARDIA DE VERSIÓN (ARQUITECTURA_TECNICA.md AT-08, G0).
+     Si lo guardado es de una versión del formato más nueva que esta aplicación
+     (`migrarFitness` → `futura`), esta copia **no guarda Fitness**: al cargar
+     reconstruye cada sesión con los campos que conoce, y guardar encima borraría
+     los que no conoce (H-02). Se queda en solo lectura y lo dice. Va una entrega
+     ANTES de la que suba la versión, para que la aplicación que Josué tenga
+     abierta ya sepa pararse ese día. */
+  const [fitnessSoloLectura, setFitnessSoloLectura] = useState(false);
+  const fitnessSoloLecturaRef = useRef(false);
   const [cumpleanos, setCumpleanos] = useState(DEFAULT_CUMPLEANOS);
   const [futbol, setFutbol] = useState([]);
   const [economia, setEconomia] = useState(DEFAULT_ECONOMIA);
@@ -897,13 +909,47 @@ export default function App() {
          `fitness.cuarentena` con su original, en vez de perderse en el
          siguiente guardado (apartados 28, 32, 35 y 36). No se pinta en ninguna
          parte y no se guarda solo: viaja con el siguiente guardado de verdad. */
-      const migracionFit = migrarFitness(fit);
+      let migracionFit = migrarFitness(fit);
       if (migracionFit.error) console.warn('[Fitness]', migracionFit.error);
+      /* 🔓 Fitness 4/8 — la M1 (versión 1 → 2) con su copia de seguridad ANTES del
+         primer guardado en la versión 2 (ARQUITECTURA_TECNICA.md §14.5): el objeto
+         de la versión 1, tal y como llegó, en `fitness_respaldo_v1` (misma tabla y
+         mismas políticas, sin SQL nuevo), y solo si esa clave no existe: nunca se
+         pisa una copia anterior. Si la copia no se puede guardar, NO se migra: se
+         sigue con lo de antes y se reintenta en la próxima carga. */
+      let migradaConCopia = false;
+      if (migracionFit.migrada && migracionFit.desde === 1 && !migracionFit.futura) {
+        const respaldo = await loadData(uidUser, CLAVE_RESPALDO_V1, null);
+        let copiaOk = !!respaldo;
+        if (!respaldo) {
+          const r = await saveData(uidUser, CLAVE_RESPALDO_V1, fit);
+          copiaOk = !!(r && r.ok);
+        }
+        if (cancelled) return;
+        if (copiaOk) migradaConCopia = true;
+        else {
+          console.warn('[Fitness] No se ha podido guardar la copia de seguridad: la migración se aplaza a la próxima carga.');
+          migracionFit = { ...migracionFit, fitness: fit, migrada: false };
+        }
+      }
+      /* 🔓 Fitness 5/8 — la M2 (versión 2 → 3) no toca ninguna sesión, así que no
+         necesita copia: se guarda ya, para que la versión 3 esté puesta antes de
+         escribir unas medias repeticiones (una aplicación de la Fase 4 deja de
+         guardar en cuanto la ve). */
+      if (migracionFit.migrada && migracionFit.desde >= 2 && !migracionFit.futura) migradaConCopia = true;
+      fitnessSoloLecturaRef.current = !!migracionFit.futura;
+      setFitnessSoloLectura(!!migracionFit.futura);
       const cargaFit = apartarLoQueNoCarga(migracionFit.fitness, normalizarFitnessConSesiones(migracionFit.fitness));
       if (cargaFit.nuevos.length && import.meta.env?.DEV) {
         console.warn(`[Fitness] ${cargaFit.nuevos.length} registro(s) apartados en la cuarentena al cargar.`);
       }
-      setFitness(cargaFit.fitness);
+      /* 🔓 Fitness 4/8 — una cuenta nueva nace en la versión 2 sin migrar: su
+         cumplimiento empieza hoy (`conEntradaEnVigor`). */
+      const fitnessCargado = migracionFit.futura ? cargaFit.fitness : conEntradaEnVigor(cargaFit.fitness, todayISO());
+      setFitness(fitnessCargado);
+      /* Y lo migrado se guarda ya (con la copia hecha): así la fecha de entrada en
+         vigor queda fijada el día de la migración y no se mueve en cada carga. */
+      if (migradaConCopia) saveData(uidUser, 'fitness', fitnessCargado);
       /* 🎂 Regla 5: `loadData` no fusiona. Lo que no se entiende se aparta (no se pierde al guardar). */
       setCumpleanos(normalizarCumpleanos(cumple));
       setLoaded(true);
@@ -915,7 +961,7 @@ export default function App() {
       /* SO — y si alguna racha viva se queda sin cumplir a estas horas, se avisa.
          Al abrir la aplicacion y no cada segundo: un aviso repetido deja de ser
          un aviso. El cooldown de 3 s del propio evento hace el resto. */
-      const enPeligro = panelRachas(normalizarEstado(rach)).rachas
+      const enPeligro = panelRachas(proyectarRachasDeEntrenamiento(normalizarEstado(rach), diasDeActividadDeEntrenamiento(fitnessCargado, { hoy: todayISO() }))).rachas
         .filter((r) => enRiesgo(r.estado, new Date().getHours()));
       if (enPeligro.length) emitir('STREAK_AT_RISK', { cuantas: enPeligro.length });
     })();
@@ -1146,6 +1192,13 @@ export default function App() {
      hook que ya usa la jarra de agua (P2): un solo aviso a la medianoche siguiente y una
      comprobación al volver, sin intervalos. */
   const diaDeHoy = useHoyISO();
+  /* 🔓 Fitness 8/8 — las rachas que se LEEN: las de entrenamiento con el criterio de
+     Fitness (una sola fuente: `diasDeActividadDeEntrenamiento`). Es una vista y nunca
+     se guarda; crear, marcar, deshacer y eliminar siguen escribiendo sobre `rachas`. */
+  const rachasVistas = useMemo(
+    () => proyectarRachasDeEntrenamiento(rachas, diasDeActividadDeEntrenamiento(fitness, { hoy: diaDeHoy })),
+    [rachas, fitness, diaDeHoy],
+  );
   /* v3.161.3 — abrir el asistente de un módulo con una primera pregunta ya hecha («Analizar mi sueño»): se
      contesta con SUS datos, igual que si la hubiera escrito en la hoja, y la conversación sigue desde ahí.
      No es una función de IA: es el mismo núcleo determinista (DA-09). */
@@ -1163,8 +1216,8 @@ export default function App() {
     setAsistenteAbierto(modulo);
   };
   const resumenesTodos = useMemo(() => Object.fromEntries(
-    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, fitness, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop }, diaDeHoy)])
-  ), [sueno, calistenia, futbol, fitness, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas, horarioTop, diaDeHoy]);
+    MORE_NAV.map((m) => [m.id, calcularResumenModulo(m.id, { sueno, calistenia, futbol, fitness, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachas: rachasVistas, horarioTop }, diaDeHoy)])
+  ), [sueno, calistenia, futbol, fitness, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, bibliotecaArchivos, relacion, fe, bienestar, rachasVistas, horarioTop, diaDeHoy]);
 
   // FIT F16 — el peso corporal que usan los rangos de Fitness. Vive en Salud (sus medidas), no
   // en Fitness: duplicarlo daría dos pesos distintos, y el de los rangos sería el viejo. Se manda
@@ -1209,7 +1262,14 @@ export default function App() {
   /* 🔓 FIT F37, apartados 18, 25 y 28 — devuelve lo que dice `saveData`
      (`{ ok, error }`, EH F52) en vez de tragárselo: sin esto, Fitness no
      puede saber si un entrenamiento ha llegado a la cuenta de Josué. */
-  const guardarFitness = async (next) => { setFitness(next); return saveData(uidUser, 'fitness', next); };
+  /* 🚨 Fitness 3/8 (G0) — con datos de una versión más nueva no se guarda ni se
+     cambia nada en pantalla: lo que se ve es lo que hay en la cuenta. */
+  const NO_GUARDA_FITNESS = { ok: false, bloqueado: true, error: { code: 'version_futura', message: 'Tus datos de Fitness son de una versión más nueva de la aplicación.' } };
+  const guardarFitness = async (next) => {
+    if (fitnessSoloLecturaRef.current) return NO_GUARDA_FITNESS;
+    setFitness(next);
+    return saveData(uidUser, 'fitness', next);
+  };
 
   // ---------- Ampliación del Dashboard — Centro de Control ----------
   // Única función de navegación con deep-link de toda la app (apartado 5: "utiliza la
@@ -1785,6 +1845,21 @@ export default function App() {
     if (modulo === 'perfumes') return eliminarDePerfumes(coleccion, id);
     if (modulo === 'accesorios') return eliminarDeAccesorios(coleccion, id);
     if (modulo === 'gustos') return eliminarDeGustos(id);
+    /* 🚨 Fitness 3/8 (G0) — en solo lectura no se borra nada de Fitness: la
+       papelera se quedaría con algo que la cuenta todavía tiene. */
+    if (modulo === 'fitness' && fitnessSoloLecturaRef.current) return;
+    /* 🔓 Fitness 3/8 — las rutinas y las plantillas tienen su puerta: antes de
+       mandarlas a la papelera, una predeterminada guarda su copia (mismo id) y se
+       retira, y si la usaba la rutina activa, sus días pasan a descanso
+       (`rutinasCiclicas.js`). Después, la papelera de siempre. */
+    if (modulo === 'fitness' && (coleccion === 'rutinas' || coleccion === 'plantillas')) {
+      const prep = coleccion === 'rutinas' ? prepararEliminarRutina(fitness, id) : prepararEliminarPlantilla(fitness, id);
+      if (!prep.ok) return;
+      const r = prepararEliminacion(prep.fitness, 'fitness', coleccion, id, new Date().toISOString());
+      if (!r) return;
+      snapshotAndSave({ fitness: r.moduloActualizado, papelera: { ...papelera, elementos: [...papelera.elementos, r.entrada] } });
+      return;
+    }
     const entradaModulo = MODULOS_PAPELERA[modulo];
     if (!entradaModulo) return;
     const resultado = prepararEliminacion(entradaModulo[0], modulo, coleccion, id, new Date().toISOString());
@@ -1800,6 +1875,8 @@ export default function App() {
   const restaurarDePapelera = (entradaId) => {
     const entrada = papelera.elementos.find((e) => e.id === entradaId);
     if (!entrada) return;
+    /* Fitness 3/8 (G0) — en solo lectura tampoco se restaura nada de Fitness. */
+    if (entrada.modulo === 'fitness' && fitnessSoloLecturaRef.current) return;
     // EH F15 — y vuelven por la misma puerta, con el motor de ME F3 intacto.
     if (entrada.modulo === 'skincare' && entrada.coleccion === 'registros') {
       const r = restaurarRegistroPiel(estiloHombre, entrada);
@@ -1956,6 +2033,8 @@ export default function App() {
   /* FIT F4 — y por la misma puerta que todo lo demás (ME F3): la plantilla va a
      Eliminados recientes y vuelve entera, con sus ejercicios y su orden. */
   const deletePlantillaFitness = (id) => eliminarConPapelera('fitness', 'plantillas', id);
+  // Fitness 3/8 — una rutina, por la misma puerta (y su copia, si es predeterminada).
+  const deleteRutinaFitness = (id) => eliminarConPapelera('fitness', 'rutinas', id);
   // FIT F10 — un entrenamiento del historial, por la papelera como todo lo demás.
   const deleteSesionFitness = (id) => eliminarConPapelera('fitness', 'sesiones', id);
   // FIT F14 — un objetivo de rendimiento, también por la papelera.
@@ -2044,7 +2123,7 @@ export default function App() {
      celebre una vez. No entra en el historial de deshacer: un logro conseguido
      no es una edición que Josué quisiera revertir con el botón de atrás. */
   const evaluarGamificacion = () => {
-    const { gamificacion: nuevo, eventos } = evaluarRachas(rachas, gamificacion);
+    const { gamificacion: nuevo, eventos } = evaluarRachas(rachasVistas, gamificacion);
     if (eventos.length) { setGamificacion(nuevo); saveData(uidUser, 'gamificacionRachas', nuevo); }
     // SO Fase 1 · apartados 30 y 31 — se emiten al bus, y quien quiera reacciona.
     // Rachas NO sabe que existe el audio, y el audio no sabe qué es una racha:
@@ -2132,7 +2211,7 @@ export default function App() {
     /* FIT F4 — sin esta línea, eliminar una plantilla no guardaría nada y la
        pantalla se pintaría perfecta: `snapshotAndSave` solo escribe lo que
        conoce. */
-    if (patch.fitness) { setFitness(patch.fitness); guardados.push(saveData(uidUser, 'fitness', patch.fitness)); }
+    if (patch.fitness && !fitnessSoloLecturaRef.current) { setFitness(patch.fitness); guardados.push(saveData(uidUser, 'fitness', patch.fitness)); }
     if (patch.cumpleanos) { setCumpleanos(patch.cumpleanos); guardados.push(saveData(uidUser, 'cumpleanos', patch.cumpleanos)); }
     return resultadoDeGuardados(guardados);
   };
@@ -2932,7 +3011,7 @@ export default function App() {
               if (coleccion === 'porProbar') return eliminarConPapelera('perfumes', 'porProbar', id);
               return eliminarConPapelera('perfumes', 'historial', id);
             }}
-            rachas={rachas}
+            rachas={rachasVistas}
             /* E3 F6 (HC F1, apartados 2, 17 y 20) — el resumen y el progreso del día se
                DERIVAN aquí de las entidades de siempre: ni una copia (apartados 24 y 25).
                Los apuntes son lo único nuevo que se guarda, porque no existía en ningún sitio. */
@@ -2982,7 +3061,9 @@ export default function App() {
         return (
           <FitnessView
             fitness={fitness}
-            fotos={saludFotos} rachas={rachas}
+            /* 🔓 Fitness 4/8 — el día de hoy, que cambia a medianoche (§3.1). */
+            hoy={diaDeHoy}
+            fotos={saludFotos} rachas={rachasVistas}
             /* 🚨 FIT F26 (C-35), CORREGIDO EN LA F27 — **la misma puerta que
                Salud, y eso incluye poder abrirla**. Antes se pasaba `null` con
                el PIN puesto, así que la galería no se pintaba **y no había
@@ -3000,6 +3081,8 @@ export default function App() {
             onOlvidoPin={() => setRecuperandoPin(true)}
             onGuardarFitness={guardarFitness}
             onEliminarPlantilla={deletePlantillaFitness}
+            onEliminarRutina={deleteRutinaFitness}
+            soloLectura={fitnessSoloLectura}
             onEliminarSesion={deleteSesionFitness}
             onEliminarObjetivo={deleteObjetivoFitness}
             accent={accent} onIr={setTab}
@@ -3092,7 +3175,7 @@ export default function App() {
               if (coleccion === 'porProbar') return eliminarConPapelera('perfumes', 'porProbar', id);
               return eliminarConPapelera('perfumes', 'historial', id);
             }}
-            rachas={rachas} gamificacion={gamificacion} habitos={productividad.habitos}
+            rachas={rachasVistas} gamificacion={gamificacion} habitos={productividad.habitos}
             accent={accent}
             onCrearRacha={crearNuevaRacha}
             onCompletarDia={completarDiaRacha}
@@ -3213,7 +3296,7 @@ export default function App() {
               const r = aplicarTarea(estiloHombre, productividad, plan, { confirmado: true });
               if (r) snapshotAndSave({ estiloHombre: r.estiloHombre, productividad: r.productividad });
             }}
-            rachas={rachas}
+            rachas={rachasVistas}
           />
         );
 
@@ -3272,7 +3355,7 @@ export default function App() {
             renderRachas={() => renderModulo('rachas')}
             /* ⚠️ Y las rachas también como DATO: el contador de la plaquita lee
                `datos[app.de]`, así que sin esto se pintaría sin decir cuántas hay. */
-            rachas={rachas}
+            rachas={rachasVistas}
             /* Y lo que ya no vive aquí (Tareas) se manda a su sitio en vez de
                abrirse en blanco. `setTab` basta: `areaDeModulo` sabe que Tareas
                cuelga de Organización, así que la barra de volver aparece. */

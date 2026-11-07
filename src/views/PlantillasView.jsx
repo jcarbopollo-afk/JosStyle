@@ -39,6 +39,18 @@ import { textoDeSeries, textoDeCarga, musculosResumidos } from '../lib/construct
 import { PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
 import { Plegable } from '../components/layoutMotion';
 import { IconoQueCambia } from '../components/motion';
+import {
+  usoDePlantilla, marcaDeUso, avisoDeEliminarPlantillaEnUso, avisoDeHuecos, origenDePlantilla,
+  plantillaEsPredeterminada, EXPLICACIONES_RUTINA,
+} from '../lib/rutinasCiclicas';
+
+/* 🔓 Fitness 3/8 — de dónde son las plantillas que se ven: las suyas (lo que ya
+   enseñaba esta pantalla) o las predeterminadas (los días de las rutinas
+   predeterminadas). Se elige con una pastilla, no hay dos pantallas. */
+const PROCEDENCIAS = [
+  { id: 'tuyas', nombre: 'Tuyas' },
+  { id: 'predeterminadas', nombre: 'Predeterminadas' },
+];
 
 /* 🔓 FIT F42 (apartados 42 y 64) — aquí había una `Pastilla` propia, una de las
    siete copias de la pastilla de un filtro: es `PastillaFiltro` (piezasFitness). */
@@ -50,6 +62,9 @@ import { IconoQueCambia } from '../components/motion';
    `SIN_OBJETIVO` porque el apartado 6 no deja editarlo en ninguna parte. */
 export function TarjetaPlantilla({
   plantilla, propios = [], accent, hoy, onVer, onEditar, onDuplicar, onEliminar,
+  /* 🔓 Fitness 3/8 — la marca discreta de «en uso» (`marcaDeUso`) y, en una
+     predeterminada, de qué rutina viene («de PPL Estético»). */
+  marca = null, de = '',
 }) {
   const [abierto, setAbierto] = useState(false);
   const ficha = fichaDePlantilla(plantilla, propios, hoy);
@@ -88,6 +103,17 @@ export function TarjetaPlantilla({
           {ficha.editado && (
             <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>{ficha.editado}</p>
           )}
+          {(marca || de) && (
+            <p className="text-[11px] mt-0.5 truncate">
+              {marca && (
+                <span className="font-semibold" style={{ color: marca.id === 'activa' ? acentoLegible(accent) : COLORS.textMuted }}>
+                  {marca.texto}
+                </span>
+              )}
+              {marca && de ? <span style={{ color: COLORS.textMuted }}> · </span> : null}
+              {de && <span style={{ color: COLORS.textMuted }}>{de}</span>}
+            </p>
+          )}
         </button>
         <button
           onClick={() => setAbierto((v) => !v)}
@@ -114,9 +140,14 @@ export function TarjetaPlantilla({
 /* ── La confirmación de borrado (apartado 8) ───────────────────────────────
    ⚠️ Dice **lo que se lleva** y **que vuelve**: la plantilla va a Eliminados
    recientes, así que prometer un borrado definitivo sería mentir (E3 F26). */
-export function ConfirmarEliminarPlantilla({ plantilla, onCancelar, onEliminar }) {
+export function ConfirmarEliminarPlantilla({ plantilla, onCancelar, onEliminar, enUso = null }) {
   if (!plantilla) return null;
-  const aviso = avisoDeEliminar(plantilla);
+  /* 🔓 Fitness 3/8 — si la usa alguna rutina, el aviso lo dice (prompt 3 §9): en la
+     activa, qué días pasan a descanso; en las demás, que no se tocan. */
+  const base = avisoDeEliminar(plantilla);
+  const aviso = enUso && !enUso.que.startsWith('Dejará')
+    ? { ...base, titulo: enUso.titulo, que: [enUso.que, enUso.otras, enUso.seQueda].filter(Boolean).join(' '), vuelve: enUso.vuelve, eliminar: enUso.confirmar }
+    : base;
   return (
     <Card style={{ border: `1px solid ${COLORS.negative}` }}>
       <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
@@ -153,6 +184,9 @@ export function ConfirmarEliminarPlantilla({ plantilla, onCancelar, onEliminar }
 export function DetallePlantilla({
   plantilla, propios = [], accent, hoy, onVolver, onEditar, onDuplicar, onEliminar,
   onEmpezar = null,
+  /* 🔓 Fitness 3/8 — dónde se usa (`usoDePlantilla`) y, si se recuperó de la
+     papelera con días a los que puede volver, la oferta de devolverla. */
+  uso = null, huecos = null, onDevolverHuecos = null, onOlvidarHuecos = null, de = '',
 }) {
   const ficha = fichaDePlantilla(plantilla, propios, hoy);
   if (!ficha) {
@@ -194,6 +228,7 @@ export function DetallePlantilla({
         {ficha.descripcion && (
           <p className="text-sm mt-2 leading-relaxed" style={{ color: COLORS.textMuted }}>{ficha.descripcion}</p>
         )}
+        {de && <p className="text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>Predeterminada, {de}</p>}
         <div className="flex gap-2 flex-wrap mt-3 pt-3" style={{ borderTop: `1px solid ${COLORS.border}` }}>
           {/* 🔓 FIT F7 — el apartado 19 de la F4 lo dejó pendiente del motor. */}
           {onEmpezar && (
@@ -206,6 +241,39 @@ export function DetallePlantilla({
           <GhostBtn icon={Trash2} onClick={onEliminar}>Eliminar</GhostBtn>
         </div>
       </Card>
+
+      {huecos && onDevolverHuecos && (
+        <Card style={{ border: `1px solid ${accent}` }}>
+          <p className="text-xs" style={{ color: COLORS.text }}>{huecos.texto}</p>
+          <div className="flex gap-2 flex-wrap mt-3">
+            <GhostBtn icon={Plus} onClick={onDevolverHuecos}>{huecos.confirmar}</GhostBtn>
+            {onOlvidarHuecos && <GhostBtn onClick={onOlvidarHuecos}>{huecos.olvidar}</GhostBtn>}
+          </div>
+        </Card>
+      )}
+
+      {uso && (
+        <div>
+          <SectionTitle sub={EXPLICACIONES_RUTINA.enUso}>Dónde se usa</SectionTitle>
+          <Card>
+            {uso.libre ? (
+              <p className="text-xs" style={{ color: COLORS.textMuted }}>No está asignada a ninguna rutina.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {uso.usos.map((u) => (
+                  <p key={u.rutinaId} className="text-xs" style={{ color: COLORS.text }}>
+                    <span className="font-semibold">{u.rutinaNombre}</span>
+                    <span style={{ color: COLORS.textMuted }}>
+                      {` · ${u.dias.length === 1 ? `día ${u.dias[0]}` : `días ${u.dias.join(', ')}`}`}
+                    </span>
+                    {u.activa && <span className="font-semibold" style={{ color: acentoLegible(accent) }}> · tu rutina activa</span>}
+                  </p>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
 
       {ficha.distribucion.grupos.length > 0 && (
         <div>
@@ -296,10 +364,17 @@ export function DetallePlantilla({
    durante la sesión si es sencillo"*: se mantiene mientras la pantalla esté
    abierta, que es exactamente lo que se puede prometer sin guardarlo. */
 export default function PlantillasView({
-  plantillas = [], propios = [], accent, hoy,
+  plantillas: todas = [], propios = [], accent, hoy,
   onVolver = null, onCrear = null, onEditar = null, onDuplicar = null, onEliminar = null,
   onEmpezar = null,
+  /* 🔓 Fitness 3/8 — con `fitness`, la pantalla sabe dónde se usa cada plantilla. */
+  fitness = null, onDevolverHuecos = null, onOlvidarHuecos = null,
 }) {
+  const [procedencia, setProcedencia] = useState('tuyas');
+  const predeterminadas = useMemo(() => todas.filter((p) => plantillaEsPredeterminada(p)), [todas]);
+  const tuyas = useMemo(() => todas.filter((p) => !plantillaEsPredeterminada(p)), [todas]);
+  const plantillas = procedencia === 'predeterminadas' ? predeterminadas : tuyas;
+  const usoDe = (p) => (fitness ? usoDePlantilla(fitness, p.id) : null);
   const [consulta, setConsulta] = useState('');
   const [entorno, setEntorno] = useState(FILTRO_TODOS);
   const [orden, setOrden] = useState(ORDEN_POR_DEFECTO);
@@ -314,7 +389,7 @@ export default function PlantillasView({
   const cuenta = useMemo(() => contarPorEntorno(plantillas), [plantillas]);
   const hayBuscador = plantillas.length >= MINIMO_PARA_BUSCAR;
 
-  const enPantalla = abierta ? plantillas.find((p) => p.id === abierta) : null;
+  const enPantalla = abierta ? todas.find((p) => p.id === abierta) : null;
 
   if (abierta) {
     return (
@@ -328,6 +403,11 @@ export default function PlantillasView({
         onDuplicar={() => { onDuplicar && onDuplicar(enPantalla); setAbierta(null); }}
         onEliminar={() => { setBorrando(enPantalla); setAbierta(null); }}
         onEmpezar={onEmpezar && enPantalla ? () => onEmpezar(enPantalla) : null}
+        uso={enPantalla ? usoDe(enPantalla) : null}
+        de={enPantalla ? origenDePlantilla(enPantalla) : ''}
+        huecos={fitness && enPantalla ? avisoDeHuecos(fitness, enPantalla) : null}
+        onDevolverHuecos={onDevolverHuecos && enPantalla ? () => onDevolverHuecos(enPantalla) : null}
+        onOlvidarHuecos={onOlvidarHuecos && enPantalla ? () => onOlvidarHuecos(enPantalla) : null}
       />
     );
   }
@@ -348,9 +428,28 @@ export default function PlantillasView({
       {borrando && (
         <ConfirmarEliminarPlantilla
           plantilla={borrando}
+          enUso={fitness ? avisoDeEliminarPlantillaEnUso(fitness, borrando.id) : null}
           onCancelar={() => setBorrando(null)}
           onEliminar={() => { const p = borrando; setBorrando(null); onEliminar && onEliminar(p); }}
         />
+      )}
+
+      {/* 🔓 Fitness 3/8 — las suyas o las predeterminadas. Solo si hay predeterminadas. */}
+      {predeterminadas.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
+          {PROCEDENCIAS.map((o) => (
+            <Pastilla
+              key={o.id}
+              activa={procedencia === o.id}
+              cuantos={o.id === 'tuyas' ? tuyas.length : predeterminadas.length}
+              accent={accent}
+              label={o.id === 'tuyas' ? 'Ver tus plantillas' : 'Ver las plantillas predeterminadas'}
+              onClick={() => { setProcedencia(o.id); setConsulta(''); setEntorno(FILTRO_TODOS); }}
+            >
+              {o.nombre}
+            </Pastilla>
+          ))}
+        </div>
       )}
 
       {plantillas.length === 0 ? (
@@ -463,6 +562,8 @@ export default function PlantillasView({
                   onEditar={() => onEditar && onEditar(p)}
                   onDuplicar={() => onDuplicar && onDuplicar(p)}
                   onEliminar={() => setBorrando(p)}
+                  marca={marcaDeUso(usoDe(p))}
+                  de={origenDePlantilla(p)}
                 />
               ))}
             </div>

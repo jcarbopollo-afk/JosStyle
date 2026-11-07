@@ -167,9 +167,25 @@ export function crearDiaDePlan({ id = null, nombre = '', descanso = false, linea
        **La fábrica construye; el normalizador limpia lo que vuelve de disco.** */
     lineas: esDescanso
       ? []
-      : lista(lineas).map((l, i) => crearLinea({ ...l, orden: i })),
+      /* 🔓 Fitness 3/8 — si la línea trae su id (los predeterminados lo traen,
+         `crearPresetPlan`), se conserva: `crearLinea` siempre estrena uno, y con
+         uno nuevo en cada carga ni la progresión ni las notas podrían reconocer
+         la línea (H-01). Las demás siguen estrenándolo. */
+      : lista(lineas).map((l, i) => {
+        const linea = crearLinea({ ...l, orden: i });
+        return texto(l?.id) ? { ...linea, id: texto(l.id) } : linea;
+      }),
   };
 }
+
+/* 🔓 Fitness 3/8 — los ids de lo predeterminado (ARQUITECTURA_TECNICA.md §6). Un día
+   de entreno de un plan es también una **plantilla predeterminada**, con su propio
+   id —nunca el del día: un id, un concepto (prompt 2 §4)— y sus líneas, ids fijos.
+   ⚠️ **Se calculan por posición y no se renumeran nunca**: una prueba guarda la
+   instantánea de los 297 ids con su ejercicio (`test-rutinas-ciclicas`), así que
+   meter un ejercicio en medio de un día la pone roja. Un ejercicio nuevo va al final. */
+export const idPlantillaDeDia = (diaId) => `${texto(diaId)}-plantilla`;
+export const idLineaPredeterminada = (diaId, i) => `${idPlantillaDeDia(diaId)}-l${i + 1}`;
 
 export function crearPresetPlan({
   id = null, nombre = '', subtitulo = '', descripcion = '',
@@ -186,10 +202,14 @@ export function crearPresetPlan({
      la F2 —*"un id es una ranura estable"*— en un sitio que nadie miró porque
      nada lo leía todavía. La ranura de un día de un preset es **su sitio en la
      semana**: el plan ES la semana (F6), y el día 1 es el lunes. */
-  const diasN = lista(dias).map((d, i) => crearDiaDePlan({
-    ...(d && typeof d === 'object' ? d : {}),
-    id: texto(d?.id) || `${planId}-dia-${i + 1}`,
-  }));
+  const diasN = lista(dias).map((d, i) => {
+    const diaId = texto(d?.id) || `${planId}-dia-${i + 1}`;
+    return crearDiaDePlan({
+      ...(d && typeof d === 'object' ? d : {}),
+      id: diaId,
+      lineas: lista(d?.lineas).map((l, j) => ({ ...l, id: texto(l?.id) || idLineaPredeterminada(diaId, j) })),
+    });
+  });
   return {
     id: planId,
     nombre: texto(nombre),
@@ -469,8 +489,12 @@ export function pastillasDeFiltro(planes, filtros = {}, campo = 'entorno') {
    activo. Y `origen` existe desde ya para que una fase futura pueda activar una
    plantilla suya sin cambiar la forma de lo guardado. */
 
-export function crearPlanActivo({ planId = '', origen = 'preset', desde = '' } = {}) {
-  return { planId: texto(planId), origen: texto(origen) || 'preset', desde: texto(desde) };
+export function crearPlanActivo({ planId = '', origen = 'preset', desde = '', inicioCiclo = '' } = {}) {
+  const activo = { planId: texto(planId), origen: texto(origen) || 'preset', desde: texto(desde) };
+  /* 🔓 Fitness 3/8 — la fecha que es el día 1 del ciclo (ARQUITECTURA_TECNICA.md §7).
+     Sin ella se lee como siempre: los de siete días por día de la semana. */
+  if (fechaValida(texto(inicioCiclo))) activo.inicioCiclo = texto(inicioCiclo);
+  return activo;
 }
 
 export function normalizarPlanActivo(g) {
@@ -500,16 +524,16 @@ export function planActivoResuelto(fitness, planes = CATALOGO_PLANES) {
 
 export function avisoDeCambioDePlan(actual, nuevo) {
   return {
-    titulo: '¿Cambiar tu plan actual?',
+    titulo: '¿Cambiar tu rutina activa?',
     /* Con el nombre del que se va: «tu plan actual» a secas no dice cuál es, y
        entonces no se puede decidir (EH F62). */
-    que: `«${texto(actual?.nombre) || 'Tu plan actual'}» dejará de aparecer como activo.`,
-    nuevo: `Pasarás a «${texto(nuevo?.nombre) || 'este plan'}».`,
+    que: `«${texto(actual?.nombre) || 'Tu rutina activa'}» dejará de ser tu rutina activa.`,
+    nuevo: `Pasarás a «${texto(nuevo?.nombre) || 'esta rutina'}».`,
     /* ⚠️ Y se dice que **no se pierde nada**: un plan prediseñado sigue en la
        biblioteca, así que prometer menos asustaría de balde (E3 F26 al revés). */
-    vuelve: 'El anterior sigue en la biblioteca por si quieres volver.',
+    vuelve: 'La anterior sigue en tu biblioteca por si quieres volver.',
     cancelar: 'Cancelar',
-    confirmar: 'Cambiar plan',
+    confirmar: 'Cambiar de rutina',
   };
 }
 
@@ -545,6 +569,9 @@ export function estructuraDelPlan(plan, origen = 'preset') {
     nombre: texto(plan.nombre) || 'Sin nombre',
     dias: lista(plan.dias).filter((d) => d && texto(d.id)).map((d) => ({
       id: texto(d.id), nombre: texto(d.nombre), descanso: !!d.descanso,
+      /* 🔓 Fitness 3/8 — y su plantilla, para leer ese día con la de entonces. Un
+         día de un predeterminado tiene la suya por id (`idPlantillaDeDia`). */
+      plantillaId: d.descanso ? null : (texto(d.plantillaId) || (origen === 'preset' ? idPlantillaDeDia(d.id) : null)),
     })),
   };
 }
@@ -558,28 +585,38 @@ export function planesAnterioresDe(fitness) {
 /** La lista de tramos con el del plan activo cerrado **hoy**. ⚠️ No se apunta
  *  nada si no hay fecha de activación —no se sabe desde cuándo lo seguía— ni si
  *  lo activó hoy mismo: ese tramo no cubre ni un día. */
-function conElTramoCerrado(f, hoy, planes) {
+/* 🔓 Fitness 3/8 — `estructura` deja que quien conoce las rutinas (`rutinasCiclicas.js`)
+   le dé la de la rutina activa: aquí solo se encuentran los planes del código y las
+   plantillas, y una rutina suya o una predeterminada editada se habría cerrado sin
+   tramo. Y el tramo guarda su `inicioCiclo`, si lo tenía. */
+export function conElTramoCerrado(f, hoy, planes = CATALOGO_PLANES, estructura = null) {
   const anteriores = planesAnterioresDe(f);
   const activo = planActivoDe(f);
   if (!activo || !fechaValida(activo.desde) || !fechaValida(hoy) || !(activo.desde < hoy)) return anteriores;
-  const e = estructuraDelPlan(planActivoResuelto(f, planes), activo.origen);
+  const e = estructura || estructuraDelPlan(planActivoResuelto(f, planes), activo.origen);
   if (!e || !e.dias.length) return anteriores;
-  return [...anteriores, {
+  const tramo = {
     planId: activo.planId, origen: activo.origen, desde: activo.desde, hasta: hoy, nombre: e.nombre, dias: e.dias,
-  }];
+  };
+  if (activo.inicioCiclo) tramo.inicioCiclo = activo.inicioCiclo;
+  return [...anteriores, tramo];
 }
 
 export function usarPlan(fitness, planId, {
   confirmado = false, hoy = todayISO(), planes = CATALOGO_PLANES, origen = 'preset',
+  /* 🔓 Fitness 3/8 — `rutinasCiclicas.js` activa por aquí también las rutinas: le da
+     la entidad ya resuelta (`entidad`), la de la activa (`actual`, para el aviso),
+     la estructura de la activa para cerrar su tramo y el día 1 del ciclo nuevo. */
+  entidad = null, actual: actualDada = null, estructuraActual = null, inicioCiclo = '',
 } = {}) {
   const f = fitness && typeof fitness === 'object' ? fitness : {};
   /* 🚨 FIT F6, apartado 18: *"Si el usuario selecciona como plan activo una
      plantilla propia: también debe funcionar. No asumir que los planes activos
      siempre son presets."* Lo único que cambia es **dónde se busca**; lo
      guardado sigue siendo el id y el origen, nunca una copia. */
-  const nuevo = origen === 'plantilla'
+  const nuevo = entidad || (origen === 'plantilla'
     ? lista(f.plantillas).find((p) => p && p.id === planId) || null
-    : planPorId(planId, planes);
+    : planPorId(planId, planes));
   if (!nuevo) {
     return {
       ok: false,
@@ -589,7 +626,7 @@ export function usarPlan(fitness, planId, {
     };
   }
 
-  const actual = planActivoResuelto(f, planes);
+  const actual = actualDada || planActivoResuelto(f, planes);
   const yaEsEse = planActivoDe(f)?.planId === nuevo.id;
   if (yaEsEse) return { ok: false, motivo: 'Ya es tu plan activo.', aviso: null, fitness: f };
 
@@ -604,20 +641,20 @@ export function usarPlan(fitness, planId, {
     aviso: null,
     fitness: {
       ...f,
-      planActivo: crearPlanActivo({ planId: nuevo.id, origen, desde: hoy }),
+      planActivo: crearPlanActivo({ planId: nuevo.id, origen, desde: hoy, inicioCiclo }),
       /* 🔓 FIT F32 — el plan que se va queda apuntado (apartado 22). */
-      planesAnteriores: conElTramoCerrado(f, hoy, planes),
+      planesAnteriores: conElTramoCerrado(f, hoy, planes, estructuraActual),
     },
   };
 }
 
 /** Quitar el plan activo sin poner otro. ⚠️ No borra nada más: el plan sigue en
  *  la biblioteca y sus plantillas personalizadas, si las hizo, se quedan. */
-export function quitarPlanActivo(fitness, { hoy = todayISO(), planes = CATALOGO_PLANES } = {}) {
+export function quitarPlanActivo(fitness, { hoy = todayISO(), planes = CATALOGO_PLANES, estructuraActual = null } = {}) {
   const f = fitness && typeof fitness === 'object' ? fitness : {};
   /* 🔓 FIT F32 — quitarlo también cierra su tramo: si no, las semanas que lo
      siguió dirían «Sin datos del plan» (apartado 22). */
-  return { ...f, planActivo: null, planesAnteriores: conElTramoCerrado(f, hoy, planes) };
+  return { ...f, planActivo: null, planesAnteriores: conElTramoCerrado(f, hoy, planes, estructuraActual) };
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -763,14 +800,14 @@ export function normalizarFitnessConPlanes(guardado, planes = CATALOGO_PLANES) {
    (EH F41). */
 
 export const ESTADO_SIN_RESULTADOS = {
-  titulo: 'No encontramos planes',
+  titulo: 'No encontramos rutinas',
   texto: 'Prueba con otro término o quita algún filtro.',
   accion: 'Quitar los filtros',
 };
 
 export const ESTADO_SIN_FAVORITOS = {
-  titulo: 'Aún no tienes planes guardados',
-  texto: 'Toca la estrella de un plan y lo tendrás aquí.',
+  titulo: 'Aún no tienes rutinas guardadas',
+  texto: 'Toca la estrella de una rutina y la tendrás aquí.',
   accion: 'Ver la biblioteca',
 };
 
@@ -779,7 +816,7 @@ export const ESTADO_SIN_FAVORITOS = {
    código, así que si está vacía es que falla la aplicación, no la conexión.
    Decir «comprueba tu conexión» sería mandarle a mirar donde no es (EH F62). */
 export const ESTADO_ERROR_PLANES = {
-  titulo: 'No podemos enseñarte los planes',
+  titulo: 'No podemos enseñarte las rutinas',
   texto: 'Vuelve a abrir Entrenamiento. Si sigue igual, la aplicación necesita actualizarse.',
   accion: 'Volver a Entrenamiento',
 };

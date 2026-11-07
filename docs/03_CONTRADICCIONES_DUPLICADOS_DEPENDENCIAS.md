@@ -1632,3 +1632,61 @@ desplegar), nunca como un botón decorativo ni de antemano, y sin fecha. **Un fa
 configurado, el servicio, la red, la sesión, el límite) **no se esconde tras un «próximamente»**: se dice como fallo.
 La comprobación de la regla 9 de Estudios (ES F1) se amplió para no contar el nombre del componente
 (`IAProximamente`), no la frase: la frase vive en `disponibilidadIA.js`.
+
+### C-77 — 🟡 RESUELTA CON LECTURA PROVISIONAL (Fitness 4/8, 2026-11-03) · Tres preguntas del cumplimiento que los documentos dejaban abiertas
+
+La Fase 4 de Fitness tenía que cerrar PD-08, PD-10, PD-11 y PD-12 «conforme a las propuestas documentadas». Tres
+de las preguntas no tenían propuesta escrita o no se habían pedido, y sin respuesta el motor no funciona. Se aplicó
+la lectura que respeta lo ya decidido, como manda la regla de no parar el flujo, y se dejan **marcadas para que
+Josué las confirme** (están en `DECISIONES_FASE4`, `src/lib/cumplimientoFitness.js`, y cambiarlas es un parámetro):
+
+- **PD-08 (sin propuesta en el documento):** una sesión **parcial** deja su fecha en **amarillo verdoso y no
+  pendiente**; una recuperación parcial deja así su fecha prevista. Sale del caso 10 del prompt 4 («La fecha
+  aparece amarillo verdoso», no «pendiente»).
+- **PD-01 (no se pidió, pero el motor la necesita):** una sesión **parcial** y una **libre** cuentan como
+  «entrenamiento realizado» para la caducidad. Es la lectura literal de D-02 («dos entrenamientos realizados») y
+  del caso 11, cuya única exclusión es «ninguna serie completada». `REALIZADO = { parcial, libre }`.
+- **PD-02 (no se pidió):** «Completar entrenamiento» admite **hoy o un día pasado** (lo que hacía la PR #2, D-03) y
+  cuenta **en esa fecha**, que es la fecha real que él declara (prompt 4 §9). ⚠️ Riesgo: completar un día pasado
+  que estaba pendiente lo deja cumplido en su fecha, aunque hubiera caducado. Si Josué prefiere otra cosa (solo
+  hoy, o que un día pasado cuente como recuperación), es un cambio en `completarEntrenamiento.js`.
+
+PD-10, PD-11 y PD-12 se aplicaron con su propuesta documentada (una descartada libera la fecha; una serie
+planificada omitida hace la sesión parcial; un pendiente con su plantilla en la papelera no se recupera hasta
+restaurarla y su caducidad sigue contando).
+
+### C-79 — ✅ RESUELTA (Fitness 8/8, 2026-11-06, decisión de Josué) · La racha de cumplimiento de Fitness
+
+> 🔓 **Josué la contestó al pedir la Fase 8**: el parcial **mantiene** la racha (*"la racha mide constancia, no
+> perfección"*), y *"la racha global de entrenamiento de la pantalla Rachas debe utilizar el mismo criterio que la racha
+> de Fitness […] una única fuente de verdad"*. Hecho con `diasDeActividadDeEntrenamiento` y
+> `proyectarRachasDeEntrenamiento` (maestro §5.7). Lo de abajo es la lectura provisional de la Fase 7, que se queda escrita.
+
+PD-06 («¿se calcula la racha desde el cumplimiento de Fitness?») seguía abierta y el prompt 7 §10 pide rachas que
+respeten los descansos. Se aplicó la lectura que respeta lo ya decidido, sin parar el flujo, y queda **escrito para que
+Josué lo confirme** (`DECISIONES_FASE7` en `src/lib/disciplinaFitness.js`; cambiarlo es pequeño):
+
+- La racha es **propia de Fitness** (`rachaDeCumplimiento`) y se **deriva** de los estados del motor de la Fase 4: la
+  suman cumplido, recuperado, parcial y descanso respetado; la cortan perdido y descanso sacrificado; un pendiente
+  (todavía recuperable) y hoy no la cortan ni la suman; se detiene donde empieza «sin seguimiento».
+- **La racha global de Rachas no se toca** (sigue siendo la de siempre, marcada a mano): alimentarla desde aquí
+  cambiaría lo que enseña la pantalla de Rachas, y eso lo decide él.
+- Dudas para Josué: ¿debe sumar un parcial? ¿Debe la racha global de entrenamiento leer esta?
+
+### C-78 — 🟡 RESUELTA CON LECTURA PROVISIONAL (Fitness 5/8, 2026-11-06) · La progresión: el modo global y el interruptor activado por defecto
+
+La Fase 5 de Fitness tenía PD-13 pendiente («¿modo global o por plantilla? ¿una plantilla duplicada hereda el
+historial?») y la arquitectura dibujaba el interruptor de cada ejercicio apagado por defecto. Se aplicó la lectura que
+respeta lo ya decidido, sin parar el flujo, y queda **escrito para que Josué lo confirme** (`DECISIONES_FASE5` en
+`src/lib/progresion.js`; cambiarlo es pequeño):
+
+- **PD-13 (con propuesta escrita):** el modo es **global** (`fitness.preferencias.progresion`), y una plantilla
+  **duplicada empieza su propio historial** (ids nuevos; la original conserva el suyo). Es lo que pide el prompt 5 §5
+  (Push A y Push B independientes) y §10 (la copia no hereda el historial como si fueran ejecuciones propias).
+- **AJ-20 (contra el dibujo de la arquitectura §5.4, que decía `false`):** una línea **sin interruptor guardado tiene
+  la progresión activada**. Con `false`, elegir Progresivo o Experto no habría propuesto nada en ninguna de las 63
+  plantillas predeterminadas hasta encender ejercicio por ejercicio: un modo que no hace nada (regla 8). Apagarlo
+  guarda `false`.
+
+Y dos límites de cálculo, también escritos en `ARQUITECTURA_TECNICA.md` §21: por tiempo no se propone subir (no hay
+una regla fiable, prompt 5 §11) y nunca se propone subir el peso (el incremento de los discos no se sabe).

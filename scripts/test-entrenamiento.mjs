@@ -246,8 +246,10 @@ ok(SERIE_EDIT.plan.reps === EB.series[0].plan.reps,
 const S_PESO = editarPrimera({ peso: '62.5' });
 ok(primeraDe(S_PESO).hecho.peso === 62.5,
   '🚨 62,5 kg se guardan como 62.5, no redondeados a 63 (apartado 15)');
-ok(primeraDe(editarPrimera({ reps: '10.7' })).hecho.reps === 11,
-  '⚠️ …pero las repeticiones son enteras: no existen 10,7 repeticiones');
+/* 🔓 Fitness 5/8 (prompt 5 §8) — se da la vuelta: 10,7 ya no se redondea a 11
+   por él. Se RECHAZA (queda lo de antes) y 10,5 vale. */
+ok(primeraDe(editarPrimera({ reps: '10.7' })).hecho.reps === null && primeraDe(editarPrimera({ reps: '10.5' })).hecho.reps === 10.5,
+  '⚠️ …y las repeticiones van enteras o de media en media: 10,7 no se escribe (ni se redondea), 10,5 sí');
 ok(primeraDe(editarSerie(S_PESO, EB.id, EB.series[0].id, { peso: '' })).hecho.peso === null,
   '⚠️ Y borrar el campo lo deja en `null`, nunca en 0 (`Number(null)` es 0, y van muchas)');
 ok(primeraDe(editarPrimera({ peso: 'hola' })).hecho.peso === null,

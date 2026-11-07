@@ -1,4 +1,5 @@
 import { uid, todayISO, fechaValida, fechaLocalISO } from './helpers';
+import { repeticionesGuardadas } from './numerosFitness';
 import { rachaActual } from './rachas';
 
 /* Entrega 4 · Fase 1/45 — «Fundación arquitectónica del módulo Fitness».
@@ -447,7 +448,8 @@ export function crearWorkoutExercise({
     exerciseId: texto(exerciseId),
     orden: enteroONull(orden) ?? 0,
     series: enteroONull(series),
-    repeticiones: enteroONull(repeticiones),
+    /* 🔓 FIT 5/8 — las repeticiones admiten medias y no se redondean al cargar. */
+    repeticiones: repeticionesGuardadas(repeticiones),
     peso: numeroONull(peso),
     descanso: enteroONull(descanso),
     notas: texto(notas),
@@ -456,7 +458,7 @@ export function crearWorkoutExercise({
        `crearLinea()` en `constructor.js`, no este modelo — aquí inventarlos
        escribiría una decisión que él no ha tomado. */
     modo: texto(modo) || null,
-    repsHasta: enteroONull(repsHasta),
+    repsHasta: repeticionesGuardadas(repsHasta),
     duracion: enteroONull(duracion),
     tipoCarga: texto(tipoCarga) || null,
     bloqueId: texto(bloqueId) || null,
@@ -553,6 +555,7 @@ export function crearWorkoutSession({
   pausadoMs = 0, actual = 0,
   visibilidad = 'privado', media = null, diaDePlan = null, guardadaEn = null,
   descanso = null, descansoAuto = true, entorno = '', pesoCorporal = null,
+  completadaCon = null, conflicto = null,
 } = {}) {
   return {
     id: uid(),
@@ -638,6 +641,16 @@ export function crearWorkoutSession({
        snapshot al empezar (F7) y cada marca usa el suyo. Una sesión de antes no
        lo tiene (`null`) y usa el del perfil, que es lo único que se sabe. */
     pesoCorporal: pesoCorporalValido(pesoCorporal),
+    /* ═══ Fitness 4/8 — cómo se registró (D-03) y si llegó en conflicto ══════
+       🚨 Aquí, por la regla 5: lo que este normalizador no conozca se lo lleva el
+       siguiente guardado. `'completar'` = «Completar entrenamiento» (todas las
+       series hechas sin valores); `'directo'` = entrenada en la aplicación. Una
+       sesión de antes no lo tiene (`null`) y se lee como directa.
+       `conflicto` lo reserva la arquitectura (§8.8) para una sesión que llegó por
+       sincronización a una fecha ya ocupada; hoy el motor lo DERIVA (no lo escribe
+       nadie) y el campo solo se conserva si alguna vez llega escrito. */
+    completadaCon: completadaCon === 'completar' || completadaCon === 'directo' ? completadaCon : null,
+    conflicto: conflicto && typeof conflicto === 'object' ? conflicto : null,
   };
 }
 
@@ -865,7 +878,14 @@ export const MODELOS = [
 export const CLAVE_FITNESS = 'fitness';
 
 export const DEFAULT_FITNESS = {
-  version: 1,
+  /* 🔓 Fitness 4/8 — versión 2: la de la migración M1 (`migracionFitnessV2.js`).
+     Lo guardado en la versión 1 pasa por ella al cargar; una cuenta nueva nace ya
+     en la 2.
+     🔓 Fitness 5/8 — versión 3 (M2, `migracionFitnessV3.js`): las medias
+     repeticiones y el modo de progresión. Una aplicación de la Fase 4 (que
+     conoce hasta la 2) encuentra una 3 y no guarda (guardia de versión, AT-08):
+     así no puede redondear un 8,5 a 9 al guardar (H-09). */
+  version: 3,
   ejercicios: [],
   planes: [],
   plantillas: [],
@@ -900,14 +920,90 @@ export const DEFAULT_FITNESS = {
      (`persistenciaFitness.js`). Nace vacía, no se pinta en ninguna parte y
      existe para que nada se pierda en el siguiente guardado (apartados 28 y 36). */
   cuarentena: [],
+  /* 🔓 Fitness 3/8 — las rutinas cíclicas (1 a 30 días) que él crea, y las COPIAS de
+     las predeterminadas que ha editado o borrado (con el mismo id: «copia al escribir»,
+     docs/15_FITNESS/ARQUITECTURA_TECNICA.md AT-03). ⚠️ Clave nueva y no `planes`: el
+     normalizador de `planes` les aplicaría la forma de una plantilla y les quitaría
+     los días (H-05). Nace vacía: las 17 predeterminadas viven en el código. */
+  rutinas: [],
+  /* Las predeterminadas (rutinas y plantillas) que él ha borrado. Mientras su copia
+     esté en Eliminados recientemente, restaurarla la devuelve (la copia guardada gana);
+     cuando la papelera la purga, siguen sin enseñarse. */
+  predeterminadasRetiradas: { rutinas: [], plantillas: [] },
+  /* 🔓 Fitness 4/8 — desde qué fecha se evalúa el cumplimiento (PD-09): lo de antes
+     no se pinta en rojo ni en pendiente, porque las sesiones de entonces no dicen
+     qué fecha cumplían. La pone la migración M1 (el día en que se migra) o la
+     primera carga de una cuenta nueva (`conEntradaEnVigor`). Vacía = sin fijar. */
+  cumplimientoDesde: '',
+  /* 🔓 Fitness 5/8 — las preferencias de Fitness. Hoy solo el modo de
+     progresión (`manual` · `progresivo` · `experto`), global (PD-13). */
+  preferencias: { progresion: 'manual' },
 };
+
+/* 🔓 Fitness 5/8 — regla 5: `preferencias` con su modo (otras claves que traiga
+   una versión más nueva se conservan). */
+export const MODOS_PROGRESION_IDS = Object.freeze(['manual', 'progresivo', 'experto']);
+function normalizarPreferencias(p) {
+  const g = p && typeof p === 'object' && !Array.isArray(p) ? p : {};
+  return { ...g, progresion: MODOS_PROGRESION_IDS.includes(g.progresion) ? g.progresion : 'manual' };
+}
+
+/* ── Fitness 3/8 · la rutina cíclica ────────────────────────────────────────
+   Vive AQUÍ, con el modelo, por la regla 5: el normalizador de abajo tiene que
+   conocerla, y `rutinasCiclicas.js` importa este archivo (sería un ciclo). Un día
+   es de entrenamiento —con UNA plantilla— o de descanso; `null` solo mientras se
+   edita, y una rutina guardada nunca lo tiene. Lo que no cumple la forma no se
+   arregla a ciegas: se devuelve `null` y la puerta de carga lo aparta en la
+   cuarentena con su original (FIT F41), en vez de perderlo. */
+export const DURACION_RUTINA = Object.freeze({ min: 1, max: 30 });
+export const TIPOS_DIA_RUTINA = Object.freeze(['entreno', 'descanso']);
+export const ORIGENES_RUTINA = Object.freeze(['propia', 'predeterminada']);
+
+export function normalizarDiaDeRutina(g) {
+  if (!g || typeof g !== 'object' || !texto(g.id)) return null;
+  const tipo = TIPOS_DIA_RUTINA.includes(g.tipo) ? g.tipo : null;
+  if (!tipo) return null;
+  const plantillaId = tipo === 'entreno' ? texto(g.plantillaId) : '';
+  if (tipo === 'entreno' && !plantillaId) return null;
+  const dia = { id: texto(g.id), tipo, plantillaId: plantillaId || null };
+  /* El nombre de un día de descanso de una predeterminada («Descanso activo»): el
+     de un día de entrenamiento es el de su plantilla y no se guarda. */
+  if (tipo === 'descanso' && texto(g.nombre)) dia.nombre = texto(g.nombre);
+  return dia;
+}
+
+export function normalizarRutinaCiclica(g) {
+  if (!g || typeof g !== 'object' || !texto(g.id)) return null;
+  const crudos = lista(g.dias);
+  if (crudos.length < DURACION_RUTINA.min || crudos.length > DURACION_RUTINA.max) return null;
+  const dias = crudos.map(normalizarDiaDeRutina);
+  if (dias.some((d) => !d)) return null;
+  if (new Set(dias.map((d) => d.id)).size !== dias.length) return null;
+  return {
+    id: texto(g.id),
+    nombre: texto(g.nombre) || 'Sin nombre',
+    descripcion: texto(g.descripcion),
+    origen: ORIGENES_RUTINA.includes(g.origen) ? g.origen : 'propia',
+    basePredeterminada: texto(g.basePredeterminada) || null,
+    dias,
+    meta: g.meta && typeof g.meta === 'object' && !Array.isArray(g.meta) ? g.meta : {},
+    creadoEn: texto(g.creadoEn),
+    editadoEn: texto(g.editadoEn),
+  };
+}
+
+export function normalizarRetiradas(g) {
+  const o = g && typeof g === 'object' ? g : {};
+  const ids = (v) => [...new Set(lista(v).map(texto).filter(Boolean))];
+  return { rutinas: ids(o.rutinas), plantillas: ids(o.plantillas) };
+}
 
 /* ── FIT F41 · la cuarentena ─────────────────────────────────────────────────
    Vive AQUÍ, con el modelo, y no en `persistenciaFitness.js`: el normalizador
    de abajo tiene que conocerla (regla 5) y aquella librería importa este
    archivo —sería un ciclo—. Allí se reexporta. Solo las listas cuyos elementos
    llevan `id`: un tramo de `planesAnteriores` no lo lleva (es sus fechas). */
-export const LISTAS_EN_CUARENTENA = ['sesiones', 'objetivos', 'clasificaciones', 'plantillas', 'ejercicios'];
+export const LISTAS_EN_CUARENTENA = ['sesiones', 'objetivos', 'clasificaciones', 'plantillas', 'ejercicios', 'rutinas'];
 export const MOTIVOS_CUARENTENA = [
   { id: 'sin_id', texto: 'No tenía identificador: no se podía abrir ni borrar.' },
   { id: 'no_se_entiende', texto: 'Le faltaba algo imprescindible (un ejercicio, una fecha, su forma).' },
@@ -935,9 +1031,18 @@ export function normalizarPlanAnterior(g) {
   if (!planId || !fechaValida(desde) || !fechaValida(hasta) || !(desde < hasta)) return null;
   const dias = lista(g.dias)
     .filter((d) => d && typeof d === 'object' && texto(d.id))
-    .map((d) => ({ id: texto(d.id), nombre: texto(d.nombre), descanso: !!d.descanso }));
+    .map((d) => ({
+      id: texto(d.id), nombre: texto(d.nombre), descanso: !!d.descanso,
+      /* 🔓 Fitness 3/8 — la plantilla que tenía ese día (para leer el pasado con la
+         estructura de entonces). Los tramos de antes no la traen: `null`. */
+      plantillaId: !d.descanso && texto(d.plantillaId) ? texto(d.plantillaId) : null,
+    }));
   if (!dias.length) return null;
-  return { planId, origen: texto(g.origen) || 'preset', desde, hasta, nombre: texto(g.nombre) || 'Sin nombre', dias };
+  const tramo = { planId, origen: texto(g.origen) || 'preset', desde, hasta, nombre: texto(g.nombre) || 'Sin nombre', dias };
+  /* 🔓 Fitness 3/8 — la fecha que era el día 1 de su ciclo. Sin ella, el de siete
+     días se lee por día de la semana y el resto desde `desde`, como hasta ahora. */
+  if (fechaValida(texto(g.inicioCiclo))) tramo.inicioCiclo = texto(g.inicioCiclo);
+  return tramo;
 }
 
 /* La forma de lo elegido. ⚠️ Se guarda **el id**, no una copia del plan: con una
@@ -948,7 +1053,10 @@ function normalizarPlanActivoGuardado(g) {
   if (!g || typeof g !== 'object') return null;
   const planId = texto(g.planId);
   if (!planId) return null;
-  return { planId, origen: texto(g.origen) || 'preset', desde: texto(g.desde) };
+  const activo = { planId, origen: texto(g.origen) || 'preset', desde: texto(g.desde) };
+  /* 🔓 Fitness 3/8 — el día 1 del ciclo (regla 5: sin esta línea se perdería al cargar). */
+  if (fechaValida(texto(g.inicioCiclo))) activo.inicioCiclo = texto(g.inicioCiclo);
+  return activo;
 }
 
 /** 🐛 **FIT F31 (apartado 23): una sesión guardada dos veces no son dos.**
@@ -1000,6 +1108,12 @@ export function normalizarFitness(guardado) {
     clasificaciones: [...new Map(lista(g.clasificaciones).map(normalizarClasificacion)
       .filter(Boolean).map((c) => [c.exerciseId, c])).values()],
     cuarentena: normalizarCuarentena(g.cuarentena),
+    /* 🔓 Fitness 3/8 — regla 5. Sin repetidas por id, como las sesiones. */
+    rutinas: sinDuplicadosPorId(lista(g.rutinas).map(normalizarRutinaCiclica).filter(Boolean)),
+    predeterminadasRetiradas: normalizarRetiradas(g.predeterminadasRetiradas),
+    /* 🔓 Fitness 4/8 — regla 5. Una fecha que no lo es se queda vacía (sin fijar). */
+    cumplimientoDesde: fechaValida(texto(g.cumplimientoDesde)) ? texto(g.cumplimientoDesde) : '',
+    preferencias: normalizarPreferencias(g.preferencias),
   };
 }
 
@@ -1089,11 +1203,11 @@ export const ACCESOS_ENTRENAMIENTO = [
      ejercicios de verdad. ⚠️ Se llama «Más planes» porque es lo que dice el
      apartado 20 del enunciado de esa fase (*"Entrenamiento → Más planes"*), y
      porque «Planificaciones» al lado de «Tu Plan» parecían lo mismo. */
-  { id: 'planificaciones', nombre: 'Más planes', que: 'La biblioteca de planes prediseñados de JosStyle.', existe: true, enFase: null },
+  { id: 'planificaciones', nombre: 'Rutinas', que: 'Tus rutinas y las predeterminadas de JosStyle: ciclos de días que se repiten.', existe: true, enFase: null },
   /* FIT F3 — ya existen: son las rutinas que guarda el constructor, en la clave
      `plantillas`. ⚠️ **No se pinta como botón en «Secciones»**: tiene su propia sección en esta misma pantalla, y dos
      entradas al mismo sitio en una pantalla es la redundancia de la E3 F30. */
-  { id: 'plantillas', nombre: 'Tus plantillas', que: 'Las rutinas que te crees tú.', existe: true, enFase: null },
+  { id: 'plantillas', nombre: 'Tus plantillas', que: 'Los entrenamientos que te crees tú.', existe: true, enFase: null },
   /* 🧹 2026-10-19 — «Habilidades» (la calistenia y el fútbol de siempre) ya no
      es un acceso: Josué pidió quitar ese bloque de Fitness entero. No se
      declara con `existe: false`, porque eso pintaría «Llega en…» de algo que

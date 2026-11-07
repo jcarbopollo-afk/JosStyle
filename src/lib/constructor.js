@@ -1,4 +1,5 @@
 import { uid, todayISO } from './helpers';
+import { repeticionesGuardadas, repeticionValida, MENSAJE_REPETICIONES, textoReps } from './numerosFitness';
 import { GRUPOS_MUSCULARES, subgrupoMuscular, crearWorkoutPlan, normalizarWorkoutPlan } from './fitness';
 /* 🔓 FIT F33 — la configuración al sustituir la decide un solo sitio. */
 import { configuracionRecomendada } from './sustitucion';
@@ -162,8 +163,9 @@ export function crearLinea({
     orden: enteroONull(orden) ?? 0,
     series: s === null ? SERIES_POR_DEFECTO : Math.min(MAX_SERIES, Math.max(1, s)),
     modo: modoSugerido,
-    repeticiones: enteroONull(repeticiones),
-    repsHasta: enteroONull(repsHasta),
+    /* 🔓 FIT 5/8 — medias repeticiones: se conservan, no se redondean. */
+    repeticiones: repeticionesGuardadas(repeticiones),
+    repsHasta: repeticionesGuardadas(repsHasta),
     duracion: enteroONull(duracion),
     peso: numeroONull(peso),
     tipoCarga: cargaSugerida,
@@ -194,9 +196,9 @@ export function textoDeSeries(linea) {
   }
   if (linea.repeticiones === null) return `${s} series`;
   if (linea.repsHasta && linea.repsHasta > linea.repeticiones) {
-    return `${s} × ${linea.repeticiones}-${linea.repsHasta}`;
+    return `${s} × ${textoReps(linea.repeticiones)}-${textoReps(linea.repsHasta)}`;
   }
-  return `${s} × ${linea.repeticiones}`;
+  return `${s} × ${textoReps(linea.repeticiones)}`;
 }
 
 /** *"+10 kg"*, *"20 kg"*, o nada si es peso corporal (apartado 12). */
@@ -549,6 +551,10 @@ export function validarRutina(rutina, propios = []) {
     if (l.series > MAX_SERIES) problemas.push({ campo: 'series', lineaId: l.id, que: `«${nombre}»: ${MAX_SERIES} series es el máximo.` });
     if (l.modo === 'reps' && l.repeticiones !== null && l.repeticiones < 1) {
       problemas.push({ campo: 'repeticiones', lineaId: l.id, que: `«${nombre}»: las repeticiones tienen que ser más de cero.` });
+    }
+    /* 🔓 FIT 5/8 (prompt 5 §8) — enteras o de media en media; 8,2 no se redondea: se dice. */
+    if (l.modo === 'reps' && ((l.repeticiones !== null && !repeticionValida(l.repeticiones)) || (l.repsHasta !== null && !repeticionValida(l.repsHasta)))) {
+      problemas.push({ campo: 'repeticiones', lineaId: l.id, que: `«${nombre}»: ${MENSAJE_REPETICIONES.charAt(0).toLowerCase()}${MENSAJE_REPETICIONES.slice(1)}` });
     }
     if (l.modo === 'reps' && l.repsHasta !== null && l.repeticiones !== null && l.repsHasta < l.repeticiones) {
       problemas.push({ campo: 'repeticiones', lineaId: l.id, que: `«${nombre}»: el rango va de menos a más.` });

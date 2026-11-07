@@ -67,6 +67,8 @@ import { sesionesDelHistorial } from './historial.js';
 import { resumenDeSesion } from './finalizacion.js';
 import { AVISOS_ACCION } from './accionesHoyAgenda.js';
 import { tipoObjetivo, DEFAULT_FITNESS, LISTAS_EN_CUARENTENA, MOTIVOS_CUARENTENA, normalizarCuarentena } from './fitness.js';
+import { MIGRACION_V1_A_V2 } from './migracionFitnessV2.js';
+import { MIGRACION_V2_A_V3 } from './migracionFitnessV3.js';
 
 /* La cuarentena vive con el modelo (`fitness.js`), y se reexporta: con
    `export { }` y no con `export … from`, que no crea binding local (EH F17). */
@@ -121,7 +123,27 @@ export const PRIMERA_VERSION = 1;
  * sesión en la F31…). Una migración hace falta el día que un campo cambie de
  * forma o de significado, y entonces va aquí.
  */
-export const MIGRACIONES_FITNESS = [];
+export const MIGRACIONES_FITNESS = [
+  /* 🔓 Fitness 4/8 — la M1 (ARQUITECTURA_TECNICA.md §14.3): aditiva, idempotente y
+     validada por dentro (si algo no cuadra lanza, y `migrarFitness` devuelve lo de
+     antes tal cual). No toca ninguna sesión. */
+  MIGRACION_V1_A_V2,
+  /* 🔓 Fitness 5/8 — la M2: el modo de progresión si falta, y la versión 3 para que
+     una aplicación de la Fase 4 no redondee las medias repeticiones al guardar. */
+  MIGRACION_V2_A_V3,
+];
+
+/**
+ * 🔓 Fitness 4/8 — la fecha de entrada en vigor del cumplimiento, si todavía no la
+ * tiene (una cuenta nueva nace en la versión 2 sin migrar). Es la de hoy: nada de
+ * antes se evalúa. Se fija con el siguiente guardado; mientras tanto, no hay nada
+ * anterior que evaluar (la cuenta acaba de empezar).
+ */
+export function conEntradaEnVigor(fitness, hoy) {
+  const f = esObjeto(fitness) ? fitness : {};
+  if (/^\d{4}-\d{2}-\d{2}$/.test(texto(f.cumplimientoDesde))) return f;
+  return { ...f, cumplimientoDesde: hoy };
+}
 
 /** La versión de lo guardado. Sin campo —o con uno que no es un entero— es la
  *  primera: la F1 la escribió desde el primer guardado. */
