@@ -337,7 +337,7 @@ console.log('\n── 10. Los estados de la pantalla (apartados 2, 25 y 26) ─�
 
 const sinPlan = tuPlan(VACIO, { hoy: MIER });
 ok(sinPlan.estado === 'sin_plan', 'Sin plan elegido se dice');
-ok(/Aún no tienes un plan/.test(SIN_PLAN.titulo), '…con las palabras del apartado 2');
+ok(/Aún no tienes una rutina/.test(SIN_PLAN.titulo), '…con las palabras del apartado 2 (desde la Fitness 3/8, «rutina»)');
 ok(!!SIN_PLAN.explorar && !!SIN_PLAN.crear,
   '🚨 …y con SUS DOS SALIDAS: la biblioteca y el constructor (apartado 2)');
 ok(sinPlan.plantillas.total === 0, '…y sus plantillas siguen leyéndose');

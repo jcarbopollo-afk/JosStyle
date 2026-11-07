@@ -8,6 +8,7 @@ import {
 /* 🔓 FIT F33 — el motor de sustitución, uno para toda la aplicación. */
 import { getExerciseReplacements, NIVELES_VISIBLES, nivelCompatibilidad } from './sustitucion';
 import { UMBRALES_GESTO } from './umbralesGesto';
+import { sumarRepeticiones, textoReps } from './numerosFitness';
 
 /* Entrega 4 · Fase 9/45 — «UX avanzada del entrenamiento en vivo».
    ═══════════════════════════════════════════════════════════════════════════
@@ -84,7 +85,7 @@ export function resumenRealizado(ejSesion) {
   if (!hechas.length) return '';
   return hechas.map((s) => {
     if (s.modo === 'tiempo') return s.hecho?.duracion ? `${s.hecho.duracion} s` : '—';
-    return s.hecho?.reps ? String(s.hecho.reps) : '—';
+    return s.hecho?.reps ? textoReps(s.hecho.reps) : '—';
   }).join(' / ');
 }
 
@@ -140,7 +141,9 @@ export function ajustarValor(valor, campo, signo, { base = null } = {}) {
     return Number.isFinite(b) && b > 0 ? b : paso;
   }
   const siguiente = Math.max(0, actual + (signo < 0 ? -paso : paso));
-  return campo === 'peso' ? Math.round(siguiente * 100) / 100 : Math.round(siguiente);
+  if (campo === 'peso') return Math.round(siguiente * 100) / 100;
+  /* 🔓 FIT 5/8 — unas repeticiones de 8,5 suben a 9,5, no a 10 (prompt 5 §8). */
+  return campo === 'reps' ? sumarRepeticiones(actual, signo < 0 ? -paso : paso) : Math.round(siguiente);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

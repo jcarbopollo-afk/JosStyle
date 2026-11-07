@@ -136,7 +136,7 @@ export const ARCHIVOS_FITNESS = [
   'src/views/HistorialView.jsx', 'src/views/ProgresoView.jsx', 'src/views/RangosView.jsx',
   'src/views/DetalleMuscularView.jsx', 'src/views/EjerciciosView.jsx', 'src/views/ConstructorView.jsx',
   'src/views/PlantillasView.jsx', 'src/views/BibliotecaPlanesView.jsx', 'src/views/TuPlanView.jsx',
-  'src/views/ClasificacionView.jsx', 'src/components/rangos.jsx', 'src/components/sustitucion.jsx',
+  'src/views/ClasificacionView.jsx', 'src/views/EditorRutinaView.jsx', 'src/components/rangos.jsx', 'src/components/sustitucion.jsx',
   'src/components/objetivosFitness.jsx', 'src/components/fotosProgreso.jsx', 'src/components/comparadorFotos.jsx',
   'src/components/historialRango.jsx', 'src/components/bibliotecaEjercicios.jsx', 'src/components/detalleEjercicio.jsx',
   'src/components/resumenProgreso.jsx', 'src/components/siguienteRango.jsx', 'src/components/explicacionRango.jsx',
@@ -147,6 +147,10 @@ export const ARCHIVOS_FITNESS = [
      clasificación (F24). Y los dos respaldos de la F39. */
   'src/components/actividadEntrenamiento.jsx', 'src/components/planificacionSemanal.jsx',
   'src/components/colaClasificacion.jsx', 'src/components/estadosFitness.jsx',
+  /* Fitness 4/8 — el cumplimiento: la ventana de 7 días, la recuperación y «Completar». */
+  'src/components/cumplimientoFitness.jsx',
+  'src/components/progresionFitness.jsx',
+  'src/components/disciplinaFitness.jsx',
   /* FIT F42 — el botón de cerrar que comparten todas las hojas. */
   'src/components/piezasFitness.jsx',
 ];

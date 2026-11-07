@@ -1,4 +1,5 @@
 import { uid, todayISO, fechaLocalISO } from './helpers';
+import { repeticionesGuardadas, repeticionesAlEscribir, textoReps } from './numerosFitness';
 import { diaYMes } from './fechasFitness';
 import { crearWorkoutSession, normalizarWorkoutSession, ESTADOS_SESION, sinDuplicadosPorId } from './fitness';
 import {
@@ -103,6 +104,11 @@ const enteroONull = (v) => {
 /* ⚠️ El peso admite decimales (apartado 15: *"60, 60.5, 62.5"*), así que NO
    pasa por `enteroONull`. Redondearlo habría convertido sus 62,5 kg en 63 sin
    decírselo. */
+/** El interruptor «Progresión» de una línea (prompt 5 §4). Guardado en
+ *  `config.progresion`; sin guardar, **activado** (AJ-20): con el modo puesto
+ *  en Progresivo o Experto es lo que él espera, y apagarlo es su decisión. */
+export const progresionDeLinea = (l) => !(l && l.config && l.config.progresion === false);
+
 const numeroONull = (v) => {
   if (v === null || v === undefined || v === '') return null;
   const n = Number(v);
@@ -153,20 +159,36 @@ export function crearSerie({
     modo: MEDIDAS_SERIE.some((m) => m.id === modo) ? modo : 'reps',
     /* Lo que decía el plan. **No se toca nunca** después de crear la sesión. */
     plan: {
-      reps: enteroONull(p.reps),
-      repsHasta: enteroONull(p.repsHasta),
+      /* 🔓 FIT 5/8 — medias repeticiones (8,5): se conservan tal cual. */
+      reps: repeticionesGuardadas(p.reps),
+      repsHasta: repeticionesGuardadas(p.repsHasta),
       duracion: enteroONull(p.duracion),
       peso: numeroONull(p.peso),
+      /* 🔓 FIT 5/8 (prompt 5 §9, ARQUITECTURA §5.7) — lo que PROPUSO la
+         progresión al empezar. Va dentro de `plan` (lo que se proponía
+         hacer), separado de lo que decía la plantilla y de `hecho`. Nunca es
+         un resultado: la progresión no escribe en `hecho`. */
+      propuesta: propuestaGuardada(p.propuesta),
     },
     /* Lo que hizo de verdad. ⚠️ Nace **vacío**: escribirle de oficio las
        repeticiones del plan sería registrar por él algo que todavía no ha hecho
        (HT F3 con `ALCANCES`, y ya van muchas). */
     hecho: {
-      reps: enteroONull(h.reps),
+      reps: repeticionesGuardadas(h.reps),
       duracion: enteroONull(h.duracion),
       peso: numeroONull(h.peso),
     },
   };
+}
+
+/** La propuesta de una serie, tal como se guardó (`null` si no hubo). */
+export function propuestaGuardada(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+  const reps = repeticionesGuardadas(v.reps);
+  const duracion = enteroONull(v.duracion);
+  const peso = numeroONull(v.peso);
+  if (reps === null && duracion === null && peso === null) return null;
+  return { reps, duracion, peso };
 }
 
 export function normalizarSerie(g) {
@@ -180,7 +202,7 @@ export function textoPlanificado(serie) {
   if (s.modo === 'tiempo') return s.plan?.duracion ? `${s.plan.duracion} s` : '';
   const { reps, repsHasta } = s.plan || {};
   if (!reps) return '';
-  return repsHasta && repsHasta !== reps ? `${reps}–${repsHasta}` : `${reps}`;
+  return repsHasta && repsHasta !== reps ? `${textoReps(reps)}–${textoReps(repsHasta)}` : textoReps(reps);
 }
 
 /** Y lo que hizo, en texto. ⚠️ Vacío si no lo ha registrado: un cero diría que
@@ -188,7 +210,7 @@ export function textoPlanificado(serie) {
 export function textoRealizado(serie) {
   const s = serie || {};
   if (s.modo === 'tiempo') return s.hecho?.duracion ? `${s.hecho.duracion} s` : '';
-  return s.hecho?.reps ? `${s.hecho.reps}` : '';
+  return s.hecho?.reps ? textoReps(s.hecho.reps) : '';
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -262,9 +284,19 @@ export function empezarSesion({
     descanso: enteroONull(l.descanso) ?? DESCANSO_POR_DEFECTO,
     series: seriesDeLinea(l, propios),
     linea: {
-      series: enteroONull(l.series),
-      repeticiones: enteroONull(l.repeticiones),
-      repsHasta: enteroONull(l.repsHasta),
+      /* 🔓 FIT 5/8 (ARQUITECTURA §5.7 y §11.2) — de QUÉ línea de la plantilla
+         salió, y si su interruptor de progresión estaba puesto ese día. La
+         progresión compara por esta identidad, no por la posición ni por el
+         nombre. Un ejercicio sin línea (añadido a mano) lleva `null`. */
+      id: texto(l.id) || null,
+      progresion: progresionDeLinea(l),
+      /* 🔓 FIT 6/8 (prompt 6 §8) — la nota permanente de la línea de la plantilla,
+         como lo que decía el plan ese día. Se enseña aparte («Indicación de la
+         plantilla») y NUNCA es la anotación de la ejecución (`notas`, que nace
+         vacía). */
+      indicacion: texto(l.notas) || null,
+      repeticiones: repeticionesGuardadas(l.repeticiones),
+      repsHasta: repeticionesGuardadas(l.repsHasta),
       duracion: enteroONull(l.duracion),
       peso: numeroONull(l.peso),
       tipoCarga: texto(l.tipoCarga) || null,
@@ -455,7 +487,12 @@ export function editarSerie(sesion, ejercicioId, serieId, cambios = {}) {
       if (s.id !== serieId) return s;
       const hecho = { ...s.hecho };
       if ('peso' in cambios) hecho.peso = numeroONull(cambios.peso);
-      if ('reps' in cambios) hecho.reps = enteroONull(cambios.reps);
+      /* 🔓 FIT 5/8 — entero o media; un valor que no vale (8,2) no se escribe
+         y se queda el de antes: nunca se redondea por él. */
+      if ('reps' in cambios) {
+        const r = repeticionesAlEscribir(cambios.reps);
+        if (r !== undefined) hecho.reps = r;
+      }
       if ('duracion' in cambios) hecho.duracion = enteroONull(cambios.duracion);
       return { ...s, hecho };
     }),

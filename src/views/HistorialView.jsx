@@ -24,8 +24,10 @@ import React, { useState, useMemo } from 'react';
 import { useScrollAlVolver } from '../components/scrollAlVolver';
 import {
   ChevronLeft, ChevronRight, Search, SlidersHorizontal, X,
-  Clock, Calendar, Dumbbell, Layers, Weight, Check, Minus, Trash2, Play, StickyNote,
+  Clock, Calendar, Dumbbell, Layers, Weight, Check, Minus, Trash2, Play, StickyNote, MoreHorizontal,
 } from 'lucide-react';
+import { Plegable } from '../components/layoutMotion';
+import { TEXTOS_ANOTACIONES } from '../lib/anotacionesFitness';
 import { ChevronDespliegue } from '../components/motion';
 import { COLORS } from '../tokens';
 import { PastillaFiltro } from '../components/piezasFitness';
@@ -33,12 +35,18 @@ import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba, todayISO } from '../lib/helpers';
 import { Card, GhostBtn, PrimaryButton, EmptyHint } from '../components/ui';
 import { DatoResumen } from './FinalizacionView';
+import { ResumenDisciplina, CalendarioCumplimiento, DetalleDeFecha } from '../components/disciplinaFitness';
+import {
+  disciplinaDelPeriodo, mesDeCumplimiento, semanaDeCumplimiento, lunesDeLaSemana, detalleDeFecha, mesDe, PERIODO_DISCIPLINA_POR_DEFECTO,
+} from '../lib/disciplinaFitness';
+import { gradoDeSesion } from '../lib/cumplimientoFitness';
 import {
   sesionesDelHistorial, fichaDeHistorial, consultarHistorial, detalleDeSesion, sesionDelHistorial,
   FILTROS_FECHA, ORDENES_HISTORIAL, FILTROS_POR_DEFECTO, PAGINA_HISTORIAL,
   HISTORIAL_VACIO, SIN_RESULTADOS, AVISO_ELIMINAR_SESION, SESION_YA_NO_ESTA,
 } from '../lib/historial';
 import { PROPS_CAMPO_BUSQUEDA } from '../lib/movilFitness';
+import { MarcaDeCumplimiento } from '../components/cumplimientoFitness';
 
 /* ── Un grupo de chips con su nombre (apartados 11-14 y 42) ────────────────
    ⚠️ `aria-pressed` y un ✓: el filtro elegido no se distingue solo por color. */
@@ -122,6 +130,10 @@ export function FiltrosHistorial({ filtros, consulta, accent, abiertos, onAbrir,
             {consulta.opcionesPlan.length > 2 && (
               <GrupoChips titulo="Plan" opciones={consulta.opcionesPlan} valor={filtros.plan} onCambiar={cambiar('plan')} accent={accent} />
             )}
+            {/* 🔓 Fitness 7/8 (prompt 7 §6) — el historial de una plantilla, por su id. */}
+            {consulta.opcionesPlantilla && consulta.opcionesPlantilla.length > 2 && (
+              <GrupoChips titulo="Plantilla" opciones={consulta.opcionesPlantilla} valor={filtros.plantilla} onCambiar={cambiar('plantilla')} accent={accent} />
+            )}
             {consulta.opcionesEntorno.length > 2 && (
               <GrupoChips titulo="Entorno" opciones={consulta.opcionesEntorno} valor={filtros.entorno} onCambiar={cambiar('entorno')} accent={accent} />
             )}
@@ -174,7 +186,7 @@ export function TarjetaHistorial({ ficha, agrupado, accent, onAbrir }) {
           {f.nombre}
         </p>
         <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
-          {[cuando, f.duracion].filter(Boolean).join(' · ')}
+          {[cuando, f.duracion, f.claseTexto, f.parcial ? 'Parcial' : '', f.completar ? 'Con «Completar entrenamiento»' : ''].filter(Boolean).join(' · ')}
         </p>
         <p className="text-xs truncate" style={{ color: COLORS.textMuted }}>
           {[f.ejerciciosTexto, f.seriesTexto, f.entornoNombre].filter(Boolean).join(' · ')}
@@ -224,12 +236,50 @@ function FilaSerie({ fila, accent }) {
         {fila.extra && <span className="block text-[10px] font-bold uppercase" style={{ color: COLORS.textMuted }}>Extra</span>}
       </span>
       <span className="tabular-nums" style={{ color: COLORS.text }}>{omitida ? '—' : fila.peso}</span>
-      <span className="tabular-nums" style={{ color: COLORS.text }}>{omitida ? '—' : fila.medida}</span>
+      <span className="tabular-nums" style={{ color: COLORS.text }}>
+        {omitida ? '—' : fila.medida}
+        {/* 🔓 Fitness 5/8 — la propuesta de aquel día, aparte del resultado. */}
+        {!omitida && fila.propuesta && (
+          <span className="block text-[10px]" style={{ color: COLORS.textMuted }}>{fila.propuesta.texto}</span>
+        )}
+      </span>
       {/* El estado lleva palabra e icono, nunca solo color (apartado 42). */}
       <span className="inline-flex items-center gap-1 font-semibold" style={{ color: hecha ? acentoLegible(accent) : COLORS.textMuted }}>
         {hecha ? <Check size={12} aria-hidden="true" /> : <Minus size={12} aria-hidden="true" />}
         {fila.estadoTexto}
       </span>
+    </div>
+  );
+}
+
+/* 🔓 Fitness 6/8 — las anotaciones anteriores de un ejercicio, voluntarias (⋯). */
+function NotasAnterioresHistorial({ notas }) {
+  const [abiertas, setAbiertas] = useState(false);
+  return (
+    <div className="mt-1.5">
+      <button
+        type="button"
+        onClick={() => setAbiertas(!abiertas)}
+        aria-expanded={abiertas}
+        aria-label={abiertas ? TEXTOS_ANOTACIONES.ocultarAnteriores : TEXTOS_ANOTACIONES.verAnteriores}
+        className="text-[11px] font-semibold inline-flex items-center gap-1 py-1.5 toque-44"
+        style={{ color: COLORS.textMuted }}
+      >
+        <MoreHorizontal size={14} aria-hidden="true" />
+        {TEXTOS_ANOTACIONES.tituloAnteriores} ({notas.length})
+      </button>
+      <Plegable abierto={abiertas}>
+        {() => (
+          <ul className="space-y-1.5 pl-4" aria-label={TEXTOS_ANOTACIONES.tituloAnteriores}>
+            {notas.map((n) => (
+              <li key={n.sesionId} className="text-xs" style={{ color: COLORS.text }}>
+                <span className="font-semibold" style={{ color: COLORS.textMuted }}>{n.fechaTexto}{n.entrenamiento ? ` · ${n.entrenamiento}` : ''}</span>
+                <span className="block">{n.texto}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Plegable>
     </div>
   );
 }
@@ -294,6 +344,10 @@ export function EjercicioHistorial({ ejercicio, accent, abierto = false, onAlter
               <StickyNote size={12} className="shrink-0 mt-px" aria-hidden="true" />
               <span className="min-w-0">{e.notas}</span>
             </p>
+      )}
+      {/* 🔓 Fitness 6/8 — las notas de esa línea de antes de esta fecha, si él las pide. */}
+      {Array.isArray(e.notasAnteriores) && e.notasAnteriores.length > 0 && (
+        <NotasAnterioresHistorial notas={e.notasAnteriores} />
       )}
       {/* 🔓 FIT F31, apartado 30 — al progreso del ejercicio, **si corresponde**:
           solo si existe en el catálogo y se hizo algo. Un ejercicio archivado
@@ -362,6 +416,14 @@ export function DetalleSesionHistorial({
           <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>
             {[d.entornoNombre, d.planNombre].filter(Boolean).join(' · ')}
           </p>
+        )}
+        {/* 🔓 Fitness 4/8 — fecha prevista y fecha real de una recuperación, y si se
+            registró con «Completar entrenamiento» (prompt 4 §9). */}
+        {d.cumplimiento && (
+          <MarcaDeCumplimiento
+            sesion={{ fecha: d.cumplimiento.fecha, completadaCon: d.cumplimiento.completadaCon, diaDePlan: { clase: d.cumplimiento.clase, fechaPrevista: d.cumplimiento.fechaPrevista } }}
+            accent={accent}
+          />
         )}
       </div>
 
@@ -463,7 +525,9 @@ export default function HistorialView({
   /* 🚨 Apartado 32 — las tarjetas se hacen UNA vez por cambio en las sesiones,
      no en cada tecla de la búsqueda. */
   const fichas = useMemo(
-    () => sesionesDelHistorial(f).map((s) => fichaDeHistorial(s, { fitness: f, propios, hoy })),
+    /* 🔓 FITNESS 7/8 — y si fue parcial (el grado del motor de la Fase 4): el
+       historial de una plantilla dice el estado de cada ejecución (prompt 7 §6). */
+    () => sesionesDelHistorial(f).map((s) => ({ ...fichaDeHistorial(s, { fitness: f, propios, hoy }), parcial: gradoDeSesion(s) === 'parcial' })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [f.sesiones, f.plantillas, f.planActivo, propios, hoy],
   );
@@ -477,6 +541,31 @@ export default function HistorialView({
   );
 
   const cambiarFiltros = (siguientes) => { setFiltros(siguientes); setPagina(1); };
+
+  /* 🔓 FITNESS 7/8 — la disciplina, el calendario y el detalle de un día. Viven
+     aquí (no en el panel) para que abrir un entrenamiento desde el calendario y
+     volver deje el periodo, el mes y el día como estaban. Todo se deriva de los
+     estados de la Fase 4: no se guarda nada. */
+  const [disc, setDisc] = useState(() => ({ periodo: PERIODO_DISCIPLINA_POR_DEFECTO, desde: '', hasta: '', mes: mesDe(todayISO()), vista: 'mes', lunes: lunesDeLaSemana(todayISO()), fecha: null, formula: false }));
+  const cambiarDisc = (cambios) => setDisc((d) => ({ ...d, ...cambios }));
+  const disciplina = useMemo(
+    () => disciplinaDelPeriodo(f, disc.periodo, { hoy, desde: disc.desde, hasta: disc.hasta }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [f, disc.periodo, disc.desde, disc.hasta, hoy],
+  );
+  /* 🔓 Fitness 8/8 — el calendario unificado: el mes o, como el de Progreso, una semana. */
+  const mesVisto = useMemo(
+    () => (disc.vista === 'semana' ? semanaDeCumplimiento(f, disc.lunes, { hoy }) : mesDeCumplimiento(f, disc.mes, { hoy })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [f, disc.vista, disc.lunes, disc.mes, hoy],
+  );
+  const detalleDia = useMemo(
+    () => (disc.fecha ? detalleDeFecha(f, disc.fecha, { hoy }) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [f, disc.fecha, hoy],
+  );
+  const est = disciplina.estadisticas;
+  const hayDisciplina = !consulta.vacio || !!(est && (est.evaluados > 0 || est.pendientes > 0));
 
   /* ── El detalle ─────────────────────────────────────────────────────── */
   if (abierta) {
@@ -522,6 +611,35 @@ export default function HistorialView({
         <ChevronLeft size={16} /> {volverTexto}
       </button>
       <h2 className="text-2xl font-extrabold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>Historial</h2>
+
+      {hayDisciplina && (
+        <>
+          <ResumenDisciplina
+            disciplina={disciplina}
+            periodo={disc.periodo}
+            desde={disc.desde}
+            hasta={disc.hasta}
+            accent={accent}
+            onPeriodo={(periodo) => cambiarDisc({ periodo })}
+            onFechas={(fechas) => cambiarDisc(fechas)}
+            formulaAbierta={disc.formula}
+            onFormula={() => cambiarDisc({ formula: !disc.formula })}
+          />
+          <CalendarioCumplimiento
+            mes={mesVisto}
+            elegida={disc.fecha}
+            accent={accent}
+            onMes={(destino) => cambiarDisc(disc.vista === 'semana' ? { lunes: destino, fecha: null } : { mes: destino, fecha: null })}
+            onVista={(vista) => cambiarDisc(vista === 'semana'
+              ? { vista, lunes: lunesDeLaSemana(disc.fecha || (disc.mes === mesDe(hoy) ? hoy : `${disc.mes}-01`)) }
+              : { vista, mes: mesDe(disc.fecha || disc.lunes || hoy) })}
+            onElegir={(fecha) => cambiarDisc({ fecha: disc.fecha === fecha ? null : fecha })}
+          />
+          <Plegable abierto={!!detalleDia}>
+            {() => <DetalleDeFecha detalle={detalleDia} accent={accent} onVerSesion={setAbierta} />}
+          </Plegable>
+        </>
+      )}
 
       {consulta.vacio ? (
         <HistorialVacio accent={accent} onEmpezar={onEmpezar} />

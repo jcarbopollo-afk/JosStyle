@@ -4,12 +4,13 @@ import {
   PUNTOS_MINIMOS_GRAFICA, inicioDePeriodo,
 } from './progresoEjercicios';
 import {
-  progresoDeEjercicio, aparicionesDeEjercicio, CLASES,
+  progresoDeEjercicio, aparicionesDeEjercicio, CLASES, plantillaDeSesion, textoSerie,
 } from './progresion';
 import {
   ejercicioPorId, nombreCompleto, musculoPrincipal, variantesDe, baseDe, equipo, nombreSinCatalogo, agarreQueAnadir,
 } from './ejercicios';
-import { sesionDelHistorial, etiquetaDeFecha } from './historial';
+import { sesionDelHistorial, etiquetaDeFecha, opcionesDePlantilla } from './historial';
+import { fechaEtiqueta } from './fechasFitness';
 import { ejerciciosDeSesion } from './entrenamiento';
 import { resumenDeEjercicio, ESTADOS_EJERCICIO } from './finalizacion';
 import { rangoEfectivoDeEjercicio } from './motorRangos';
@@ -440,6 +441,66 @@ export const ERROR_DETALLE = {
    11 · LA PANTALLA ENTERA (apartados 1, 31 y 40)
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   FITNESS 7/8 — LA EVOLUCIÓN POR PLANTILLA (prompt 7, ARQUITECTURA §23)
+   ═══════════════════════════════════════════════════════════════════════════
+   El mismo ejercicio en dos plantillas son dos contextos (otro orden, otro
+   cansancio, otro rango de repeticiones): mezclarlos en una gráfica puede
+   esconder lo que pasa en cada una. La plantilla de cada aparición es la de su
+   sesión (`plantillaDeSesion`, la regla de la progresión), así que una
+   plantilla borrada sigue saliendo con su nombre de entonces: sus sesiones son
+   historia. Lo que no tiene plantilla (entrenamiento libre) solo está en «Todas». */
+
+export const TODAS_LAS_PLANTILLAS = 'todas';
+
+/** Las plantillas donde aparece el ejercicio (`opciones`, con «Todas» delante) y
+ *  la plantilla de cada sesión (`de`: sesionId → plantillaId | null). */
+export function plantillasDelEjercicio(fitness, apariciones) {
+  const sesiones = new Map(lista(fitness && fitness.sesiones).filter((s) => s && s.id).map((s) => [s.id, s]));
+  const de = new Map();
+  const fichas = [];
+  for (const a of lista(apariciones)) {
+    const s = sesiones.get(a.sesionId);
+    const plantillaId = s ? plantillaDeSesion(s, fitness) : null;
+    de.set(a.sesionId, plantillaId);
+    if (plantillaId) fichas.push({ plantillaId, nombre: texto(s.nombre) || 'Entrenamiento', fecha: a.fecha || '' });
+  }
+  return { opciones: opcionesDePlantilla(fichas), de };
+}
+
+export const MAX_FILAS_EVOLUCION = 6;
+export const MAX_SERIES_EVOLUCION = 8;
+
+/**
+ * La evolución SERIE A SERIE: las últimas ejecuciones (de la métrica que se
+ * mira y dentro del periodo), cada una con sus series por número —el número del
+ * historial, F12—. Lo que no se hizo en una serie es «—», nunca «0». Con menos
+ * de dos ejecuciones no hay evolución que enseñar, y se dice.
+ */
+export function evolucionPorSerie(apariciones, { clase = null, rango = 'todo', hoy = todayISO(), limite = MAX_FILAS_EVOLUCION } = {}) {
+  const desde = inicioDePeriodo(periodo(rango).dias, hoy);
+  const vistas = lista(apariciones)
+    .filter((a) => a && (!clase || a.clase === clase) && (!desde || (a.fecha || '') >= desde))
+    .slice(0, limite);
+  if (vistas.length < 2) {
+    return { hay: false, numeros: [], filas: [], motivo: 'Hacen falta al menos dos registros para comparar serie a serie.' };
+  }
+  let max = 0;
+  for (const a of vistas) for (const s of lista(a.series)) if (Number.isInteger(s.numero) && s.numero > max) max = s.numero;
+  max = Math.min(max, MAX_SERIES_EVOLUCION);
+  const numeros = Array.from({ length: max }, (_, i) => i + 1);
+  const filas = vistas.map((a) => {
+    const porNumero = new Map(lista(a.series).map((s) => [s.numero, s]));
+    return {
+      sesionId: a.sesionId,
+      fecha: a.fecha || '',
+      fechaTexto: a.fecha ? fechaEtiqueta(a.fecha) : '—',
+      celdas: numeros.map((n) => ({ numero: n, texto: porNumero.has(n) ? textoSerie(a.clase, porNumero.get(n)) : '—' })),
+    };
+  });
+  return { hay: true, numeros, filas, motivo: '' };
+}
+
 /**
  * `ExerciseProgressDetail` en datos.
  *
@@ -449,19 +510,31 @@ export const ERROR_DETALLE = {
  */
 export function detalleCompletoDeEjercicio(fitness, exerciseId, {
   propios = [], perfil = null, hoy = todayISO(), rango = null, metrica = null, limiteHistorial = null,
+  plantilla = null,
 } = {}) {
   const id = texto(exerciseId);
   try {
     const apariciones = aparicionesDeEjercicio(fitness, id, propios);
     const cabecera = cabeceraDeEjercicio(id, { propios, apariciones });
-    const elegido = rango && periodo(rango).id === rango ? rango : periodoPorDefecto(apariciones, { hoy });
-    const clase = metricaElegida(apariciones, metrica);
+    /* 🔓 FITNESS 7/8 — la evolución POR PLANTILLA. La gráfica, la métrica, los
+       descartes y la evolución serie a serie pueden mirarse solo con lo hecho en
+       una plantilla; el último, el mejor, la tendencia y el historial siguen
+       siendo del ejercicio entero (la vista general, que complementa). */
+    const porPlantilla = plantillasDelEjercicio(fitness, apariciones);
+    const plantillaElegida = porPlantilla.opciones.some((o) => o.id === plantilla && o.id !== TODAS_LAS_PLANTILLAS)
+      ? plantilla : TODAS_LAS_PLANTILLAS;
+    const vistas = plantillaElegida === TODAS_LAS_PLANTILLAS
+      ? apariciones
+      : apariciones.filter((a) => porPlantilla.de.get(a.sesionId) === plantillaElegida);
+    const elegido = rango && periodo(rango).id === rango ? rango : periodoPorDefecto(vistas, { hoy });
+    const clase = metricaElegida(vistas, metrica);
     const base = detalleDeProgreso(fitness, id, { propios, rango: elegido, hoy });
     /* ⚠️ La gráfica se vuelve a pedir **con la métrica elegida**: la de `base`
        es la de la última vez, que es lo correcto por defecto (F12). */
     const p = progresoDeEjercicio(fitness, id, { propios });
-    const grafica = graficaDeProgreso(p, { rango: elegido, hoy, clase });
-    const metricas = metricasDisponibles(apariciones);
+    const pVista = vistas === apariciones ? p : { ...p, apariciones: vistas };
+    const grafica = graficaDeProgreso(pVista, { rango: elegido, hoy, clase });
+    const metricas = metricasDisponibles(vistas);
     const estado = estadoDelDetalle(apariciones.length, { archivado: cabecera.archivado && apariciones.length > 0 });
     return {
       error: null,
@@ -480,7 +553,12 @@ export function detalleCompletoDeEjercicio(fitness, exerciseId, {
       metricas,
       metrica: clase,
       hayselector: metricas.length > 1,
-      descartados: descartadosDelGrafico(apariciones, grafica, { rango: elegido, hoy }),
+      descartados: descartadosDelGrafico(vistas, grafica, { rango: elegido, hoy }),
+      /* 🔓 FITNESS 7/8 — el selector de plantilla, solo con dos o más. */
+      plantillas: porPlantilla.opciones,
+      plantilla: plantillaElegida,
+      hayPlantillas: porPlantilla.opciones.length > 2,
+      evolucionSeries: evolucionPorSerie(vistas, { clase, rango: elegido, hoy }),
       alternativa: alternativaTextual(base, grafica),
       rango: rangoDelEjercicio(fitness, id, { propios, perfil }),
       objetivo: objetivoDelEjercicio(fitness, id, { propios, hoy }),
@@ -510,6 +588,10 @@ export function detalleCompletoDeEjercicio(fitness, exerciseId, {
       metrica: null,
       hayselector: false,
       descartados: { cuantos: 0, significativo: false, aviso: '' },
+      plantillas: [{ id: TODAS_LAS_PLANTILLAS, nombre: 'Todas' }],
+      plantilla: TODAS_LAS_PLANTILLAS,
+      hayPlantillas: false,
+      evolucionSeries: { hay: false, numeros: [], filas: [], motivo: '' },
       alternativa: '',
       rango: { hay: false, nombre: '', rango: null, siguiente: null, destinoHistorial: null, vacio: '' },
       objetivo: { hay: false, objetivo: null, conseguido: false, texto: '', fecha: '' },

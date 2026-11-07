@@ -246,6 +246,14 @@ console.log('\n🔎 EH · Fase 48/65 — Auditoría final de funciones y duplica
        sistema entero—: lo caza `motor`, como a `motorRangos`. **Duodécima**
        exclusión a mano, por el mismo motivo de siempre. */
     && f !== 'motorConversacion'
+    /* ⚠️ Y `rutinasCiclicas` es de **Fitness** (Fitness 3/8: las rutinas de 1 a 30
+       días), no de Imagen personal: lo caza `rutinas`, por las rutinas de piel, pelo
+       y barba. **Decimotercera** exclusión a mano, por el mismo motivo de siempre. */
+    && f !== 'rutinasCiclicas'
+    /* ⚠️ Y `migracionFitnessV2` es la M1 de **Fitness** (Fitness 4/8), no de Imagen
+       personal: lo caza `migracion`, por el `migracion.js` de la EH F46.
+       **Decimocuarta** exclusión a mano. */
+    && f !== 'migracionFitnessV2' && f !== 'migracionFitnessV3'
     && !LIBRERIAS_EH.includes(f)
   ));
   eq(sinRevisar, [],

@@ -277,12 +277,13 @@ const segundo = usarPlan(primero.fitness, 'upper-lower');
 ok(!segundo.ok && segundo.motivo === 'confirmacion' && segundo.aviso,
   '🚨 FIT F5 — con otro plan activo, SIN confirmar no escribe nada (apartado 14)');
 ok(segundo.fitness.planActivo.planId === 'ppl-estetico', '…y el activo sigue siendo el de antes');
-ok(/¿Cambiar tu plan actual\?/.test(segundo.aviso.titulo), `…y pregunta con sus palabras («${segundo.aviso.titulo}»)`);
+/* 🔓 Fitness 3/8 — el ciclo de días se llama «rutina» (prompt 1 §4): la pregunta se da la vuelta. */
+ok(/¿Cambiar tu rutina activa\?/.test(segundo.aviso.titulo), `…y pregunta con sus palabras («${segundo.aviso.titulo}»)`);
 ok(/PPL Est/.test(segundo.aviso.que),
   '⚠️ …diciendo CUÁL se va: «tu plan actual» a secas no deja decidir (EH F62)');
 ok(/Upper/.test(segundo.aviso.nuevo), '…y cuál entra');
-ok(/sigue en la biblioteca/i.test(segundo.aviso.vuelve),
-  '⚠️ …y que no se pierde nada: un plan prediseñado no se borra');
+ok(/sigue en tu biblioteca/i.test(segundo.aviso.vuelve),
+  '⚠️ …y que no se pierde nada: una rutina predeterminada no se borra al cambiar');
 ok(!/no se puede deshacer|para siempre/i.test(JSON.stringify(segundo.aviso)),
   '…sin prometer que es irreversible, porque no lo es');
 
@@ -408,7 +409,7 @@ console.log('\n── 10. Los estados vacíos, con salida (apartado 17) ──')
 for (const [nombre, e] of [['Sin resultados', ESTADO_SIN_RESULTADOS], ['Sin favoritos', ESTADO_SIN_FAVORITOS], ['Error', ESTADO_ERROR_PLANES]]) {
   ok(!!e.titulo && !!e.texto && !!e.accion, `${nombre}: tiene título, explicación y SALIDA (un vacío sin botón es una pantalla rota, EH F41)`);
 }
-ok(/No encontramos planes/.test(ESTADO_SIN_RESULTADOS.titulo), '…con las palabras del enunciado');
+ok(/No encontramos rutinas/.test(ESTADO_SIN_RESULTADOS.titulo), '…con las palabras del enunciado (desde la Fitness 3/8, «rutinas»)');
 ok(!/conexi[oó]n/i.test(ESTADO_ERROR_PLANES.texto),
   '🚨 …y el de error NO manda a mirar la conexión: la biblioteca vive en el código (EH F62)');
 

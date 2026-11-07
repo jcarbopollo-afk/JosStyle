@@ -31,3 +31,79 @@ export function decimal(n, { max = DECIMALES_FITNESS } = {}) {
   const f = 10 ** max;
   return String(Math.round(x * f) / f).replace('.', ',');
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FITNESS 5/8 — LAS REPETICIONES: ENTERAS O DE MEDIA EN MEDIA
+   (prompt 5 §8, ARQUITECTURA_TECNICA.md §11.4)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   🚨 Una sola regla para toda Fitness: unas repeticiones valen si son un número
+   finito, ≥ 0 y **múltiplo de 0,5** (6 · 6,5 · 7). 6,2 o 7,8 no valen, y **no
+   se redondean**: se rechazan con una frase que dice qué escribir.
+
+   Dónde se aplica (prompt 5 §8):
+   - **Al escribir** (plantilla, entrenamiento en directo, edición de series):
+     `leerRepeticiones` devuelve el valor o el motivo; nunca lo corrige.
+   - **Al guardar desde el motor** (`editarSerie`, `crearLinea`): un valor que
+     no vale no se escribe (el de antes se queda).
+   - **Al cargar lo guardado** (normalizadores): `repeticionesGuardadas`
+     conserva el número TAL CUAL. Antes se redondeaba (`Math.round`), así que
+     todo lo guardado hasta ahora es entero y sigue valiendo: no hay que migrar
+     nada. Un valor raro que llegara de fuera (una importación, otro
+     dispositivo) no se toca ni se tira: se conserva, la progresión lo ignora
+     como dato y la validación de la plantilla lo dice.
+   - **Al enseñar**: `textoReps` con coma («8,5»).
+
+   ⚠️ Vive aquí, en `numerosFitness.js`, porque es una hoja del árbol de
+   imports: la pueden importar el modelo, el motor y las pantallas sin ciclos.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+
+/** ¿Valen estas repeticiones? Entero o x,5, finito y no negativo. */
+export function repeticionValida(v) {
+  if (v === null || v === undefined || v === '' || typeof v === 'boolean') return false;
+  const n = typeof v === 'number' ? v : Number(v);
+  return Number.isFinite(n) && n >= 0 && Number.isInteger(n * 2);
+}
+
+/** Para los normalizadores de carga: el número tal cual, sin redondear. */
+export function repeticionesGuardadas(v) {
+  if (v === null || v === undefined || v === '' || typeof v === 'boolean') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Para el motor: el valor si vale, `null` si está vacío y `undefined` si NO
+ *  vale (quien llama deja el de antes). */
+export function repeticionesAlEscribir(v) {
+  if (v === null || v === undefined || (typeof v === 'string' && v.trim() === '')) return null;
+  const n = typeof v === 'number' ? v : Number(String(v).trim().replace(',', '.'));
+  return repeticionValida(n) ? n : undefined;
+}
+
+export const MENSAJE_REPETICIONES = 'Las repeticiones van enteras o de media en media: 8 u 8,5.';
+
+/**
+ * Lo que él ha escrito en un campo. `{ ok: true, valor }` (con `valor: null` si
+ * lo ha dejado vacío) o `{ ok: false, mensaje }`. Admite la coma y el punto.
+ */
+export function leerRepeticiones(textoEscrito) {
+  const t = String(textoEscrito ?? '').trim();
+  if (t === '') return { ok: true, valor: null, mensaje: null };
+  if (!/^\d+([.,]\d+)?$/.test(t)) return { ok: false, valor: null, mensaje: 'Escribe un número: 8 u 8,5.' };
+  const n = Number(t.replace(',', '.'));
+  if (!repeticionValida(n)) return { ok: false, valor: null, mensaje: MENSAJE_REPETICIONES };
+  return { ok: true, valor: n, mensaje: null };
+}
+
+/** «8», «8,5». Vacío si no hay número. */
+export function textoReps(n) {
+  return decimal(n);
+}
+
+/** Un paso de − o + sobre unas repeticiones que ya valen: conserva la media
+ *  (8,5 + 1 = 9,5) en vez de redondear al entero. */
+export function sumarRepeticiones(actual, paso) {
+  const siguiente = Math.max(0, Number(actual) + paso);
+  return Math.round(siguiente * 2) / 2;
+}

@@ -143,6 +143,16 @@ export const CAMPOS_GUARDADOS = [
   /* FIT F41 — lo que la puerta de carga apartó, con su original: un dato suyo,
      no una cifra derivada. */
   'cuarentena',
+  /* Fitness 3/8 — las rutinas que él crea (y las copias de las predeterminadas que
+     edita o borra) y qué predeterminadas ha retirado: datos suyos, no derivados.
+     Lo que SÍ se deriva de ellas —en uso, día del ciclo, duración— no se guarda. */
+  'rutinas', 'predeterminadasRetiradas',
+  /* Fitness 4/8 — desde qué fecha se evalúa el cumplimiento (PD-09): una decisión,
+     no una cifra. Los pendientes, los colores y la caducidad se DERIVAN y no se
+     guardan (`cumplimientoFitness.js`). */
+  'cumplimientoDesde',
+  /* 🔓 Fitness 5/8 — el modo de progresión (`preferencias.progresion`). */
+  'preferencias',
 ];
 
 /* Lo que JAMÁS se guarda, porque se deriva (apartados 32, 34, 36 y 51). */

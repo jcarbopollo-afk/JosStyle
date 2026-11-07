@@ -32,6 +32,7 @@ import {
   pantallaDeSustitucion, sustitucionElegida, necesitaConfirmar, nivelCompatibilidad,
   TEXTOS_SUSTITUCION, AVISO_OBJETIVO,
 } from '../lib/sustitucion';
+import { textoReps } from '../lib/numerosFitness';
 
 /* El color de cada nivel es un TOKEN (regla 2), y siempre va con su palabra. */
 const colorDeNivel = (id) => ({
@@ -243,7 +244,7 @@ export function ReplacementConfirm({
     c.series ? `${c.series} ${c.series === 1 ? 'serie' : 'series'}` : 'las series',
     c.descanso ? `${c.descanso} s de descanso` : null,
     c.notas ? 'la nota' : null,
-    !c.cambiaMedida && c.repeticiones ? `${c.repeticiones}${c.repsHasta ? `–${c.repsHasta}` : ''} repeticiones` : null,
+    !c.cambiaMedida && c.repeticiones ? `${textoReps(c.repeticiones)}${c.repsHasta ? `–${textoReps(c.repsHasta)}` : ''} repeticiones` : null,
     !c.cambiaMedida && c.duracion ? `${c.duracion} s por serie` : null,
   ].filter(Boolean);
   const opciones = [

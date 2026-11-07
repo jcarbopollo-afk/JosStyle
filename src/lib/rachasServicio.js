@@ -370,6 +370,55 @@ export function vaciarCola(estado) {
 export const hayPendientes = (estado) => normalizarEstado(estado).pendientes.length > 0;
 
 /* ===========================================================================
+   FITNESS 8/8 — LA RACHA DE ENTRENAMIENTO, CON EL CRITERIO DE FITNESS
+   ===========================================================================
+   Decisión de Josué (2026-11-06): *"La racha global de entrenamiento de la
+   pantalla Rachas debe utilizar el mismo criterio que la racha de Fitness […]
+   una única fuente de verdad"*. Esa fuente es la lista de días de Fitness
+   (`diasDeActividadDeEntrenamiento`, en `disciplinaFitness.js`): cada día suma,
+   corta o es neutro. Aquí **no se recalcula** nada de Fitness ni se importa:
+   quien llama (App.jsx) pasa la lista ya hecha, y este archivo solo la
+   **proyecta** sobre las rachas de tipo entrenamiento, como el Pomodoro proyecta
+   sus sesiones (E3 F25). Es una vista: **nunca se guarda**. Las escrituras
+   (crear, marcar, deshacer, eliminar) siguen yendo sobre el estado de verdad.
+
+   - Solo las rachas de tipo `training` activas, y solo si Fitness tiene días con
+     seguimiento. Sin rutina ni seguimiento, la racha sigue siendo la de siempre
+     (marcada a mano): no hay otro criterio con el que unificarla.
+   - Con seguimiento, sus marcas a mano **se conservan guardadas** pero no cuentan:
+     los días los decide Fitness. Antes del seguimiento no se cuenta nada (PD-09:
+     no se inventa cumplimiento de aquellas fechas).
+   - El resto de rachas (sueño, estudio, hábitos…) y sus eventos no se tocan. */
+export function proyectarRachasDeEntrenamiento(estado, actividad) {
+  const e = normalizarEstado(estado);
+  if (!actividad || !actividad.hay) return e;
+  const deEntreno = new Set(e.definiciones.filter((r) => r.tipo === 'training' && r.activa).map((r) => r.id));
+  if (!deEntreno.size) return e;
+  const neutros = {};
+  const cortes = {};
+  const suman = [];
+  for (const d of actividad.dias || []) {
+    if (!d || !d.fecha) continue;
+    if (d.actividad === 'suma') suman.push(d.fecha);
+    else if (d.actividad === 'corta') cortes[d.fecha] = true;
+    /* Hoy sin hacer en un día de entrenamiento NO es neutro para la regla: es el
+       «pendiente» de hoy (pide algo y avisa de noche, como cualquier racha). En un
+       día de descanso hoy no pide nada. */
+    else if (d.actividad === 'neutro' && (d.estado !== 'hoy' || d.descanso)) neutros[d.fecha] = true;
+  }
+  const definiciones = e.definiciones.map((r) => (deEntreno.has(r.id)
+    ? { ...r, regla: { clase: 'segun_fitness', neutros, cortes } }
+    : r));
+  const eventos = [
+    ...e.eventos.filter((x) => !deEntreno.has(x.rachaId)),
+    ...[...deEntreno].flatMap((rachaId) => suman.map((fecha) => ({
+      id: `fitness:${rachaId}:${fecha}`, rachaId, fecha, valor: 1, registradoEn: '', origen: 'fitness', origenId: null,
+    }))),
+  ];
+  return { ...e, definiciones, eventos };
+}
+
+/* ===========================================================================
    CONSULTA — lo que llaman las pantallas (apartados 14 y 24)
    ===========================================================================
    *"Evita que cada componente llame directamente a Supabase"* y *"no

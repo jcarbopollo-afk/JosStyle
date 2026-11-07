@@ -97,12 +97,12 @@ ok(/camino|URL/.test(FUENTES_PERSISTENCIA.find((f) => f.entidad === 'ProgressPho
 
 /* ═══ 2 · La versión y las migraciones (apartados 26, 27, 28 y 57) ══════════ */
 console.log('\n── 2 · La versión de la F1 y las migraciones (apartados 26-28 y 57) ──');
-ok(VERSION_FITNESS === DEFAULT_FITNESS.version && VERSION_FITNESS === 1,
-  '🐛 La versión YA existía: `version: 1` en `DEFAULT_FITNESS` desde la F1. Es un solo número, no uno nuevo');
+ok(VERSION_FITNESS === DEFAULT_FITNESS.version && VERSION_FITNESS === 3,
+  '🐛 La versión YA existía (`version: 1` en `DEFAULT_FITNESS` desde la F1) y es un solo número: 🔓 Fitness 4/8 la sube a 2 con la M1 y la 5/8 a 3 con la M2');
 ok(/export const VERSION_FITNESS = DEFAULT_FITNESS\.version/.test(leer('src/lib/persistenciaFitness.js')),
   '…y la librería lo importa, no lo repite');
-ok(MIGRACIONES_FITNESS.length === 0,
-  'Hoy no hay ninguna migración que correr: de la F2 a la F40 todo cambio fue una suma que absorbe la puerta de carga');
+ok(MIGRACIONES_FITNESS.length === 2 && MIGRACIONES_FITNESS[0].de === 1 && MIGRACIONES_FITNESS[0].a === 2 && MIGRACIONES_FITNESS[1].de === 2 && MIGRACIONES_FITNESS[1].a === 3,
+  '🔓 Fitness 4/8 y 5/8 — dos migraciones: la M1 (el ciclo y la entrada en vigor del cumplimiento) y la M2 (el modo de progresión, y la 3 para que una aplicación de la Fase 4 no redondee las medias repeticiones)');
 ok(MIGRACIONES_FITNESS.every((m, i, l) => m.a === m.de + 1 && (i === 0 ? m.de === PRIMERA_VERSION : m.de === l[i - 1].a))
   && (MIGRACIONES_FITNESS.length === 0 ? VERSION_FITNESS === PRIMERA_VERSION : MIGRACIONES_FITNESS[MIGRACIONES_FITNESS.length - 1].a === VERSION_FITNESS),
   '…y la cadena cuadra con la versión: subir una sin su migración pone esto rojo');
@@ -116,13 +116,16 @@ const s1 = sesion('curl-barra', '2026-09-01', [{ reps: 10, peso: 30 }, { reps: 8
 const s2 = sesion('dominada-prona', '2026-09-03', [{ reps: 6 }], { id: 'mig-2' });
 const crudoV1 = copia({
   ...DEFAULT_FITNESS,
+  /* 🔓 Fitness 4/8 — el default ya es la 2: lo de la versión 1 se escribe con su número. */
+  version: 1,
   sesiones: [s1, s2],
   objetivos: [{ id: 'mig-o1', exerciseId: 'curl-barra', tipo: 'reps', valor: 15, unidad: 'reps', creadoEn: Date.parse('2026-08-01'), estado: 'activo' }],
 });
 const intacto = copia(crudoV1);
 {
-  const r = migrarFitness(crudoV1);
-  ok(r.fitness === crudoV1 && !r.migrada && !r.error,
+  const alDia = { ...crudoV1, version: VERSION_FITNESS };
+  const r = migrarFitness(alDia);
+  ok(r.fitness === alDia && !r.migrada && !r.error,
     'Con la versión al día no se copia ni se toca nada: devuelve lo mismo');
 }
 /* Migraciones de ENSAYO (apartado 57: "crear datos de versiones anteriores"). */
@@ -171,14 +174,16 @@ const ENSAYO = [
 }
 {
   const app = leer('src/App.jsx');
-  ok(/const migracionFit = migrarFitness\(fit\);[\s\S]{0,200}const cargaFit = apartarLoQueNoCarga\(migracionFit\.fitness, normalizarFitnessConSesiones\(migracionFit\.fitness\)\);[\s\S]{0,300}setFitness\(cargaFit\.fitness\);/.test(app),
+  /* 🔓 Fitness 4/8 — entre migrar y normalizar va la copia de seguridad de la M1, y lo que
+     se pone es lo cargado con su entrada en vigor: el orden es el mismo. */
+  ok(/let migracionFit = migrarFitness\(fit\);[\s\S]{0,2500}const cargaFit = apartarLoQueNoCarga\(migracionFit\.fitness, normalizarFitnessConSesiones\(migracionFit\.fitness\)\);[\s\S]{0,600}setFitness\(fitnessCargado\);/.test(app),
     '🚨 App.jsx migra lo CRUDO, luego normaliza y luego aparta: después de normalizar ya no se sabría qué había (EH F46)');
 }
 
 /* ═══ 3 · La cuarentena (apartados 28, 32, 35 y 36) ═════════════════════════ */
 console.log('\n── 3 · Lo que no carga se aparta, no se tira (apartados 28, 32, 35 y 36) ──');
-ok(igual(LISTAS_EN_CUARENTENA, ['sesiones', 'objetivos', 'clasificaciones', 'plantillas', 'ejercicios']),
-  'Las cinco listas con `id`: un tramo de `planesAnteriores` no lo lleva (es sus fechas), y con él dentro se habrían apartado TODOS');
+ok(igual(LISTAS_EN_CUARENTENA, ['sesiones', 'objetivos', 'clasificaciones', 'plantillas', 'ejercicios', 'rutinas']),
+  'Las seis listas con `id` (la sexta, `rutinas`, de la Fitness 3/8): un tramo de `planesAnteriores` no lo lleva (es sus fechas), y con él dentro se habrían apartado TODOS');
 ok(MOTIVOS_CUARENTENA.map((m) => m.id).join() === 'sin_id,no_se_entiende,repetido' && MOTIVOS_CUARENTENA.every((m) => m.texto),
   'Tres motivos, cada uno con su frase');
 const valida = sesion('press-banca-barra', '2026-09-05', [{ reps: 8, peso: 60 }], { id: 'q-buena' });

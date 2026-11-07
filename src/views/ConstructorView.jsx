@@ -21,7 +21,7 @@
    pantalla y en un dedo sobre una lista con scroll.
    =========================================================================== */
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useId } from 'react';
 import {
   ArrowLeft, Plus, Check, ChevronUp, ChevronDown, Copy, Trash2, Pencil, X, Repeat,
 } from 'lucide-react';
@@ -30,7 +30,7 @@ import { PastillaFiltro as Pastilla } from '../components/piezasFitness';
 import { acentoLegible } from '../lib/acabadoFitness';
 import { hexToRgba } from '../lib/helpers';
 import {
-  Card, SectionTitle, TextInput, Textarea, GhostBtn, PrimaryButton, Field, EmptyHint,
+  Card, SectionTitle, TextInput, Textarea, GhostBtn, PrimaryButton, Field, EmptyHint, MensajeDeCampo,
 } from '../components/ui';
 import { iconoDeGrupo } from '../components/iconosFitness';
 import { ENTORNOS, ejercicioPorId, musculoPrincipal } from '../lib/ejercicios';
@@ -48,6 +48,9 @@ import { ExerciseReplacementModal } from '../components/sustitucion';
 import { PROPS_CAMPO_NUMERICO } from '../lib/movilFitness';
 import { ListaAnimada } from '../components/layoutMotion';
 import { VacioQueLlega } from '../components/estadosAsincronos';
+import { leerRepeticiones, sumarRepeticiones, textoReps } from '../lib/numerosFitness';
+import { progresionActivaEnLinea, conProgresionEnLinea } from '../lib/progresion';
+import { InterruptorProgresion } from '../components/progresionFitness';
 
 /* ── Un botón redondo de icono ─────────────────────────────────────────────
    ⚠️ Siempre con `aria-label` y con `toque-44`: un botón de solo icono sin
@@ -133,9 +136,24 @@ export function FilaEjercicio({
    puede tocar más y menos **y** escribirlo. */
 function Contador({
   label, valor, onCambiar, min = 0, max = 999, sufijo = '', vacio = '—', permiteVacio = true,
+  /* 🔓 Fitness 5/8 (prompt 5 §8) — unas repeticiones admiten medias (8,5): el
+     número se puede escribir, y ± conserva la media. Lo que no vale se dice. */
+  medias = false,
 }) {
   const n = valor === null || valor === undefined ? null : Number(valor);
-  const mueve = (d) => onCambiar(Math.max(min, Math.min(max, (n ?? min) + d)));
+  const mueve = (d) => onCambiar(Math.max(min, Math.min(max, medias && n !== null ? sumarRepeticiones(n, d) : (n ?? min) + d)));
+  const [escrito, setEscrito] = useState(null);
+  const [error, setError] = useState('');
+  const idError = useId();
+  const confirmarEscrito = () => {
+    if (escrito === null) return;
+    const r = leerRepeticiones(escrito);
+    if (!r.ok) { setError(r.mensaje); return; }
+    if (r.valor !== null && (r.valor < min || r.valor > max)) { setError(`Entre ${min} y ${max}.`); return; }
+    setError('');
+    setEscrito(null);
+    if (r.valor === null ? permiteVacio : true) onCambiar(r.valor);
+  };
   return (
     <Field label={label}>
       <div className="flex items-center gap-2">
@@ -152,12 +170,30 @@ function Contador({
           className="w-10 h-10 rounded-xl text-lg font-bold toque-44 active:scale-90 disabled:opacity-30"
           style={{ background: hexToRgba(COLORS.border, 0.45), color: COLORS.text }}
         >−</button>
-        <div
-          className="flex-1 text-center rounded-xl py-2.5 text-base font-extrabold"
-          style={{ background: hexToRgba(COLORS.border, 0.3), color: COLORS.text, minHeight: 44 }}
-        >
-          {n === null ? vacio : `${n}${sufijo}`}
-        </div>
+        {medias ? (
+          <input
+            type="text"
+            inputMode="decimal"
+            {...PROPS_CAMPO_NUMERICO}
+            aria-label={label}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? idError : undefined}
+            value={escrito !== null ? escrito : (n === null ? '' : textoReps(n))}
+            placeholder={vacio}
+            onChange={(ev) => { setEscrito(ev.target.value); setError(''); }}
+            onBlur={confirmarEscrito}
+            onKeyDown={(ev) => { if (ev.key === 'Enter') ev.currentTarget.blur(); }}
+            className="campo flex-1 min-w-0 text-center rounded-xl py-2.5 text-base font-extrabold outline-none"
+            style={{ background: hexToRgba(COLORS.border, 0.3), color: COLORS.text, minHeight: 44, border: `1px solid ${error ? COLORS.negative : 'transparent'}` }}
+          />
+        ) : (
+          <div
+            className="flex-1 text-center rounded-xl py-2.5 text-base font-extrabold"
+            style={{ background: hexToRgba(COLORS.border, 0.3), color: COLORS.text, minHeight: 44 }}
+          >
+            {n === null ? vacio : `${n}${sufijo}`}
+          </div>
+        )}
         <button
           onClick={() => mueve(1)}
           aria-label={`Subir ${label}`}
@@ -166,6 +202,7 @@ function Contador({
           style={{ background: hexToRgba(COLORS.border, 0.45), color: COLORS.text }}
         >+</button>
       </div>
+      {medias && <MensajeDeCampo id={idError}>{error}</MensajeDeCampo>}
     </Field>
   );
 }
@@ -179,6 +216,8 @@ export function EditorLinea({
   linea, propios = [], accent, onCambiar, onCerrar, onCambiarVariante = null,
   /* 🔓 FIT F33, apartado 15 — abre la hoja de sustitución. */
   onReemplazar = null,
+  /* 🔓 Fitness 5/8 — con Progresivo o Experto, el interruptor de esta línea. */
+  modoProgresion = 'manual',
 }) {
   if (!linea) return <EmptyHint text="Ese ejercicio ya no está en la plantilla." />;
   const nombre = nombreDeLinea(linea, propios);
@@ -255,6 +294,7 @@ export function EditorLinea({
               valor={linea.repeticiones}
               min={1}
               max={200}
+              medias
               onCambiar={(v) => set({ repeticiones: v })}
             />
             {/* Apartado 10: *"repeticiones exactas; rango de repeticiones"*. */}
@@ -263,6 +303,7 @@ export function EditorLinea({
               valor={linea.repsHasta}
               min={1}
               max={200}
+              medias
               onCambiar={(v) => set({ repsHasta: v })}
             />
           </>
@@ -334,6 +375,17 @@ export function EditorLinea({
           </Field>
         )}
 
+        {/* 🔓 Fitness 5/8 (prompt 5 §4) — discreto, y solo fuera de Manual. Se
+            guarda en `config.progresion` de la línea: editar y duplicar lo
+            conservan. */}
+        {modoProgresion !== 'manual' && (
+          <InterruptorProgresion
+            activa={progresionActivaEnLinea(linea)}
+            accent={accent}
+            onCambiar={(v) => set({ config: conProgresionEnLinea(linea, v).config })}
+          />
+        )}
+
         {/* Apartado 14: la nota de la PLANTILLA, no la de una sesión real. */}
         <Field label="Nota">
           <Textarea
@@ -398,6 +450,8 @@ export function ResumenConstructor({ rutina, propios = [], accent }) {
    la aplicación es el borrador, y vive en el dispositivo (apartado 25). */
 export default function ConstructorView({
   planes = [], propios = [], accent, rutinaInicial = null, onGuardar, onVolver,
+  /* 🔓 Fitness 5/8 — el modo global: en Manual no hay interruptor por línea. */
+  modoProgresion = 'manual',
 }) {
   const [rutina, setRutina] = useState(() => rutinaInicial || crearRutina({}));
   /* Con qué se entró, para saber si hay algo que perder al salir (apartado 26). */
@@ -465,6 +519,7 @@ export default function ConstructorView({
           propios={propios}
           accent={accent}
           onCambiar={(c) => cambiar(editarLinea(rutina, editando, c))}
+          modoProgresion={modoProgresion}
           onCambiarVariante={(id) => cambiar(cambiarVariante(rutina, editando, id, propios))}
           onReemplazar={linea ? () => setReemplazando(linea.id) : null}
           onCerrar={() => setEditando(null)}

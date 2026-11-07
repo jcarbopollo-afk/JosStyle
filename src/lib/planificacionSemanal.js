@@ -105,7 +105,7 @@ export const ESTADOS_PLANIFICACION = [
   { id: 'planned_not_completed', nombre: 'Planificado', simbolo: '○', que: 'Un día que ya pasó, con entrenamiento en el plan y ninguno guardado. No es un fallo: puede que no lo registrara.' },
   { id: 'unplanned', nombre: 'Sin entrenamiento planificado', simbolo: '—', que: 'El plan no tiene entrenamiento ese día. No se afirma que descansara: puede haber entrenamiento libre (apartado 5).' },
   { id: 'completed_extra', nombre: 'Entrenamiento extra', simbolo: '+', que: 'Hay un entrenamiento guardado un día sin sesión planificada. No es negativo (apartado 32).' },
-  { id: 'unknown', nombre: 'Sin datos del plan', simbolo: '·', que: 'No se sabe qué plan había ese día, así que no se afirma nada de él (apartado 31: «No inventar»).' },
+  { id: 'unknown', nombre: 'Sin datos de la rutina', simbolo: '·', que: 'No se sabe qué plan había ese día, así que no se afirma nada de él (apartado 31: «No inventar»).' },
 ];
 export const estadoPlanificacion = (id) => ESTADOS_PLANIFICACION.find((e) => e.id === id) || null;
 
@@ -114,9 +114,9 @@ export const TEXTO_REALIZADO = 'Entrenamiento realizado';
 export const TEXTO_SIN_REGISTRO = 'Sin entrenamiento registrado';
 export const TEXTO_SIN_DURACION = 'Duración no disponible';
 export const PLAN_INVALIDO = {
-  titulo: 'Este plan no tiene una planificación válida.',
+  titulo: 'Esta rutina no tiene una planificación válida.',
   texto: 'No tiene ningún día con ejercicios, así que no se puede repartir la semana.',
-  editar: 'Editar plan',
+  editar: 'Editar rutina',
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -237,7 +237,7 @@ function descripcionDelDia(d) {
       return `${cabeza} Sin entrenamiento planificado. Entrenamiento extra: ${hechasTexto}.`;
     default: {
       /* Una plantilla como plan: se dice cuál es y que no tiene día. */
-      const que = p && p.libre ? `${p.nombre}, ${TEXTO_SIN_DIA_FIJO.toLowerCase()}.` : 'Sin datos del plan.';
+      const que = p && p.libre ? `${p.nombre}, ${TEXTO_SIN_DIA_FIJO.toLowerCase()}.` : 'Sin datos de la rutina.';
       if (hechas.length) return `${cabeza} ${que} ${TEXTO_REALIZADO}: ${hechasTexto}.`;
       return d.futuro ? `${cabeza} ${que}` : `${cabeza} ${que} ${TEXTO_SIN_REGISTRO}.`;
     }
@@ -426,7 +426,7 @@ export function getWeekPlan(fecha, fitness, { hoy = todayISO(), planes = CATALOG
   /* Apartado 22 — si en esta semana cambió de plan, se dice cuál había cada día. */
   const planesDeLaSemana = [...new Set(dias.map((d) => d.planificado?.planNombre).filter(Boolean))];
   const aviso = planesDeLaSemana.length > 1
-    ? `Esta semana cambiaste de plan: ${planesDeLaSemana.map((n) => `«${n}»`).join(' y después ')}.`
+    ? `Esta semana cambiaste de rutina: ${planesDeLaSemana.map((n) => `«${n}»`).join(' y después ')}.`
     : '';
 
   return {

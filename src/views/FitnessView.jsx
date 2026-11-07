@@ -24,11 +24,11 @@
    dejaste hace dos semanas. `DEFAULT_FITNESS` ni siquiera tiene el campo.
    =========================================================================== */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, ChevronLeft, Flame, Dumbbell, Pencil, X } from 'lucide-react';
 import { COLORS } from '../tokens';
 import { acentoLegible } from '../lib/acabadoFitness';
-import { hexToRgba } from '../lib/helpers';
+import { hexToRgba, todayISO } from '../lib/helpers';
 import { Card, SectionTitle, GhostBtn, EmptyHint } from '../components/ui';
 import {
   AREAS_FITNESS, AREA_INICIAL, ESTADOS_VACIOS, ACCESOS_ENTRENAMIENTO,
@@ -73,10 +73,26 @@ import ClasificacionView from './ClasificacionView';
 /* FIT F8 — el resumen y el guardado, también pantalla entera: se llega desde el
    entrenamiento en vivo y se sale guardando o descartando. */
 import FinalizacionView from './FinalizacionView';
-import { duplicarPlantilla } from '../lib/plantillas';
 import {
-  usarPlan, personalizarPreset, alternarFavoritoPlan, quitarPlanActivo, diaARutina,
+  personalizarPreset, alternarFavoritoPlan, diaARutina,
 } from '../lib/planes';
+import EditorRutinaView from './EditorRutinaView';
+import {
+  prepararSesionNueva, opcionesDeRecuperacion, sesionParaRecuperar,
+} from '../lib/cumplimientoFitness';
+/* 🔓 Fitness 5/8 — las propuestas de progresión al empezar. */
+import { conPropuestas, modoDeProgresion, cambiarModoProgresion } from '../lib/progresion';
+/* 🔓 Fitness 6/8 — las anotaciones anteriores de cada línea. */
+import { anotacionesDeEjercicio } from '../lib/anotacionesFitness';
+import { completarEntrenamiento } from '../lib/completarEntrenamiento';
+import { AvisoFechaOcupada } from '../components/cumplimientoFitness';
+import { desplazarHasta } from '../lib/accesibilidadMotion';
+import {
+  plantillasDisponibles, rutinasPropias, fichaDeRutina, planesPredeterminadosVisibles,
+  activarRutina, quitarRutinaActiva, guardarRutinaCiclica, duplicarRutinaCiclica, rutinaParaEditar,
+  crearRutinaCiclica, avisoDeEliminarRutina, configurarDia, rutinaActiva, duplicarPlantillaDisponible,
+  devolverAHuecos, olvidarHuecos,
+} from '../lib/rutinasCiclicas';
 import { planActivoCompleto, sesionDelDia, tuPlan } from '../lib/tuPlan';
 import {
   empezarSesion, guardarSesion, sesionActiva, descartarSesion, sesionEnCursoDelMismoOrigen,
@@ -300,6 +316,12 @@ export function AreaEntrenamiento({
      sesión del historial o de Tu Plan, la ficha de un ejercicio), y a qué área
      vuelve el historial si se abrió desde Progreso. */
   inicio = null, onInicioConsumido = null, onVolverAArea = null,
+  /* 🔓 Fitness 3/8 — abrir el editor de una rutina (un id, o `null` para una nueva)
+     y eliminar una rutina por la papelera general. */
+  onAbrirEditorRutina = null, onEliminarRutina = null,
+  /* 🔓 Fitness 4/8 — el día de hoy (cambia a medianoche), recuperar un pendiente
+     (empezándolo o con «Completar entrenamiento») y completar uno hecho fuera. */
+  hoy = null, onRecuperar = null, onCompletarRecuperacion = null, onCompletar = null,
 }) {
   const propios = (fitness || {}).ejercicios || [];
   /* 🚨 Lo que construye Josué son **plantillas**, no planes. Lo dejó escrito la
@@ -353,8 +375,14 @@ export function AreaEntrenamiento({
      plantilla sigan igual. ⚠️ Y las líneas que se le pasan son **las de la
      rutina**, no las de `lineasDeDia()`: aquéllas son texto para pintar —«4 × 8»,
      «Pecho 45 %»— y aquí hacen falta las series, el modo y el descanso. */
-  const empezarDelPlan = (indice) => {
+  const empezarDelPlan = (indice, fechaDelDia = null) => {
     if (!onEmpezarSesion) return;
+    /* 🔓 Fitness 4/8 — empezar desde la semana un día PASADO que está pendiente es
+       recuperarlo (prompt 4 §6): la sesión se vincula a esa fecha prevista. */
+    if (fechaDelDia && fechaDelDia < hoy && onRecuperar) {
+      const p = opcionesDeRecuperacion(fitness || {}, { hoy }).recuperables.find((x) => x.fecha === fechaDelDia);
+      if (p) { onRecuperar(p); return; }
+    }
     const resuelto = planActivoCompleto(fitness || {});
     if (!resuelto || !resuelto.plan) return;
     const ficha = sesionDelDia(resuelto.plan, indice, propios);
@@ -488,18 +516,26 @@ export function AreaEntrenamiento({
   if (dentro === 'plantillas') {
     return (
       <PlantillasView
-        plantillas={plantillas}
+        /* 🔓 Fitness 3/8 — la biblioteca entera: las suyas y las predeterminadas
+           (los días de las rutinas predeterminadas), con dónde se usa cada una. */
+        plantillas={plantillasDisponibles(fitness || {})}
+        fitness={fitness || {}}
         propios={propios}
         accent={accent}
         onVolver={() => setDentro(null)}
         onCrear={onAbrirConstructor ? () => onAbrirConstructor(null) : null}
         onEditar={onAbrirConstructor ? (p) => onAbrirConstructor(planARutina(p)) : null}
         onDuplicar={onGuardarFitness ? (p) => {
-          const r = duplicarPlantilla(plantillas, p.id);
-          if (r.ok) onGuardarFitness({ ...(fitness || {}), plantillas: r.plantillas }, 'plantilla_duplicada');
+          const r = duplicarPlantillaDisponible(fitness || {}, p.id);
+          if (r.ok) onGuardarFitness(r.fitness, 'plantilla_duplicada');
         } : null}
         onEliminar={onEliminarPlantilla ? (p) => onEliminarPlantilla(p.id) : null}
         onEmpezar={onEmpezarSesion ? empezarDePlantilla : null}
+        onDevolverHuecos={onGuardarFitness ? (p) => {
+          const r = devolverAHuecos(fitness || {}, p.id);
+          if (r.ok) onGuardarFitness(r.fitness, 'cambios_guardados');
+        } : null}
+        onOlvidarHuecos={onGuardarFitness ? (p) => onGuardarFitness(olvidarHuecos(fitness || {}, p.id)) : null}
       />
     );
   }
@@ -512,12 +548,27 @@ export function AreaEntrenamiento({
       <BibliotecaPlanesView
         fitness={fitness || {}}
         accent={accent}
+        /* 🔓 Fitness 3/8 — la biblioteca de rutinas: las predeterminadas que se ven
+           (sin las borradas; las editadas, en su versión nueva) y las suyas. */
+        planes={planesPredeterminadosVisibles(fitness || {})}
+        propias={rutinasPropias(fitness || {}).map((r) => fichaDeRutina(fitness || {}, r))}
+        activa={(() => { const r = rutinaActiva(fitness || {}); return r ? { id: r.id, nombre: r.nombre } : null; })()}
         onVolver={() => setDentro(null)}
         onUsar={onGuardarFitness ? (planId, opciones) => {
-          const r = usarPlan(fitness || {}, planId, opciones);
+          /* Activar pasa por `activarRutina`, que cierra el tramo de la anterior con
+             su estructura de verdad (también si era una rutina suya). */
+          const r = activarRutina(fitness || {}, planId, opciones);
           /* 🔓 FIT F37, apartado 36 — cambiar de plan se confirma a la vista. */
           if (r.ok) onGuardarFitness(r.fitness, 'plan_activado');
         } : null}
+        onCrearRutina={onAbrirEditorRutina ? () => onAbrirEditorRutina(null) : null}
+        onEditarRutina={onAbrirEditorRutina ? (id) => onAbrirEditorRutina(id) : null}
+        onDuplicarRutina={onGuardarFitness ? (id) => {
+          const r = duplicarRutinaCiclica(fitness || {}, id);
+          if (r.ok) onGuardarFitness(r.fitness, 'cambios_guardados');
+        } : null}
+        onEliminarRutina={onEliminarRutina}
+        avisoEliminarRutina={(id) => avisoDeEliminarRutina(fitness || {}, id)}
         onPersonalizar={onGuardarFitness ? (planId) => {
           const r = personalizarPreset(fitness || {}, planId);
           /* Apartado 15: la copia aparece en Tus plantillas, así que se lleva
@@ -594,9 +645,14 @@ export function AreaEntrenamiento({
         onCambiarPlan={() => setDentro('planificaciones')}
         onVerPlantillas={() => setDentro('plantillas')}
         onCrear={onAbrirConstructor ? () => onAbrirConstructor(null) : null}
-        onQuitar={onGuardarFitness ? () => onGuardarFitness(quitarPlanActivo(fitness || {})) : null}
+        onQuitar={onGuardarFitness ? () => onGuardarFitness(quitarRutinaActiva(fitness || {})) : null}
         onEmpezar={onEmpezarSesion ? empezarDelPlan : null}
         onVerSesion={(id) => setSesionAbierta(id)}
+        hoy={hoy || undefined}
+        onRecuperar={onRecuperar}
+        onCompletarRecuperacion={onCompletarRecuperacion}
+        onCompletar={onCompletar}
+        onCambiarModoProgresion={onGuardarFitness ? (m) => onGuardarFitness(cambiarModoProgresion(fitness || {}, m)) : null}
         /* 🔓 FIT F32, apartado 23 — «Editar plan»: una plantilla suya se abre en
            el constructor; un plan de la biblioteca no se edita, así que se
            lleva a elegir otro. */
@@ -607,7 +663,8 @@ export function AreaEntrenamiento({
             const pl = ((fitness || {}).plantillas || []).find((x) => x && x.id === r.activo.planId);
             return pl && onAbrirConstructor ? () => onAbrirConstructor(planARutina(pl)) : null;
           }
-          return () => setDentro('planificaciones');
+          /* 🔓 Fitness 3/8 — una rutina (suya o predeterminada) se edita en su editor. */
+          return onAbrirEditorRutina ? () => onAbrirEditorRutina(r.activo.planId) : () => setDentro('planificaciones');
         })()}
       />
 
@@ -661,6 +718,23 @@ export function AreaEntrenamiento({
    áreas: el entrenamiento en vivo, el constructor y el cuestionario se pintan a
    pantalla completa, antes de las pestañas, y un fallo en uno de ellos tampoco
    puede llevarse la aplicación. Dentro, cada área tiene el suyo. */
+/* 🚨 Fitness 3/8 (G0) — datos de una versión más nueva de la aplicación: se mira,
+   no se guarda (`fitnessSoloLectura` en App.jsx). */
+export function AvisoSoloLectura() {
+  return (
+    <div role="status" className="mb-3">
+      <Card style={{ border: `1px solid ${COLORS.warning}` }}>
+        <p className="text-sm font-bold" style={{ color: COLORS.text, fontFamily: "'Manrope', sans-serif" }}>
+          Tus datos de Fitness son de una versión más nueva
+        </p>
+        <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+          Recarga la página para poder guardar. Mientras tanto puedes mirarlo todo, pero no se guarda nada en Fitness: así no se pierde lo que hiciste en la versión nueva.
+        </p>
+      </Card>
+    </div>
+  );
+}
+
 export default function FitnessView(props) {
   const { onGuardarFitness = null, accent } = props;
   /* 🔓 FIT F37, apartados 24 y 25 — el aviso de Fitness es el de siempre
@@ -696,6 +770,7 @@ export default function FitnessView(props) {
      (`index.css`). Con `display: contents`: no añade una caja al diseño. */
   return (
     <div className="fit-foco">
+      {props.soloLectura && <AvisoSoloLectura />}
       <AreaSegura clave="fitness" nombre="Fitness" accent={accent}>
         <FitnessViewContenido {...props} onGuardarFitness={guardarF} />
       </AreaSegura>
@@ -716,6 +791,9 @@ function FitnessViewContenido({
   onAddFoto = null, onDeleteFoto = null,
   protegidoFotos = false, pinHash = null, pinSalt = null,
   desbloqueadoFotos = false, onDesbloquearFotos = null, onOlvidoPin = null,
+  onEliminarRutina = null,
+  /* 🔓 Fitness 4/8 — hoy, de `App.jsx` (`useHoyISO`): cambia a medianoche. */
+  hoy = null,
 }) {
   const [area, setArea] = useState(AREA_INICIAL);
   /* 🔓 **FIT F18 — el foco muscular se retira.** La F16 mandaba el grupo a
@@ -767,6 +845,10 @@ function FitnessViewContenido({
   /* FIT F3 — qué se está construyendo es estado de la pantalla, nunca un dato
      guardado (EH F40). `null` = no se está construyendo nada. */
   const [creando, setCreando] = useState(null);
+  /* 🔓 Fitness 3/8 — la rutina que se está editando (`{ rutina, nueva }`). Estado de
+     pantalla, como `creando`: vive aquí y no en el área para no perderse al ir a
+     crear una plantilla nueva desde un día y volver (prompt 3 §4). */
+  const [editandoRutina, setEditandoRutina] = useState(null);
   /* 🚨 FIT F7 — y lo mismo con el entrenamiento en vivo: lo que se guarda es
      **la sesión** (en `fitness.sesiones`, apartado 29); lo que es de la pantalla
      es **cuál está abierta**. Por eso aquí solo vive el id: la sesión se lee de
@@ -776,6 +858,20 @@ function FitnessViewContenido({
   /* 🔓 FIT F37 — el guardado que llega aquí ya es el que lee el resultado y
      avisa (`FitnessView`, abajo): todo guardado de Fitness pasa por él. */
   const guardarF = onGuardarFitness;
+  /* 🔓 Fitness 4/8 — hoy cambia a medianoche y al volver a la aplicación (§3.1: lo
+     previsto para hoy pasa a pendiente al empezar el día siguiente). Y el aviso de
+     una fecha ya ocupada (una sesión por día), que se enseña arriba y se lleva a
+     la vista. Estado de pantalla. Hooks antes de cualquier `return` (regla 4).
+     `hoy` llega de `App.jsx` (`useHoyISO`): Fitness no importa piezas de Nutrición. */
+  const hoyFit = hoy || todayISO();
+  const [avisoOcupada, setAvisoOcupada] = useState(null);
+  /* Para abrir el entrenamiento de ese día en el Historial aunque ya se esté en
+     Entrenamiento: el área lee su `inicio` al montarse, así que se vuelve a montar. */
+  const [reabrir, setReabrir] = useState(0);
+  const avisoRef = useRef(null);
+  useEffect(() => {
+    if (avisoOcupada && avisoRef.current) desplazarHasta(avisoRef.current, { block: 'start' });
+  }, [avisoOcupada]);
 
   const racha = rachaDeFitness(rachas);
   /* 🔓 FIT F16 — `fitness.rangos` ya no se lee aquí. Los rangos **se calculan**
@@ -807,15 +903,51 @@ function FitnessViewContenido({
     return guardarF(guardarSesion(fitness || {}, sesion));
   };
 
-  const empezar = (sesion) => {
+  const empezar = (sesion, { recuperar = null } = {}) => {
     if (!sesion) return;
     /* 🐛 FIT F45 (apartado 21) — «Empezar» en el mismo entrenamiento que ya
        está en curso lo CONTINÚA: antes creaba una segunda sesión y dejaba la
        primera colgada. */
-    const yaEnCurso = sesionEnCursoDelMismoOrigen(fitness || {}, sesion);
-    if (yaEnCurso) { setEntrenando(yaEnCurso.id); return; }
-    guardarSesionViva(sesion);
-    setEntrenando(sesion.id);
+    const yaEnCurso = recuperar ? null : sesionEnCursoDelMismoOrigen(fitness || {}, sesion);
+    /* 🔓 Fitness 4/8 — pero una RECUPERACIÓN en curso no es «el mismo entrenamiento»
+       que el previsto de hoy aunque use la misma plantilla: es el de otro día. Esa no se
+       continúa por aquí; la comprobación de abajo dice que hoy ya hay uno empezado. */
+    const esRecuperacion = !!(yaEnCurso && yaEnCurso.diaDePlan && yaEnCurso.diaDePlan.clase === 'recuperacion');
+    if (yaEnCurso && !esRecuperacion) { setEntrenando(yaEnCurso.id); return; }
+    /* 🚨 Fitness 4/8 — TODA sesión nueva pasa por aquí: una por fecha (§3.2) y
+       clasificada al empezar (prevista, recuperación o libre, con su fecha
+       prevista, su rutina, su día y su plantilla). Si la fecha ya tiene su
+       entrenamiento, se dice y se ofrece abrirlo; no se crea otro. */
+    const r = prepararSesionNueva(fitness || {}, { ...sesion, fecha: hoyFit }, { hoy: hoyFit, recuperar });
+    if (!r.ok) {
+      setAvisoOcupada(r.aviso || { titulo: 'No se puede empezar ese entrenamiento', texto: 'Ya no se puede recuperar.', enCurso: false, sesionId: null });
+      return;
+    }
+    setAvisoOcupada(null);
+    /* 🔓 Fitness 5/8 — al empezar, la propuesta de progresión de cada serie
+       (`plan.propuesta`), según el modo y el interruptor de cada línea. En
+       Manual la sesión sale tal cual. Nunca toca `hecho`. */
+    const conProp = conPropuestas(fitness || {}, r.sesion);
+    guardarSesionViva(conProp);
+    setEntrenando(conProp.id);
+  };
+  /* 🔓 Fitness 4/8 — recuperar un pendiente: la plantilla de aquel día, ejecutada hoy
+     y vinculada a su fecha prevista (§6 y §8.6). */
+  const recuperar = (p) => {
+    if (!p) return;
+    const s = sesionParaRecuperar(fitness || {}, p, { hoy: hoyFit, propios, pesoCorporal: perfil ? perfil.peso : null });
+    if (!s) { setAvisoOcupada({ titulo: 'No se puede recuperar', texto: 'Su plantilla ya no está disponible.', enCurso: false, sesionId: null }); return; }
+    empezar(s, { recuperar: p });
+  };
+  /* 🔓 Fitness 4/8 — «Completar entrenamiento» (D-03): sin directo, todas las series
+     hechas y sin valores. Devuelve el resultado para que la tarjeta diga el error. */
+  const completar = (opciones) => {
+    if (!guardarF) return { ok: false, mensaje: 'No se puede guardar ahora.' };
+    const r = completarEntrenamiento(fitness || {}, { ...opciones, hoy: hoyFit, propios, pesoCorporal: perfil ? perfil.peso : null });
+    if (!r.ok) return r;
+    setAvisoOcupada(null);
+    guardarF(guardarSesion(fitness || {}, r.sesion), 'cambios_guardados');
+    return r;
   };
 
   /* 🚨 FIT F7 — el entrenamiento en vivo es PANTALLA ENTERA, sin las pestañas
@@ -844,6 +976,8 @@ function FitnessViewContenido({
         /* 🔓 FIT F38, apartado 12 — la última vez de ese ejercicio, sin contar
            la sesión que se está haciendo. Es `ultimaVez()` de la F11. */
         ultimaVezDe={(exerciseId) => ultimaVezEnVivo(fitness || {}, exerciseId, { propios, sesionId: enVivo.id })}
+        /* 🔓 Fitness 6/8 — la nota anterior de la línea y las antiguas. */
+        anotacionesDe={(ej) => anotacionesDeEjercicio(fitness || {}, enVivo, ej)}
         /* 🔓 FIT F33, apartado 21 — al sustituir un ejercicio con objetivo.
            🚨 Cancelarlo va **en la misma escritura** que la sesión: dos
            guardados seguidos parten del mismo `fitness` y el segundo borraría
@@ -910,9 +1044,57 @@ function FitnessViewContenido({
         planes={plantillas}
         propios={propios}
         accent={accent}
+        /* 🔓 Fitness 5/8 — el interruptor «Progresión» de cada línea solo se
+           enseña fuera de Manual (prompt 5 §4). */
+        modoProgresion={modoDeProgresion(fitness || {})}
         rutinaInicial={creando.rutina}
-        onGuardar={(siguientes) => guardarF && guardarF({ ...(fitness || {}), plantillas: siguientes }, 'cambios_guardados')}
+        onGuardar={(siguientes) => {
+          if (!guardarF) return undefined;
+          /* 🔓 Fitness 3/8 — si se abrió desde un día de una rutina («Crear una
+             plantilla nueva»), la nueva se asigna a ese día del borrador. */
+          if (creando.paraDia && editandoRutina) {
+            const antes = new Set(plantillas.map((x) => x && x.id));
+            const nueva = siguientes.find((x) => x && !antes.has(x.id));
+            if (nueva) {
+              setEditandoRutina((e) => (e ? { ...e, vuelta: (e.vuelta || 0) + 1, rutina: configurarDia(e.rutina, creando.paraDia, { tipo: 'entreno', plantillaId: nueva.id }) } : e));
+              setCreando((c) => (c ? { ...c, paraDia: null } : c));
+            }
+          }
+          return guardarF({ ...(fitness || {}), plantillas: siguientes }, 'cambios_guardados');
+        }}
         onVolver={() => setCreando(null)}
+      />
+    );
+  }
+
+  /* 🔓 Fitness 3/8 — el editor de una rutina, a pantalla completa como el
+     constructor (va después de él: crear una plantilla desde un día abre el
+     constructor encima y, al volver, el borrador sigue aquí). */
+  if (editandoRutina) {
+    return (
+      <EditorRutinaView
+        key={editandoRutina.vuelta || 0}
+        original={editandoRutina.original}
+        fitness={fitness || {}}
+        plantillas={plantillasDisponibles(fitness || {})}
+        rutinaInicial={editandoRutina.rutina}
+        nueva={editandoRutina.nueva}
+        accent={accent}
+        onCambiar={(r) => setEditandoRutina((e) => (e ? { ...e, rutina: r } : e))}
+        onVolver={() => { setEditandoRutina(null); setInicio({ area: 'entrenamiento', dentro: 'planificaciones' }); setArea('entrenamiento'); }}
+        onCrearPlantilla={guardarF ? (borrador, diaId) => {
+          setEditandoRutina((e) => (e ? { ...e, rutina: borrador } : e));
+          setCreando({ rutina: crearRutina({}), paraDia: diaId });
+        } : null}
+        onGuardar={guardarF ? (rutina) => {
+          const r = guardarRutinaCiclica(fitness || {}, rutina);
+          if (!r.ok) return r;
+          guardarF(r.fitness, 'cambios_guardados');
+          setEditandoRutina(null);
+          setInicio({ area: 'entrenamiento', dentro: 'planificaciones' });
+          setArea('entrenamiento');
+          return r;
+        } : null}
       />
     );
   }
@@ -941,10 +1123,28 @@ function FitnessViewContenido({
     <div className="space-y-1">
       <CabeceraFitness titulo="Fitness" racha={racha} accent={accent} />
       <PestanasFitness areas={AREAS_FITNESS} activa={area} onCambiar={cambiarArea} accent={accent} />
+      {/* 🔓 Fitness 4/8 — una sesión por día: el aviso sale arriba, venga de donde
+          venga el «Empezar» (Tu Plan, una plantilla, la biblioteca, «Repetir»). */}
+      {avisoOcupada && (
+        <div ref={avisoRef} className="mb-3">
+          <AvisoFechaOcupada
+            aviso={avisoOcupada}
+            accent={accent}
+            onVer={(a) => {
+              setAvisoOcupada(null);
+              const s = (fitness?.sesiones || []).find((x) => x && x.id === a.sesionId);
+              if (!s) return;
+              if (s.estado === 'completada') { setInicio({ area: 'entrenamiento', dentro: 'historial', sesion: s.id }); setArea('entrenamiento'); setReabrir((n) => n + 1); return; }
+              setEntrenando(s.id);
+            }}
+            onCerrar={() => setAvisoOcupada(null)}
+          />
+        </div>
+      )}
 
       {/* 🔓 FIT F37, apartado 4 — cambiar de área: opacidad y seis píxeles,
           220 ms. La `key` hace que cada área entre de nuevo. */}
-      <div key={area} className="fit-entra">
+      <div key={`${area}-${reabrir}`} className="fit-entra">
       {area === 'rangos' && (
         <AreaSegura clave="rangos" nombre="Rangos" accent={accent}>
         <AreaRangos
@@ -1014,10 +1214,20 @@ function FitnessViewContenido({
           onGuardarFitness={guardarF}
           onEliminarPlantilla={onEliminarPlantilla}
           onEliminarSesion={onEliminarSesion}
+          onEliminarRutina={onEliminarRutina}
+          onAbrirEditorRutina={guardarF ? (id) => {
+            const r = id ? rutinaParaEditar(fitness || {}, id) : null;
+            const rutina = id ? r : crearRutinaCiclica({});
+            setEditandoRutina(rutina ? { rutina, nueva: !id, vuelta: 0, original: JSON.stringify(rutina) } : null);
+          } : null}
           onAbrirConstructor={guardarF
             ? (rutina) => setCreando({ rutina: rutina || crearRutina({}) })
             : null}
           onEmpezarSesion={guardarF ? empezar : null}
+          hoy={hoyFit}
+          onRecuperar={guardarF ? recuperar : null}
+          onCompletarRecuperacion={guardarF ? (p) => completar({ recuperar: p }) : null}
+          onCompletar={guardarF ? (opcion, fecha) => completar({ opcion, fecha }) : null}
           sesionSinGuardar={sinGuardar}
           onSeguirGuardando={sinGuardar ? () => setEntrenando(sinGuardar.id) : null}
           onDescartarSinGuardar={sinGuardar && guardarF ? () => {

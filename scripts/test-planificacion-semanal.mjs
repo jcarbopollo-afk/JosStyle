@@ -483,8 +483,8 @@ const vacia = { id: 'pv', nombre: 'Vacía', ejercicios: [] };
 const fVacia = { ...DEFAULT_FITNESS, plantillas: [vacia], planActivo: crearPlanActivo({ planId: 'pv', origen: 'plantilla', desde: '2026-09-21' }) };
 const sVacia = getWeekPlan(HOY, fVacia, { hoy: HOY });
 ok(sVacia.estado === 'invalido' && sVacia.dias.length === 0, '🚨 Un plan sin ningún día con ejercicios es `invalido`');
-ok(PLAN_INVALIDO.titulo === 'Este plan no tiene una planificación válida.' && PLAN_INVALIDO.editar === 'Editar plan',
-  '…con las palabras del apartado 23');
+ok(PLAN_INVALIDO.titulo === 'Esta rutina no tiene una planificación válida.' && PLAN_INVALIDO.editar === 'Editar rutina',
+  '…con las palabras del apartado 23 (desde la Fitness 3/8, «rutina»)');
 ok(tuPlan(fVacia, { hoy: HOY }).invalido === true, '…y Tu Plan lo sabe, en vez de romperse');
 ok(!planValido({ dias: [] }) && !planValido(null) && !planValido({ dias: [{ descanso: true }] }) && planValido(planPorId(PPL)),
   'planValido: sin días, sin nada o todo descanso no valen; un plan de la biblioteca sí');
@@ -550,8 +550,8 @@ ok(ESTADOS_PLANIFICACION.map((e) => e.id).join() === 'planned,completed,planned_
   'Los seis estados del apartado 31, con sus ids');
 ok(getDayTrainingStatus(HOY, f1, { hoy: HOY }).estado === 'unplanned' && getDayTrainingStatus('2026-09-21', f1, { hoy: HOY }).estado === 'completed',
   'getDayTrainingStatus: el estado de un día');
-ok(diaDePlanificacion({ fecha: HOY, planificado: null, realizadas: [] }, { hoy: HOY }).descripcion === 'Jueves 24 de septiembre (hoy). Sin datos del plan. Sin entrenamiento registrado.',
-  'Sin datos del plan, se dice —y se dice que no hay registro—');
+ok(diaDePlanificacion({ fecha: HOY, planificado: null, realizadas: [] }, { hoy: HOY }).descripcion === 'Jueves 24 de septiembre (hoy). Sin datos de la rutina. Sin entrenamiento registrado.',
+  'Sin datos de la rutina, se dice —y se dice que no hay registro—');
 ok(estructuraDelPlan(null) === null && estructuraDelPlan({ id: 'pl1', nombre: 'X' }, 'plantilla').dias[0].id === 'pl1-dia',
   'estructuraDelPlan: una plantilla es un día, con el mismo id que Tu Plan');
 

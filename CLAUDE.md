@@ -2278,6 +2278,56 @@ había que adivinarlo.**
 
 ▶️ **Lo que hay que hacer ahora, en este orden:**
 
+🏋️ **FITNESS — LA REORGANIZACIÓN EN OCHO FASES (desde el 2026-11-03).** Antes de tocar Fitness, leer
+**`docs/FITNESS_DOCUMENTO_MAESTRO.md`** (estado verificado) y **`docs/15_FITNESS/PLAN_DESARROLLO/`**
+(`PLAN_MAESTRO_FITNESS.md`, los ocho prompts con las decisiones D-01 a D-05 incorporadas; y
+`SEGUIMIENTO_FASES.md`, el estado de cada fase y el protocolo «sigue»). Rama de trabajo
+**`claude/fitness-rediseno`**, creada desde `main`; **Imagen personal va aparte y no se toca** (D-01).
+Fases 1 a 6 completadas (sin commit): diseño en **`docs/15_FITNESS/ARQUITECTURA_TECNICA.md`** y, en la
+Fase 3, las rutinas cíclicas de 1 a 30 días (`src/lib/rutinasCiclicas.js`, `EditorRutinaView.jsx`), la
+biblioteca de plantillas con «en uso» y la guardia de versión. 🚨 **Lo predeterminado vive en el código y se
+copia al editarlo o borrarlo, con el mismo id**; «rutina» es el ciclo y «plantilla», el entrenamiento.
+Regla de recuperación definitiva (D-02): un entrenamiento perdido caduca al realizarse **dos entrenamientos
+posteriores** a su fecha prevista. **Fase 4 completada (sin commit)**: 🚨 **el cumplimiento sale de UN motor,
+`src/lib/cumplimientoFitness.js`** (pendientes, caducidad, estados y colores de cada fecha, ventana de 7 días,
+recuperación y sus consecuencias); ninguna pantalla calcula un color. 🚨 **Toda sesión nueva pasa por
+`prepararSesionNueva`**: una por fecha (solo en el cliente; el SQL del servidor está preparado y sin ejecutar,
+PD-03) y clasificada al empezar en `diaDePlan` (prevista, recuperación o libre, con su fecha prevista). «Completar
+entrenamiento» (`completarEntrenamiento.js`, D-03): todas las series hechas **sin ningún valor**. La migración M1
+(versión 2, `migracionFitnessV2.js`) existe solo en código y pruebas: **no se ha ejecutado contra datos reales**.
+PD-01, PD-02 y PD-08 tienen una lectura **provisional** que Josué debe confirmar (C-77). **Fase 5 completada (sin
+commit)**: 🚨 **la progresión sale de `progresion.js`, ampliado, nunca de un segundo motor**: modo global en
+`preferencias.progresion` (Manual por defecto · Progresivo · Experto, PD-13), interruptor por línea en
+`config.progresion` (sin guardar, activado: AJ-20) y comparación **por plantilla + `linea.id` + `exerciseId`** (la sesión
+guarda `linea.id` desde esta fase). La propuesta se calcula al empezar (`conPropuestas`) y va en `serie.plan.propuesta`:
+🚨 **nunca escribe `hecho`**. 🚨 **Las repeticiones son enteras o de media en media, con UNA regla en
+`numerosFitness.js`** (`repeticionValida`, `leerRepeticiones`, `textoReps`): 8,2 se rechaza con su frase, nunca se
+redondea, y al cargar se conserva tal cual. Versión 3 (M2, `migracionFitnessV3.js`, solo código y pruebas) para que una
+aplicación de la Fase 4 no redondee al guardar. **Fase 6 completada (sin commit)**: 🚨 **la anotación de un ejercicio
+es `ejercicio.notas` de la foto de la sesión** (nace vacía); la nota anterior y las antiguas se LEEN de las sesiones
+(`anotacionesFitness.js`) con **la misma correspondencia que la progresión** (`ejerciciosDeLineaEnSesiones`); la nota de
+la plantilla viaja como `linea.indicacion` y **nunca** se copia a la anotación; `sesion.notas` es la general. **Fase 7
+completada (sin commit)**: 🚨 **la disciplina, el calendario y el detalle de un día salen de `disciplinaFitness.js`, que
+solo CUENTA los estados de `estadoDeFecha`** (ninguna pantalla calcula un color ni un porcentaje). La fórmula vive en
+`FORMULA_CUMPLIMIENTO` (cumplidos ÷ evaluados; el parcial cuenta medio; pendientes, hoy, futuro y sin seguimiento fuera
+del denominador; una recuperación cuenta una vez, en su fecha prevista). Periodos con fechas naturales en local
+(`rangoDePeriodo`: 7 y 30 días móviles, este mes, mes anterior, elegir fechas). La racha de cumplimiento es **propia de
+Fitness y provisional** (PD-06, C-79): no toca la racha global. El historial por plantilla es un **filtro** de la lista
+(`plantillaDeSesion`, la regla de la progresión) y la evolución por plantilla una **opción** de
+`detalleCompletoDeEjercicio` (`plantilla`), con la tabla serie a serie. **Fase 8 completada (sin commit)** —el
+rediseño de Fitness está cerrado en código y pruebas; lo que queda necesita a Josué (PD-03, R1)—: 🚨 **UN SOLO
+CALENDARIO**, el de Historial (`CalendarioCumplimiento`, mes o semana): el de Progreso → Resumen se retiró y ahora es un
+acceso («Ver el calendario»); cada día dice también qué se entrenó, aunque sea de antes del seguimiento. 🚨 **UNA SOLA
+FUENTE DE «QUÉ DÍA CUENTA COMO ENTRENAMIENTO»: `diasDeActividadDeEntrenamiento`** (`disciplinaFitness.js`; suman
+completo, recuperado, parcial y descanso respetado; cortan perdido y descanso sacrificado; pendiente y hoy, neutros; PD-06
+definitiva). La racha de Fitness sale de ahí y la **global de entrenamiento** de Rachas también:
+`proyectarRachasDeEntrenamiento` (`rachasServicio.js`) la proyecta en App.jsx (`rachasVistas`) con la regla interna
+`segun_fitness` (`rachas.js`, `toca`/`corta`). 🚨 **La proyección es una vista y nunca se guarda**: las pantallas leen
+`rachasVistas` y las escrituras van sobre `rachas`. Sin seguimiento en Fitness, la racha de entrenamiento sigue a mano; con
+él, sus marcas a mano se conservan guardadas y no cuentan, y las demás rachas no cambian. 🐛 Y al crear la suite de la
+fase pisé `scripts/test-integracion-fitness.mjs` (era de la FIT F36): se restauró de git y la nueva es
+`test-integracion-final-fitness.mjs`. **Antes de crear un archivo, buscar el nombre** — otra vez.
+
 🧔 **IMAGEN PERSONAL — EL CICLO POSTERIOR A LA F65 (2026-11-01): B1–B8 APROBADAS Y B9 HECHA; FALTA FUSIONAR EN `main`.** Josué abrió un
 ciclo nuevo para reorganizar su navegación: la portada son ahora **seis tarjetas** (Ropa, Cuidado, Pelo, Fragancia, Accesorios y
 Funcionamiento) con **Hábitos y rutinas** aparte. **Rama: `claude/imagen-personal-integracion`**, basada en `main` (`ea7bc4a`) y

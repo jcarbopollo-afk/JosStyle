@@ -208,7 +208,7 @@ import { detalleDeObjetivo as detalleObjetivoF30, objetivoEnVivo as enVivoF30 } 
    `TrainingRecentSessions` SIN su dato devuelven `null` a propósito: eso se
    prueba en Node (FIT F3), aquí solo con dato. */
 import {
-  TrainingActivitySummary, TrainingActivityCalendar, TrainingActivityDay, TrainingFrequencyCard,
+  TrainingActivitySummary, TrainingFrequencyCard,
   TrainingRecentSessions, TrainingRecentSessionCard, TrainingPlanAdherence, TrainingPeriodSelector,
 } from '../src/components/actividadEntrenamiento.jsx';
 import {
@@ -356,7 +356,36 @@ import ConstructorView, { FilaEjercicio, EditorLinea, ResumenConstructor } from 
 /* FIT F4 — la gestión de plantillas. ⚠️ Sus tres piezas sueltas, porque el
    detalle y la confirmación **solo aparecen tras pulsar algo** (NAV F3). */
 import PlantillasView, { TarjetaPlantilla, DetallePlantilla, ConfirmarEliminarPlantilla } from '../src/views/PlantillasView.jsx';
-import BibliotecaPlanesView, { TarjetaPlan, DetallePlan, ConfirmarCambioDePlan } from '../src/views/BibliotecaPlanesView.jsx';
+import BibliotecaPlanesView, { TarjetaPlan, DetallePlan, ConfirmarCambioDePlan, TarjetaRutina, ConfirmarEliminarRutina } from '../src/views/BibliotecaPlanesView.jsx';
+/* Fitness 3/8 — las rutinas cíclicas: el editor, la biblioteca y lo predeterminado. */
+import EditorRutinaView, { EleccionDeDia } from '../src/views/EditorRutinaView.jsx';
+import { AvisoSoloLectura } from '../src/views/FitnessView.jsx';
+import { normalizarFitnessConSesiones as cargarF3x } from '../src/lib/entrenamiento.js';
+import {
+  ventanaDeSieteDias as ventanaF4x, opcionesDeRecuperacion as opcionesF4x, consecuenciasDeElegir as consecuenciasF4x,
+  avisoFechaOcupada as avisoOcupadaF4x,
+} from '../src/lib/cumplimientoFitness.js';
+import { opcionesParaCompletar as paraCompletarF4x } from '../src/lib/completarEntrenamiento.js';
+/* Fitness 5/8 — la progresión: el selector, el interruptor y la propuesta en el directo. */
+import { SelectorProgresion, InterruptorProgresion, LineaPropuesta, MarcaProgreso } from '../src/components/progresionFitness.jsx';
+/* Fitness 7/8 — la disciplina, el calendario y el detalle de un día. */
+import { ResumenDisciplina, CalendarioCumplimiento, DetalleDeFecha } from '../src/components/disciplinaFitness.jsx';
+import {
+  disciplinaDelPeriodo as disciplinaF7x, mesDeCumplimiento as mesF7x, detalleDeFecha as detalleFechaF7x, mesDe as mesDeF7x,
+  semanaDeCumplimiento as semanaF8x,
+} from '../src/lib/disciplinaFitness.js';
+import { EvolucionPorSerie } from '../src/views/ProgresoView.jsx';
+import { conPropuestas as conPropuestasF5x, cambiarModoProgresion as modoF5x } from '../src/lib/progresion.js';
+import { empezarSesion as empezarF5x, editarSerie as editarF5x, marcarSerie as marcarF5x, ejerciciosDeSesion as ejsF5x, filasDeSeries as filasF5x } from '../src/lib/entrenamiento.js';
+import { crearLinea as lineaF5x } from '../src/lib/constructor.js';
+import {
+  VentanaCumplimiento, TarjetaRecuperacion, AvisoFechaOcupada, CompletarEntrenamientoTarjeta, MarcaDeCumplimiento,
+} from '../src/components/cumplimientoFitness.jsx';
+import {
+  crearRutinaCiclica as crearRutinaF3x, configurarDia as configurarDiaF3x, plantillasDisponibles as plantillasDispF3x,
+  guardarRutinaCiclica as guardarRutinaF3x, activarRutina as activarRutinaF3x, fichaDeRutina as fichaRutinaF3x,
+  rutinasPropias as rutinasPropiasF3x, planesPredeterminadosVisibles as planesVisF3x, avisoDeEliminarRutina as avisoRutinaF3x,
+} from '../src/lib/rutinasCiclicas.js';
 import { CATALOGO_PLANES as PLANES_F5, planPorId as planPorIdF5, usarPlan as usarPlanF5, personalizarPreset as personalizarF5 } from '../src/lib/planes.js';
 import TuPlanView, { SinPlan, PlanPerdido, TarjetaProximo, DescansoHoy, SesionDelDia } from '../src/views/TuPlanView.jsx';
 /* FIT F32 — la planificación semanal. ⚠️ `SemanaCompacta` (F6) se retiró: la
@@ -472,6 +501,29 @@ const accent = ACCENTS[0].value;
 const noop = () => {};
 const datosPeloSmoke = (e5) => datosPelo(e5).rutinas[0].id;
 const HOY = new Date().toLocaleDateString('sv-SE'); // día local, no UTC
+/* 🔓 Fitness 4/8 — una rutina Push · Pull · descanso, activada hace cuatro días, con el
+   seguimiento desde entonces y sin nada entrenado: dos pendientes recuperables. */
+/* Fitness 5/8 — una sesión de Push A con su vez anterior (10 · 9 · 8 a 60 kg). */
+function sesionConPropuestasF5x(modo) {
+  const l = { ...lineaF5x({ exerciseId: 'press-banca-barra', series: 3, repeticiones: 8, repsHasta: 12, peso: 60 }), id: 'L1' };
+  const nueva = (fecha) => empezarF5x({ nombre: 'Push A', lineas: [l], planId: 'PA', origenTipo: 'plantilla', origenId: 'PA', hoy: fecha, ahora: 1 });
+  let antes = { ...nueva('2026-10-01'), id: 'antes' };
+  const e = ejsF5x(antes)[0];
+  [10, 9, 8].forEach((r, i) => { antes = marcarF5x(editarF5x(antes, e.id, e.series[i].id, { reps: r, peso: 60 }), e.id, e.series[i].id, true); });
+  const f = modoF5x({ sesiones: [{ ...antes, estado: 'completada', terminadaEn: 2 }] }, modo);
+  return conPropuestasF5x(f, nueva('2026-10-03'));
+}
+
+function fitnessF4x() {
+  const hace = (n) => { const d = new Date(`${HOY}T12:00:00`); d.setDate(d.getDate() - n); return d.toLocaleDateString('sv-SE'); };
+  let r = crearRutinaF3x({ nombre: 'Ciclo F4', duracion: 3 });
+  r = configurarDiaF3x(r, r.dias[0].id, { tipo: 'entreno', plantillaId: 'ppl-estetico-dia-1-plantilla' });
+  r = configurarDiaF3x(r, r.dias[1].id, { tipo: 'entreno', plantillaId: 'ppl-estetico-dia-2-plantilla' });
+  r = configurarDiaF3x(r, r.dias[2].id, { tipo: 'descanso' });
+  let f = cargarF3x(guardarRutinaF3x(cargarF3x({}), r, { hoy: hace(4) }).fitness);
+  f = cargarF3x(activarRutinaF3x(f, r.id, { hoy: hace(4) }).fitness);
+  return { ...f, cumplimientoDesde: hace(4) };
+}
 /* 🚨 **UN ESCENARIO DE PLAN SE ACTIVA UN LUNES, NUNCA «HOY»** (FIT F26, y es la
    bomba de relojería de la FIT F24 por segunda vez — allí costó 45 rojos en el
    recorrido y aquí cuatro en el banco). Los diecisiete planes de la biblioteca
@@ -641,7 +693,6 @@ const fitnessF31 = () => ({
   planActivo: { planId: 'ppl-estetico', origen: 'preset', desde: '2026-08-31' },
 });
 const resumenF31 = (extra = {}) => resumenActividadF31(fitnessF31(), { hoy: HOY_F31, ...extra });
-const diaF31 = (estado) => resumenF31().semana.dias.find((d) => d.estado === estado);
 
 /* FIT F32 — la planificación semanal. Un jueves, con el PPL desde el 7 y un
    cambio a Upper / Lower el miércoles 23: así la semana tiene días del plan
@@ -3976,16 +4027,21 @@ const CASOS = [
   ['TrainingActivitySummary (sin plan)', TrainingActivitySummary, () => ({
     fitness: { sesiones: fitnessF31().sesiones }, hoy: HOY_F31, accent, onVerSesion: noop,
   })],
-  ['TrainingActivityCalendar (semana)', TrainingActivityCalendar, () => ({ dias: resumenF31().semana.dias, accent, onVista: noop, onElegir: noop })],
-  ['TrainingActivityCalendar (mes)', TrainingActivityCalendar, () => ({
-    dias: resumenF31().semana.dias, mes: mesActividadF31(fitnessF31(), { hoy: HOY_F31 }), vista: 'mes',
-    accent, onVista: noop, onMes: noop, onElegir: noop,
+  /* 🔓 Fitness 8/8 — el calendario de actividad (semana y mes) y sus días se
+     unificaron con el de cumplimiento: los mismos datos de la F31, ahora en él. */
+  ['CalendarioCumplimiento (semana, con los entrenamientos de la F31)', CalendarioCumplimiento, () => ({
+    mes: semanaF8x(cargarF3x(fitnessF31()), HOY_F31, { hoy: HOY_F31 }), accent, onMes: noop, onElegir: noop, onVista: noop,
   })],
-  ['TrainingActivityDay (entrenado)', TrainingActivityDay, () => ({ dia: diaF31('entrenado'), accent, onElegir: noop })],
-  /* 🚨 Apartados 28 y 29 — los dos «sin entrenar», y NO son lo mismo. */
-  ['TrainingActivityDay (sin registro)', TrainingActivityDay, () => ({ dia: diaF31('sin_registro'), accent, onElegir: noop })],
-  ['TrainingActivityDay (descanso del plan)', TrainingActivityDay, () => ({ dia: diaF31('descanso'), accent })],
-  ['TrainingActivityDay (futuro)', TrainingActivityDay, () => ({ dia: diaF31('futuro'), accent })],
+  ['CalendarioCumplimiento (mes, con los entrenamientos de la F31)', CalendarioCumplimiento, () => ({
+    mes: mesF7x(cargarF3x(fitnessF31()), '2026-09', { hoy: HOY_F31 }), accent, onMes: noop, onElegir: noop, onVista: noop,
+  })],
+  ['CalendarioCumplimiento (semana pasada, con rutina)', CalendarioCumplimiento, () => ({
+    mes: semanaF8x(fitnessF4x(), '2026-10-05', { hoy: HOY }), accent, onMes: noop, onElegir: noop, onVista: noop,
+  })],
+  ['CalendarioCumplimiento (semana sin nada)', CalendarioCumplimiento, () => ({ mes: semanaF8x(cargarF3x({}), HOY, { hoy: HOY }), accent, onMes: noop, onElegir: noop })],
+  /* Un día con dos entrenamientos se elige en el detalle (antes, debajo de la semana). */
+  ['DetalleDeFecha (un día con dos entrenamientos)', DetalleDeFecha, () => ({ detalle: detalleFechaF7x(cargarF3x(fitnessF31()), '2026-09-16', { hoy: HOY_F31 }), accent, onVerSesion: noop })],
+  ['DetalleDeFecha (antes del seguimiento, con un entrenamiento)', DetalleDeFecha, () => ({ detalle: detalleFechaF7x(cargarF3x(fitnessF31()), '2026-09-14', { hoy: HOY_F31 }), accent, onVerSesion: noop })],
   ['TrainingFrequencyCard', TrainingFrequencyCard, () => ({ constancia: resumenF31().constancia, frecuencia: resumenF31().frecuencia, accent })],
   ['TrainingFrequencyCard (sin media)', TrainingFrequencyCard, () => ({ constancia: resumenF31({ periodo: '7d' }).constancia, frecuencia: null, accent })],
   ['TrainingPlanAdherence', TrainingPlanAdherence, () => ({ plan: resumenF31().plan, accent })],
@@ -4262,6 +4318,11 @@ const CASOS = [
     accent, onCambiar: noop, onCerrar: noop,
   })],
   ['EditorLinea', EditorLinea, () => ({ linea: null, accent, onCambiar: noop, onCerrar: noop })],
+  /* 🔓 Fitness 5/8 — con Progresivo o Experto, el interruptor; y las repeticiones con media. */
+  ['EditorLinea (Experto, 8,5 repeticiones, progresión apagada)', EditorLinea, () => ({
+    linea: { ...anadirF3(crearRutinaF3({ nombre: 'X' }), 'press-banca-barra').lineas[0], repeticiones: 8.5, repsHasta: 10.5, config: { progresion: false } },
+    accent, onCambiar: noop, onCerrar: noop, modoProgresion: 'experto',
+  })],
   /* ⚠️ La rutina VACÍA no entra aquí, y es el precedente de `BloqueRecomendado`
      y `Recomendados`: `ResumenConstructor` devuelve `null` a propósito —un
      resumen de «0 ejercicios · ≈ 0 min» sería el cero inventado de la regla 8—
@@ -4318,6 +4379,158 @@ const CASOS = [
   /* FIT F5 — la biblioteca de planificaciones. Los casos que más importan son
      **el estado vacío de la búsqueda** (apartado 17) y **un plan activo que ya
      no existe**: la pantalla tiene que seguir funcionando, no dejar un hueco. */
+  /* ═══ Fitness 3/8 — rutinas cíclicas ═══ */
+  ['EditorRutinaView (nueva, 7 días sin decidir)', EditorRutinaView, () => {
+    const f = cargarF3x({});
+    return { fitness: f, plantillas: plantillasDispF3x(f), rutinaInicial: crearRutinaF3x({}), nueva: true, accent, onGuardar: noop, onVolver: noop, onCrearPlantilla: noop };
+  }],
+  ['EditorRutinaView (editando, con días decididos)', EditorRutinaView, () => {
+    const f = cargarF3x({});
+    let r = crearRutinaF3x({ nombre: 'Mía', duracion: 3 });
+    r = configurarDiaF3x(configurarDiaF3x(r, r.dias[0].id, { tipo: 'entreno', plantillaId: 'ppl-estetico-dia-1-plantilla' }), r.dias[1].id, { tipo: 'descanso' });
+    return { fitness: f, plantillas: plantillasDispF3x(f), rutinaInicial: r, accent, onGuardar: noop, onVolver: noop };
+  }],
+  ['EditorRutinaView (30 días)', EditorRutinaView, () => {
+    const f = cargarF3x({});
+    return { fitness: f, plantillas: plantillasDispF3x(f), rutinaInicial: crearRutinaF3x({ nombre: 'Larga', duracion: 30 }), accent, onGuardar: noop, onVolver: noop };
+  }],
+  ['EleccionDeDia', EleccionDeDia, () => {
+    const f = cargarF3x({});
+    return { dia: { id: 'd1', tipo: null, plantillaId: null }, plantillas: plantillasDispF3x(f), usadasEnRutina: [], accent, onElegir: noop, onCrearPlantilla: noop };
+  }],
+  ['TarjetaRutina (activa)', TarjetaRutina, () => ({
+    ficha: { id: 'r', nombre: 'Mía', texto: '3 días · 2 de entrenamiento', activa: true, activable: true, motivo: '' },
+    accent, onActivar: noop, onEditar: noop, onDuplicar: noop, onEliminar: noop,
+  })],
+  ['TarjetaRutina (que no se puede activar)', TarjetaRutina, () => ({
+    ficha: { id: 'r', nombre: 'Rota', texto: '1 día · 1 de entrenamiento', activa: false, activable: false, motivo: 'El día 1 tiene una plantilla que ya no está.' },
+    accent, onEditar: noop, onEliminar: noop,
+  })],
+  /* 🔓 Fitness 4/8 — el cumplimiento: una rutina Push · Pull · descanso activada hace
+     cuatro días, sin entrenar nada (dos pendientes) o con una sesión libre hoy. */
+  ['TuPlanView (con pendientes que recuperar)', TuPlanView, () => ({
+    fitness: fitnessF4x(), accent, hoy: HOY,
+    onExplorar: noop, onCrear: noop, onVerPlantillas: noop, onCambiarPlan: noop, onEmpezar: noop,
+    onRecuperar: noop, onCompletarRecuperacion: () => ({ ok: true }), onCompletar: () => ({ ok: true }),
+  })],
+  ['VentanaCumplimiento', VentanaCumplimiento, () => ({ dias: ventanaF4x(fitnessF4x(), { hoy: HOY }) })],
+  ['TarjetaRecuperacion', TarjetaRecuperacion, () => {
+    const f = fitnessF4x();
+    return {
+      opciones: opcionesF4x(f, { hoy: HOY }), accent, onEmpezar: noop, onCompletar: noop,
+      consecuencias: (p) => consecuenciasF4x(f, { tipo: 'recuperar', pendiente: p }, { hoy: HOY }),
+      consecuenciasDeHoy: consecuenciasF4x(f, { tipo: 'previsto' }, { hoy: HOY }),
+    };
+  }],
+  ['AvisoFechaOcupada', AvisoFechaOcupada, () => ({
+    aviso: avisoOcupadaF4x({ id: 's1', nombre: 'Push', estado: 'completada' }, HOY, HOY), accent, onVer: noop, onCerrar: noop,
+  })],
+  ['AvisoFechaOcupada (uno empezado)', AvisoFechaOcupada, () => ({
+    aviso: avisoOcupadaF4x({ id: 's1', nombre: 'Push', estado: 'en_curso' }, HOY, HOY), accent, onVer: noop, onCerrar: noop,
+  })],
+  ['CompletarEntrenamientoTarjeta', CompletarEntrenamientoTarjeta, () => ({
+    opciones: paraCompletarF4x(fitnessF4x()), hoy: HOY, accent, onCompletar: noop, onCancelar: noop,
+  })],
+  ['CompletarEntrenamientoTarjeta (sin nada que completar)', CompletarEntrenamientoTarjeta, () => ({
+    opciones: [], hoy: HOY, accent, onCompletar: noop, onCancelar: noop,
+  })],
+  ['MarcaDeCumplimiento', MarcaDeCumplimiento, () => ({
+    sesion: { fecha: HOY, completadaCon: 'completar', diaDePlan: { clase: 'recuperacion', fechaPrevista: '2026-10-05' } }, accent,
+  })],
+  /* 🔓 Fitness 7/8 — historial y estadísticas. */
+  ['ResumenDisciplina (últimos 30 días)', ResumenDisciplina, () => ({
+    disciplina: disciplinaF7x(fitnessF4x(), 'treinta', { hoy: HOY }), periodo: 'treinta', accent, onPeriodo: noop, onFechas: noop, onFormula: noop,
+  })],
+  ['ResumenDisciplina (fórmula abierta, este mes)', ResumenDisciplina, () => ({
+    disciplina: disciplinaF7x(fitnessF4x(), 'mes_actual', { hoy: HOY }), periodo: 'mes_actual', accent, onPeriodo: noop, onFechas: noop, onFormula: noop, formulaAbierta: true,
+  })],
+  ['ResumenDisciplina (elegir fechas, sin elegir)', ResumenDisciplina, () => ({
+    disciplina: disciplinaF7x(fitnessF4x(), 'personalizado', { hoy: HOY }), periodo: 'personalizado', accent, onPeriodo: noop, onFechas: noop,
+  })],
+  ['ResumenDisciplina (sin nada que contar)', ResumenDisciplina, () => ({
+    disciplina: disciplinaF7x(cargarF3x({}), 'siete', { hoy: HOY }), periodo: 'siete', accent, onPeriodo: noop, onFechas: noop,
+  })],
+  ['CalendarioCumplimiento', CalendarioCumplimiento, () => ({
+    mes: mesF7x(fitnessF4x(), mesDeF7x(HOY), { hoy: HOY }), elegida: HOY, accent, onMes: noop, onElegir: noop,
+  })],
+  ['CalendarioCumplimiento (sin seguimiento)', CalendarioCumplimiento, () => ({
+    mes: mesF7x(cargarF3x({}), '2026-01', { hoy: HOY }), accent, onMes: noop, onElegir: noop,
+  })],
+  ['DetalleDeFecha (hoy)', DetalleDeFecha, () => ({ detalle: detalleFechaF7x(fitnessF4x(), HOY, { hoy: HOY }), accent, onVerSesion: noop })],
+  ['DetalleDeFecha (un día sin registros)', DetalleDeFecha, () => ({ detalle: detalleFechaF7x(cargarF3x({}), '2026-01-05', { hoy: HOY }), accent, onVerSesion: noop })],
+  ['DetalleDeFecha (una recuperación)', DetalleDeFecha, () => ({
+    detalle: {
+      fecha: '2026-10-06', estado: 'recuperado', nombre: 'Recuperado', color: 'verde', motivo: 'Se recuperó el miércoles.',
+      previsto: { tipo: 'entreno', plantilla: 'Pull', rutina: 'PPL' }, sesiones: [],
+      cumplidaPor: { id: 's2', fecha: '2026-10-07', nombre: 'Pull' },
+    },
+    accent, onVerSesion: noop,
+  })],
+  ['DetalleDeFecha (sesiones del día)', DetalleDeFecha, () => ({
+    detalle: {
+      fecha: '2026-10-07', estado: 'descanso_sacrificado', nombre: 'Descanso sacrificado', color: 'rojo', motivo: 'Era descanso.',
+      previsto: { tipo: 'descanso', plantilla: null, rutina: 'PPL' },
+      sesiones: [{ id: 's2', nombre: 'Pull', clase: 'recuperacion', grado: 'parcial', fechaPrevista: '2026-10-06', completar: false }],
+      cumplidaPor: null,
+    },
+    accent, onVerSesion: noop,
+  })],
+  ['EvolucionPorSerie', EvolucionPorSerie, () => ({
+    evolucion: {
+      hay: true, numeros: [1, 2, 3], motivo: '',
+      filas: [
+        { sesionId: 'a', fecha: '2026-10-08', fechaTexto: '8 OCT', celdas: [{ numero: 1, texto: '60 kg × 9' }, { numero: 2, texto: '60 kg × 8' }, { numero: 3, texto: '—' }] },
+        { sesionId: 'b', fecha: '2026-10-01', fechaTexto: '1 OCT', celdas: [{ numero: 1, texto: '60 kg × 8' }, { numero: 2, texto: '60 kg × 8,5' }, { numero: 3, texto: '60 kg × 7' }] },
+      ],
+    },
+  })],
+  ['EvolucionPorSerie (sin bastantes registros)', EvolucionPorSerie, () => ({ evolucion: { hay: false, numeros: [], filas: [], motivo: 'Hacen falta al menos dos registros para comparar serie a serie.' } })],
+  ['HistorialView (con disciplina y calendario)', HistorialView, () => ({ fitness: fitnessF4x(), accent, onVolver: noop })],
+  /* 🔓 Fitness 5/8 — la progresión. */
+  ['SelectorProgresion (Manual)', SelectorProgresion, () => ({ modo: 'manual', accent, onCambiar: noop })],
+  ['SelectorProgresion (Experto)', SelectorProgresion, () => ({ modo: 'experto', accent, onCambiar: noop })],
+  ['InterruptorProgresion (activado)', InterruptorProgresion, () => ({ activa: true, accent, onCambiar: noop })],
+  ['InterruptorProgresion (apagado)', InterruptorProgresion, () => ({ activa: false, accent, onCambiar: noop })],
+  ['LineaPropuesta (con mejora)', LineaPropuesta, () => ({ filas: filasF5x(ejsF5x(sesionConPropuestasF5x('experto'))[0]) })],
+  ['LineaPropuesta (como referencia, por tiempo)', LineaPropuesta, () => ({ filas: [{ id: 'a', plan: { propuesta: { duracion: 40, reps: null, peso: null, mejora: false } } }] })],
+  ['MarcaProgreso', MarcaProgreso, () => ({ supera: true })],
+  ['TablaSeries (con propuestas, una hecha por encima)', TablaSeries, () => {
+    let s = sesionConPropuestasF5x('experto');
+    const e = ejsF5x(s)[0];
+    s = marcarF5x(editarF5x(s, e.id, e.series[0].id, { reps: 11, peso: 60 }), e.id, e.series[0].id, true);
+    return { filas: filasF5x(ejsF5x(s)[0]), accent, activaId: e.series[1].id, onEditar: noop, onMarcar: noop, onQuitar: noop, onRecuperar: noop, onAnadir: noop, onAjustar: noop };
+  }],
+  ['TablaSeries (medias repeticiones)', TablaSeries, () => {
+    let s = sesionConPropuestasF5x('progresivo');
+    const e = ejsF5x(s)[0];
+    s = editarF5x(s, e.id, e.series[0].id, { reps: '8,5', peso: 60 });
+    return { filas: filasF5x(ejsF5x(s)[0]), accent, onEditar: noop, onMarcar: noop, onQuitar: noop, onRecuperar: noop, onAnadir: noop };
+  }],
+  ['ConfirmarEliminarRutina', ConfirmarEliminarRutina, () => ({
+    aviso: { titulo: '¿Eliminar tu rutina activa?', que: 'Dejará de ser tu rutina activa.', seQueda: 'Tus entrenamientos no se tocan.', vuelve: 'Podrás recuperarla.', confirmar: 'Eliminar rutina' },
+    nombre: 'Mía', onCancelar: noop, onEliminar: noop,
+  })],
+  ['BibliotecaPlanesView (con rutinas suyas, una activa)', BibliotecaPlanesView, () => {
+    let f = cargarF3x({});
+    let r = crearRutinaF3x({ nombre: 'Mía', duracion: 2 });
+    r = configurarDiaF3x(configurarDiaF3x(r, r.dias[0].id, { tipo: 'entreno', plantillaId: 'ppl-estetico-dia-1-plantilla' }), r.dias[1].id, { tipo: 'descanso' });
+    f = cargarF3x(guardarRutinaF3x(f, r, { hoy: HOY }).fitness);
+    f = cargarF3x(activarRutinaF3x(f, r.id, { hoy: HOY }).fitness);
+    return {
+      fitness: f, accent, planes: planesVisF3x(f), propias: rutinasPropiasF3x(f).map((x) => fichaRutinaF3x(f, x)),
+      activa: { id: r.id, nombre: r.nombre }, onVolver: noop, onUsar: noop, onPersonalizar: noop, onFavorito: noop,
+      onCrearRutina: noop, onEditarRutina: noop, onDuplicarRutina: noop, onEliminarRutina: noop, avisoEliminarRutina: (id) => avisoRutinaF3x(f, id),
+    };
+  }],
+  ['PlantillasView (las suyas y las predeterminadas, con «en uso»)', PlantillasView, () => {
+    const f = cargarF3x({ planActivo: { planId: 'ppl-estetico', origen: 'preset', desde: HOY } });
+    return { plantillas: plantillasDispF3x(f), fitness: f, propios: [], accent, hoy: HOY, onVolver: noop, onCrear: noop, onEditar: noop, onDuplicar: noop, onEliminar: noop };
+  }],
+  ['DetallePlan (predeterminada, con editar, duplicar y eliminar)', DetallePlan, () => ({
+    plan: PLANES_F5[0], accent, onVolver: noop, onUsar: noop, onPersonalizar: noop, onFavorito: noop,
+    onEditar: noop, onDuplicar: noop, onEliminar: noop,
+  })],
+  ['AvisoSoloLectura', AvisoSoloLectura, () => ({})],
   ['BibliotecaPlanesView', BibliotecaPlanesView, () => ({
     fitness: {}, accent, onVolver: noop, onUsar: noop, onPersonalizar: noop, onFavorito: noop,
   })],
@@ -4474,6 +4687,24 @@ const CASOS = [
   })],
   /* FIT F38, apartado 12 — con «Última vez», y con una función que no tiene
      ninguna (un ejercicio nuevo): los dos tienen que pintarse. */
+  /* 🔓 Fitness 6/8 — con la indicación de la plantilla, la nota anterior y tres antiguas. */
+  ['EntrenamientoVivoView (con notas anteriores)', EntrenamientoVivoView, () => ({
+    sesion: sesionUsadaF7(), propios: [], accent,
+    onGuardar: noop, onSalir: noop, onTerminada: noop,
+    anotacionesDe: () => ({
+      indicacion: 'Codos a 45°',
+      anterior: { sesionId: 'a', fecha: '2026-10-27', fechaTexto: '27 de octubre', entrenamiento: '', texto: 'Subir el banco un punto' },
+      anteriores: [
+        { sesionId: 'a', fecha: '2026-10-27', fechaTexto: '27 de octubre', entrenamiento: '', texto: 'Subir el banco un punto' },
+        { sesionId: 'b', fecha: '2026-10-20', fechaTexto: '20 de octubre', entrenamiento: 'Push', texto: 'La última serie me costó bastante' },
+      ],
+    }),
+  })],
+  ['EntrenamientoVivoView (sin notas anteriores)', EntrenamientoVivoView, () => ({
+    sesion: sesionVivaF7(), propios: [], accent,
+    onGuardar: noop, onSalir: noop, onTerminada: noop,
+    anotacionesDe: () => ({ indicacion: '', anterior: null, anteriores: [] }),
+  })],
   ['EntrenamientoVivoView (con última vez)', EntrenamientoVivoView, () => ({
     sesion: sesionVivaF7(), propios: [], accent, onGuardar: noop, onSalir: noop, onTerminada: noop,
     ultimaVezDe: () => ({ texto: 'Última vez: 20 kg × 10', cuando: 'Ayer', series: '20×10 · 20×8', fecha: HOY }),
@@ -4558,6 +4789,15 @@ const CASOS = [
   ['HistorialVacio', HistorialVacio, () => ({ accent, onEmpezar: noop })],
   ['EjercicioHistorial', EjercicioHistorial, () => ({
     ejercicio: detalleF10(historialF10(fitnessConHistorialF10())[0]).ejercicios[0], accent, abierto: true, onAlternar: noop,
+  })],
+  /* 🔓 Fitness 6/8 — un ejercicio del historial con sus notas anteriores (⋯). */
+  ['EjercicioHistorial (con notas anteriores)', EjercicioHistorial, () => ({
+    ejercicio: {
+      ...detalleF10(historialF10(fitnessConHistorialF10())[0]).ejercicios[0],
+      notas: 'Hoy mejor',
+      notasAnteriores: [{ sesionId: 'a', fecha: '2026-10-27', fechaTexto: '27 de octubre', entrenamiento: '', texto: 'Subir el banco un punto' }],
+    },
+    accent, abierto: true, onAlternar: noop,
   })],
   ['DetalleSesionHistorial', DetalleSesionHistorial, () => ({
     detalle: detalleF10(historialF10(fitnessConHistorialF10())[0]), accent, onVolver: noop, onEliminar: noop,

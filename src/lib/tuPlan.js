@@ -19,6 +19,7 @@ import {
    hizo. Es la de la F31, que pasó a `historial.js` para que la semana del plan
    y la actividad no las agruparan cada una a su manera. */
 import { sesionesPorDia } from './historial';
+import { rutinaDisponible, rutinaComoPlan, posicionEnCiclo } from './rutinasCiclicas';
 
 /* Entrega 4 · Fase 6/45 — «Tu Plan».
    ═══════════════════════════════════════════════════════════════════════════
@@ -187,7 +188,23 @@ export function planActivoCompleto(fitness, planes = CATALOGO_PLANES) {
     const plan = plantilla ? planDePlantilla(plantilla, propios) : null;
     return { plan, activo, origen: 'plantilla', perdido: !plan };
   }
-  const plan = planPorId(activo.planId, planes);
+  /* 🔓 Fitness 3/8 — una rutina suya (`'rutina'`) o una predeterminada que él ha
+     editado (su copia, con el mismo id) se resuelve en el motor de rutinas y se da
+     con la forma de un plan. ⚠️ Un predeterminado **sin tocar** sigue siendo el del
+     catálogo, el mismo objeto de siempre: nada de lo que ya funcionaba cambia. */
+  const copia = activo.origen === 'rutina'
+    || lista((fitness || {}).rutinas).some((r) => r && r.id === activo.planId);
+  if (copia) {
+    const r = rutinaDisponible(fitness, activo.planId, planes);
+    const base = r ? rutinaComoPlan(fitness, r, planes) : null;
+    /* El día 1 de su ciclo: el guardado; una suya sin él (lo perdió una versión
+       anterior), desde que se activó. Una predeterminada sin él, por semana. */
+    const inicioCiclo = texto(activo.inicioCiclo) || (activo.origen === 'rutina' ? texto(activo.desde) : '');
+    const plan = base ? { ...base, ...(inicioCiclo ? { inicioCiclo } : {}) } : null;
+    return { plan, activo, origen: activo.origen === 'rutina' ? 'rutina' : 'preset', perdido: !plan };
+  }
+  const delCatalogo = planPorId(activo.planId, planes);
+  const plan = delCatalogo && texto(activo.inicioCiclo) ? { ...delCatalogo, inicioCiclo: texto(activo.inicioCiclo) } : delCatalogo;
   /* ⚠️ `perdido` no es lo mismo que «no hay plan» (apartado 25): hay uno
      elegido y **ya no se puede enseñar**, así que la pantalla ofrece elegir
      otro en vez de fingir que nunca eligió nada. */
@@ -203,6 +220,10 @@ export function planActivoCompleto(fitness, planes = CATALOGO_PLANES) {
 export function posicionDelDia(plan, fecha, desde = '') {
   const dias = lista(plan?.dias);
   if (!dias.length || !fecha) return null;
+  /* 🔓 Fitness 3/8 — si el plan sabe qué fecha es su día 1 (una rutina, o un tramo
+     que lo guardó), el ciclo cuenta desde ahí, sea de los días que sea
+     (ARQUITECTURA_TECNICA.md §7). Si no, las dos reglas de siempre. */
+  if (fechaValida(texto(plan?.inicioCiclo))) return posicionEnCiclo(dias.length, texto(plan.inicioCiclo), fecha);
   /* Siete días: el plan ES la semana, y su día 1 es el lunes (apartado 7). */
   if (dias.length === 7) {
     const d = diaDeFecha(fecha);
@@ -276,7 +297,8 @@ export function tramoEnFecha(fecha, {
     const a = previos[i];
     if (a && fecha >= a.desde && fecha < a.hasta) {
       return {
-        plan: { id: a.planId, nombre: a.nombre, dias: a.dias }, desde: a.desde,
+        /* 🔓 Fitness 3/8 — con el día 1 de su ciclo, si el tramo lo guardó. */
+        plan: { id: a.planId, nombre: a.nombre, dias: a.dias, ...(a.inicioCiclo ? { inicioCiclo: a.inicioCiclo } : {}) }, desde: a.desde,
         planId: a.planId, origen: a.origen, actual: false,
       };
     }
@@ -418,7 +440,7 @@ export function semanaDelPlan(plan, {
    que pasa entonces se dice con las palabras del apartado 32. */
 export const DESCANSO_HOY = {
   titulo: 'Hoy no hay entrenamiento planificado',
-  texto: 'Tu plan no tiene entrenamiento hoy. Si entrenas por tu cuenta, contará como entrenamiento extra.',
+  texto: 'Tu rutina no tiene entrenamiento hoy. Si entrenas por tu cuenta, contará como entrenamiento extra.',
 };
 
 /** El próximo entrenamiento (apartado 5): el de hoy si hoy toca, y si no el
@@ -585,9 +607,9 @@ export function plantillasParaTuPlan(fitness, propios = [], cuantas = PLANTILLAS
 
 /* Apartado 2, con sus palabras y sus dos salidas. */
 export const SIN_PLAN = {
-  titulo: 'Aún no tienes un plan',
-  texto: 'Elige una planificación o crea tu propia plantilla para empezar.',
-  explorar: 'Explorar planes',
+  titulo: 'Aún no tienes una rutina',
+  texto: 'Elige una rutina, crea la tuya o empieza con una de tus plantillas.',
+  explorar: 'Ver rutinas',
   crear: 'Crear entrenamiento',
 };
 
@@ -595,9 +617,9 @@ export const SIN_PLAN = {
    de recuperación y permitir elegir otro plan."* ⚠️ Y se dice **qué ha pasado**,
    no un «Error» a secas (EH F62). */
 export const PLAN_PERDIDO = {
-  titulo: 'Tu plan ya no está disponible',
-  texto: 'La planificación que seguías ya no existe. Puedes elegir otra sin perder tus plantillas.',
-  accion: 'Explorar planes',
+  titulo: 'Tu rutina ya no está disponible',
+  texto: 'La rutina que seguías ya no existe. Puedes elegir otra sin perder tus plantillas ni tus entrenamientos.',
+  accion: 'Ver rutinas',
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════

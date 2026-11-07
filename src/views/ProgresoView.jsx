@@ -110,6 +110,44 @@ function Chips({ opciones, valor, onCambiar, accent, etiqueta }) {
    dejarlas aquí habría sido un ciclo entre los dos archivos (FIT F24 y F27).
    Una sola dirección, y ni una copia. */
 
+/* ── FITNESS 7/8 — la evolución serie a serie ──────────────────────────────
+   Una tabla corta (seis ejecuciones como mucho), que se desplaza de lado si
+   hay muchas series: en un iPhone se lee mejor que una gráfica por serie. */
+export function EvolucionPorSerie({ evolucion }) {
+  const e = evolucion;
+  if (!e) return null;
+  if (!e.hay) {
+    return e.motivo ? <p className="text-[11px] mt-2" style={{ color: COLORS.textMuted }}>{e.motivo}</p> : null;
+  }
+  return (
+    <div className="mt-3">
+      <p className="text-xs font-semibold mb-1.5" style={{ color: COLORS.text }}>Serie a serie</p>
+      <div className="overflow-x-auto -mx-1 px-1">
+        <table className="text-[11px] tabular-nums w-full" aria-label="Evolución serie a serie">
+          <thead>
+            <tr style={{ color: COLORS.textMuted }}>
+              <th scope="col" className="text-left font-medium pr-2 py-1">Fecha</th>
+              {e.numeros.map((n) => (
+                <th key={n} scope="col" className="text-left font-medium pr-2 py-1 whitespace-nowrap">{`Serie ${n}`}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {e.filas.map((fila) => (
+              <tr key={fila.sesionId} style={{ color: COLORS.text, borderTop: `1px solid ${COLORS.border}` }}>
+                <th scope="row" className="text-left font-medium pr-2 py-1 whitespace-nowrap">{fila.fechaTexto}</th>
+                {fila.celdas.map((c) => (
+                  <td key={c.numero} className="pr-2 py-1 whitespace-nowrap" style={c.texto === '—' ? { color: COLORS.textMuted } : undefined}>{c.texto}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 /* ── La tarjeta de un ejercicio (apartado 7) ───────────────────────────── */
 export function TarjetaProgreso({ tarjeta, accent, onAbrir }) {
   const t = tarjeta;
@@ -347,6 +385,8 @@ function FilaHistoria({ fila, accent, abierta, onAlternar, onVerSesion }) {
 export function DetalleProgreso({
   detalle, accent, rango, onRango, onVolver, onVerEjercicio, onVerSesion,
   metrica = null, onMetrica = null, onHistorialRango = null, onVariante = null,
+  /* 🔓 FITNESS 7/8 — elegir de qué plantilla se mira la evolución. */
+  onPlantilla = null,
   /* 🔓 FIT F30, apartado 35 — ver el objetivo de este ejercicio, o crearlo. */
   onVerObjetivo = null, onCrearObjetivo = null,
   /* 🔓 FIT F43 (apartado 47) — lo que dice el botón de volver. Decía siempre
@@ -425,6 +465,13 @@ export function DetalleProgreso({
           {/* Apartados 9 a 12 — la gráfica, su métrica y sus seis periodos. */}
           {d.veces >= 2 && (
             <Card>
+              {/* 🔓 FITNESS 7/8 — la evolución de una plantilla, solo con dos o más. */}
+              {d.hayPlantillas && onPlantilla && (
+                <div className="mb-2">
+                  <p className="text-[11px] mb-1" style={{ color: COLORS.textMuted }}>Plantilla</p>
+                  <Chips opciones={d.plantillas} valor={d.plantilla} onCambiar={onPlantilla} accent={accent} etiqueta="Plantilla de la evolución" />
+                </div>
+              )}
               <Chips opciones={d.periodos} valor={rango} onCambiar={onRango} accent={accent} etiqueta="Periodo de la gráfica" />
               {/* Apartado 11 — el selector solo si hay dos métricas de verdad. */}
               {d.hayselector && (
@@ -434,7 +481,7 @@ export function DetalleProgreso({
               )}
               {/* MS F4, apartados 22 y 28 — otro periodo u otra métrica es un cambio de DATOS, no de
                   página: la gráfica se funde en su sitio (`CambioDeContenido`), sin rehacer la ficha. */}
-              <CambioDeContenido clave={`${rango}·${metrica || d.metrica}`} className="mt-3">
+              <CambioDeContenido clave={`${rango}·${metrica || d.metrica}·${d.plantilla || 'todas'}`} className="mt-3">
                 <GraficaProgreso grafica={d.grafica} accent={accent} onVerSesion={onVerSesion} />
               </CambioDeContenido>
               {/* 🚨 Apartado 35 — la alternativa textual: no depender del gráfico. */}
@@ -445,6 +492,8 @@ export function DetalleProgreso({
               {d.descartados.significativo && (
                 <p className="text-[11px] mt-1.5" style={{ color: COLORS.warning }}>{d.descartados.aviso}</p>
               )}
+              {/* 🔓 FITNESS 7/8 — la evolución serie a serie (la alternativa en tabla). */}
+              <EvolucionPorSerie evolucion={d.evolucionSeries} />
             </Card>
           )}
 
@@ -1030,6 +1079,8 @@ export default function ProgresoView({
   const [rango, setRango] = useState(null);
   /* Apartado 11 — la métrica pedida; `null` es la de la última vez (F12). */
   const [metrica, setMetrica] = useState(null);
+  /* 🔓 FITNESS 7/8 — la plantilla cuya evolución se mira (null = todas). */
+  const [plantillaVista, setPlantillaVista] = useState(null);
   const [vista, setVista] = useState(null); // { tipo: 'sesion' | 'ejercicio', id }
   /* FIT F13 — el periodo del progreso muscular, el grupo y el subgrupo abiertos,
      y el filtro por grupo de la lista de ejercicios (apartados 6, 8 y 13). */
@@ -1087,10 +1138,10 @@ export default function ProgresoView({
      rango, el objetivo, las variantes, la métrica y los periodos. Sigue sin
      guardarse nada: se deriva en cada render de las sesiones (apartado 32). */
   const detalle = useMemo(() => (abierto
-    ? detalleCompletoDeEjercicio(f, abierto, { propios, perfil, rango, metrica, hoy })
+    ? detalleCompletoDeEjercicio(f, abierto, { propios, perfil, rango, metrica, hoy, plantilla: plantillaVista })
     : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [abierto, f.sesiones, f.objetivos, f.clasificaciones, propios, perfil, rango, metrica, hoy]);
+    [abierto, f.sesiones, f.objetivos, f.clasificaciones, propios, perfil, rango, metrica, hoy, plantillaVista]);
 
   /* 🚨 FIT F18, apartado 11 — el ejercicio que llega desde el detalle muscular
      de Rangos abre **esta** pantalla, la de la F12: *"no crear otra pantalla de
@@ -1165,6 +1216,7 @@ export default function ProgresoView({
     }
     setRango(null);
     setMetrica(null);
+    setPlantillaVista(null);
   };
 
   /* Apartado 30 — «Ver entrenamiento» es la pantalla de la F10. */
@@ -1186,7 +1238,7 @@ export default function ProgresoView({
               setSeccion('ejercicios');
               /* Desde la sesión de un ejercicio a otro: volver deshace el paso. */
               if (abierto && abierto !== id) setPrevios((p) => [...p, abierto]);
-              if (abierto !== id) { setRango(null); setMetrica(null); }
+              if (abierto !== id) { setRango(null); setMetrica(null); setPlantillaVista(null); }
               setAbierto(id);
             }}
           />
@@ -1370,6 +1422,7 @@ export default function ProgresoView({
           onRango={setRango}
           metrica={detalle.metrica}
           onMetrica={setMetrica}
+          onPlantilla={setPlantillaVista}
           onVolver={cerrarDetalle}
           volverTexto={vuelta.texto}
           volverEtiqueta={vuelta.etiqueta}
@@ -1378,7 +1431,7 @@ export default function ProgresoView({
           /* Apartado 26 — el historial de rango es el de la F22, no otro. */
           onHistorialRango={() => setVista({ tipo: 'historialRango', destino: detalle.rango.destinoHistorial })}
           /* Apartados 20 y 21 — ir a la variante, que tiene su propio historial. */
-          onVariante={(id) => { if (id !== abierto) setPrevios((p) => [...p, abierto]); setAbierto(id); setRango(null); setMetrica(null); }}
+          onVariante={(id) => { if (id !== abierto) setPrevios((p) => [...p, abierto]); setAbierto(id); setRango(null); setMetrica(null); setPlantillaVista(null); }}
           /* 🔓 FIT F30, apartado 35 — «Ver objetivo» / «Crear objetivo». */
           onVerObjetivo={detalle.objetivo.hay ? () => { setAbierto(null); setSeccion('objetivos'); setObjetivoAbierto(detalle.objetivo.objetivo.id); } : null}
           onCrearObjetivo={onGuardarFitness ? () => { setAbierto(null); setSeccion('objetivos'); setFormulario({ modo: 'crear', exerciseId: detalle.exerciseId, eligiendo: false }); } : null}

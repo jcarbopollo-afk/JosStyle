@@ -170,6 +170,25 @@ export const CLASES_REGLA = {
      `recorrerRacha`: *"una regla con `periodo: 'semana'` recorrería SEMANAS en vez
      de días"*. Se ha construido ahí, en el mismo bucle, en vez de escribir un
      segundo motor — que es como acabarían discrepando los números. */
+  /* 🔓 **Fitness 8/8 — "Según tu rutina de Fitness".** No se elige al crear una
+     racha (`interna`): es la regla con la que `proyectarRachasDeEntrenamiento`
+     (`rachasServicio.js`) presenta una racha de tipo entrenamiento cuando Fitness
+     tiene seguimiento. Los días que Fitness da por neutros (un pendiente que aún
+     se puede recuperar, hoy en un día de descanso) llegan en `neutros` y **no
+     tocan**: ni cuentan ni rompen, como un martes en una regla de lunes. Lo que
+     suma llega como un evento y lo que corta, como un día sin él. Nunca se guarda:
+     es la vista que se calcula al leer. */
+  segun_fitness: {
+    id: 'segun_fitness',
+    label: 'Según tu rutina de Fitness',
+    periodo: 'dia',
+    interna: true,
+    describir: () => 'Según tu rutina de Fitness',
+    evaluar: (evento) => !!evento,
+    toca: (fecha, regla) => !(regla && regla.neutros && regla.neutros[fecha]),
+    corta: (fecha, regla) => !!(regla && regla.cortes && regla.cortes[fecha]),
+  },
+
   veces_por_semana: {
     id: 'veces_por_semana',
     label: 'X veces por semana',
@@ -383,6 +402,11 @@ export function estadoDeDia(fecha, { indice, regla, hoy = todayISO() } = {}) {
   const clase = claseDeRegla(regla);
   if (clase.evaluar(indice?.[fecha], regla)) return ESTADOS_DIA.COMPLETADO;
   if (fecha > hoy) return ESTADOS_DIA.FUTURO;
+  /* 🔓 Fitness 8/8 — un día que la regla da por CORTADO (solo «Según tu rutina de
+     Fitness»: un descanso sacrificado o un perdido) es perdido también si es hoy:
+     sacrificar el descanso de hoy ya ha pasado, no está «pendiente». Las demás
+     reglas no declaran `corta`, así que para ellas no cambia nada. */
+  if (typeof clase.corta === 'function' && clase.corta(fecha, regla)) return ESTADOS_DIA.PERDIDO;
   /* ⚠️ Se pregunta DESPUÉS de mirar si está cumplido: si Josué marca un martes que
      no tocaba, eso es un día cumplido, no un día que no cuenta. Hacerlo bien le da
      la razón a él en vez de a la regla. */
@@ -677,6 +701,8 @@ export function resumenRacha(eventos, racha, hoy = todayISO()) {
     record,
     estado: estadoRacha(eventos, r, hoy),
     estadoHoy: estadoDeDia(hoy, { indice: indicePorFecha(eventos, r.id), regla: r.regla, hoy }),
+    /* Fitness 8/8 — se lleva sola desde Fitness: no se marca a mano. */
+    derivada: r.regla.clase === 'segun_fitness',
     // `record === actual && actual > 0` no basta: la primera racha de todas
     // iguala el récord sin batir nada. Batirlo es superar a los tramos ANTERIORES,
     // y para eso **tiene que haber alguno** — sin él no hay récord que batir.

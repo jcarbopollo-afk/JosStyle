@@ -158,8 +158,10 @@ console.log('\n── 5. Vacíos, periodos y lo que no es de la F4 ──');
 ok(/\.vacio-entra\s*\{[^}]*vacioEntra var\(--motion-dur-fast\)[^;]*backwards/.test(CSS_LIMPIO), 'un vacío entra en `fast`, sin ser protagonista (apartado 14)');
 ok(/className="vacio-entra /.test(leer('src/components/ui.jsx')), '…y lo lleva `EmptyHint`, el vacío de toda la aplicación');
 const PROG = VISTAS['src/views/ProgresoView.jsx'];
-ok(/<CambioDeContenido clave=\{`\$\{rango\}·\$\{metrica \|\| d\.metrica\}`\} className="mt-3">\s*<GraficaProgreso/.test(PROG),
-  'la gráfica de un ejercicio se funde al cambiar de periodo o de métrica: un cambio de datos, no de página (apartados 22 y 28)');
+/* 🔓 Fitness 7/8 — la clave suma la plantilla elegida (otro cambio de datos):
+   la comprobación la admite sin dejar de exigir el periodo y la métrica. */
+ok(/<CambioDeContenido clave=\{`\$\{rango\}·\$\{metrica \|\| d\.metrica\}(·\$\{d\.plantilla \|\| 'todas'\})?`\} className="mt-3">\s*<GraficaProgreso/.test(PROG),
+  'la gráfica de un ejercicio se funde al cambiar de periodo, de métrica o de plantilla: un cambio de datos, no de página (apartados 22 y 28)');
 ok(/<CambioDeContenido clave=\{periodo\} className="space-y-2">/.test(PROG), '…y la lista de músculos, al cambiar de periodo');
 ['cifra-sube', 'cifra-baja', 'vacio-entra'].forEach((c) => ok(MOTION_MAP.some((e) => e.clase === c && e.fase === 4), `\`${c}\` está en el MOTION_MAP (F4)`));
 ok(a.sinMapa.length === 0 && a.keyframesHuerfanos.length === 0 && a.mapaSinCss.length === 0 && a.curvasAjenas.length === 0 && a.deudaQueCrece.length === 0,

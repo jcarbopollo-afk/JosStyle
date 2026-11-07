@@ -515,7 +515,7 @@ function CrearRacha({ accent, onCrear, onCancelar }) {
       </Field>
       <Field label="Cuándo cuenta un día">
         <Select value={clase} onChange={(e) => setClase(e.target.value)}>
-          {Object.values(CLASES_REGLA).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+          {Object.values(CLASES_REGLA).filter((c) => !c.interna).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
         </Select>
       </Field>
       {necesitaValor && (
@@ -614,6 +614,18 @@ function DetalleRacha({ resumen, rachas, accent, hoy, onVolver, onCompletar, onD
               </PrimaryButton>
             </>
           )}
+        </Card>
+      )}
+
+      {/* Fitness 8/8 — una racha de entrenamiento con seguimiento en Fitness no se
+          marca aquí: lo dice, con su criterio, en vez de quedarse sin botón. */}
+      {resumen.derivada && (
+        <Card>
+          <p className="text-sm font-semibold" style={{ color: COLORS.text }}>Se lleva sola desde Fitness</p>
+          <p className="text-xs mt-1" style={{ color: COLORS.textMuted }}>
+            Suman los entrenamientos completos, recuperados y parciales y los descansos respetados de tu rutina.
+            La corta un entrenamiento perdido o un descanso sacrificado. Un pendiente que aún puedes recuperar no la corta.
+          </p>
         </Card>
       )}
 
@@ -819,8 +831,10 @@ export default function RachasView({
         onVolver={() => setAbierta(null)}
         // Un hábito se marca en Productividad, que es donde vive su dato. Ofrecer
         // aquí un botón que escribe en otro módulo sería duplicar el camino.
-        onCompletar={detalle.propia ? completar : null}
-        onDeshacer={detalle.propia ? onDeshacerDia : null}
+        // Fitness 8/8 — la de entrenamiento se lleva sola desde Fitness (`derivada`):
+        // marcarla a mano sería un segundo criterio para el mismo día.
+        onCompletar={detalle.propia && !detalle.derivada ? completar : null}
+        onDeshacer={detalle.propia && !detalle.derivada ? onDeshacerDia : null}
         onEliminar={detalle.propia ? onEliminarRacha : null}
         // Entrega 3 · F2 — el "+1", solo en la racha que acaba de subir.
         subida={subida && subida.id === detalle.id ? subida : null}
