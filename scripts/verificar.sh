@@ -2125,6 +2125,22 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-a5-sincronizacion.mjs 
 else
   fallo "Falla A5 (sincronización segura)"; grep '✗' /tmp/jc_a5.log
 fi
+# Horarios · el historial de versiones (docs/19 §18.9): saveData lo rechaza, lectura por prefijo y escritor condicional.
+if node --import ./scripts/resolver-vite.mjs scripts/test-historial-versiones.mjs >/tmp/jc_hv.log 2>&1; then
+  ok "Horarios · historial de versiones (rechazo en saveData, prefijo, escritor condicional) — $(grep -c '✓' /tmp/jc_hv.log) comprobaciones"
+else
+  fallo "Falla el historial de versiones de Horarios"; grep '✗' /tmp/jc_hv.log
+fi
+# …y contra un PostgREST LOCAL de verdad, solo si está configurado (HV_PGRST_URL…). Nunca contra producción.
+if [ -n "${HV_PGRST_URL:-}" ]; then
+  if node --import ./scripts/resolver-vite.mjs scripts/test-historial-versiones-postgrest.mjs >/tmp/jc_hvpg.log 2>&1; then
+    ok "Horarios · historial de versiones contra PostgREST local — $(grep -c '✓' /tmp/jc_hvpg.log) comprobaciones"
+  else
+    fallo "Falla el historial de versiones contra PostgREST local"; grep '✗' /tmp/jc_hvpg.log
+  fi
+else
+  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial contra PostgREST local: omitida (sin HV_PGRST_URL)"
+fi
 
 # Entrega 3 · F3 — la iconografía del armario y la categoría de ropa interior.
 if node scripts/smoke.mjs test-iconos-armario.jsx >/tmp/jc_icon.log 2>&1; then

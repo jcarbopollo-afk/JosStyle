@@ -66,6 +66,11 @@
    pantalla, que es lo último que él tocó aquí.
    =========================================================================== */
 
+/* 🕰 Horarios (docs/19 §18.9): el historial de versiones NO entra en esta cola. Reenviar a ciegas el último valor
+   de una fila de versiones borraría las marcas de eliminación que otra pestaña o un reintento ya confirmaron (lo
+   demostró la prueba de nivel 3). Lo escribe su escritor condicional (`historialVersiones.js`), nunca `saveData`. */
+import { esClaveDeHistorialVersiones } from './historialVersiones';
+
 /** Cuánto espera un guardado a que termine el anterior de su misma clave antes de salir igual. Con
  *  una petición colgada, la cola no puede quedarse parada para siempre. */
 export const TOPE_ESPERA_ANTERIOR_MS = 10000;
@@ -76,6 +81,8 @@ export const TOPE_PETICION_MS = 30000;
 
 /** El error con el que se niega un guardado de una clave que no se pudo cargar. */
 export const ERROR_CARGA_FALLIDA = Object.freeze({ code: 'carga_fallida', message: 'Esta parte de tus datos no se pudo cargar: guardarla pisaría lo que tienes en tu cuenta.' });
+/** El de una clave del historial de versiones: solo la escribe su escritor condicional. */
+export const ERROR_CLAVE_PROTEGIDA = Object.freeze({ code: 'clave_protegida', message: 'El historial de versiones no se guarda con saveData: lo escribe su escritor condicional.' });
 /** Y el de un guardado que llega con el usuario de una sesión que ya no está. */
 export const ERROR_OTRA_SESION = Object.freeze({ code: 'otra_sesion', message: 'Este cambio era de una sesión que ya se cerró.' });
 
@@ -175,6 +182,8 @@ export const clavesSinCargar = () => [...estado.sinCargar.keys()];
    (`alSalir`), porque mientras esperan en la cola puede llegar un cambio más nuevo. */
 export function antesDeGuardar(clave, { usuario = null, ahora = Date.now(), valor, reintento = false } = {}) {
   const k = String(clave);
+  /* Antes que nada: una clave del historial no toca la cola, ni su «último deseado», ni lo pendiente. */
+  if (esClaveDeHistorialVersiones(k)) return { sale: false, error: ERROR_CLAVE_PROTEGIDA };
   if (estado.usuario && usuario && usuario !== estado.usuario) return { sale: false, error: ERROR_OTRA_SESION };
   if (estado.sinCargar.has(k)) return { sale: false, error: ERROR_CARGA_FALLIDA };
   const seq = ++estado.seq;
@@ -380,7 +389,9 @@ export function esperarAnterior(anterior, tope = TOPE_ESPERA_ANTERIOR_MS) {
    (`reintentarGuardados` en `supabase.js`) lo vuelve a mandar por la puerta de
    siempre, así que pasa otra vez por la cola y por el número de orden.
    ─────────────────────────────────────────────────────────────────────────── */
-export const pendientesParaReintentar = () => [...estado.pendientes.entries()].map(([clave, p]) => ({ clave, valor: p.valor }));
+export const pendientesParaReintentar = () => [...estado.pendientes.entries()]
+  .filter(([clave]) => !esClaveDeHistorialVersiones(clave))   // segunda barrera: nunca se reenvía una (docs/19 §18.9)
+  .map(([clave, p]) => ({ clave, valor: p.valor }));
 
 export function marcarReintento(enMarcha, { ahora = Date.now(), salioBien = false } = {}) {
   estado.reintentando = !!enMarcha;

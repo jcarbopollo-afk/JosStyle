@@ -7,7 +7,10 @@ import { emitir } from './eventos';
 import {
   antesDeGuardar, despuesDeGuardar, esperarAnterior, marcarEnviado, alSalir, respuestaTardia, marcarVencida, apuntarCargaFallida, apuntarCargaBuena,
   pendientesParaReintentar, marcarReintento, usuarioDeLaSesion, generacionActual, marcarSalidaPedida, TOPE_PETICION_MS,
+  ERROR_CLAVE_PROTEGIDA,
 } from './sincronizacion';
+/* 🕰 Horarios (docs/19 §18.9): las claves del historial de versiones tienen su propio camino, abajo. */
+import { esClaveDeHistorialVersiones, PREFIJO_HISTORIAL_VERSIONES } from './historialVersiones';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -107,6 +110,13 @@ export async function loadData(userId, key, fallback) {
  * enciende (regla 8).
  */
 export async function saveData(userId, key, value, { reintento = false } = {}) {
+  /* 🚨 Horarios (docs/19 §18.9) — el historial de versiones NUNCA se escribe con este `upsert` sin condición: un
+     valor viejo pisaría las marcas de eliminación ya confirmadas (lo demostró la prueba de nivel 3). Se rechaza
+     aquí, antes de la cola, sin tocar la red y sin dejar nada pendiente. Lo escribe `transporteDeVersiones`. */
+  if (esClaveDeHistorialVersiones(key)) {
+    console.error('No se guarda', key, ERROR_CLAVE_PROTEGIDA.message);
+    return { ok: false, error: ERROR_CLAVE_PROTEGIDA, bloqueado: true, protegida: true };
+  }
   /* 🚨 MS F16 — antes de salir: una clave que no se pudo cargar no se escribe
      (pisaría lo que hay en la cuenta), un guardado de una sesión que ya se
      cerró tampoco, y los de una misma clave salen EN ORDEN (apartado 41): este
@@ -179,6 +189,94 @@ export async function saveData(userId, key, value, { reintento = false } = {}) {
   }
   return { ok: !error, error: error || null };
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🕰 HORARIOS · EL TRANSPORTE DEL HISTORIAL DE VERSIONES (docs/19 §18.9)
+
+   Lo único de este archivo que escribe `horarioVersiones:<aparato>`. NO pasa por `saveData` ni por su cola: no
+   hay reintento ciego, ni «último valor», ni nada pendiente. Quien decide qué escribir y cuándo reintentar es el
+   escritor (`crearEscritorDeVersiones` en `historialVersiones.js`); aquí solo se habla con PostgREST:
+     · leer TODAS las filas del usuario con `like 'horarioVersiones:%'` (RLS deja ver solo las suyas);
+     · insertar la primera fila de un aparato con un `insert` simple (si ya existe, la clave primaria contesta 409);
+     · actualizar SOLO si `value->>ultimaOperacion` sigue siendo la base leída, pidiendo la fila de vuelta
+       (`.select()`): con la respuesta mínima, PostgREST contesta 204 tanto si cambió una fila como si no.
+   Cada función se niega a tocar una clave que no sea del historial, así que no puede alterar otras claves.
+   ⚠️ `updated_at` se escribe por compatibilidad con la tabla, pero NO es la condición: la condición es la operación.
+   =========================================================================== */
+const SIN_RESPUESTA = Symbol('sin_respuesta');
+/* Se envuelve UNA vez (postgrest-js lanza la petición en cada `then`) y se espera como mucho `TOPE_PETICION_MS`.
+   Vencido, es «sin respuesta»: puede haberse aplicado, y el escritor relee para saberlo. */
+async function conTope(constructor) {
+  let reloj = null;
+  try {
+    const peticion = Promise.resolve(constructor);
+    const tiempo = new Promise((r) => { reloj = setTimeout(() => r(SIN_RESPUESTA), TOPE_PETICION_MS); });
+    const r = await Promise.race([peticion, tiempo]);
+    return r === SIN_RESPUESTA ? { sinRespuesta: true } : r;
+  } catch (e) {
+    return { sinRespuesta: true, error: e };
+  } finally { if (reloj) clearTimeout(reloj); }
+}
+/* postgrest-js no lanza ante un fallo de red: devuelve un error sin estado HTTP. Eso es «sin respuesta». */
+const sinEstado = (r) => !!r.sinRespuesta || (r.error && !r.status);
+const claveDeHistorial = (clave) => {
+  if (!esClaveDeHistorialVersiones(clave) || clave.length <= PREFIJO_HISTORIAL_VERSIONES.length) {
+    throw new Error(`El transporte del historial solo escribe claves ${PREFIJO_HISTORIAL_VERSIONES}<aparato>: ${clave}`);
+  }
+  return clave;
+};
+
+/** Todas las filas `horarioVersiones:*` del usuario. Solo lectura. Con un error, `ok: false`: nunca una lista a medias. */
+export async function leerRegistrosDeVersiones(userId) {
+  const r = await conTope(supabase.from('app_data').select('key, value')
+    .eq('user_id', userId).like('key', `${PREFIJO_HISTORIAL_VERSIONES}%`));
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error) return { ok: false, error: r.error, status: r.status };
+  if (!Array.isArray(r.data)) return { ok: false, error: { code: 'respuesta_incompleta', message: 'La lectura no devolvió una lista' } };
+  return { ok: true, filas: r.data };
+}
+
+/** La fila de un aparato (o `null` si todavía no existe). Solo lectura. */
+export async function leerRegistroDeVersiones(userId, clave) {
+  const r = await conTope(supabase.from('app_data').select('value')
+    .eq('user_id', userId).eq('key', claveDeHistorial(clave)).maybeSingle());
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error) return { ok: false, error: r.error, status: r.status };
+  return { ok: true, valor: r.data ? r.data.value : null };
+}
+
+/** La primera escritura de un aparato. `conflicto`: otra pestaña o instalación la creó antes (409, 23505). */
+export async function insertarRegistroDeVersiones(userId, clave, valor) {
+  const r = await conTope(supabase.from('app_data')
+    .insert({ user_id: userId, key: claveDeHistorial(clave), value: valor, updated_at: new Date().toISOString() })
+    .select('key'));
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error && r.error.code === '23505') return { ok: false, conflicto: true, error: r.error };
+  /* Un 4xx con código de PostgREST o de Postgres es una respuesta definitiva: no se aplicó. */
+  if (r.error) return { ok: false, error: r.error, status: r.status, definitivo: r.status >= 400 && r.status < 500 };
+  return { ok: Array.isArray(r.data) && r.data.length === 1 };
+}
+
+/** La escritura condicional: SOLO si la fila sigue con `ultimaOperacion = base`. `aplicada: false` = otro escribió antes. */
+export async function actualizarRegistroDeVersiones(userId, clave, valor, base) {
+  if (typeof base !== 'string' || !base) throw new Error('La escritura condicional necesita la operación base');
+  const r = await conTope(supabase.from('app_data')
+    .update({ value: valor, updated_at: new Date().toISOString() })
+    .eq('user_id', userId).eq('key', claveDeHistorial(clave)).eq('value->>ultimaOperacion', base)
+    .select('key'));
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error) return { ok: false, error: r.error, status: r.status, definitivo: r.status >= 400 && r.status < 500 };
+  if (!Array.isArray(r.data)) return { ok: false, sinRespuesta: true, error: { code: 'respuesta_incompleta' } };
+  return { ok: true, aplicada: r.data.length === 1 };
+}
+
+/** Lo que recibe `crearEscritorDeVersiones` para hablar con Supabase. */
+export const transporteDeVersiones = Object.freeze({
+  leerTodas: leerRegistrosDeVersiones,
+  leerPropia: leerRegistroDeVersiones,
+  insertar: insertarRegistroDeVersiones,
+  actualizarSiBase: actualizarRegistroDeVersiones,
+});
 
 /**
  * 🚨 **Perder y recuperar la conexión, dicho en voz alta.**
