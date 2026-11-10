@@ -6,10 +6,19 @@
 > Referencias obligatorias:
 > - **`docs/17`**: el objetivo funcional. Su Anexo prevalece.
 > - **`docs/18`**: la auditoría.
-> - **`docs/19`**: la arquitectura. **Su §17 prevalece** donde haya diferencias.
+> - **`docs/19`**: la arquitectura. Prevalece sobre este documento donde haya diferencias, y dentro de ella manda lo
+>   más reciente, en este orden:
+>   1. **Su §18.12** (cierre documental previo a la Fase 4, 2026-11-09): **manda expresamente sobre todos los apartados
+>      anteriores** de `docs/19` (el §17 y el resto del §18 incluidos) cuando difieran.
+>   2. **El resto de su §18** (correcciones del 2026-11-09): manda sobre el §17 y los anteriores.
+>   3. **Su §17** (aclaraciones del 2026-11-08): manda sobre los apartados 1 a 16.
 >
-> Las decisiones pendientes de Josué (TP-1, TP-3, TP-4, TP-5, TP-7, TP-13, TP-14 y TP-15) **siguen pendientes**: el diseño
-> enseña qué cambia según la respuesta, pero no decide ninguna (§12.13).
+> Decisiones de Josué:
+> - **Estado vigente** (🔎 cierre previo a la Fase 4, 2026-11-09; lo determina `docs/19` §18.12): siguen pendientes TP-1,
+>   TP-3, TP-5, TP-7 y TP-15 (que incluye el TP-8), además de las de las Fases 5 y 7. **TP-4, TP-13 y TP-14 están
+>   resueltas** (§12.13). El diseño enseña qué cambia según la respuesta de las pendientes, pero no decide ninguna.
+> - **Estado anterior** (cuando se escribió este documento, antes del `docs/19` §18.12; se conserva como registro): TP-1,
+>   TP-3, TP-4, TP-5, TP-7, TP-13, TP-14 y TP-15 seguían pendientes.
 >
 > Fecha: 2026-11-08 · Rama `claude/horarios-rediseno` · Base `bf9bb46`.
 
@@ -515,9 +524,13 @@ Una sola entrada para lo que necesita sus ojos:
 - **Elementos apartados** (la cuarentena, `docs/19` §17.5): «Una clase que no pertenece a ningún horario», «Un cambio con una
   fecha que no existe»…
 - **Días sin elegir**: actividades guardadas en un «día» sin día de la semana (P2): «Elige qué día es».
+- 🔎 **Versiones sin resolver** (cierre previo a la Fase 4, `docs/19` §18.12): las versiones en conflicto, las
+  eliminaciones dudosas y el aviso de historial incompleto o de un formato posterior (§11.4).
+  - **Solo informan**: hoy no existe ninguna operación para resolverlos, así que **no tienen** «Resolver», «Mantener así»
+    ni «Descartar». Lo dice una frase: «Por ahora no se puede resolver desde la app. No se ha borrado nada».
 
-Cada una con su explicación y sus salidas (Resolver, Mantener así, Recuperar, Descartar). Si no hay nada, la entrada no
-existe.
+Cada una con su explicación y sus salidas (Resolver, Mantener así, Recuperar, Descartar), **salvo las versiones sin
+resolver**, que solo informan. Si no hay nada, la entrada no existe.
 
 ---
 
@@ -867,6 +880,14 @@ Al guardar algo que coincidiría (en el editor, «Cambiar este día», mover, du
 - 🔎 **Si no se puede comprobar que tus versiones anteriores siguen a salvo** (sin conexión o un error al releerlas,
   `docs/19` §18.7): no se guarda. Se dice «No se puede comprobar que tus versiones anteriores están a salvo. Tu borrador
   sigue guardado. Inténtalo con conexión.» · [Reintentar]. Nunca se sigue a medias.
+- 🔎 **Si el historial de versiones está incompleto o es de una versión más nueva de JosStyle** (cierre previo a la Fase 4,
+  `docs/19` §18.12): guardar escribe antes una versión automática, y el historial no admite escrituras así. **No se
+  guarda**, y se dice:
+  - Incompleto: «No se puede guardar ahora: tu historial de versiones está incompleto y no se puede hacer la copia de
+    antes del cambio. Tu borrador sigue guardado. No se ha borrado nada.»
+  - De una versión más nueva: «No se puede guardar ahora: tu historial se guardó con una versión más nueva de JosStyle.
+    Recarga la aplicación. Tu borrador sigue guardado.» · [Recargar].
+  - Lo mismo vale para **recuperar una versión** y para la actualización de Horarios (la migración).
 
 ### 11.4 Versiones anteriores (sin pantalla de historial)
 
@@ -917,13 +938,52 @@ Desde el `⋯` del horario se abre una **hoja** con la lista de versiones:
 - 🔎 **Si le cambiaste el nombre a la misma versión en dos aparatos a la vez**:
   - La fila lo dice: «Tiene dos nombres: «Antes del examen» o «Segundo trimestre» · [Elegir]». No dice de qué aparato es
     cada uno, porque no se puede saber con certeza.
-  - No se elige uno en silencio. Elegir deja ese nombre en todos.
+  - No se elige uno en silencio. Elegir deja ese nombre en todos. 🔎 Elegir es un renombre: solo se puede con el historial
+    completo y si la versión no está sin resolver (abajo).
 - 🔎 **Si no se puede leer la lista de versiones**: la hoja no enseña una lista a medias. Dice «No se han podido cargar tus
   versiones. No se ha perdido nada.» · [Reintentar].
+- 🔎 **Estados del historial** (cierre previo a la Fase 4). Responden a lo que **ya devuelve el código** (`docs/19`
+  §18.12); la hoja que los enseña es **diseño de la Fase 4**, no existe todavía:
+  - **Historial incompleto** (`completa: false`: alguna fila no se ha podido entender):
+    - Se enseñan las versiones que sí se pueden leer, con un aviso fijo arriba de la hoja, en `warning` con icono y
+      palabra: «⚠ Tu historial de versiones está incompleto. Una parte no se ha podido leer, así que esta lista puede no
+      ser la definitiva: puede faltar alguna versión o alguna eliminación. No se ha borrado nada.»
+    - Mientras dure, **no se modifica el historial**: no hay «Guardar una versión», ni `⋯` en ninguna versión, ni
+      «Recuperar esta versión». Solo «Ver». Debajo del aviso: «Mientras tanto no se pueden guardar, cambiar ni recuperar
+      versiones, ni guardar cambios de tus horarios.»
+  - **Historial de una versión más nueva de JosStyle** (una fila de un formato posterior): solo lectura. «Tu historial de
+    versiones se guardó con una versión más nueva de JosStyle. Recarga la aplicación para poder cambiarlo.» · [Recargar].
+    Se ve lo que esta versión entiende, con el mismo aviso de que puede no estar completo, y nada se modifica.
+  - **Una versión sin resolver** (tiene algo en `afectadaPor`). La fila lo dice con palabra, no solo con color, y solo
+    tiene «Ver»: ni `⋯` ni «Recuperar esta versión».
+    - Su creación tiene dos contenidos (`creacion_en_conflicto`): «⚠ Sin resolver: esta versión tiene dos contenidos
+      distintos». «Ver» enseña **todos**, uno detrás de otro («Contenido 1 de 2»…), sin elegir ninguno. El que sale en la
+      lista es uno cualquiera de los dos y **no** se presenta como el bueno.
+    - Una eliminación o un renombre en conflicto la nombran (`eliminacion_en_conflicto`, `renombre_en_conflicto`,
+      `marca_recuperada_en_conflicto`): «⚠ Sin resolver: hay dos órdenes distintas sobre esta versión».
+    - Una eliminación dudosa (`eliminacion_dudosa`): «⚠ Puede que esté eliminada: hay una eliminación que no se ha podido
+      comprobar». La versión **se sigue viendo**.
+  - **Una versión protegida** (alguna de sus variantes es automática): se enseña como **automática**, sin `⋯`, aunque la
+    variante que salga diga otra cosa.
+  - **Si una acción se rechaza** porque el estado cambió entre ver la lista y pulsar (lo dice el escritor con su motivo).
+    En todos los casos «No ha cambiado nada» y la lista se vuelve a leer:
+    - `vista_incompleta`: «No se ha hecho: tu historial de versiones está incompleto.»
+    - `formato_nuevo`: «No se ha hecho: tu historial se guardó con una versión más nueva de JosStyle. Recarga la
+      aplicación.» · [Recargar]
+    - `version_afectada`: «No se puede: esta versión está sin resolver.»
+    - `version_automatica`: «Las versiones automáticas no se pueden renombrar ni eliminar.»
+    - `sin_conexion` o `lectura`: «No se ha podido comprobar tu historial.» · [Reintentar]
+    - `conflictos_repetidos`: «Otra pestaña u otro aparato está guardando versiones a la vez.» · [Reintentar]
+    - `sin_candado`: «Este navegador no permite obtener el bloqueo necesario para guardar versiones de forma segura. No
+      ha cambiado nada.» Aparece siempre que el navegador no da ese bloqueo (`navigator.locks`), sea cual sea el motivo:
+      por ejemplo, un Safari anterior a 15.4, o una página abierta fuera de un contexto seguro (`docs/19` §18.12,
+      riesgo 6).
+  - **No existe ningún botón para resolver** un conflicto, una eliminación dudosa o el historial incompleto: no hay
+    operación para hacerlo (`docs/19` §18.12). «Revisión» lo explica (§7.5).
 - 🔎 Dos versiones automáticas idénticas de dos aparatos (por ejemplo, de una actualización hecha a la vez) salen en una
   línea con «2 copias iguales». No se elimina ninguna.
-- **Ninguna versión se elimina sola** (`docs/19` §17.1). No existe «Borrar versiones antiguas»: eso sería una poda, y es
-  TP-13, pendiente.
+- **Ninguna versión se elimina sola** (`docs/19` §17.1). No existe «Borrar versiones antiguas»: eso sería una poda, y
+  TP-13 está resuelta: se conserva todo (2026-11-09).
 - **En un horario desactivado**: lo mismo que en uno activo.
 - **En uno archivado**: solo «Ver», sin recuperar, guardar, renombrar ni eliminar, hasta recuperar el horario del
   archivo.
@@ -962,6 +1022,9 @@ Desde el `⋯` del horario se abre una **hoja** con la lista de versiones:
 | Confirmación pendiente | La pantalla de §11.3 |
 | Papelera | «🗑 Eliminado · hasta el …» |
 | Restauración | El aviso con su estado de llegada (como estaba, o desactivado si coincidiría) |
+| 🔎 Historial incompleto | El aviso fijo «⚠ Tu historial de versiones está incompleto» y solo «Ver» (§11.4) |
+| 🔎 Historial de una versión más nueva | «Recarga la aplicación para poder cambiarlo» · [Recargar], y solo «Ver» |
+| 🔎 Versión sin resolver | «⚠ Sin resolver» o «⚠ Puede que esté eliminada», y solo «Ver» |
 
 ---
 
@@ -983,18 +1046,20 @@ Desde el `⋯` del horario se abre una **hoja** con la lista de versiones:
 | **12.12 Sin conexión** | Se ve lo último cargado, con el indicador global arriba (`IndicadorDeSincronizacion`). Editar un borrador funciona (se guarda al volver la conexión **mientras la app siga abierta**, como todo `saveData`: lo pendiente no se guarda en el aparato, MS F16). 🔎 **«Guardar en mi horario», recuperar una versión, «Guardar una versión» y eliminar o renombrar una versión necesitan conexión** (revisión del 2026-11-09): hay que comprobar que las versiones anteriores siguen a salvo (`docs/19` §18.7), así que sin ella el botón dice «Sin conexión: tu borrador sigue guardado; podrás guardarlo en tu horario al recuperarla» y no hace nada a medias. Los cambios de un solo día (cancelar, mover solo hoy, día libre) no crean versión y se guardan como siempre con `saveData`. ⚠️ No se promete que no pisará cambios de otro aparato (`docs/19` §17.3, TP-15) |
 | **Solo lectura por versión nueva** | Si la guardia de versión se activa (`docs/19` §12.3): «Tu horario se guardó con una versión más nueva de JosStyle. Recarga la aplicación para editarlo.» · [Recargar]. Todo se ve; nada se edita |
 | **Copia antigua detectada** | `docs/19` §17.2: «Una versión antigua de JosStyle guardó tu horario el día X» con las dos salidas, sin elegir por él |
+| 🔎 **Historial de versiones incompleto** | §11.4: las versiones que se pueden leer, con el aviso; nada que modifique el historial, y no se pueden guardar cambios de los horarios hasta que se resuelva (`docs/19` §18.12) |
+| 🔎 **Historial de una versión más nueva** | §11.4: solo lectura, con [Recargar] |
 
 ### 12.13 Decisiones pendientes que afectan a la interfaz (no se deciden aquí)
 
 | TP | Qué cambia en la interfaz según la respuesta |
 |---|---|
-| **TP-5** (aplicar el ciclo A/B si existe) | 🔎 **Mientras esté pendiente, ninguna pantalla muestra semanas A/B**: ni «Semana A» en la cabecera, ni la opción «Semanas A/B» en «Repetición», ni `⋯ → Semanas A/B` en el editor (corrección 2026-11-09). La configuración guardada se conserva intacta. Si Josué decide aplicarlo, esos tres controles aparecen en el sitio ya reservado. ⚠️ **«Cada dos semanas» no es esto**: se ve siempre y TP-5 no le afecta (§11.2, `docs/19` §18.6) |
+| **TP-5** (aplicar el ciclo A/B si existe) | 🔎 Se decide **después del diagnóstico**, y solo si aparecen ciclos con grupo. **Mientras esté pendiente, ninguna pantalla muestra semanas A/B**: ni «Semana A» en la cabecera, ni la opción «Semanas A/B» en «Repetición», ni `⋯ → Semanas A/B` en el editor (corrección 2026-11-09). La configuración guardada se conserva intacta. Si Josué decide aplicarlo, esos tres controles aparecen en el sitio ya reservado. ⚠️ **«Cada dos semanas» no es esto**: se ve siempre y TP-5 no le afecta (§11.2, `docs/19` §18.6) |
 | **TP-7** (Fitness en un día de descanso) | 🔎 **Ninguna opción aprobada** (corrección 2026-11-09). **En Horarios**: (A) la actividad se ve atenuada con «Descanso según tu plan»; o (B) se ve igual que cualquier día, con el título que dé Fitness («Descanso»). **En Inicio**: contarla, no contarla o contarla con otra etiqueta en «N eventos». La Fase 4 no implementa ninguna de las dos de Horarios sin su respuesta |
-| **TP-13** (podar o borrar) | Si se autoriza, aparecería una acción en `⋯` («Borrar versiones antiguas», etc.). Mientras no, **no existe ningún botón de vaciar** salvo la papelera global de siempre |
-| **TP-14** (aviso de versión nueva) | Si se autoriza: un aviso «Hay una versión nueva de JosStyle · [Recargar]», de toda la app. Si no, no existe |
-| **TP-15** (protección entre aparatos) | Si se implanta: el mensaje «Otro aparato guardó cambios en este horario a las HH:MM» en Revisar y guardar. Mientras no, ese mensaje no existe y nada promete esa protección |
+| **TP-13** (podar o borrar) | 🔎 **RESUELTA por Josué el 2026-11-09: se conserva todo.** No existe ningún botón de vaciar ni de «Borrar versiones antiguas», salvo la papelera global de siempre |
+| **TP-14** (aviso de versión nueva) | 🔎 **RESUELTA por Josué el 2026-11-09: no se incorpora en esta fase.** No existe el aviso «Hay una versión nueva de JosStyle» de toda la app. El [Recargar] de la guardia y del historial de una versión más nueva (§11.4, §12) es otra cosa y sí existe |
+| **TP-15** (protección entre aparatos; 🔎 incluye el TP-8) | **El historial de versiones ya está protegido** por su escritura condicional (`docs/19` §18.9 y §18.12). **`horarioTop` y los borradores, no**: si se implanta, el mensaje «Otro aparato guardó cambios en este horario a las HH:MM» en Revisar y guardar. Mientras no, ese mensaje no existe y nada promete esa protección |
 | **TP-1 / TP-3** (push) | Hasta la Fase 7, en Ajustes → Notificaciones no hay ningún «Avisos con la app cerrada». Después, el botón con sus requisitos del iPhone dichos en pantalla |
-| **TP-4** (diagnóstico) | Una pantalla de solo lectura con los recuentos, si él elige verla en la app (`docs/19` §12.2) |
+| **TP-4** (diagnóstico) | 🔎 **RESUELTA por Josué el 2026-11-09**: una pantalla de **solo lectura** con los recuentos, en la **entrega A** de la Fase 4 (`docs/19` §12.2). Sin ninguna acción que cambie datos. Haberla visto y revisado es condición de la entrega B |
 | **TP-18** (el orden de los días) | 🔎 **RESUELTA por Josué el 2026-11-09**: siempre de lunes a domingo, en el móvil y en el escritorio, sin ningún control para reordenar. El orden guardado antes se conserva y no se usa para pintar (§4, §6.2, §11.2, `docs/19` §18.8) |
 
 ---
@@ -1207,8 +1272,21 @@ colores de `PALETA_ACTIVIDADES`]:
    - Ninguna pantalla dice «sí se aplicó» ni atribuye una operación a un aparato.
    - `saveData` se niega a escribir `horarioVersiones:…`.
    - **No hay nada pendiente en `localStorage` ni en IndexedDB**: solo `aparato`, `confirmada` y `sesiones`.
-   - ⚠️ Esto comprueba la lógica, no Supabase. **La condición real queda sin comprobar** hasta el nivel 3 o 4, que necesitan
-     autorización.
+   - ⚠️ Esto comprueba la lógica, no Supabase. 🔎 **La condición real se comprobó en el nivel 3** (PostgREST local), con el
+     código anterior a las últimas correcciones: hay que repetirla. **El nivel 4 (Supabase alojado) sigue sin hacer** y
+     necesita autorización (`docs/19` §18.12).
+5l. 🔎 Estados del historial (`docs/19` §18.12, §11.4 de aquí), con el doble:
+   - Con una fila dañada: las versiones que se pueden leer salen con el aviso de historial incompleto, y no hay ninguna
+     acción que lo modifique. Guardar cambios de un horario, recuperar una versión y «Guardar una versión» se detienen
+     con su mensaje, sin escribir nada.
+   - Con una fila de un formato posterior: solo lectura y [Recargar].
+   - Una versión con una eliminación dudosa se sigue viendo, con su frase, y solo tiene «Ver».
+   - Una creación en conflicto enseña todas sus variantes en «Ver» y ninguna se presenta como la buena.
+   - Una versión protegida no tiene `⋯`.
+   - Cada motivo de rechazo tiene su frase y deja «No ha cambiado nada».
+   - Ninguna pantalla ofrece «Resolver» para las versiones.
+5m. 🔎 El panel de diagnóstico de la entrega A (TP-4): solo lectura, sin ninguna escritura (comprobado con el doble de
+   Supabase: ni un `upsert` ni un `update`).
 6. Ningún texto pintado por debajo de 12 px; zonas táctiles de 44 px.
 7. Cada estado de §12 tiene su caso en el banco de renderizado.
 8. El recorrido de Chromium: crear un horario a mano, añadir una actividad de dos días, revisar, guardar, verla en la agenda
@@ -1266,5 +1344,6 @@ colores de `PALETA_ACTIVIDADES`]:
 
 ---
 
-*Fase 3 de 8 terminada. Solo diseño: no autoriza la Fase 4 ni ninguna implementación, migración, SQL, dependencia,
+*Fase 3 de 8 terminada, con el cierre documental previo a la Fase 4 (2026-11-09). Solo diseño: no autoriza la Fase 4 ni
+ninguna implementación, migración, SQL, dependencia,
 despliegue o cambio de datos.*

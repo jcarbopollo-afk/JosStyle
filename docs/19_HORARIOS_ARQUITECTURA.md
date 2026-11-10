@@ -51,7 +51,7 @@ exportación visual lleva otro nombre.
 15. Decisiones técnicas pendientes
 16. Criterios de aceptación
 17. Aclaraciones de la revisión (2026-11-08) — **mandan sobre los apartados anteriores donde difieran**
-18. Correcciones del 2026-11-09 (versiones manuales, TP-5/TP-7, funciones que se conservan, colores al exportar, «Cada dos semanas», conservación de versiones, coherencia, TP-18 resuelta, versiones eliminadas entre aparatos —sin nada pendiente en el aparato y con escritura condicional— y la regla definitiva del autoguardado)
+18. Correcciones del 2026-11-09 (versiones manuales, TP-5/TP-7, funciones que se conservan, colores al exportar, «Cada dos semanas», conservación de versiones, coherencia, TP-18 resuelta, versiones eliminadas entre aparatos —sin nada pendiente en el aparato y con escritura condicional— y la regla definitiva del autoguardado). §18.12: el cierre documental previo a la Fase 4 (TP-4, el historial de versiones tal como está implementado, TP-8 con TP-15, y sus riesgos)
 
 ---
 
@@ -95,7 +95,7 @@ exportación visual lleva otro nombre.
 | **D-H2** | `pg_cron` es una propuesta pendiente de comprobación en la Fase 7 | §9.4: el disparador se diseña con `pg_cron` + `pg_net`, con la comprobación del plan gratuito como **condición de entrada de la Fase 7**, y una alternativa si falla |
 | **D-H3** | No ampliar las integraciones de Calendario e Inicio más allá de lo acordado | §8.5 y §8.6: Inicio sigue contando «N eventos» y el día del Calendario sigue enseñando las clases, **ahora con la regla de choques única**. El **mes del Calendario no enseña las clases** y **no hay lista nueva en Inicio** |
 | **D-H4** | La especificación HT es documentación histórica cuando contradiga el Documento Maestro | Donde `docs/17` y `ESPECIFICACION_HORARIO_TOP.md` choquen, manda `docs/17`. La especificación HT **no se edita** (es literal). Queda **pendiente de anotar en `docs/03`** cuando se autorice tocar ese documento (§15) |
-| **D-H5** | Diagnóstico de datos reales exclusivamente de lectura antes de la Fase 4 | §12.2: `diagnosticoHorarios(crudo)` es pura y **no escribe**. La forma de llevarla a sus datos (un despliegue o un `select` que él ejecute) necesita su autorización, y es la **condición de entrada de la migración** |
+| **D-H5** | Diagnóstico de datos reales exclusivamente de lectura antes de la Fase 4 | §12.2: `diagnosticoHorarios(crudo)` es pura y **no escribe**. 🔎 **TP-4 resuelto (2026-11-09)**: se lleva a sus datos con un **panel de solo lectura dentro de la entrega A** de la Fase 4, **sin SQL en producción**. Haberlo visto y revisado es la **condición de entrada de la entrega B y de cualquier migración** |
 | **D-H6** | Fitness mostrará la rutina que corresponda a cada fecha sin inventar horarios | §8.2: se lee `planificadoEnFecha` en cada fecha. Sin hora, sale como elemento **«sin hora»** del día. Con hora, **solo** si Josué coloca una actividad vinculada con sus propias horas. Nunca se copia una rutina ni se crea una sesión |
 | **D-H7** | La exportación se incorpora en la Fase 4 | §14.11: el contrato de la exportación visual (día o semana, PNG y PDF, sin dependencias) forma parte de la Fase 4 y de sus criterios de aceptación |
 
@@ -684,7 +684,7 @@ Version = { id, horarioId, numero, creadaEn,
 > - **Eliminar una versión manual**:
 >   - Con confirmación clara: «Se eliminará solo la versión «X». Tu horario y las demás versiones no cambian».
 >   - Afecta **exclusivamente a esa versión**: ni al horario actual ni a otras versiones.
->   - No va a la papelera (la papelera guarda horarios). Es un borrado que pide él, no una poda: **TP-13 sigue intacto**.
+>   - No va a la papelera (la papelera guarda horarios). Es un borrado que pide él, no una poda: **TP-13 sigue intacto** (🔎 resuelta el 2026-11-09: se conserva todo, §18.12).
 > - **Ninguna versión se elimina automáticamente**: ni por número, ni por antigüedad, ni por espacio (§17.1).
 >   🔎 **Corregido (segunda revisión del 2026-11-09)**: tampoco al vaciar o caducar un horario en la papelera. **Sus
 >   versiones se conservan** («Versiones de horarios eliminados», §7 y §18.7). Las automáticas no se pueden eliminar desde
@@ -1139,14 +1139,18 @@ Un aviso **recibido con JosStyle cerrada en su iPhone** (Anexo §3). Solo él pu
 - Tamaño de `horarioTop` en bytes, y tamaño de `mochila` y `completadas`.
 - Campos desconocidos.
 
-**Cómo se lleva a sus datos** [PENDIENTE, lo autoriza él], dos opciones:
-1. **Un despliegue con un panel de diagnóstico** (solo lectura) que enseñe esos recuentos en su iPhone. Necesita
-   autorizar un despliegue.
-2. **Un `select` de solo lectura** que él ejecute en el SQL Editor de Supabase y cuyo resultado pegue. Necesita su
-   autorización, aunque no modifica nada. Por ejemplo, el tamaño y los recuentos de `value -> 'horarios'`, `'bloques'` y
-   `'excepciones'` de la fila `key = 'horarioTop'`. El texto exacto se le dará cuando lo autorice.
+**Cómo se lleva a sus datos** — 🔎 **TP-4 resuelto por Josué (2026-11-09)**:
+- Con **un panel de diagnóstico de solo lectura**, que forma parte de la **entrega A** de la Fase 4 (§12.3). Enseña esos
+  recuentos en su iPhone con los datos que la app ya carga. No escribe nada, no migra nada y no cambia ningún dato.
+- **No se ejecuta ni se prepara ninguna consulta SQL en producción** como alternativa. La opción del `select` que había
+  aquí queda descartada.
+- El panel llega con el despliegue de la entrega A, que necesita su autorización como cualquier entrega.
 
-**Sin diagnóstico no se activa la migración.** Es la condición de entrada.
+**Sin diagnóstico no hay entrega B ni migración.** La entrega B no puede empezar hasta que:
+1. el panel se haya ejecutado con sus datos reales;
+2. él lo haya visto y revisado; y
+3. se haya resuelto cualquier incidencia que lo pida (por ejemplo, TP-5 si aparecen ciclos con grupo, o los días sin
+   elegir y las reglas que irían a la cuarentena, que se le enseñan antes).
 
 ### 12.3 La guardia de versión, en dos entregas (N1, N2, N6)
 
@@ -1154,13 +1158,15 @@ Un aviso **recibido con JosStyle cerrada en su iPhone** (Anexo §3). Solo él pu
 - El normalizador **conserva lo desconocido**.
 - **Guardia**: si `horarioTop.version` es mayor que la que conoce la app, se pone en **solo lectura**, no guarda y lo
   dice, como `fitnessSoloLectura`.
-- El diagnóstico.
+- **El panel de diagnóstico de solo lectura** (§12.2, TP-4 resuelto).
 - La hoja `fechasSemana.js`.
 
 Desde esa entrega, ninguna copia de la app puede borrar campos nuevos.
 
 **Entrega B** (después, con margen para que su iPhone y sus pestañas hayan recargado la A):
 - La versión 2 de verdad: migración, campos nuevos, borradores, versiones y papelera.
+- 🔎 **Condición previa (TP-4, 2026-11-09)**: el diagnóstico de la entrega A ejecutado con sus datos, revisado por él y
+  con sus incidencias resueltas (§12.2). Sin eso, la entrega B no empieza.
 
 > 🔎 **Revisión 2026-11-08**: esperar un margen **no garantiza** que no quede una copia antigua. Las señales que deja la A
 > (testigo, registro de aparatos, registro de la guardia), las cinco condiciones para que la B migre, entre ellas la
@@ -1198,8 +1204,9 @@ Desde esa entrega, ninguna copia de la app puede borrar campos nuevos.
 
 ### 12.5 La migración real, paso a paso (sin ejecutar)
 
-1. Él autoriza el diagnóstico y lo ve. Si aparecen casos raros (ciclos, columnas sin día, choques), se le enseñan antes.
-2. Entrega A desplegada y en uso unos días.
+1. Entrega A desplegada (con su autorización), con el panel de diagnóstico de solo lectura (§12.2).
+2. Él ve el diagnóstico con sus datos reales. Si aparecen casos raros (ciclos con grupo, columnas sin día, choques), se le
+   enseñan y se resuelven **antes** de la B (TP-5 incluido). La A sigue en uso unos días (TP-12, §17.2).
 3. Entrega B: en la primera carga, `migrarHorarioTop(crudo)` en memoria.
    - Si va bien, se guarda `horarioTop_respaldo_v1` (solo si no existe). Si eso falla, no se migra.
    - Luego las versiones `migracion` y, con el siguiente guardado, `horarioTop` en la versión 2.
@@ -1478,11 +1485,11 @@ Ninguna bloquea la Fase 3.
 | **TP-1** | Instalar `web-push` 3.6.7 (solo en el servidor) o la implementación propia con `node:crypto` (D-H1) | `web-push` 3.6.7 fijada, con la prueba de que no llega al navegador | **Autorización expresa** en la Fase 7 |
 | **TP-2** | `pg_cron` + `pg_net` en el plan gratuito sin pausar el proyecto (D-H2) | Comprobarlo al entrar en la Fase 7; si no, un programador externo | Fase 7 |
 | **TP-3** | Claves VAPID, la clave de servicio de Supabase y el secreto del cron en Vercel; el SQL de las tablas y del cron | Se le dan los pasos y el SQL exactos | **Josué**, Fase 7 |
-| **TP-4** | Cómo llevar el diagnóstico a sus datos: un despliegue o un `select` (D-H5) | La opción que él prefiera; sin diagnóstico no hay migración | **Josué**, antes de la Fase 4 |
-| **TP-5** | Si el diagnóstico encuentra **ciclos con grupo**: aplicar el ciclo cambia lo que ve | Enseñárselo y preguntar antes de la entrega B. **Pendiente de Josué; no se implementa ninguna opción sin preguntarle** (§17.6). 🔎 **2026-11-09**: mientras esté pendiente, **ninguna pantalla muestra controles de semanas A/B**; la configuración del ciclo se conserva en los datos y en el diseño, inactiva (§18) | **Josué**, si aparece |
+| **TP-4** | Cómo llevar el diagnóstico a sus datos (D-H5) | 🔎 **RESUELTA por Josué el 2026-11-09**: un **panel de solo lectura en la entrega A**; ningún SQL en producción. Haberlo visto, revisado y resuelto sus incidencias es la condición de la entrega B y de cualquier migración (§12.2) | Resuelta |
+| **TP-5** | Si el diagnóstico encuentra **ciclos con grupo**: aplicar el ciclo cambia lo que ve | 🔎 **2026-11-09: se decide después del diagnóstico de la entrega A, y solo si aparecen.** Enseñárselo y preguntar antes de la entrega B. **Pendiente de Josué; no se implementa ninguna opción sin preguntarle** (§17.6). 🔎 **2026-11-09**: mientras esté pendiente, **ninguna pantalla muestra controles de semanas A/B**; la configuración del ciclo se conserva en los datos y en el diseño, inactiva (§18) | **Josué**, si aparece |
 | **TP-6** | «Corregir desde el principio» (cambiar también el pasado) como cuarto alcance | **No añadirlo** (Anexo §5 fija tres); el pasado se conserva (§4.2) | Fase 3 (si en la interfaz hiciera falta) |
 | **TP-7** | Una actividad vinculada a Fitness en un día de descanso: cómo se ve en Horarios y si cuenta en «N eventos» de Inicio | 🔎 **2026-11-09: ninguna opción aprobada**, ni la visual ni la de Inicio. **En Horarios**: (A) verse atenuada con «Descanso según tu plan»; o (B) verse igual que cualquier día, con el título que dé Fitness («Descanso»). **En Inicio**: contarla, no contarla o contarla con otra etiqueta. En todos los casos sigue contando en las coincidencias, porque sus horas son suyas. **Pendiente de Josué; no se implementa ninguna sin preguntarle** (§17.6) | **Josué** |
-| **TP-8** | La escritura condicional en el servidor contra copias antiguas | Fuera de este rediseño; el riesgo queda mitigado por la guardia, el respaldo y las versiones aparte | Fase pendiente de Josué (SQL) |
+| **TP-8** | La escritura condicional en el servidor contra copias antiguas | 🔎 **Unificada en el TP-15 (2026-11-09)**: es la misma cuestión. Se trata allí (§17.7), para no tener dos decisiones sobre lo mismo | Ver TP-15 |
 | **TP-9** | Anotar en `docs/03` D-H4 y las decisiones de esta fase | Cuando se autorice modificar ese documento (el prompt de la Fase 2 solo autoriza crear documentación) | Fase 4 o la que se autorice |
 | **TP-10** | C9: restaurar una asignatura no devuelve sus clases | Fuera del alcance de Horarios (es de la papelera de Estudios); anotarlo | Josué |
 | **TP-11** | Las opciones de `tesseract.js` 7 para servir sus archivos desde la app, y la velocidad en su iPhone | Comprobarlo al empezar la Fase 5; la instalación necesita autorización | Fase 5 |
@@ -1644,7 +1651,7 @@ funcionando como la A):
      - «Quedarme con lo que hay ahora y volver a actualizarlo»: se migra lo que hay, sin los campos nuevos que la copia
        antigua borró, y estos se pueden recuperar uno a uno desde la versión.
 
-**Un aviso de versión nueva para el futuro** [PENDIENTE, TP-14]:
+**Un aviso de versión nueva para el futuro** [TP-14 — 🔎 **RESUELTA el 2026-11-09: no se incorpora en esta fase**; lo de abajo queda como opción descartada por ahora]:
 - Una comprobación ligera (un `version.json` servido sin caché, consultado al volver a la app) que pida recargar cuando
   haya una versión más nueva.
 - No ayuda con las copias anteriores a la A, pero sí con todo lo que venga después.
@@ -1795,9 +1802,9 @@ horarioCuarentena = { version: 1, elementos: [{
 
 | # | Cuestión | Opciones | Quién |
 |---|---|---|---|
-| **TP-13** | Cualquier poda o borrado automático: `completadas`, `mochila`, choques resueltos, versiones, avisos enviados, cuarentena | Conservar todo y avisar a partir de un umbral (lo propuesto); o una poda concreta por lista y antigüedad | **Josué** |
-| **TP-14** | Aviso de versión nueva para toda la aplicación (`version.json`) | Añadirlo con la entrega A; o no | **Josué** (afecta a toda la app) |
-| **TP-15** | Protección real entre aparatos: el token sin SQL (A) o la versión en el servidor con SQL (B) | A, comprobada antes contra Supabase con autorización; B, con su SQL; o ninguna, y quedarse con la detección y la recuperación | **Josué** |
+| **TP-13** | Cualquier poda o borrado automático: `completadas`, `mochila`, choques resueltos, versiones, avisos enviados, cuarentena | 🔎 **RESUELTA por Josué el 2026-11-09**: **se conserva todo**. No hay ninguna poda automática. El crecimiento queda como riesgo aceptado (§17.8.4) | Resuelta |
+| **TP-14** | Aviso de versión nueva para toda la aplicación (`version.json`) | 🔎 **RESUELTA por Josué el 2026-11-09**: **no se incorpora en esta fase**. Las copias antiguas siguen tratándose con la guardia, el testigo y la recuperación (§17.2) | Resuelta |
+| **TP-15** (incluye el **TP-8**) | **Protección de las escrituras entre aparatos.** 🔎 **Unificada con el TP-8 el 2026-11-09.** Hay que separar dos cosas: **(1) el historial de versiones**: protegido por diseño y **ya implementado en código** con la escritura condicional por aparato (§18.9 y §18.12), comprobada con un PostgREST local y pendiente de comprobar en Supabase alojado y en su iPhone; **(2) `horarioTop` y los borradores**: **siguen sin protección**; hoy gana el último que escribe, y una copia anterior a la entrega A puede borrar campos nuevos | Para (2): A, el token sin SQL (comprobada antes, sin tocar producción); B, la versión en el servidor con SQL que ejecuta Josué; o ninguna, y quedarse con la detección y la recuperación (§17.2). **La solución definitiva sigue pendiente de pruebas y de su autorización** | **Josué** |
 | **TP-16** | Pedir `updated_at` en la carga (para el respaldo y para la opción A del TP-15) | Ampliar `loadData` para Horarios | Fase 4 |
 | **TP-17** | Las claves nuevas `horarioAparatos`, `horarioGuardia` y `horarioCuarentena` (misma tabla, mismas políticas, sin SQL). 🔎 Y los registros `horarioVersiones:<aparato>` (§18.9, 2026-11-09) | Como se describen en 17.2, 17.5 y 18.9 | Fase 4 |
 | **TP-18** | El orden de los días | 🔎 **RESUELTA por Josué el 2026-11-09**: siempre de lunes a domingo, sin controles para reordenar, en el móvil y en el escritorio; `posicion` se conserva intacto y deja de controlar la presentación (§18.8) | Resuelta |
@@ -1833,7 +1840,13 @@ Recogidas en el §6.5 (modelo y reglas) y en el §14.6 (contrato). En resumen:
 
 ### 18.2 Decisiones pendientes: siguen pendientes
 
-TP-1, TP-3, TP-4, TP-5, TP-7, TP-13, TP-14 y TP-15 siguen sin resolver.
+- **Estado vigente** (🔎 desde el §18.12, 2026-11-09): siguen pendientes TP-1, TP-3, TP-5 (después del diagnóstico), TP-7
+  y TP-15 (que incluye el TP-8), además de las de las Fases 5 y 7 (la lista completa está en el §18.12). **TP-4, TP-13 y
+  TP-14 están resueltas.**
+- **Estado anterior** (cuando se escribió este apartado, antes del §18.12; se conserva como registro): TP-1, TP-3, TP-4,
+  TP-5, TP-7, TP-13, TP-14 y TP-15 seguían sin resolver.
+
+Lo que sigue vale en el estado vigente:
 - **TP-5**: ninguna pantalla muestra semanas A/B mientras no se decida.
 - **TP-7**: ninguna opción visual ni de Inicio está aprobada. Las posibilidades están en la fila del §15, y el §8.2 ya no da
   por hecha ninguna.
@@ -1945,10 +1958,12 @@ Cada paso exige el anterior.
 Josué del §18.10**. El autoguardado conserva el borrador y no crea versiones. Queda escrito aquí porque `docs/17` no se
 modifica.
 
-**Comprobado sin contradicciones**:
+**Comprobado sin contradicciones** (🔎 registro de aquella revisión, antes del §18.12: refleja el estado de entonces, no
+el vigente; el estado vigente de las decisiones lo determina el §18.12):
 - D-H3 se respeta: Calendario e Inicio sin accesos nuevos (§18.4, `docs/20` §2.1).
-- TP-1, TP-3, TP-4, TP-5, TP-7, TP-13, TP-14 y TP-15 siguen pendientes (§15, `docs/20` §12.13). TP-18 se planteó en esta
-  revisión y Josué la resolvió el mismo día.
+- En aquella revisión, TP-1, TP-3, TP-4, TP-5, TP-7, TP-13, TP-14 y TP-15 seguían pendientes (§15, `docs/20` §12.13).
+  TP-18 se planteó en esa revisión y Josué la resolvió el mismo día. **Estado vigente** (§18.12): TP-4, TP-13 y TP-14
+  están resueltas, y el TP-8 queda unificado en el TP-15.
 - La exportación usa la regla de color de la pantalla sin escribir datos.
 - «Cada dos semanas» no depende de TP-5.
 
@@ -2047,7 +2062,9 @@ Sirve para **reintentarla con el mismo `opId`**. Al cerrar la app desaparece: no
 1. Él pulsa (crear una versión, eliminar una manual con `confirmado` o renombrarla). Se crea un `opId` nuevo.
 2. Se toma el candado `navigator.locks` de las versiones. Sin él, no se escribe y se dice por qué.
 3. Se **lee la fila propia** y se comprueba la identidad (ver la tabla de abajo). Si hay duda, se cambia de id antes de
-   seguir.
+   seguir. 🔎 **Implementado así (§18.12)**: si la operación ya está en la fila, se confirma sin escribir. Si no, antes de
+   escribir se lee **el historial entero** (todas las filas): si esa lectura falla, si hay una fila de un formato posterior
+   o si alguna fila no se entiende (la propia incluida), **no se escribe nada**.
 4. Se construye la fila nueva: la leída más la operación, con `n = secuencia + 1` y `base = ultimaOperacion`.
 5. **Escritura condicional** (PostgREST, con la política de `update` que ya existe):
    - **Fila que ya existe**: `update` del valor `where user_id = … and key = … and value->>'ultimaOperacion' = <base>`,
@@ -2134,13 +2151,19 @@ sabe este aparato. «Qué es» es **lo más probable**, no una certeza.
     - Como `version.id` es el `opId` de su creación, la misma versión no sale dos veces. Una marca o un renombre repetidos
       tampoco.
     - **No se borra nada para conseguirlo**: las dos copias siguen en sus filas, y la vista las junta.
-    - Si dos copias del mismo `opId` no son idénticas (no debería pasar), no se elige una en silencio: se enseñan las dos y
-      «Revisión» lo avisa.
-  - Las versiones de todas las filas, menos las que tengan una marca en cualquier fila. Una marca sobre una automática se
-    ignora y se avisa en «Revisión».
+    - Si dos copias del mismo `opId` no son idénticas (no debería pasar), no se elige una en silencio. 🔎 **Implementado
+      así (§18.12)**: queda como **conflicto** con todas sus variantes y sus filas. Una eliminación o un renombre en
+      conflicto no se aplican. Una creación en conflicto se enseña con una de sus variantes, marcada como no resuelta, y la
+      versión queda bloqueada. «Revisión» lo avisa.
+  - Las versiones de todas las filas, menos las que tengan una marca **válida** (de una fila que se entiende entera) en
+    cualquier fila. Una marca sobre una automática se ignora y se avisa en «Revisión». 🔎 Una marca leída de una fila
+    dañada **no elimina**: es una eliminación dudosa (§18.12).
   - El nombre de cada versión es el último de su cadena de renombres (`sustituye`). Dos renombres que sustituyen al mismo
     son un conflicto que él elige.
 - Si la lectura falla, **no se enseña una lista a medias** y no se escribe nada.
+- 🔎 Si la lectura funciona pero alguna fila no se entiende (dañada o de un formato posterior), la vista sale
+  **incompleta**: se pueden enseñar las versiones recuperables con un aviso inequívoco, y **no se modifica el historial**
+  (§18.12).
 
 #### Por qué una marca confirmada no puede desaparecer
 
@@ -2186,13 +2209,16 @@ saber cuántas filas cambió:
 - **Del código actual**:
   - Solo que cada clave es una fila independiente (clave primaria `(user_id, key)`) y que RLS aísla por usuario.
   - Nada más. Su `saveData` hace `upsert` sin condición y su cola reenvía a ciegas, y por eso no puede usarse aquí.
-- **Pendiente de implementar**:
+- **Implementado en código** 🔎 (commit `017a488`, todavía **sin pantalla** y sin usarse en la app; §18.12):
   - La lectura por prefijo y el escritor condicional.
-  - Que `saveData` rechace estas claves.
+  - Que `saveData` y su cola rechacen estas claves.
   - El id con `crypto.randomUUID`, `confirmada`, `sesiones` y la tabla de identidad, que es **orientativa**.
-  - La vista fusionada y los avisos.
+  - La vista fusionada.
+- **Pendiente de implementar**: los avisos y toda la interfaz (Fase 4, `docs/20` §11.4).
 - **Pendiente de probar**:
-  - La condición en PostgREST, solo en los niveles 3 o 4 y con autorización.
+  - 🔎 La condición en PostgREST **se comprobó en el nivel 3** (Postgres y PostgREST locales), pero **con el código de
+    antes de las tres últimas correcciones** (eliminaciones dudosas, versiones afectadas y la lectura global antes de
+    escribir). Falta repetirla con el código actual, y el nivel 4 (Supabase alojado, de pruebas).
   - Web Locks en su iPhone.
   - Los casos con dos aparatos reales.
 - **Lo que no se garantiza**:
@@ -2239,9 +2265,141 @@ autoguardado») en lo que toca a crear versiones. `docs/17` no se modifica: mand
 | **Identidad e ids de versión** (corrección autorizada el 2026-11-09) | La detección de clones es orientativa y no sostiene la integridad. `version.id` = `opId` de su creación, y la vista cuenta cada `opId` una vez. Retirado el aviso de «sí se aplicó». Nada se enseña como hecho sin confirmar |
 | **MS F16, sin excepciones** (decisión de Josué, 2026-11-09) | Nada pendiente se guarda en el aparato: ni versiones, ni marcas, ni borradores. En el aparato solo hay identificadores y lo ya confirmado (§18.9). `docs/20` §11.2 y §12.12 decían que un borrador sin guardar «sigue en este aparato»: corregido a «en memoria, mientras la app siga abierta» |
 
-**Decisiones pendientes**: TP-1, TP-3, TP-4, TP-5, TP-7, TP-13, TP-14 y TP-15. TP-18 está resuelta.
+**Decisiones pendientes**:
+- **Estado vigente** (🔎 desde el §18.12): TP-1, TP-3, TP-5, TP-7 y TP-15 (que incluye el TP-8), además de las de las
+  Fases 5 y 7 (lista completa en el §18.12). Resueltas: TP-4, TP-13, TP-14 y TP-18.
+- **Estado en esta revisión final, antes del §18.12** (se conserva como registro): pendientes TP-1, TP-3, TP-4, TP-5,
+  TP-7, TP-13, TP-14 y TP-15; TP-18 ya estaba resuelta.
+
+### 18.12 Cierre documental previo a la Fase 4 (2026-11-09)
+
+> Corrección documental autorizada por Josué. **Manda sobre los apartados anteriores donde difieran.** No autoriza la Fase 4
+> ni ningún cambio de código, datos, SQL o dependencias.
+
+#### Decisiones de Josué
+
+| # | Decisión | Dónde queda |
+|---|---|---|
+| 1 | **TP-4**: el diagnóstico de sus datos es un **panel de solo lectura en la entrega A**. No se ejecuta ni se prepara SQL en producción | §12.2, §12.3, §12.5, §15 |
+| 2 | El diagnóstico, **ejecutado, revisado y con sus incidencias resueltas**, es condición necesaria de la entrega B y de cualquier migración | §12.2, §12.3 |
+| 3 | **Vista incompleta**: se pueden enseñar las versiones recuperables, con un aviso inequívoco de que el historial está incompleto. **No se modifica el historial** mientras esté incompleta | Abajo y `docs/20` §11.4 |
+| 4 | Una fila de un **formato posterior** se trata como **solo lectura** | Abajo y `docs/20` §11.4 |
+| 5 | **TP-5** se decide después del diagnóstico, y solo si aparecen ciclos con grupo | §15 |
+| 6 | **TP-8** se trata junto con el **TP-15** | §15, §17.7 |
+| 7 | **TP-13**: se conserva todo; no hay poda automática | §17.7 |
+| 8 | **TP-14**: no hay aviso global de versión nueva en esta fase | §17.7 |
+| 9 | **TP-7** y las de las Fases 5 y 7 siguen pendientes para su fase | Abajo |
+
+#### El historial de versiones tal como está implementado
+
+**Estado** [CÓDIGO]: `src/lib/historialVersiones.js` (la vista y el escritor) y el transporte de `src/lib/supabase.js`, en
+el commit `017a488`. **No tiene pantalla y la app no lo usa todavía**: nada escribe `horarioVersiones:*` en producción. Lo
+que la interfaz enseñará es **diseño de la Fase 4** (`docs/20` §11.4), no comportamiento existente.
+
+**Lo que devuelve la vista** (`vistaFusionadaDeVersiones`; solo lee, no escribe):
+
+| Campo | Qué es |
+|---|---|
+| `visibles` | Las versiones que se enseñan, en un orden fijo (fecha de creación y luego id) que **no depende del orden de lectura**. Cada una lleva: `protegida`, `afectada`, `afectadaPor`, `enConflicto`, `eliminacionDudosa`, y del renombre, `conflictoDeNombre` y `cabezas` |
+| `eliminadas` | Las ocultadas por una marca **válida** (de una fila que se entiende entera) y sin conflicto |
+| `eliminacionesDudosas` | Las marcas leídas de una fila dañada. **No eliminan nada.** Cada una: `opId`, `versionId`, `objetivo` (`visible`, `automatica`, `ya_eliminada` o `desconocida`), `nombre`, `filas`, `en` y `sesion` |
+| `conflictos` | Cada `opId` con copias que no dicen lo mismo: `origen` (`filas_validas`, `valida_y_recuperada`, `recuperadas` o `copias_en_fila_ilegible`) y **todas sus variantes con sus filas**. Ninguna se elige |
+| `afectadas` | Todas las versiones sin resolver, visibles o no, con su `afectadaPor` |
+| `marcasIgnoradas` | Marcas válidas sobre una versión automática (no tienen efecto) |
+| `ilegibles`, `detalleIlegibles`, `formatoFuturo` | Las filas que no se entienden: `fila_ilegible` (con cuántas marcas se leyeron y cuántas operaciones quedaron sin leer) o `formato_futuro` (con su número de formato) |
+| `completa` | Se han entendido **todas** las filas |
+| `definitiva` | `completa` y, además, sin conflictos ni eliminaciones dudosas |
+
+**Reglas de la vista**:
+1. **Las filas válidas mandan.** Lo leído de una fila dañada nunca sustituye una operación válida, aunque comparta su
+   `opId`. Si dice otra cosa, es un conflicto (`valida_y_recuperada`) que afecta a la versión que **nombra la copia
+   dañada**, no a la creación válida con la que comparte id.
+2. **De una fila de formato 1 dañada** solo se leen las marcas de eliminación completas (con `opId` y `versionId`) cuyas
+   copias dentro de la fila sean idénticas **campo a campo**. Son **eliminaciones dudosas**: la versión sigue visible. De
+   esa fila no se recuperan versiones ni renombres.
+3. **Conflictos**: una eliminación o un renombre en conflicto **no se aplican**. Una creación en conflicto **no hace
+   desaparecer la versión**: se enseña con una de sus variantes (la primera en un orden fijo, que **no significa que sea
+   la buena**), marcada como no resuelta, y todas sus variantes quedan en `conflictos`.
+4. **Automáticas**: basta con que **una** variante de la creación sea automática para que toda la identidad quede
+   `protegida`. Una marca válida sobre ella, venga del aparato que venga, se ignora; una dudosa queda con objetivo
+   `automatica`.
+5. **`afectadaPor`** dice qué deja sin resolver a una versión, con su `opId`, su `origen` y su `motivo`:
+   `creacion_en_conflicto`, `renombre_en_conflicto`, `eliminacion_en_conflicto`, `marca_recuperada_en_conflicto` o
+   `eliminacion_dudosa`. `enConflicto` es cualquiera de ellos salvo `eliminacion_dudosa`.
+6. **Una fila de un formato posterior** no se interpreta en absoluto.
+7. **Dos renombres a la vez** que sustituyen al mismo nombre no son un conflicto de operación: es `conflictoDeNombre`
+   (dos `cabezas`) y se resuelve eligiendo uno con un renombre nuevo, cuando la vista esté completa.
+
+**Lo que hace el escritor** (`crearEscritorDeVersiones`). Cada operación acaba en `confirmada`, `sin_confirmar` o
+`no_aplicada`, con un `motivo`:
+1. Si la operación ya está en la fila propia, se confirma **sin escribir** (cuenta en `yaAplicadas`).
+2. Si no, **antes de escribir cualquier cosa** (crear, eliminar, renombrar o un reintento) se lee **el historial entero**:
+   | Lo que encuentra | Motivo | Si no se había enviado | Si ya se había enviado |
+   |---|---|---|---|
+   | No se puede leer | `sin_conexion` o `lectura` | `no_aplicada`, en memoria para reintentarla con el mismo `opId` | `sin_confirmar` |
+   | Una fila de un formato posterior | `formato_nuevo` | Igual | Igual |
+   | Una fila que no se entiende (también la propia) | `vista_incompleta` | Igual | Igual |
+3. **Eliminar y renombrar** comprueban además la versión, con la vista recién leída: `version_desconocida`; `ya_eliminada`
+   (al eliminar, devuelve `confirmada` sin escribir; al renombrar, `no_aplicada`); `version_automatica` (si es automática o `protegida`); `version_afectada` (si tiene
+   algo en `afectadaPor`). Eliminar exige `confirmado` (`sin_confirmacion`).
+4. Sin `navigator.locks` no escribe (`sin_candado`). Si la condición rechaza dos intentos seguidos, se para
+   (`conflictos_repetidos`) y la operación queda en memoria.
+5. Con la vista **completa pero no definitiva** por un conflicto, se puede seguir operando con las versiones **no
+   afectadas**, y crear versiones nuevas.
+6. 🔎 **Cambio respecto al §18.9**: con la fila **propia** dañada, el escritor **ya no cambia de id para seguir en una fila
+   nueva**: la vista sale incompleta y no escribe.
+
+**Consecuencias para el resto del diseño** (lo construye la Fase 4; aquí se fija para que no se invente):
+- Confirmar un borrador, restaurar una versión y migrar **escriben antes una versión automática** (§6.4, §18.7). Con el
+  historial incompleto, de un formato posterior o sin poder leerse, esa versión no se puede escribir, y por la regla 5 del
+  §18.7 **la operación se detiene**. Es decir: **una fila dañada o de un formato posterior, de cualquier aparato, impide
+  confirmar cambios del horario, restaurar y migrar** hasta que se resuelva. El borrador no se pierde (sigue en
+  `horarioBorradores`, que no pasa por este escritor).
+- **No existe ninguna operación para resolver** un conflicto, una eliminación dudosa o una fila dañada. Añadirla
+  necesitaría un tipo de operación nuevo, es decir, un cambio del formato, y es una decisión de Josué.
+
+#### Riesgos y límites (aceptados mientras no se decida otra cosa)
+
+1. **Una fila dañada bloquea las escrituras** del historial en todos los aparatos, también la del propio, y con ellas
+   confirmar, restaurar y migrar (arriba). No hay reparación.
+2. **No hay forma de resolver conflictos ni eliminaciones dudosas**: esas versiones se quedan sin poder renombrarse ni
+   eliminarse.
+3. **Hay una ventana entre la lectura global y la escritura**: otro aparato puede dañar o cambiar una fila en ese
+   momento. La integridad de lo ya escrito no depende de esa lectura, sino de la escritura condicional sobre la fila
+   propia.
+4. **Cada escritura hace una lectura global más** (todas las filas), en cada uno de sus dos intentos como mucho.
+5. **Pruebas simuladas frente a reales**:
+   - **Simulado (Node, doble en memoria)**: la lógica completa, 136 comprobaciones.
+   - **Real, pero local**: la escritura condicional, el `insert` duplicado y `like` con RLS en Postgres 16 y PostgREST
+     v12.2.3 locales, y Web Locks en **Chromium**. Pasó (33 de 33) **con el código anterior a las tres últimas
+     correcciones**; falta repetirla.
+   - **Sin probar**: Supabase alojado (nivel 4); Safari e iPhone (Web Locks, `crypto.randomUUID`, la app en segundo plano);
+     dos aparatos reales; un iPhone restaurado desde una copia. Y `verificar.sh` completo con el código actual.
+   - Nada de lo anterior se presenta como probado en Safari, en el iPhone ni en Supabase.
+6. **`crypto.randomUUID` y `navigator.locks` solo existen en un contexto seguro** (`isSecureContext`): una página servida
+   por HTTPS **o** desde la propia máquina (`http://localhost`, `http://127.0.0.1`), aunque vaya por HTTP. No depende de
+   HTTPS, sino de que el origen sea de confianza.
+   - **Comprobado en Chromium (Playwright 1.62.1, 2026-11-09)**: en `http://127.0.0.1` y `http://localhost` los dos
+     existen. En HTTP con una dirección de red (`http://192.0.2.2`, como abrir el servidor de desarrollo desde el iPhone
+     por la IP del ordenador), `isSecureContext` es falso, `crypto.randomUUID` no existe (llamarlo lanza `TypeError`) y
+     `navigator.locks` tampoco.
+   - **Consecuencia**: ahí el escritor **no se puede crear** (sus valores por defecto llaman a `crypto.randomUUID`), y
+     aunque se le diera un id, sin candado no escribiría (`sin_candado`). En producción (Vercel, HTTPS) no afecta.
+   - **En Safari no se ha comprobado**: según la especificación de contextos seguros debería comportarse igual. La Fase 4
+     tiene que tratar este caso.
+7. **`horarioTop` y los borradores siguen sin protección entre aparatos** (TP-15, punto 2).
+
+#### Decisiones que siguen pendientes
+
+- **TP-5**: después del diagnóstico, y solo si aparecen ciclos con grupo.
+- **TP-7**: antes de la Fase 7.
+- **TP-15** (con el TP-8): la protección de `horarioTop` y los borradores; pendiente de pruebas y de su autorización.
+- **TP-1, TP-2 y TP-3** (Fase 7) y **TP-11** (Fase 5).
+- **TP-9** (anotar en `docs/03`), **TP-10** (fuera de Horarios) y **TP-12** (el margen entre la A y la B, Fase 4).
+- **Resueltas**: TP-4, TP-6, TP-13, TP-14 y TP-18. **Unificada**: TP-8, en el TP-15.
 
 ---
 
-*Fase 2 de 8 terminada, con la revisión documental del 2026-11-08 y las correcciones del 2026-11-09. Solo documentación:
+*Fase 2 de 8 terminada, con la revisión documental del 2026-11-08, las correcciones del 2026-11-09 y el cierre documental
+previo a la Fase 4 (§18.12). Solo documentación:
 no autoriza la Fase 4 ni ninguna instalación, migración, SQL, despliegue o cambio de datos.*
