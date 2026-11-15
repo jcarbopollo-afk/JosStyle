@@ -62,6 +62,10 @@ import {
 import { crearHabito as crearHabitoF24, semanaDe as semanaDeF24 } from '../src/lib/habitos.js';
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
+import { DiagnosticoHorarios, DiagnosticoHorariosEntrada, AvisoSoloLecturaHorario } from '../src/components/diagnosticoHorarioPanel.jsx';
+// 🛡 Horarios A-bis — los avisos de la guardia y su pantalla de consulta.
+import { AvisoGuardiaHorario, ConsultaGuardiaHorario, ConsultaGuardiaHorarioEntrada } from '../src/components/guardiaHorarioPanel.jsx';
+import { diagnosticoHorarios } from '../src/lib/diagnosticoHorario.js';
 import EstiloHombreView, { GestionarApartados, Recomendados, Plaquita, AsistenteEH, RetomarConfiguracion, YaLoSabemos, MisDatosEH, MiEstiloEH, PerfilCapilarEH, PanelPelo, RutinasPeloEH, SeguimientoPeloEH, AjustesPeloEH, RutinaDeHoy, RecomendacionesPeloEH, ProductosPeloEH, PeluqueriaEH, MiEstiloDeCorteEH, SkincareEH, PerfilPielEH, PanelPiel, RutinasPielEH, SeguimientoPielEH, RecomendacionesPielEH, ProductosPielEH, BarbaEH, ElegirPartesBarba, PerfilBarbaEH, ProductosBarbaEH, PanelBarba, RutinasBarbaEH, SonrisaEH, PerfumesEH, RecomendacionesPerfumesEH, AccesoriosEH, GustosEH, PersonalizarPlaquitas, IdeasEH, DescubrirEH, PreferenciasEH, ProgresoEH, GestionarEstiloEH, BuscadorEstiloEH, AvisosEstiloEH, IntegracionEH, TutorialEH, BienvenidaEH, VacioEH, CargandoEH, AvisoEstadoEH, HechoEH, AvisosDeEstadoEH, PrivacidadEH, CuerpoHigieneEH } from '../src/views/EstiloHombreView.jsx';
 import { registrarCorte, planificarCorte, alternarRecordatorio, anadirSitio, PARTE_PELUQUERIA, datosPeluqueria } from '../src/lib/peluqueria.js';
 import { contestarCorte, anadirCorte, fijarCorteActual, marcarQuieroProbar, valorarCorte, decirQueCorteFue } from '../src/lib/cortesPelo.js';
@@ -1383,6 +1387,46 @@ const CASOS = [
          ninguno: tiene que seguir habiendo una forma de recuperarlos. */
       ['HorarioView · todos archivados', HorarioView, () =>
         props(archivarHorario(lleno, base.horario.id))],
+
+      /* 🔎 Horarios · Fase 4, entrega A — la guardia de versión y el diagnóstico de
+         solo lectura. Todos los datos de estos casos son DE PRUEBA, construidos aquí. */
+      ['HorarioView · solo lectura (versión más nueva, datos de prueba)', HorarioView, () =>
+        props(lleno, { soloLectura: 'version_futura', horarioCrudo: { ...lleno, version: 2 } })],
+      ['HorarioView · solo lectura sin horario (versión ilegible, datos de prueba)', HorarioView, () =>
+        props(DEFAULT_HORARIO_TOP, { soloLectura: 'version_ilegible', horarioCrudo: { ...DEFAULT_HORARIO_TOP, version: 'x' } })],
+      ['HorarioView · con el diagnóstico (datos de prueba)', HorarioView, () =>
+        props(lleno, { horarioCrudo: lleno })],
+      ['AvisoSoloLecturaHorario · versión más nueva', AvisoSoloLecturaHorario, () => ({ motivo: 'version_futura', accent, onRecargar: noop })],
+      ['AvisoSoloLecturaHorario · versión ilegible', AvisoSoloLecturaHorario, () => ({ motivo: 'version_ilegible', accent, onRecargar: noop })],
+      ['DiagnosticoHorariosEntrada (cerrado, datos de prueba)', DiagnosticoHorariosEntrada, () => ({ crudo: conChoque, asignaturas: [], hoy: HOY, accent })],
+      /* 🛡 Horarios A-bis — la guardia: sus tres avisos de solo lectura y la consulta (datos de prueba). */
+      ['AvisoGuardiaHorario · comprobando', AvisoGuardiaHorario, () => ({ motivo: 'guardia_comprobando', accent })],
+      ['AvisoGuardiaHorario · no verificable', AvisoGuardiaHorario, () => ({ motivo: 'guardia_no_verificable', guardia: { motivo: 'lectura_guardia' }, accent, onReintentar: noop })],
+      ['AvisoGuardiaHorario · incidencia sin confirmar', AvisoGuardiaHorario, () => ({ motivo: 'guardia_incidencia_sin_confirmar', accent, onReintentar: noop })],
+      ['ConsultaGuardiaHorario · inicial (datos de prueba)', ConsultaGuardiaHorario, () => ({ guardia: {
+        estado: 'E2', motivo: null, aparato: 'aparato-prueba', textoTestigo: 'Inicial', filas: [], resumen: { registros: [], retiradas: [], resoluciones: [], intenciones: [] }, registroPendiente: null, pendientes: 0, estadoRegistro: null,
+      } })],
+      ['ConsultaGuardiaHorarioEntrada (cerrada, datos de prueba)', ConsultaGuardiaHorarioEntrada, () => ({ guardia: { estado: 'E1', filas: [], pendientes: 0 }, accent })],
+      ['DiagnosticoHorarios · horario sano (datos de prueba)', DiagnosticoHorarios, () => ({
+        diagnostico: diagnosticoHorarios(lleno, { asignaturas: [{ id: 'a1', nombre: 'Física' }], hoy: HOY }),
+      })],
+      ['DiagnosticoHorarios · con choques (datos de prueba)', DiagnosticoHorarios, () => ({
+        diagnostico: diagnosticoHorarios(choqueEntreHorarios, { asignaturas: [], hoy: HOY }),
+      })],
+      ['DiagnosticoHorarios · con anomalías (datos de prueba)', DiagnosticoHorarios, () => ({
+        diagnostico: diagnosticoHorarios({
+          version: 2, config: { prueba: true },
+          horarios: [{ id: 'hp', columnas: [{ id: 'c1', dia: 1 }, { id: 'c2', dia: null }], filas: [], nuevoCampo: 1 }],
+          bloques: [
+            { id: 'b1', horarioId: 'hp', columnaId: 'c2', inicio: '08:00', fin: '09:00' },
+            { columnaId: 'c1', inicio: '25:00', fin: '09:00', recurrencia: { clase: 'cada3' } },
+          ],
+          excepciones: [{ id: 'e1', fecha: '2026-13-45', tipo: 'raro' }],
+          actividades: [null],
+        }, { asignaturas: [], hoy: HOY }),
+      })],
+      ['DiagnosticoHorarios · vacío', DiagnosticoHorarios, () => ({ diagnostico: diagnosticoHorarios(DEFAULT_HORARIO_TOP, { hoy: HOY }) })],
+      ['DiagnosticoHorarios · sin cargar', DiagnosticoHorarios, () => ({ diagnostico: diagnosticoHorarios(null, { cargaFallida: true, hoy: HOY }) })],
       ['PanelAvanzado', PanelAvanzado, () => ({
         estado: lleno, horario: base.horario, accent, asignaturas: [{ id: 'a1', nombre: 'Física' }],
         visual: normalizarVisual(null), hoy: HOY, onVisual: noop, onCambiar: noop, onResultado: noop,

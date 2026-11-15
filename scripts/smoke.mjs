@@ -85,6 +85,10 @@ await build({
           export const leerRegistrosDeVersiones = nada, leerRegistroDeVersiones = nada;
           export const insertarRegistroDeVersiones = nada, actualizarRegistroDeVersiones = nada;
           export const transporteDeVersiones = Object.freeze({});
+          // 🛡 Horarios A-bis (§4) — el transporte de la guardia del horario. En un render sin red, nada.
+          export const leerFilasDeGuardiaHorario = nada, leerFilaDeGuardiaHorario = nada, leerHorarioPropio = nada;
+          export const insertarFilaDeGuardiaHorario = nada, actualizarFilaDeGuardiaHorario = nada;
+          export const transporteDeGuardia = Object.freeze({});
         `,
         loader: 'js',
       }));

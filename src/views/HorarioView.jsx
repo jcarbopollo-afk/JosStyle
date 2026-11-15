@@ -86,6 +86,9 @@ import {
 import { informe, recomendaciones } from '../lib/analiticaHorario';
 import { exportarHorario, revisarImportacion, importarHorario, estadoDelModulo } from '../lib/horarioTop';
 import { notificarSiCorresponde } from '../lib/notificaciones';
+import { DiagnosticoHorariosEntrada, AvisoSoloLecturaHorario } from '../components/diagnosticoHorarioPanel';
+// 🛡 Horarios A-bis — los avisos de la guardia del horario y su pantalla de consulta (solo lectura).
+import { AvisoGuardiaHorario, ConsultaGuardiaHorarioEntrada, esMotivoDeGuardia } from '../components/guardiaHorarioPanel';
 
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
 const fechaCorta = (iso) => iso.split('-').reverse().slice(0, 2).join('/');
@@ -226,12 +229,18 @@ function Cuadricula({ rejilla, accent, edicion, visual, onCelda, onBloque, onMen
               {fils.map((celda) => (
                 <div key={celda.columna.id} className="flex-1 py-0.5" style={{ minWidth: ANCHO_COL || 0 }}>
                   {celda.bloques.length === 0 ? (
-                    <button
-                      onClick={() => onCelda(celda.columna, fila)}
-                      className="w-full h-full rounded-lg"
-                      style={{ border: `1px dashed ${COLORS.border}`, opacity: edicion ? 1 : 0.35 }}
-                      aria-label={`Añadir en ${celda.columna.nombre} a las ${fila.inicio}`}
-                    />
+                    /* 🔎 Entrega A — sin `onCelda` (solo lectura) la celda vacía es un
+                       hueco, no un botón que no haría nada. */
+                    onCelda ? (
+                      <button
+                        onClick={() => onCelda(celda.columna, fila)}
+                        className="w-full h-full rounded-lg"
+                        style={{ border: `1px dashed ${COLORS.border}`, opacity: edicion ? 1 : 0.35 }}
+                        aria-label={`Añadir en ${celda.columna.nombre} a las ${fila.inicio}`}
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-lg" style={{ border: `1px dashed ${COLORS.border}`, opacity: 0.35 }} aria-hidden="true" />
+                    )
                   ) : (
                     <div className="h-full flex flex-col" style={{ gap: 2 }}>
                       {celda.bloques.map((b) => (
@@ -338,7 +347,7 @@ function NuevoBloque({ estado, columna, fila, accent, asignaturas, onCrear, onCe
    hubo un cambio se carga todos los lunes del curso.
 
    El editor lo impone además desde abajo: sin alcance no escribe. */
-function PanelBloque({ bloque, columnas, accent, fecha, onEditar, onMover, onDuplicar, onEliminar, onAbrirActividad, onCerrar }) {
+function PanelBloque({ bloque, columnas, accent, fecha, onEditar, onMover, onDuplicar, onEliminar, onAbrirActividad, onCerrar, soloLectura = false }) {
   const [modo, setModo] = useState(null);        // 'hora' | 'mover' | 'duplicar' | 'borrar'
   const [inicio, setInicio] = useState(bloque.inicio);
   const [fin, setFin] = useState(bloque.fin);
@@ -372,7 +381,8 @@ function PanelBloque({ bloque, columnas, accent, fecha, onEditar, onMover, onDup
         <button onClick={onCerrar} className="p-1" aria-label="Cerrar"><X size={14} style={{ color: COLORS.textMuted }} /></button>
       </div>
 
-      {!modo && (
+      {/* 🔎 Entrega A — en solo lectura la clase se consulta: ni una acción que cambie nada. */}
+      {!modo && !soloLectura && (
         <div className="flex flex-wrap gap-1.5 mt-3">
           <Accion icono={Pencil} label="Cambiar hora" onClick={() => setModo('hora')} />
           <Accion icono={MoveRight} label="Mover a…" onClick={() => setModo('mover')} />
@@ -685,14 +695,24 @@ function PanelAvisos({ centro, accent, onLeer, onArchivar, onTodosLeidos, onPosp
             <div key={a.id} className="py-1" style={{ opacity: a.leido ? 0.6 : 1 }}>
               <div className="flex items-start gap-2">
                 <span className="text-xs leading-none mt-0.5" aria-hidden="true">{tipoAviso(a.tipo).icono}</span>
-                <button onClick={() => onLeer?.(a.id)} className="flex-1 text-left min-w-0">
-                  <p className="text-xs truncate" style={{ color: COLORS.text }}>{a.titulo}</p>
-                  {a.cuerpo && <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>{a.cuerpo}</p>}
-                </button>
+                {/* 🔎 Entrega A — sin `onLeer`/`onArchivar` (solo lectura) el aviso se lee, sin botones. */}
+                {onLeer ? (
+                  <button onClick={() => onLeer(a.id)} className="flex-1 text-left min-w-0">
+                    <p className="text-xs truncate" style={{ color: COLORS.text }}>{a.titulo}</p>
+                    {a.cuerpo && <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>{a.cuerpo}</p>}
+                  </button>
+                ) : (
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-xs truncate" style={{ color: COLORS.text }}>{a.titulo}</p>
+                    {a.cuerpo && <p className="text-[10px] truncate" style={{ color: COLORS.textMuted }}>{a.cuerpo}</p>}
+                  </div>
+                )}
                 <span className="text-[10px] flex-shrink-0" style={{ color: COLORS.textMuted }}>{a.hora}</span>
-                <button onClick={() => onArchivar?.(a.id)} className="p-0.5 flex-shrink-0" aria-label={`Archivar ${a.titulo}`}>
-                  <X size={11} style={{ color: COLORS.textMuted }} />
-                </button>
+                {onArchivar && (
+                  <button onClick={() => onArchivar(a.id)} className="p-0.5 flex-shrink-0" aria-label={`Archivar ${a.titulo}`}>
+                    <X size={11} style={{ color: COLORS.textMuted }} />
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -791,7 +811,7 @@ function PanelPlan({ estado, examenes, accent, hoy, asignaturas, sobrecarga, onA
               )}
 
               {/* ⚠️ Aquí y solo aquí se escribe, y solo tras confirmar. */}
-              {!hecho && (
+              {!hecho && onAplicar && (
                 confirmando ? (
                   <div className="rounded-xl p-2 mt-2" style={{ background: COLORS.surface2 }}>
                     <p className="text-[11px] mb-2" style={{ color: COLORS.text }}>
@@ -897,10 +917,12 @@ function PanelAutomatizaciones({ propuestas, historial, accent, onEjecutar, onEj
           <p className="text-[11px]" style={{ color: COLORS.text }}>
             ¿{p.valor}? <span style={{ color: COLORS.textMuted }}>Por {p.porQue}.</span>
           </p>
-          <div className="flex gap-2 mt-1.5">
-            <button onClick={() => onEjecutar?.(p, true)} className="text-[11px] font-semibold" style={{ color: accent }}>Sí</button>
-            <button className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>Ahora no</button>
-          </div>
+          {onEjecutar && (
+            <div className="flex gap-2 mt-1.5">
+              <button onClick={() => onEjecutar(p, true)} className="text-[11px] font-semibold" style={{ color: accent }}>Sí</button>
+              <button className="text-[11px] font-semibold" style={{ color: COLORS.textMuted }}>Ahora no</button>
+            </div>
+          )}
         </div>
       ))}
 
@@ -950,21 +972,31 @@ function PanelMochila({ mochila, progreso, accent, titulo = 'MOCHILA', onMarcar,
   const fila = (e) => (
     <div key={e.clave} className="py-1">
       <div className="flex items-center gap-2">
-        <button
-          onClick={() => e.disponible && onMarcar?.(e, !e.preparado)}
-          className="flex-shrink-0"
-          disabled={!e.disponible}
-          aria-label={`${e.preparado ? 'Sacar' : 'Meter'} ${e.nombre}`}
-        >
-          <span className="block w-4 h-4 rounded-md flex items-center justify-center"
-            style={{
-              border: `1.5px solid ${e.preparado ? accent : COLORS.border}`,
-              background: e.preparado ? accent : 'transparent',
-              opacity: e.disponible ? 1 : 0.4,
-            }}>
-            {e.preparado && <Check size={10} style={{ color: COLORS.textOnAccent }} />}
-          </span>
-        </button>
+        {/* 🔎 Entrega A — sin `onMarcar` (solo lectura) la casilla se ve, pero no es un botón. */}
+        {(() => {
+          const casilla = (
+            <span className="block w-4 h-4 rounded-md flex items-center justify-center"
+              style={{
+                border: `1.5px solid ${e.preparado ? accent : COLORS.border}`,
+                background: e.preparado ? accent : 'transparent',
+                opacity: e.disponible ? 1 : 0.4,
+              }}>
+              {e.preparado && <Check size={10} style={{ color: COLORS.textOnAccent }} />}
+            </span>
+          );
+          return onMarcar ? (
+            <button
+              onClick={() => e.disponible && onMarcar(e, !e.preparado)}
+              className="flex-shrink-0"
+              disabled={!e.disponible}
+              aria-label={`${e.preparado ? 'Sacar' : 'Meter'} ${e.nombre}`}
+            >
+              {casilla}
+            </button>
+          ) : (
+            <span className="flex-shrink-0" role="img" aria-label={`${e.nombre}: ${e.preparado ? 'en la mochila' : 'sin meter'}`}>{casilla}</span>
+          );
+        })()}
         <button onClick={() => setAbierto(abierto === e.clave ? null : e.clave)} className="flex-1 text-left min-w-0">
           <span className="text-xs truncate block"
             style={{ color: e.disponible ? COLORS.text : COLORS.textMuted, textDecoration: e.disponible ? 'none' : 'line-through' }}>
@@ -1399,7 +1431,7 @@ export function HoyView({
      asignatura, así que se enseñan las que MENCIONAN la actividad y el texto lo
      dice. Fingir un enlace sería un dato inventado (regla 8).
    · **Borrar avisa primero y recomienda archivar** (apartado 58). */
-export function FichaActividad({ ficha, accent, onEditar, onFavorita, onArchivar, onDuplicar, onEliminar, impacto, onCerrar }) {
+export function FichaActividad({ ficha, accent, onEditar, onFavorita, onArchivar, onDuplicar, onEliminar, impacto, onCerrar, soloLectura = false }) {
   const [modo, setModo] = useState(null);   // 'editar' | 'borrar'
   const [campos, setCampos] = useState({
     nombre: ficha.titulo, corto: ficha.corto, persona: ficha.profesor,
@@ -1421,9 +1453,11 @@ export function FichaActividad({ ficha, accent, onEditar, onFavorita, onArchivar
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={onFavorita} className="p-1" aria-label={ficha.favorita ? 'Quitar de favoritas' : 'Marcar como favorita'}>
-            <LatidoAlMarcar activo={!!ficha.favorita}><Star size={14} style={{ color: ficha.favorita ? accent : COLORS.textMuted }} fill={ficha.favorita ? accent : 'none'} /></LatidoAlMarcar>
-          </button>
+          {!soloLectura && (
+            <button onClick={onFavorita} className="p-1" aria-label={ficha.favorita ? 'Quitar de favoritas' : 'Marcar como favorita'}>
+              <LatidoAlMarcar activo={!!ficha.favorita}><Star size={14} style={{ color: ficha.favorita ? accent : COLORS.textMuted }} fill={ficha.favorita ? accent : 'none'} /></LatidoAlMarcar>
+            </button>
+          )}
           <button onClick={onCerrar} className="p-1" aria-label="Cerrar"><X size={14} style={{ color: COLORS.textMuted }} /></button>
         </div>
       </div>
@@ -1499,12 +1533,15 @@ export function FichaActividad({ ficha, accent, onEditar, onFavorita, onArchivar
             </div>
           )}
 
+          {/* 🔎 Entrega A — en solo lectura la ficha se consulta: ni editar, ni duplicar, ni archivar, ni eliminar. */}
+          {!soloLectura && (
           <div className="flex flex-wrap gap-1.5 mt-3">
             <Accion icono={Pencil} label="Editar" onClick={() => setModo('editar')} />
             <Accion icono={Copy} label="Duplicar" onClick={onDuplicar} />
             <Accion icono={EyeOff} label={ficha.estado === 'Archivada' ? 'Recuperar' : 'Archivar'} onClick={onArchivar} />
             <Accion icono={Trash2} label="Eliminar" tono="negativo" onClick={() => setModo('borrar')} />
           </div>
+          )}
         </>
       )}
 
@@ -1927,6 +1964,15 @@ export default function HorarioView({
   // La tarea sigue siendo suya: aquí solo se pide el cambio.
   onCompletarTarea = null, onReprogramarTarea = null,
   onCambiar, onCrearHorario,
+  // 🔎 Horarios · Fase 4, entrega A — la guardia de versión (`docs/19` §12.3) y el
+  // diagnóstico de solo lectura (TP-4). `soloLectura` es el motivo (`version_futura`
+  // o `version_ilegible`) o `null`; `horarioCrudo`, lo que llegó de la cuenta sin
+  // normalizar. App.jsx no guarda ningún cambio del horario mientras `soloLectura`.
+  soloLectura = null, horarioCrudo = null, cargaFallida = false,
+  onRecargar = () => window.location.reload(),
+  // 🛡 Horarios A-bis — la guardia del horario: lo que enseña la pantalla de consulta (`guardia`), «Reintentar»
+  // cuando la comprobación no se pudo hacer y la evaluación de las cinco condiciones. Solo lectura.
+  guardia = null, onReintentarGuardia = null, onEvaluarGuardia = null,
 }) {
   const estado = horarioTop;
   const [horarioId, setHorarioId] = useState(null);
@@ -1968,13 +2014,17 @@ export default function HorarioView({
   /* Cada operación entra por `onCambiar`, que en App.jsx es `snapshotAndSave`:
      guarda y alimenta el "Deshacer" global. Por eso aquí no hay ni botón de
      guardar ni historial propio (apartados 36 y 38). */
-  const aplicar = (nuevo) => { onCambiar(nuevo); return { error: null }; };
+  /* 🔎 Entrega A — en solo lectura, ni una operación llega a `onCambiar` (App.jsx la
+     bloquearía igualmente: esto es la segunda puerta). */
+  const SIN_GUARDAR = { error: 'Tu horario está en solo lectura en esta aplicación.' };
+  const aplicar = (nuevo) => { if (soloLectura) return SIN_GUARDAR; onCambiar(nuevo); return { error: null }; };
   /* 🚨 AS F1 — si la operación ha creado una asignatura para el catálogo
      compartido, el horario y el catálogo se guardan en LA MISMA llamada: dos
      `snapshotAndSave` seguidos se pisan (E3 F26). Sin `onCambiarConAsignatura`
      —una pantalla antigua, una prueba— se cae al `onCambiar` de siempre, así
      que nunca se queda sin guardar el horario. */
   const aplicarResultado = (r) => {
+    if (soloLectura) return SIN_GUARDAR;
     if (r.error) return r;
     if (r.asignaturaNueva && onCambiarConAsignatura) onCambiarConAsignatura(r.estado, r.asignaturaNueva);
     else onCambiar(r.estado);
@@ -2043,12 +2093,13 @@ export default function HorarioView({
     return {
       propuestas,
       historial,
-      ejecutar: (p, confirmada) => aplicarResultado(ejecutar(estado, p, { fecha, confirmada })),
-      ejecutarTodo: () => aplicar(ejecutarTodo(estado, fecha, { asignaturas }).estado),
-      deshacer: (id) => aplicarResultado(deshacer(estado, id)),
+      // 🔎 Entrega A — en solo lectura se ve qué haría y qué hizo, sin poder ejecutarlo ni deshacerlo.
+      ejecutar: soloLectura ? null : (p, confirmada) => aplicarResultado(ejecutar(estado, p, { fecha, confirmada })),
+      ejecutarTodo: soloLectura ? null : () => aplicar(ejecutarTodo(estado, fecha, { asignaturas }).estado),
+      deshacer: soloLectura ? null : (id) => aplicarResultado(deshacer(estado, id)),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [estado, fecha, asignaturas]);
+  }, [estado, fecha, asignaturas, soloLectura]);
 
   /* HT F9 — los exámenes que vienen y la sobrecarga. Todo derivado; el plan
      se calcula dentro del panel, que es quien sabe cuál está mirando. */
@@ -2072,7 +2123,8 @@ export default function HorarioView({
     /* ⚠️ ESTE es el único camino por el que un plan llega al horario, y exige
        `confirmado: true`. La pantalla lo pide con un botón que dice qué va a
        pasar (regla 7). */
-    aplicar: (sesiones) => {
+    // 🔎 Entrega A — en solo lectura no hay «Ponlo en mi horario».
+    aplicar: soloLectura ? null : (sesiones) => {
       if (!activo) return { error: 'No hay horario donde ponerlo.' };
       const columnaDe = (fecha) => (activo.columnas || []).find((c) => c.dia === diaDeFecha(fecha));
       let d = estado;
@@ -2086,7 +2138,7 @@ export default function HorarioView({
       return { error: null };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [estado, examenesProximos, hoy, asignaturas, estudios, productividad, activo]);
+  }), [estado, examenesProximos, hoy, asignaturas, estudios, productividad, activo, soloLectura]);
 
   /* HT F10 — qué habría que avisar ahora, y el centro de lo ya avisado.
      `minuto` está en las dependencias porque la decisión depende de la hora. */
@@ -2112,7 +2164,9 @@ export default function HorarioView({
       nuevo = registrarEnviado(nuevo, av, { fecha: hoy });
       cambio = true;
     }
-    if (cambio) onCambiar(nuevo);
+    // 🔎 Entrega A — en solo lectura el aviso sale (no escribe el horario: su marca de
+    // «ya avisado hoy» vive en el aparato), pero no se apunta en el horario.
+    if (cambio && !soloLectura) onCambiar(nuevo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [porAvisar]);
 
@@ -2139,27 +2193,35 @@ export default function HorarioView({
 
   // Apartado 25 — sin ningún horario, no una pantalla vacía.
   if (!horarios.length) {
-    return creando ? (
+    return creando && !soloLectura ? (
       <CrearHorario accent={accent} onCancelar={() => setCreando(false)}
         onCrear={(datos) => { const { estado: nuevo, horario } = crearDesdePlantilla(estado, { ...datos, hoy }); onCrearHorario(nuevo); setHorarioId(horario.id); setCreando(false); setEdicion(true); }} />
     ) : (
       /* Entrega 3 · F5, apartado 7 — *"mostrar un estado vacío extremadamente
          sencillo […] no mostrar demasiadas opciones simultáneamente"*. Los
          textos son los del enunciado, en `VACIO_HORARIOS`. */
+      <div className="space-y-3">
+      {esMotivoDeGuardia(soloLectura)
+        ? <AvisoGuardiaHorario motivo={soloLectura} guardia={guardia} accent={accent} onReintentar={onReintentarGuardia} />
+        : <AvisoSoloLecturaHorario motivo={soloLectura} accent={accent} onRecargar={onRecargar} />}
       <Card className="text-center">
         <Calendar size={22} style={{ color: accent }} className="mx-auto mb-2" />
         <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{VACIO_HORARIOS.titulo}</p>
         <p className="text-xs mt-1 mb-3" style={{ color: COLORS.textMuted }}>{VACIO_HORARIOS.explica}</p>
-        <PrimaryButton accent={accent} icon={Plus} onClick={() => setCreando(true)}>{VACIO_HORARIOS.boton}</PrimaryButton>
+        {/* 🔎 Entrega A — en solo lectura no se ofrece crear ni recuperar: no se guardaría. */}
+        {!soloLectura && <PrimaryButton accent={accent} icon={Plus} onClick={() => setCreando(true)}>{VACIO_HORARIOS.boton}</PrimaryButton>}
         {/* Si están todos archivados, esta pantalla sería un callejón sin salida:
             el sitio para recuperarlos está dentro del horario que no hay. */}
-        {horariosArchivados(estado).map((h) => (
+        {!soloLectura && horariosArchivados(estado).map((h) => (
           <button key={h.id} onClick={() => { onCambiar(archivarHorario(estado, h.id, false)); setHorarioId(h.id); }}
             className="text-[11px] font-semibold mt-3 block mx-auto" style={{ color: accent }}>
             Recuperar «{h.nombre}»
           </button>
         ))}
       </Card>
+      <DiagnosticoHorariosEntrada crudo={horarioCrudo} asignaturas={asignaturas} cargaFallida={cargaFallida} hoy={hoy} accent={accent} />
+      <ConsultaGuardiaHorarioEntrada guardia={guardia} onEvaluar={onEvaluarGuardia} accent={accent} />
+      </div>
     );
   }
 
@@ -2168,6 +2230,9 @@ export default function HorarioView({
 
   return (
     <div className="space-y-3">
+      {esMotivoDeGuardia(soloLectura)
+        ? <AvisoGuardiaHorario motivo={soloLectura} guardia={guardia} accent={accent} onReintentar={onReintentarGuardia} />
+        : <AvisoSoloLecturaHorario motivo={soloLectura} accent={accent} onRecargar={onRecargar} />}
       {/* ═══ Entrega 3 · F5, apartados 1, 2, 5 y 6 ═══════════════════════════
           *"Debe existir una separación visual y conceptual evidente"* entre las
           vistas de planificación y las estructuras que las generan. Josué lo
@@ -2255,11 +2320,14 @@ export default function HorarioView({
 
       {/* Apartado 35 — el interruptor entre consulta y edición. */}
       <div className="flex items-center gap-2">
+        {/* 🔎 Entrega A — en solo lectura no se entra a editar: nada se guardaría. */}
+        {!soloLectura && (
         <button onClick={() => setEdicion(!edicion)}
           className="flex items-center gap-1.5 text-[11px] font-semibold"
           style={{ color: edicion ? accent : COLORS.textMuted }}>
           <Pencil size={12} /> {edicion ? 'Terminar de editar' : 'Editar horario'}
         </button>
+        )}
         {resumen?.conflictos > 0 && (
           <span className="flex items-center gap-1 text-[11px] ml-auto" style={{ color: COLORS.negative }}>
             <AlertTriangle size={11} /> {resumen.conflictos} {plural(resumen.conflictos, 'choque', 'choques')}
@@ -2287,6 +2355,7 @@ export default function HorarioView({
           onArchivar={() => aplicar(archivarActividad(estado, actividadId, ficha.estado !== 'Archivada'))}
           onDuplicar={() => aplicarResultado(duplicarActividad(estado, actividadId, { hoy }))}
           onEliminar={() => { aplicar(eliminarActividadDefinitiva(estado, actividadId)); setActividadId(null); }}
+          soloLectura={!!soloLectura}
         />
       )}
 
@@ -2300,6 +2369,7 @@ export default function HorarioView({
           onMover={(id, columnaId) => aplicarResultado(moverBloque(estado, id, { columnaId }))}
           onDuplicar={(id, columnaId) => aplicarResultado(duplicarBloque(estado, id, { columnaId, hoy }))}
           onEliminar={(id) => aplicar(eliminarBloque(estado, id))}
+          soloLectura={!!soloLectura}
         />
       )}
 
@@ -2327,18 +2397,18 @@ export default function HorarioView({
           onReprogramar={onReprogramarTarea}
           onAbrirBloque={(ev) => setBloque({ ...ev, id: ev.bloqueId })}
           onIrAFecha={(f) => { setFecha(f); setVista('dia'); }}
-          mochilaHoy={mochilaHoy} mochilaManana={mochilaManana} accionesMochila={accionesMochila}
+          mochilaHoy={mochilaHoy} mochilaManana={mochilaManana} accionesMochila={soloLectura ? null : accionesMochila}
           tablon={tablon} automatizaciones={automatizaciones} planificador={planificador}
-          centroAvisos={centroAvisos} accionesAvisos={accionesAvisos} analitica={analitica}
-          onCompletar={(ev, v) => aplicar(marcarCompletada(estado, ev, fecha, v))}
+          centroAvisos={centroAvisos} accionesAvisos={soloLectura ? null : accionesAvisos} analitica={analitica}
+          onCompletar={soloLectura ? null : (ev, v) => aplicar(marcarCompletada(estado, ev, fecha, v))}
         />
       )}
 
       {vista === 'semana' && (
         <Card>
           <Cuadricula
-            rejilla={rejilla} accent={accent} edicion={edicion} visual={visual}
-            onCelda={(columna, fila) => { setBloque(null); setMenuColumna(null); setCelda({ columna, fila }); }}
+            rejilla={rejilla} accent={accent} edicion={edicion && !soloLectura} visual={visual}
+            onCelda={soloLectura ? null : (columna, fila) => { setBloque(null); setMenuColumna(null); setCelda({ columna, fila }); }}
             onBloque={(b) => { setCelda(null); setMenuColumna(null); setBloque(b); }}
             onMenuColumna={(c) => { setCelda(null); setBloque(null); setMenuColumna(c); }}
           />
@@ -2394,7 +2464,7 @@ export default function HorarioView({
         </Card>
       )}
 
-      {edicion && vista === 'semana' && (
+      {edicion && !soloLectura && vista === 'semana' && (
         <>
           <div className="flex flex-wrap gap-1.5">
             <Accion icono={Plus} label="Añadir día" onClick={() => aplicar(anadirColumna(estado, activo.id, { nombre: `Columna ${columnas.length + 1}` }))} />
@@ -2425,6 +2495,10 @@ export default function HorarioView({
           )}
         </>
       )}
+
+      {/* 🔎 Horarios · Fase 4, entrega A (TP-4) — el diagnóstico de solo lectura, plegado. */}
+      <DiagnosticoHorariosEntrada crudo={horarioCrudo} asignaturas={asignaturas} cargaFallida={cargaFallida} hoy={hoy} accent={accent} />
+      <ConsultaGuardiaHorarioEntrada guardia={guardia} onEvaluar={onEvaluarGuardia} accent={accent} />
     </div>
   );
 }

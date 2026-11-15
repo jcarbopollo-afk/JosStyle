@@ -671,6 +671,34 @@ else
   fallo "Falla el cierre de Horario Top"; grep '✗' /tmp/jc_horario12.log
 fi
 
+# 🔎 Horarios · Fase 4, entrega A — fechasSemana.js, normalizador conservador, guardia de
+# versión, diagnóstico de solo lectura y su panel (`docs/19` §12.2, §12.3 y §14.1).
+if node --import ./scripts/resolver-vite.mjs scripts/test-horarios-entrega-a.mjs >/tmp/jc_horario_ea.log 2>&1; then
+  ok "Horarios, entrega A: conservar lo desconocido, guardia y diagnóstico — $(grep -c '✓' /tmp/jc_horario_ea.log) comprobaciones"
+else
+  fallo "Falla la entrega A de Horarios"; grep '✗' /tmp/jc_horario_ea.log
+fi
+
+# 🔎 Y lo que se VE en solo lectura, pintado de verdad: ni un control de escritura.
+if node scripts/smoke.mjs test-horarios-solo-lectura.jsx >/tmp/jc_horario_ea_vista.log 2>&1; then
+  ok "Horarios, entrega A: la solo lectura en pantalla — $(grep -c '✓' /tmp/jc_horario_ea_vista.log) comprobaciones"
+else
+  fallo "Falla la solo lectura de Horarios en pantalla"; grep '✗' /tmp/jc_horario_ea_vista.log
+fi
+
+# 🛡 Horarios · A-bis — la guardia del horario: testigo, filas por aparato, clasificación (E1 solo con un testigo
+# válido presente), escritor condicional, bloqueo y el evaluador de la B (especificación A-bis consolidada).
+if node --import ./scripts/resolver-vite.mjs scripts/test-guardia-horario.mjs >/tmp/jc_horario_abis.log 2>&1; then
+  ok "Horarios, A-bis: la guardia del horario (casos 1–30, concurrencia, evaluador) — $(grep -c '✓' /tmp/jc_horario_abis.log) comprobaciones"
+else
+  fallo "Falla la guardia del horario (A-bis)"; grep '✗' /tmp/jc_horario_abis.log
+fi
+if node scripts/smoke.mjs test-guardia-horario-vista.jsx >/tmp/jc_horario_abis_vista.log 2>&1; then
+  ok "Horarios, A-bis: los avisos y la pantalla de consulta, pintados — $(grep -c '✓' /tmp/jc_horario_abis_vista.log) comprobaciones"
+else
+  fallo "Falla la guardia del horario en pantalla (A-bis)"; grep '✗' /tmp/jc_horario_abis_vista.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else
@@ -2138,8 +2166,14 @@ if [ -n "${HV_PGRST_URL:-}" ]; then
   else
     fallo "Falla el historial de versiones contra PostgREST local"; grep '✗' /tmp/jc_hvpg.log
   fi
+  # 🛡 Horarios A-bis — el transporte de la guardia del horario, contra el mismo PostgREST local.
+  if node --import ./scripts/resolver-vite.mjs scripts/test-guardia-horario-postgrest.mjs >/tmp/jc_ghpg.log 2>&1; then
+    ok "Horarios · guardia del horario contra PostgREST local — $(grep -c '✓' /tmp/jc_ghpg.log) comprobaciones"
+  else
+    fallo "Falla la guardia del horario contra PostgREST local"; grep '✗' /tmp/jc_ghpg.log
+  fi
 else
-  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial contra PostgREST local: omitida (sin HV_PGRST_URL)"
+  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial y guardia del horario contra PostgREST local: omitidas (sin HV_PGRST_URL)"
 fi
 
 # Entrega 3 · F3 — la iconografía del armario y la categoría de ropa interior.

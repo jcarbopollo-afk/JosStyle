@@ -49,6 +49,7 @@ import {
 } from './horario';
 import { eventosDerivados } from './calendarioIntegracion';
 import { visibleEn } from './actividades';
+import { diasEntre } from './fechasSemana';
 
 /* ===========================================================================
    1 · AHORA, SIGUIENTE Y CUÁNTO QUEDA (apartados 3, 4 y 5)
@@ -185,11 +186,9 @@ export function pendientes({ productividad = null, estudios = null, hoy = todayI
     || a.titulo.localeCompare(b.titulo, 'es'));
 }
 
-/** Días enteros entre dos fechas ISO. Cero si alguna falta. */
-export function diasEntre(desde, hasta) {
-  if (!desde || !hasta) return 0;
-  return Math.round((new Date(`${hasta}T00:00:00`) - new Date(`${desde}T00:00:00`)) / 86400000);
-}
+/* 🔎 Horarios · Fase 4, entrega A — `diasEntre` vive ahora en la hoja `fechasSemana.js`
+   (`docs/19` §14.1), con la misma firma. Se reexporta aquí: Fitness la importa de `hoy.js`. */
+export { diasEntre };
 
 /**
  * Apartado 34 — *"reprogramar → mañana / este fin de semana / elegir fecha.

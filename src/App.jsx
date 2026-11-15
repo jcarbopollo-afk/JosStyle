@@ -52,7 +52,7 @@ import { eventoDesdeQuickAdd } from './lib/accionesHoyAgenda';
 // Entrega 3 · F14 (HC F9) — la forma de la pantalla mientras carga (apartados 23 y 24).
 import { esqueleto } from './lib/pulidoHC';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
-import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl, uploadFotoRelacion, getSignedFotoRelacionUrl, deleteFotoRelacion, vigilarLaConexion } from './lib/supabase';
+import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl, uploadFotoRelacion, getSignedFotoRelacionUrl, deleteFotoRelacion, vigilarLaConexion, transporteDeGuardia } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, addDays, hexToRgba, fechaLocalISO } from './lib/helpers';
 import { normalizarPerfilFoto } from './lib/fotoPerfil';
@@ -155,7 +155,7 @@ import { useContextoFisico } from './components/responsiveMotion';
 /* MS F16 — los estados del sistema: lo que no se pudo cargar, lo que no ha llegado a la cuenta, la
    conexión, la espera del arranque y la sesión que caduca. */
 import { IndicadorDeSincronizacion, ErrorDeArranque, useEspera, AvisoDeEspera } from './components/estadosAsincronos';
-import { empezarSesionDeDatos, usuarioDeLaSesion, clavesSinCargar, consumirSalidaPedida, resumenSincronizacion, resultadoDeGuardados } from './lib/sincronizacion';
+import { empezarSesionDeDatos, usuarioDeLaSesion, clavesSinCargar, consumirSalidaPedida, resumenSincronizacion, resultadoDeGuardados, cargaFallida, esperarColaDe } from './lib/sincronizacion';
 import { arranqueSinDatos, motivoDeSalida } from './lib/estadosAsincronos';
 import { useFuentesListas } from './components/layoutMotion';
 import { AnuncioDeNavegacion } from './components/accesibilidadMotion';
@@ -167,7 +167,10 @@ import ArmarioView from './views/ArmarioView';
 import RachasView, { ResumenRachaHoy } from './views/RachasView';
 import HorarioView from './views/HorarioView';
 import EstiloHombreView from './views/EstiloHombreView';
-import { DEFAULT_HORARIO_TOP, normalizarHorarioTop } from './lib/horario';
+import { DEFAULT_HORARIO_TOP, normalizarHorarioTop, guardiaDeVersionHorario, parcheTocaHorario } from './lib/horario';
+/* 🛡 Horarios A-bis — la guardia del horario (testigo, filas por aparato y comprobación al cargar). */
+import { crearGuardiaDeHorario } from './lib/guardiaHorario';
+import { VERSION as VERSION_APP } from './lib/version';
 import { DEFAULT_ESTILO_HOMBRE, normalizarEstiloHombre } from './lib/estiloDeHombre';
 /* ⚠️ **Este import faltaba desde ME F3**, y `DEFAULT_PAPELERA` se usa en un
    `useState` de la línea 262: `App.jsx` lanzaba un ReferenceError en el primer
@@ -553,6 +556,30 @@ export default function App() {
      abierta ya sepa pararse ese día. */
   const [fitnessSoloLectura, setFitnessSoloLectura] = useState(false);
   const fitnessSoloLecturaRef = useRef(false);
+  /* 🔎 Horarios · Fase 4, entrega A (`docs/19` §12.3) — la misma guardia para el
+     horario: si `horarioTop.version` es más nueva que la que conoce esta copia (o
+     no se puede leer), no se guarda ni un cambio del horario y la pantalla lo dice.
+     `horarioCrudo` es lo que llegó de la cuenta TAL CUAL, sin normalizar: lo lee
+     el diagnóstico de solo lectura, que tiene que ver lo que el normalizador
+     todavía transforma (`docs/19` §0.2). Nunca se guarda. */
+  const [horarioSoloLectura, setHorarioSoloLectura] = useState(null);
+  const horarioSoloLecturaRef = useRef(false);
+  const [horarioCrudo, setHorarioCrudo] = useState(null);
+  /* 🛡 Horarios A-bis (§8) — el motivo de la entrega A va aparte (`horarioMotivoARef`) porque TIENE PRIORIDAD:
+     el de solo lectura que leen los guardados (`horarioSoloLecturaRef`) es el de la A o, si no hay, el de la
+     guardia (comprobando · no verificable · incidencia sin confirmar). `horarioTopRef` es el estado de la
+     pantalla en el momento de guardar: de ahí sale la `base` del testigo (§1), nunca de lo que restaura Deshacer.
+     Nada de esto se guarda en el aparato (C-84). */
+  const horarioMotivoARef = useRef(false);
+  const guardiaHorarioRef = useRef(null);
+  const horarioTopRef = useRef(DEFAULT_HORARIO_TOP);
+  const [guardiaHorario, setGuardiaHorario] = useState(null);
+  const aplicarSoloLecturaHorario = () => {
+    const g = guardiaHorarioRef.current;
+    const motivo = horarioMotivoARef.current || (g ? g.motivoBloqueo() : null) || false;
+    horarioSoloLecturaRef.current = motivo;
+    setHorarioSoloLectura(motivo || null);
+  };
   const [cumpleanos, setCumpleanos] = useState(DEFAULT_CUMPLEANOS);
   const [futbol, setFutbol] = useState([]);
   const [economia, setEconomia] = useState(DEFAULT_ECONOMIA);
@@ -652,6 +679,9 @@ export default function App() {
     setConversaciones({});
     const id = session?.user?.id || null;
     if (!session) {
+      /* 🛡 A-bis — la guardia del horario es de la sesión: se cierra y no avisa más. */
+      if (guardiaHorarioRef.current) { guardiaHorarioRef.current.cerrar(); guardiaHorarioRef.current = null; }
+      setGuardiaHorario(null);
       // Y de paso, fuera de memoria lo más privado.
       setEstiloHombre(DEFAULT_ESTILO_HOMBRE);
       setRelacion(DEFAULT_RELACION);
@@ -884,7 +914,34 @@ export default function App() {
       const migracionSonido = migrarSonidoEncendido(aud);
       setAudio(migracionSonido.prefs);
       if (migracionSonido.migrada) saveData(uidUser, 'audio', migracionSonido.prefs);
-      setHorarioTop(normalizarHorarioTop(hor));
+      {
+        const horarioNormal = normalizarHorarioTop(hor);
+        horarioTopRef.current = horarioNormal;
+        setHorarioTop(horarioNormal);
+      }
+      /* 🛡 A-bis — la guardia del horario de esta sesión. Nace en E0 («Comprobando tu horario»): solo
+         Horarios queda en solo lectura hasta que termine la comprobación, que empieza al terminar la carga. */
+      let guardiaNueva = null;
+      let entradaGuardia = null;
+      {
+        const guardiaHor = guardiaDeVersionHorario(hor);
+        horarioMotivoARef.current = guardiaHor.soloLectura ? guardiaHor.motivo : false;
+        if (guardiaHorarioRef.current) guardiaHorarioRef.current.cerrar();
+        guardiaNueva = crearGuardiaDeHorario({ transporte: transporteDeGuardia, usuario: uidUser, versionApp: VERSION_APP });
+        guardiaHorarioRef.current = guardiaNueva;
+        const g = guardiaNueva;
+        g.suscribir(() => {
+          if (guardiaHorarioRef.current !== g) return;
+          aplicarSoloLecturaHorario();
+          setGuardiaHorario(g.vista());
+        });
+        entradaGuardia = { guardiaA: guardiaHor, cargaFallida: cargaFallida('horarioTop') };
+        // El motivo (o `false`): lo leen los guardados y el error que devuelven. El de la A tiene prioridad.
+        horarioSoloLecturaRef.current = guardiaHor.soloLectura ? guardiaHor.motivo : (g.motivoBloqueo() || false);
+        setHorarioSoloLectura(horarioSoloLecturaRef.current || null);
+        setGuardiaHorario(g.vista());
+        setHorarioCrudo(hor);
+      }
       /* ⚠️ **EH F46** — la migración va **sobre lo que devuelve `loadData`**, no
          sobre lo normalizado: el normalizador ya habría tapado lo que hay que
          arreglar (la lección de la F41 y la F45, por cuarta vez). Y solo se
@@ -953,6 +1010,9 @@ export default function App() {
       /* 🎂 Regla 5: `loadData` no fusiona. Lo que no se entiende se aparta (no se pierde al guardar). */
       setCumpleanos(normalizarCumpleanos(cumple));
       setLoaded(true);
+      /* 🛡 A-bis (§6) — la comprobación: primero todas las filas de la guardia y después la lectura propia de
+         `horarioTop`. No se espera: solo Horarios depende de ella. */
+      if (guardiaNueva && guardiaHorarioRef.current === guardiaNueva) guardiaNueva.comprobar(entradaGuardia);
       /* SO — los datos ya estan en pantalla. Es el unico momento del ciclo en que
          'sincronizado' significa algo: antes de esto no hay nada que sincronizar,
          y despues los guardados son de uno en uno. */
@@ -1046,6 +1106,15 @@ export default function App() {
   }, []);
 
   useEffect(() => { actualizarAudio(audio); }, [audio]);
+
+  /* 🛡 Horarios A-bis (§5) — al volver la conexión, la guardia reintenta lo que no se confirmó (con sus mismos
+     identificadores) o vuelve a comprobar si no pudo. Desde memoria: no hay nada pendiente en el aparato. */
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.addEventListener) return undefined;
+    const alVolver = () => { const g = guardiaHorarioRef.current; if (g) g.reintentar(); };
+    window.addEventListener('online', alVolver);
+    return () => window.removeEventListener('online', alVolver);
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -1265,6 +1334,28 @@ export default function App() {
   /* 🚨 Fitness 3/8 (G0) — con datos de una versión más nueva no se guarda ni se
      cambia nada en pantalla: lo que se ve es lo que hay en la cuenta. */
   const NO_GUARDA_FITNESS = { ok: false, bloqueado: true, error: { code: 'version_futura', message: 'Tus datos de Fitness son de una versión más nueva de la aplicación.' } };
+  /* 🔎 Horarios · Fase 4, entrega A — lo que devuelve un guardado del horario bloqueado
+     por la guardia de versión. Se bloquea la llamada ENTERA: si un cambio toca el
+     horario y otro módulo a la vez (borrar una asignatura limpia sus clases), guardar
+     solo la mitad dejaría los dos almacenes contándose cosas distintas. */
+  const NO_GUARDA_HORARIO = () => ({
+    ok: false, bloqueado: true,
+    error: { code: horarioSoloLecturaRef.current || 'solo_lectura', message: 'Tu horario está en solo lectura en esta aplicación: no se ha guardado nada.' },
+  });
+
+  /* 🛡 Horarios A-bis (§1 y §7) — lo que se guarda de `horarioTop`: `version: 1` siempre y el testigo fuera del
+     arranque (o con una intención confirmada). Se llama SOLO desde los dos puntos de escritura (`snapshotAndSave`
+     y Deshacer), cuando ya se ha decidido guardar. El mismo objeto va a la pantalla y a `saveData`. Durante el
+     arranque, después del guardado se relee para demostrar el testigo (la relectura espera a la cola). */
+  const prepararHorarioParaGuardar = (nuevo) => {
+    const g = guardiaHorarioRef.current;
+    if (!g) { horarioTopRef.current = nuevo; return nuevo; }
+    const p = g.prepararEscritura(nuevo, horarioTopRef.current);
+    horarioTopRef.current = p.valor;
+    if (p.conTestigo && p.arranque) queueMicrotask(() => g.despuesDeGuardar(p, esperarColaDe('horarioTop')));
+    return p.valor;
+  };
+
   const guardarFitness = async (next) => {
     if (fitnessSoloLecturaRef.current) return NO_GUARDA_FITNESS;
     setFitness(next);
@@ -2178,7 +2269,14 @@ export default function App() {
   // al restaurarse duplicaría el elemento. Con la papelera dentro del snapshot, deshacer revierte
   // las dos cosas a la vez y los dos sistemas de recuperación no se pisan.
   const snapshotAndSave = (patch) => {
+    if (parcheTocaHorario(patch) && horarioSoloLecturaRef.current) return Promise.resolve(NO_GUARDA_HORARIO());
+    /* 🛡 A-bis (§1) — el horario que se guarda lleva su `version` y, fuera del arranque, su testigo. */
+    if (patch.horarioTop) patch = { ...patch, horarioTop: prepararHorarioParaGuardar(patch.horarioTop) };
     const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion, horarioTop, fitness, cumpleanos };
+    /* 🔎 Entrega A — en solo lectura el paso de Deshacer NO lleva el horario: lo que hay en
+       pantalla es la versión normalizada (una colección malformada sale vacía) y deshacer ese
+       paso más tarde, ya editable, la escribiría encima de lo que hay en la cuenta. */
+    if (horarioSoloLecturaRef.current) delete snapshot.horarioTop;
     const nextHist = [...history, snapshot].slice(-10);
     /* 🐛 2026-10-18 — devuelve el resultado de lo guardado (`{ ok, error }` de `saveData`), para que
        una pantalla que tenga algo que decir de SU guardado lo pueda leer (editar un examen). Nadie
@@ -2374,7 +2472,9 @@ export default function App() {
          clases del horario se quedaban apuntando a un id que ya no existía: el
          «Caso 4» que el enunciado prohíbe. ⚠️ Va aquí dentro y no en otro
          `snapshotAndSave` porque dos escrituras seguidas se pisan (E3 F26). */
-      horarioTop: limpiarHorarioDeAsignatura(horarioTop, id, { confirmado: true }),
+      /* 🔎 Entrega A — en solo lectura el horario no se toca, y Estudios sigue funcionando: la
+         asignatura se borra y sus clases se quedan como estaban (el diagnóstico lo cuenta). */
+      ...(horarioSoloLecturaRef.current ? {} : { horarioTop: limpiarHorarioDeAsignatura(horarioTop, id, { confirmado: true }) }),
       papelera: { ...papelera, elementos: [...papelera.elementos, entrada] },
     });
   };
@@ -2816,7 +2916,11 @@ export default function App() {
 
   const undo = () => {
     if (history.length === 0) return;
-    const last = history[history.length - 1];
+    const ultimoPaso = history[history.length - 1];
+    /* 🛡 A-bis (§1) — el horario que restaura Deshacer también lleva su `version` y su testigo; la `base` sale del
+       estado actual de la pantalla, nunca de la copia que se restaura. */
+    const last = !horarioSoloLecturaRef.current && ultimoPaso.horarioTop
+      ? { ...ultimoPaso, horarioTop: prepararHorarioParaGuardar(ultimoPaso.horarioTop) } : ultimoPaso;
     const rest = history.slice(0, -1);
     setSueno(last.sueno); saveData(uidUser, 'sueno', last.sueno);
     setCalistenia(last.calistenia); saveData(uidUser, 'calistenia', last.calistenia);
@@ -2838,7 +2942,10 @@ export default function App() {
     setArmario(last.armario || DEFAULT_ARMARIO); saveData(uidUser, 'armario', last.armario || DEFAULT_ARMARIO);
     setRachas(last.rachas || ESTADO_INICIAL); saveData(uidUser, 'rachas', last.rachas || ESTADO_INICIAL);
     setGamificacion(last.gamificacion || GAMIFICACION_INICIAL); saveData(uidUser, 'gamificacionRachas', last.gamificacion || GAMIFICACION_INICIAL);
-    setHorarioTop(last.horarioTop || DEFAULT_HORARIO_TOP); saveData(uidUser, 'horarioTop', last.horarioTop || DEFAULT_HORARIO_TOP);
+    /* 🔎 Horarios · Fase 4, entrega A — en solo lectura, deshacer no vuelve a escribir el horario. */
+    /* Y un paso que no lleva el horario (uno guardado en solo lectura) no lo toca: antes lo
+       restauraba como vacío. */
+    if (!horarioSoloLecturaRef.current && last.horarioTop) { setHorarioTop(last.horarioTop); saveData(uidUser, 'horarioTop', last.horarioTop); }
     setEstiloHombre(last.estiloHombre || DEFAULT_ESTILO_HOMBRE); saveData(uidUser, 'estiloHombre', last.estiloHombre || DEFAULT_ESTILO_HOMBRE);
     /* 🎂 Solo si el paso lo tenía: un paso de antes de Cumpleaños no puede vaciarlo. */
     if (last.cumpleanos) { setCumpleanos(last.cumpleanos); saveData(uidUser, 'cumpleanos', last.cumpleanos); }
@@ -3132,8 +3239,10 @@ export default function App() {
             estudios={estudios} sueno={sueno}
             /* 🚨 AS F2 — el horario se LEE para saber en cuántas clases se usa
                una asignatura antes de eliminarla. Nunca se escribe desde aquí:
-               quien lo hace es `deleteAsignatura`, en una sola llamada. */
-            horarioTop={horarioTop}
+               quien lo hace es `deleteAsignatura`, en una sola llamada. 🔎 En solo lectura
+               no se le pasa: borrar la asignatura no tocará el horario, así que el aviso
+               no puede prometer que se lleva sus clases. */
+            horarioTop={horarioSoloLectura ? null : horarioTop}
             onAddPrograma={addPrograma} onUpdateProgramas={updateProgramas} onDeletePrograma={deletePrograma}
             onAddAsignatura={addAsignatura} onUpdateAsignaturas={updateAsignaturas} onDeleteAsignatura={deleteAsignatura}
             onAddTema={addTema} onUpdateTemas={updateTemas} onDeleteTema={deleteTema}
@@ -3304,6 +3413,12 @@ export default function App() {
         return (
           <HorarioView
             horarioTop={horarioTop}
+            soloLectura={horarioSoloLectura}
+            horarioCrudo={horarioCrudo}
+            cargaFallida={cargaFallida('horarioTop')}
+            guardia={guardiaHorario}
+            onReintentarGuardia={() => { const g = guardiaHorarioRef.current; if (g) g.reintentar(); }}
+            onEvaluarGuardia={(params) => { const g = guardiaHorarioRef.current; return g ? g.evaluar(params) : Promise.resolve(null); }}
             asignaturas={estudios.asignaturas || []}
             estudios={estudios} productividad={productividad} calendario={calendario}
             notificaciones={notificaciones}

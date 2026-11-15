@@ -7,10 +7,12 @@ import { emitir } from './eventos';
 import {
   antesDeGuardar, despuesDeGuardar, esperarAnterior, marcarEnviado, alSalir, respuestaTardia, marcarVencida, apuntarCargaFallida, apuntarCargaBuena,
   pendientesParaReintentar, marcarReintento, usuarioDeLaSesion, generacionActual, marcarSalidaPedida, TOPE_PETICION_MS,
-  ERROR_CLAVE_PROTEGIDA,
+  ERROR_CLAVE_PROTEGIDA, ERROR_CLAVE_GUARDIA,
 } from './sincronizacion';
 /* 🕰 Horarios (docs/19 §18.9): las claves del historial de versiones tienen su propio camino, abajo. */
 import { esClaveDeHistorialVersiones, PREFIJO_HISTORIAL_VERSIONES } from './historialVersiones';
+/* 🛡 Horarios A-bis (§4): las filas de la guardia del horario, igual: su propio camino, abajo. */
+import { esClaveDeGuardiaHorario, PREFIJO_GUARDIA_HORARIO } from './guardiaHorario';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -116,6 +118,12 @@ export async function saveData(userId, key, value, { reintento = false } = {}) {
   if (esClaveDeHistorialVersiones(key)) {
     console.error('No se guarda', key, ERROR_CLAVE_PROTEGIDA.message);
     return { ok: false, error: ERROR_CLAVE_PROTEGIDA, bloqueado: true, protegida: true };
+  }
+  /* 🛡 Horarios A-bis (§4) — y las de la guardia del horario (`horarioGuardia:*`, `horarioGuardia`,
+     `horarioAparatos`, `horarioAparatos:*`): antes de la cola, sin tocar la red y sin dejar nada pendiente. */
+  if (esClaveDeGuardiaHorario(key)) {
+    console.error('No se guarda', key, ERROR_CLAVE_GUARDIA.message);
+    return { ok: false, error: ERROR_CLAVE_GUARDIA, bloqueado: true, protegida: true };
   }
   /* 🚨 MS F16 — antes de salir: una clave que no se pudo cargar no se escribe
      (pisaría lo que hay en la cuenta), un guardado de una sesión que ya se
@@ -276,6 +284,86 @@ export const transporteDeVersiones = Object.freeze({
   leerPropia: leerRegistroDeVersiones,
   insertar: insertarRegistroDeVersiones,
   actualizarSiBase: actualizarRegistroDeVersiones,
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🛡 HORARIOS A-BIS · EL TRANSPORTE DE LA GUARDIA DEL HORARIO (§4)
+
+   Lo único de este archivo que escribe `horarioGuardia:<aparato>`, con el mismo patrón que el historial de
+   versiones: fuera de `saveData` y de su cola, `insert` simple (23505 = conflicto) y `update` condicional sobre
+   `value->>ultimaOperacion`, pidiendo las filas de vuelta. ⚠️ A diferencia del historial, **nunca envía
+   `updated_at`**: la fecha de creación de una fila la pone el servidor (`default now()`) y un `update` sin ella
+   la conserva (§2, `primeraVezA`). Cada función se niega a tocar una clave que no sea de la guardia.
+   Y una lectura PROPIA de `horarioTop`, solo de lectura, que dice si la fila existe y NO toca el estado de
+   carga de `loadData` (no desbloquea ni bloquea esa clave para `saveData`).
+   =========================================================================== */
+const claveDeGuardiaValida = (clave) => {
+  if (typeof clave !== 'string' || !clave.startsWith(PREFIJO_GUARDIA_HORARIO) || clave.length <= PREFIJO_GUARDIA_HORARIO.length) {
+    throw new Error(`El transporte de la guardia solo escribe claves ${PREFIJO_GUARDIA_HORARIO}<aparato>: ${clave}`);
+  }
+  return clave;
+};
+
+/** Todas las filas `horarioGuardia:*` del usuario, con su `updated_at`. Con un error, `ok: false`: nunca a medias. */
+export async function leerFilasDeGuardiaHorario(userId) {
+  const r = await conTope(supabase.from('app_data').select('key, value, updated_at')
+    .eq('user_id', userId).like('key', `${PREFIJO_GUARDIA_HORARIO}%`));
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error) return { ok: false, error: r.error, status: r.status };
+  if (!Array.isArray(r.data)) return { ok: false, error: { code: 'respuesta_incompleta', message: 'La lectura no devolvió una lista' } };
+  return { ok: true, filas: r.data };
+}
+
+/** La fila de este aparato: `{ ok, existe, valor }`. Solo lectura. */
+export async function leerFilaDeGuardiaHorario(userId, clave) {
+  const r = await conTope(supabase.from('app_data').select('value')
+    .eq('user_id', userId).eq('key', claveDeGuardiaValida(clave)).maybeSingle());
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error) return { ok: false, error: r.error, status: r.status };
+  return { ok: true, existe: !!r.data, valor: r.data ? r.data.value : null };
+}
+
+/** La primera escritura de un aparato, sin `updated_at` (la pone el servidor). `conflicto`: ya existía (23505). */
+export async function insertarFilaDeGuardiaHorario(userId, clave, valor) {
+  const r = await conTope(supabase.from('app_data')
+    .insert({ user_id: userId, key: claveDeGuardiaValida(clave), value: valor })
+    .select('key'));
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error && r.error.code === '23505') return { ok: false, conflicto: true, error: r.error };
+  if (r.error) return { ok: false, error: r.error, status: r.status, definitivo: r.status >= 400 && r.status < 500 };
+  if (!Array.isArray(r.data)) return { ok: false, sinRespuesta: true, error: { code: 'respuesta_incompleta' } };
+  return { ok: r.data.length === 1 };
+}
+
+/** La escritura condicional, sin `updated_at`: SOLO si la fila sigue con `ultimaOperacion = base`. */
+export async function actualizarFilaDeGuardiaHorario(userId, clave, valor, base) {
+  if (typeof base !== 'string' || !base) throw new Error('La escritura condicional necesita la operación base');
+  const r = await conTope(supabase.from('app_data')
+    .update({ value: valor })
+    .eq('user_id', userId).eq('key', claveDeGuardiaValida(clave)).eq('value->>ultimaOperacion', base)
+    .select('key'));
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error) return { ok: false, error: r.error, status: r.status, definitivo: r.status >= 400 && r.status < 500 };
+  if (!Array.isArray(r.data)) return { ok: false, sinRespuesta: true, error: { code: 'respuesta_incompleta' } };
+  return { ok: true, aplicada: r.data.length === 1 };
+}
+
+/** La lectura propia de `horarioTop` (§4): dice si la fila existe y no toca el estado de carga de `loadData`. */
+export async function leerHorarioPropio(userId) {
+  const r = await conTope(supabase.from('app_data').select('value')
+    .eq('user_id', userId).eq('key', 'horarioTop').maybeSingle());
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error) return { ok: false, error: r.error, status: r.status };
+  return { ok: true, existe: !!r.data, valor: r.data ? r.data.value : null };
+}
+
+/** Lo que recibe `crearGuardiaDeHorario` para hablar con Supabase. */
+export const transporteDeGuardia = Object.freeze({
+  leerTodas: leerFilasDeGuardiaHorario,
+  leerPropia: leerFilaDeGuardiaHorario,
+  insertar: insertarFilaDeGuardiaHorario,
+  actualizarSiBase: actualizarFilaDeGuardiaHorario,
+  leerHorario: leerHorarioPropio,
 });
 
 /**
