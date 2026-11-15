@@ -18404,6 +18404,14 @@ almacen.horarioTop = horarioDeAntes_hea;
    conexión sigue funcionando tras una comprobación válida; una lectura que falla bloquea con «Reintentar»; y
    dos aparatos (dos contextos) tienen cada uno su fila. Todos los datos son DE PRUEBA. */
 console.log('\n── Horarios A-bis · la guardia del horario (E0, testigo, B, C, sin conexión y dos aparatos) ──');
+/* 🕰 Esta sección NO depende de la hora real: la página ve siempre un miércoles a mediodía (`page.clock`, con los
+   temporizadores en marcha). Con la hora real, las tres clases de prueba (00:00–00:03) entraban, en las dos horas
+   siguientes a la medianoche, en la ventana de avisos, y dos o más avisos a la vez disparan el bucle de guardados
+   de `avisosHorario.js` + `HorarioView` (una incidencia anterior a la entrega A, documentada aparte). A mediodía
+   esas clases ya pasaron y sus avisos quedan fuera de la ventana, sea cual sea el día y la hora en que corra.
+   ⚠️ Es la última sección del recorrido: el reloj fijo se queda puesto hasta el final (no hay forma de quitarlo). */
+const AHORA_ABIS = new Date(2026, 10, 11, 12, 0, 0);
+await page.clock.setFixedTime(AHORA_ABIS);
 const erroresAntes_abis = errores.length;
 const horarioDeAntes_abis = almacen.horarioTop;
 for (const k of Object.keys(almacen).filter(esFilaGuardia)) delete almacen[k];
@@ -18415,10 +18423,12 @@ const esperarQue_abis = async (fn, tope = 8000) => {
   return !!(await fn());
 };
 const ultimoHorario_abis = () => guardado.filter((g) => g && g.key === 'horarioTop').at(-1)?.value;
-const horarioAbis = (id, nombre) => {
-  const h = horarioGe2(id, nombre);
-  return { ...h, columnas: h.columnas.map((c) => ({ ...c, dia: ((new Date().getDay() + 6) % 7) + 1 })) };
-};
+/* El horario de prueba, entero aquí: su día es el de la fecha fija y su franja no sale de la hora real. */
+const horarioAbis = (id, nombre) => ({
+  id, nombre, activo: true, archivado: false, creadoEn: '2026-11-01',
+  columnas: [{ id: `c_${id}`, horarioId: id, nombre: 'Hoy', dia: ((AHORA_ABIS.getDay() + 6) % 7) + 1, posicion: 0, visible: true }],
+  filas: [{ id: `f_${id}`, tipo: 'hora', inicio: '08:00', fin: '09:00', posicion: 0 }],
+});
 const escenarioAbis = () => baseGe2(
   [horarioAbis('hab1', 'Prueba A-bis')],
   [
@@ -18530,6 +18540,7 @@ ok(await esperarQue_abis(async () => !/No se ha podido comprobar tu horario/.tes
 {
   const regsAntes = Object.keys(almacen).filter(esFilaGuardia).flatMap((k) => almacen[k].detecciones || []).length;
   const ctx2 = await browser.newContext();
+  await ctx2.clock.setFixedTime(AHORA_ABIS);
   const pagina2 = await ctx2.newPage();
   await pagina2.route(`${SUPA}/**`, manejadorSupa);
   await pagina2.addInitScript(sesionDePrueba);
