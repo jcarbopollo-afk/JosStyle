@@ -8,6 +8,8 @@
 > - **`docs/18`**: la auditoría.
 > - **`docs/19`**: la arquitectura. Prevalece sobre este documento donde haya diferencias, y dentro de ella manda lo
 >   más reciente, en este orden:
+>   0. 🔎 **Su §18.13** (la entrega A y la A-bis tal como están implementadas, 2026-11-15): manda sobre el §18.12 y todo lo
+>      anterior donde difieran (`docs/03` C-80).
 >   1. **Su §18.12** (cierre documental previo a la Fase 4, 2026-11-09): **manda expresamente sobre todos los apartados
 >      anteriores** de `docs/19` (el §17 y el resto del §18 incluidos) cuando difieran.
 >   2. **El resto de su §18** (correcciones del 2026-11-09): manda sobre el §17 y los anteriores.
@@ -15,8 +17,9 @@
 >
 > Decisiones de Josué:
 > - **Estado vigente** (🔎 cierre previo a la Fase 4, 2026-11-09; lo determina `docs/19` §18.12): siguen pendientes TP-1,
->   TP-3, TP-5, TP-7 y TP-15 (que incluye el TP-8), además de las de las Fases 5 y 7. **TP-4, TP-13 y TP-14 están
->   resueltas** (§12.13). El diseño enseña qué cambia según la respuesta de las pendientes, pero no decide ninguna.
+>   TP-3, TP-5 y TP-7, además de las de las Fases 5 y 7. **TP-4, TP-13 y TP-14 están resueltas** (§12.13). **El TP-15
+>   (que incluye el TP-8) lo decidió Josué el 2026-11-10: A + B + C, todavía sin implementar** (`docs/19` §18.12). El
+>   diseño enseña qué cambia según la respuesta de las pendientes, pero no decide ninguna.
 > - **Estado anterior** (cuando se escribió este documento, antes del `docs/19` §18.12; se conserva como registro): TP-1,
 >   TP-3, TP-4, TP-5, TP-7, TP-13, TP-14 y TP-15 seguían pendientes.
 >
@@ -1043,9 +1046,10 @@ Desde el `⋯` del horario se abre una **hoja** con la lista de versiones:
 | **12.9 Conflictos pendientes** | §10.2 y la entrada «Revisión» con su número |
 | **12.10 Borradores** | §11; «Sin terminar» en Mis horarios para los horarios nuevos |
 | **12.11 Errores de carga** | Si la carga de Horarios falla, la app ya **no escribe** esa clave (MS F16). La pantalla: «No se ha podido cargar tu horario» · «Comprueba la conexión. No se ha perdido nada.» · [Reintentar]. Mientras carga: **`Esqueleto`** con la forma de la agenda (E3 F14), nunca un giro sobre fondo vacío |
-| **12.12 Sin conexión** | Se ve lo último cargado, con el indicador global arriba (`IndicadorDeSincronizacion`). Editar un borrador funciona (se guarda al volver la conexión **mientras la app siga abierta**, como todo `saveData`: lo pendiente no se guarda en el aparato, MS F16). 🔎 **«Guardar en mi horario», recuperar una versión, «Guardar una versión» y eliminar o renombrar una versión necesitan conexión** (revisión del 2026-11-09): hay que comprobar que las versiones anteriores siguen a salvo (`docs/19` §18.7), así que sin ella el botón dice «Sin conexión: tu borrador sigue guardado; podrás guardarlo en tu horario al recuperarla» y no hace nada a medias. Los cambios de un solo día (cancelar, mover solo hoy, día libre) no crean versión y se guardan como siempre con `saveData`. ⚠️ No se promete que no pisará cambios de otro aparato (`docs/19` §17.3, TP-15) |
+| **12.12 Sin conexión** | Se ve lo último cargado, con el indicador global arriba (`IndicadorDeSincronizacion`). Editar un borrador funciona (se guarda al volver la conexión **mientras la app siga abierta**, como todo `saveData`: lo pendiente no se guarda en el aparato, MS F16). 🔎 **«Guardar en mi horario», recuperar una versión, «Guardar una versión» y eliminar o renombrar una versión necesitan conexión** (revisión del 2026-11-09): hay que comprobar que las versiones anteriores siguen a salvo (`docs/19` §18.7), así que sin ella el botón dice «Sin conexión: tu borrador sigue guardado; podrás guardarlo en tu horario al recuperarla» y no hace nada a medias. Los cambios de un solo día (cancelar, mover solo hoy, día libre) no crean versión y se guardan como siempre con `saveData`. ⚠️ No se promete que no pisará cambios de otro aparato (`docs/19` §17.3, TP-15). 🔎 El TP-15 está **decidido (A + B + C, 2026-11-10) pero sin implementar** (`docs/19` §18.12): hasta que lo esté, esta advertencia sigue valiendo, y cuando lo esté, el borrador y los cambios de un día se escribirán con el escritor protegido, no con `saveData`. 🔎 **Con la A-bis (v3.162.0, `docs/19` §18.13)**: si la comprobación de la guardia no se puede completar mientras el resto de la cuenta sí se ha cargado —porque falla la lectura de las filas de la guardia o la lectura propia de `horarioTop`, o porque `horarioTop` no se pudo cargar—, Horarios queda en **solo lectura hasta que se pueda comprobar** («No se ha podido comprobar tu horario…», con [Reintentar]; también se reintenta al volver la conexión). **Si la app se abre sin ninguna conexión no se llega a Horarios**: toda la aplicación enseña su pantalla de error de arranque. Con una comprobación válida ya hecha, editar sin conexión sigue funcionando, y un guardado de `horarioTop` pendiente en la cola **no** bloquea |
 | **Solo lectura por versión nueva** | Si la guardia de versión se activa (`docs/19` §12.3): «Tu horario se guardó con una versión más nueva de JosStyle. Recarga la aplicación para editarlo.» · [Recargar]. Todo se ve; nada se edita |
-| **Copia antigua detectada** | `docs/19` §17.2: «Una versión antigua de JosStyle guardó tu horario el día X» con las dos salidas, sin elegir por él |
+| **Copia antigua detectada** | `docs/19` §17.2: «Una versión antigua de JosStyle guardó tu horario el día X» con las dos salidas, sin elegir por él. 🔎 Es la recuperación **después de migrar**, de la entrega B. Antes de la B, lo detecta la guardia de la A-bis (fila siguiente) |
+| 🔎 **Guardia del horario (A-bis, implementada en v3.162.0)** | `docs/19` §18.13. Avisos en la pantalla de Horarios, todo se ve y no se guardan cambios: **comprobando** (E0), «Comprobando tu horario. Mientras tanto se ve, pero no se guardan cambios en él.»; **no verificable**, «No se ha podido comprobar tu horario. Para no estropear nada, no se guardan cambios en él hasta que se pueda comprobar.», con el detalle del motivo; **incidencia sin apuntar** (B o C en E3–E7), «Tu horario pudo cambiar desde otra versión de JosStyle y todavía no se ha podido apuntar en tu cuenta. Hasta que se apunte, no se guardan cambios en él.». Estos dos llevan [Reintentar] (vuelve a leer o a intentar apuntarlo; no decide nada); el de comprobando, no. La pantalla de consulta, «Comprobación de tus aparatos» («Solo consulta: no cambia nada»): aparatos, pérdidas y casos ambiguos en dos bloques, retiradas y resoluciones, intenciones, el estado del testigo y las cinco condiciones (se evalúan sin `margenDias` ni `versionMinima`, que no están fijados, así que la 1 y la 4 salen «no verificable», y la 5 siempre lo es en la A-bis). **Sin acciones**: retirar y resolver son de la entrega corta (C-3) |
 | 🔎 **Historial de versiones incompleto** | §11.4: las versiones que se pueden leer, con el aviso; nada que modifique el historial, y no se pueden guardar cambios de los horarios hasta que se resuelva (`docs/19` §18.12) |
 | 🔎 **Historial de una versión más nueva** | §11.4: solo lectura, con [Recargar] |
 
@@ -1057,7 +1061,7 @@ Desde el `⋯` del horario se abre una **hoja** con la lista de versiones:
 | **TP-7** (Fitness en un día de descanso) | 🔎 **Ninguna opción aprobada** (corrección 2026-11-09). **En Horarios**: (A) la actividad se ve atenuada con «Descanso según tu plan»; o (B) se ve igual que cualquier día, con el título que dé Fitness («Descanso»). **En Inicio**: contarla, no contarla o contarla con otra etiqueta en «N eventos». La Fase 4 no implementa ninguna de las dos de Horarios sin su respuesta |
 | **TP-13** (podar o borrar) | 🔎 **RESUELTA por Josué el 2026-11-09: se conserva todo.** No existe ningún botón de vaciar ni de «Borrar versiones antiguas», salvo la papelera global de siempre |
 | **TP-14** (aviso de versión nueva) | 🔎 **RESUELTA por Josué el 2026-11-09: no se incorpora en esta fase.** No existe el aviso «Hay una versión nueva de JosStyle» de toda la app. El [Recargar] de la guardia y del historial de una versión más nueva (§11.4, §12) es otra cosa y sí existe |
-| **TP-15** (protección entre aparatos; 🔎 incluye el TP-8) | **El historial de versiones ya está protegido** por su escritura condicional (`docs/19` §18.9 y §18.12). **`horarioTop` y los borradores, no**: si se implanta, el mensaje «Otro aparato guardó cambios en este horario a las HH:MM» en Revisar y guardar. Mientras no, ese mensaje no existe y nada promete esa protección |
+| **TP-15** (protección entre aparatos; 🔎 incluye el TP-8) | 🔎 **DECIDIDA por Josué el 2026-11-10: A + B + C, todavía sin implementar** (`docs/19` §18.12). **El historial de versiones tiene su propio escritor condicional** (`docs/03` DEP-31, `docs/19` §18.9 y §18.12), **independiente de la B del TP-15**: su condición se comprobó en Postgres y PostgREST locales (33/33, con el código de `017a488`, el 2026-11-09) y **falta comprobarla en Supabase alojado y en Safari/iPhone**, así que todavía no se presenta como una protección garantizada entre aparatos. **`horarioTop` y los borradores, todavía no**: cuando esté implementada, aparece el mensaje «Otro aparato guardó cambios en este horario a las HH:MM» en Revisar y guardar, con la política de conflictos aprobada. Mientras no lo esté, ese mensaje no existe y nada promete esa protección |
 | **TP-1 / TP-3** (push) | Hasta la Fase 7, en Ajustes → Notificaciones no hay ningún «Avisos con la app cerrada». Después, el botón con sus requisitos del iPhone dichos en pantalla |
 | **TP-4** (diagnóstico) | 🔎 **RESUELTA por Josué el 2026-11-09**: una pantalla de **solo lectura** con los recuentos, en la **entrega A** de la Fase 4 (`docs/19` §12.2). Sin ninguna acción que cambie datos. Haberla visto y revisado es condición de la entrega B |
 | **TP-18** (el orden de los días) | 🔎 **RESUELTA por Josué el 2026-11-09**: siempre de lunes a domingo, en el móvil y en el escritorio, sin ningún control para reordenar. El orden guardado antes se conserva y no se usa para pintar (§4, §6.2, §11.2, `docs/19` §18.8) |
@@ -1272,9 +1276,14 @@ colores de `PALETA_ACTIVIDADES`]:
    - Ninguna pantalla dice «sí se aplicó» ni atribuye una operación a un aparato.
    - `saveData` se niega a escribir `horarioVersiones:…`.
    - **No hay nada pendiente en `localStorage` ni en IndexedDB**: solo `aparato`, `confirmada` y `sesiones`.
-   - ⚠️ Esto comprueba la lógica, no Supabase. 🔎 **La condición real se comprobó en el nivel 3** (PostgREST local), con el
-     código anterior a las últimas correcciones: hay que repetirla. **El nivel 4 (Supabase alojado) sigue sin hacer** y
-     necesita autorización (`docs/19` §18.12).
+   - ⚠️ Esto comprueba la lógica, no Supabase. 🔎 **La condición real se comprobó en el nivel 3** (Postgres 16 y
+     PostgREST 12.2.3 locales, sin tocar Supabase) **con el código de `017a488`**, el 2026-11-09: **33 de 33** en
+     `scripts/test-historial-versiones-postgrest.mjs`, sola y otra vez dentro de `verificar.sh`, cuyo único fallo fue de
+     Fitness («FIT 8/8 — la semana: hoy y el pendiente de ayer, con sus estados»; la explicación que se dio entonces —que
+     un lunes el día anterior cae en la semana anterior— no se confirmó, `docs/19` §18.12). **Alcance**: la escritura condicional del historial de versiones, el
+     `insert` duplicado y el listado por prefijo con RLS. **No cubre** la guardia de la A-bis (su nivel 3 no se ha
+     ejecutado, `docs/19` §18.13) ni el TP-15. **El nivel 4 (Supabase alojado) y Safari/iPhone siguen sin hacer**; el
+     nivel 4 necesita autorización (`docs/19` §18.12).
 5l. 🔎 Estados del historial (`docs/19` §18.12, §11.4 de aquí), con el doble:
    - Con una fila dañada: las versiones que se pueden leer salen con el aviso de historial incompleto, y no hay ninguna
      acción que lo modifique. Guardar cambios de un horario, recuperar una versión y «Guardar una versión» se detienen
@@ -1344,6 +1353,6 @@ colores de `PALETA_ACTIVIDADES`]:
 
 ---
 
-*Fase 3 de 8 terminada, con el cierre documental previo a la Fase 4 (2026-11-09). Solo diseño: no autoriza la Fase 4 ni
-ninguna implementación, migración, SQL, dependencia,
-despliegue o cambio de datos.*
+*Fase 3 de 8 terminada, con el cierre documental previo a la Fase 4 (2026-11-09), la decisión del TP-15 (2026-11-10) y la
+sincronización con la entrega A y la A-bis implementadas (2026-11-15, `docs/19` §18.13). Solo diseño: no autoriza la
+entrega B ni ninguna implementación, migración, SQL, dependencia, despliegue o cambio de datos.*

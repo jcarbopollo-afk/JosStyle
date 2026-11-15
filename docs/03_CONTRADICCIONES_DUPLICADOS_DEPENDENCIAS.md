@@ -1461,6 +1461,8 @@ séptima no falta: ya está contestada.
 | DEP-12 | Overlays → `createPortal` | Consecuencia del bug de `containing block`. **Todo overlay nuevo lo necesita** |
 | DEP-13 | Seguridad → `MORE_NAV` | `AREAS_PROTEGIBLES` se construye de `MORE_NAV`: un módulo nuevo se vuelve protegible solo con existir ahí |
 | DEP-14 | Relación recurrente → `expandirRecurrentes` | Reutiliza el motor de C3 tal cual, aplicado indistintamente a eventos propios y derivados |
+| DEP-31 | Horarios · historial de versiones → **su propio escritor condicional** (commit `017a488`, `docs/19` §18.9 y §18.12) | Las filas `horarioVersiones:<aparato>` **solo** las escribe `transporteDeVersiones` (`src/lib/supabase.js`) desde `crearEscritorDeVersiones` (`src/lib/historialVersiones.js`): una fila por aparato, `insert` la primera vez y `update … where value->>'ultimaOperacion' = <base>` después. **`saveData` y su cola rechazan esas claves** sin tocar la red (`ERROR_CLAVE_PROTEGIDA`). 🚨 Quitar ese rechazo, o escribir una de esas filas por otro camino, rompe la garantía de que una versión eliminada no reaparece. Comprobado con Postgres y PostgREST **locales** (33/33, con el código de `017a488`, el 2026-11-09); **sin probar todavía en un Supabase alojado ni en el iPhone**. Todavía sin pantalla: la app no lo usa. 🔎 **Desde la A-bis (v3.162.0, 2026-11-15)**: de `historialVersiones.js` la app usa además `almacenDelNavegador`, del que la guardia saca el id del aparato (DEP-34); el escritor y la vista siguen sin usarse |
+| DEP-34 | Horarios · la guardia de la A-bis → **su propio escritor condicional** (v3.162.0, `docs/19` §17.2 y §18.13) | Las filas `horarioGuardia:<aparato>` **solo** las escribe `transporteDeGuardia` (`src/lib/supabase.js`) desde el escritor de `src/lib/guardiaHorario.js`: una fila por aparato, `insert` la primera vez y `update … where value->>'ultimaOperacion' = <base>` después, **sin enviar nunca `updated_at`**, y una escritura solo se da por confirmada si, al releer, aparece su `id`. **`saveData` y su cola rechazan** `horarioGuardia:*`, `horarioGuardia`, `horarioAparatos` y `horarioAparatos:*` sin tocar la red. La comprobación del invariante de la fila (`cumpleInvariante`: `formato`, `aparato` y `primeraVezA` no cambian, `secuencia` sube de uno en uno y las listas solo crecen) la hace **ese escritor antes de enviar**; una escritura de esas filas por otro camino no pasaría por la comprobación de ese escritor. Probado en Node y en Chromium con un doble de Supabase; **su nivel 3 (`test-guardia-horario-postgrest.mjs`) no se ha ejecutado**, ni en Supabase alojado ni en el iPhone |
 
 ### C.2 — Dependencias del trabajo pendiente
 
@@ -1473,9 +1475,11 @@ séptima no falta: ya está contestada.
 | DEP-19 | **Migración entre dispositivos** (R9.6) | Requiere R3.4 primero |
 | DEP-20 | **Exportación a PDF** | Librería nueva → `npm install` → el entorno de la IA no puede instalarla; hay que escribirla a ciegas o generar el PDF sin librería |
 | DEP-21 | **Importación CSV del banco** | `papaparse` ya está como dependencia. Falta además **detección de duplicados** |
-| DEP-22 | **Web Push** (R9.1) | Service Worker + tabla de suscripciones + función serverless de envío. **Infraestructura nueva** |
+| DEP-22 | **Web Push** (R9.1) | Service Worker + tabla de suscripciones + función serverless de envío. **Infraestructura nueva**. 🔎 **Horarios (2026-11-08)** lo planifica para su Fase 7 (`docs/19` §9): D-H1, la estándar `web-push` 3.6.7 **solo en la función de servidor** (cero bytes en el navegador), cuya instalación necesita **autorización expresa** (TP-1); D-H2, `pg_cron` + `pg_net` como disparador, **por comprobar** en el plan gratuito al entrar en la Fase 7 (TP-2); y las claves VAPID, la clave de servicio, el secreto del cron y el SQL de las tablas, que **da o ejecuta Josué** (TP-3). Todo sigue pendiente |
 | DEP-23 | **Dispositivos / sesiones / auditoría / borrado de cuenta** | Servidor con permisos de **administrador de Supabase**. No existe |
 | DEP-24 | **AXION** (R10) | 🔒 **Conversación de diseño con Josué**, explícitamente pedida por él. Además, la categoría "IA" de Ajustes (C-03) y la tarjeta 🤖 IA del hub "Más" están enganchadas a esta decisión |
+| DEP-32 | **Horarios · la entrega B de la Fase 4** (la versión 2: migración, borradores, versiones, papelera) | 🔎 **El diagnóstico de sus datos reales** (D-H5, TP-4 resuelta el 2026-11-09, `docs/19` §12.2): un **panel de solo lectura** dentro de la entrega A, **sin SQL en producción**. La entrega B y cualquier migración **no empiezan** hasta que ese panel se haya ejecutado con sus datos, **Josué lo haya revisado** y se hayan resuelto las incidencias que lo pidan (entre ellas TP-5, C-85, si aparecen ciclos con grupo). Además, las cinco condiciones de `docs/19` §17.2 y el margen entre la A y la B (TP-12). 🔎 **Desde la A-bis (v3.162.0, 2026-11-15, `docs/19` §18.13)**: las cinco condiciones las calcula el evaluador puro `evaluarCondicionesB`, que la B tiene que encontrar todas en «cumple»; con incidencias de pérdida (B) o ambiguas (C) registradas, la condición 2 no se cumple hasta resolverlas, y **retirar y resolver son de la entrega corta** (C-3), que va antes de la B. El margen (`margenDias`), la hora del servidor y `versionMinima` siguen sin fijarse |
+| DEP-33 | **Horarios · protección de `horarioTop` y `horarioBorradores` entre aparatos** (TP-15, que incluye el TP-8) | 🔓 **Decisión aprobada por Josué el 2026-11-10: A + B + C, en ese orden** (`docs/19` §18.12, «TP-15: la decisión aprobada»). **A**: un escritor propio con escritura condicional por igualdad con la revisión leída, nunca con la hora del dispositivo; `saveData` y su cola dejan de poder escribir esas claves. **B**: una regla en el servidor **solo para las claves de Horarios**, que impide que una copia antigua escriba sin respetar la revisión vigente. **C**: recargar al volver a primer plano y al recuperar la conexión. ⏸ **Nada está implementado.** B **depende del SQL que ejecuta Josué**, de probarse antes con Postgres y PostgREST locales **y** en un proyecto Supabase independiente, y de su **autorización expresa** para activarla en producción; mientras no esté activa, la protección **no se da por garantizada** frente a copias antiguas. Ni una prueba con datos reales. Y A tiene que llegar a **todos** los caminos de escritura antes de que B se active, o B dejaría sin guardar a la propia aplicación. **Obligatorio**: B no se da por garantizada hasta que las pruebas demuestren que no puede eludirse con DELETE, INSERT, UPDATE, UPSERT ni ninguna otra vía, y las operaciones que tocan varias claves necesitan una recuperación segura probada con fallos a medias. 🔎 **2026-11-15**: la A-bis **no implementa el TP-15**. Su testigo ya lleva `revision` y `base` dentro de `horarioTop`, pero **no protegen nada** hasta el TP-15; usarlas o no para el escritor A es la cuestión de implementación 1 (`docs/19` §18.12), sin decidir |
 
 ### C.3 — Dependencias operativas *(no de código)*
 
@@ -1486,7 +1490,7 @@ séptima no falta: ya está contestada.
 | DEP-27 | El **permiso de cámara en Safari** es necesario para el escáner de códigos de barras (documentado en `SETUP.md`) |
 | DEP-28 | Un **icono de lucide-react nuevo** debe verificarse contra la versión `0.383.0` antes de importarlo. Caso real evitado: `Palmtree` → renombrado a `TreePalm` en versiones intermedias |
 | DEP-29 | ⏸ **Conectar Google Calendar y Outlook necesita a Josué** (E3 F12 / HC F7, regla 49). Hacen falta **tres** cosas que solo puede dar él: registrar JosStyle en Google Cloud Console, registrarla en el portal de Microsoft (las dos van atadas a su cuenta) y **un sitio seguro donde guardar el acceso** — el apartado 26 prohíbe expresamente el navegador y el código del frontend, y hoy hay una sola función de servidor y ninguna tabla para esto. **Mientras tanto NO se construye el botón "Conectar"**: sería un control decorativo (regla 8) y, peor, le haría creer que sus exámenes están sincronizados. Lo que sí quedó hecho y funcionando es el **archivo `.ics`**, que es la alternativa que pide el propio apartado 4 para Apple y sirve igual para los tres. Está declarado en `LO_QUE_NECESITA_JOSUE` (`src/lib/calendariosExternos.js`) y se ve en Ajustes → Integraciones. **Los apartados 19 y 20 (enviar un evento de JosStyle a Google) dependen de lo mismo.** 🕐 **Y Josué lo APLAZÓ el 2026-10-17:** *"lo de Microsoft queda profesional pero puede dar muchos problemas… qué te parece si lo quitamos y en un futuro ya lo desarrollaremos mejor"*. Se quitó de Ajustes → Integraciones la tarjeta «Conectar la cuenta entera», que le pedía registrar JosStyle en Google y en Microsoft; se queda lo que funciona hoy, **añadir el archivo `.ics`**. `LO_QUE_NECESITA_JOSUE` sigue escrito en `calendariosExternos.js` para cuando se retome, y **no se le vuelve a proponer** hasta que lo pida él. |
-| DEP-30 | ⏸ **El service worker lo decide Josué** (E3 F15 / HC F10, apartado 11). Es la pieza que falta para **dos** cosas: abrir la aplicación sin conexión y los avisos con la app cerrada (E3 F11). 🚨 **Y no se añade a ciegas porque el riesgo es exactamente el fallo histórico de este proyecto:** un service worker mal configurado deja la aplicación **congelada en una versión vieja** —se abriría siempre la de antes por más código nuevo que se suba—, y JosStyle ya perdió meses con `main` sirviendo el `src/` del 11 de agosto mientras Josué decía *"la web sigue igual"*. El patrón seguro existe (red primero para el HTML, caché para los archivos con hash), pero es un cambio de arquitectura que hay que poder probar en su iPhone antes de dejarlo puesto. Declarado en `LO_QUE_DECIDE_JOSUE` (`src/lib/auditoriaPWA.js`) con su riesgo escrito. 🕐 **Y Josué decidió el 2026-10-17 dejarlo para el final, junto con lo que queda de la IA** (⚠️ la autenticación de `/api/ask-ai` ya existía desde el 2026-09-04, `HALLAZGO_ENDPOINT`; lo abierto es el límite por usuario, que vive en memoria): *"la conexión déjalo pendiente para luego como la IA, porque primero quiero que esté toda la app hecha para luego meter esos dos"*. No se construye ni se le vuelve a proponer hasta que él dé la app por terminada. |
+| DEP-30 | ⏸ **El service worker lo decide Josué** (E3 F15 / HC F10, apartado 11). Es la pieza que falta para **dos** cosas: abrir la aplicación sin conexión y los avisos con la app cerrada (E3 F11). 🚨 **Y no se añade a ciegas porque el riesgo es exactamente el fallo histórico de este proyecto:** un service worker mal configurado deja la aplicación **congelada en una versión vieja** —se abriría siempre la de antes por más código nuevo que se suba—, y JosStyle ya perdió meses con `main` sirviendo el `src/` del 11 de agosto mientras Josué decía *"la web sigue igual"*. El patrón seguro existe (red primero para el HTML, caché para los archivos con hash), pero es un cambio de arquitectura que hay que poder probar en su iPhone antes de dejarlo puesto. Declarado en `LO_QUE_DECIDE_JOSUE` (`src/lib/auditoriaPWA.js`) con su riesgo escrito. 🕐 **Y Josué decidió el 2026-10-17 dejarlo para el final, junto con lo que queda de la IA** (⚠️ la autenticación de `/api/ask-ai` ya existía desde el 2026-09-04, `HALLAZGO_ENDPOINT`; lo abierto es el límite por usuario, que vive en memoria): *"la conexión déjalo pendiente para luego como la IA, porque primero quiero que esté toda la app hecha para luego meter esos dos"*. No se construye ni se le vuelve a proponer hasta que él dé la app por terminada. 🔎 **Horarios (2026-11-09, TP-14)**: tampoco hay, en esta fase, un aviso global de «versión nueva» (`version.json`); lo decidió Josué. Sin service worker ni ese aviso, **una copia vieja de la app puede seguir abierta** (una pestaña sin recargar, la PWA del iPhone que vuelve de segundo plano), y Horarios lo trata con la guardia de versión, el testigo y la recuperación (`docs/19` §17.2) y, cuando esté activa, con la regla del servidor de DEP-33. Esto no reabre el service worker ni se le propone |
 
 ### C.4 — Contradicciones del documento de la Entrega 3
 
@@ -1575,6 +1579,10 @@ PWA con algo pendiente o en vuelo, ese cambio se pierde. Josué lo decide: *"yo 
 iPhone, más que nada porque si no no se guarda, y como después se elimina"*. **Se hará como fase propia**: lo
 pendiente se apunta en el dispositivo, se reintenta al volver a abrir y se borra en cuanto llega. Hasta esa fase,
 el comportamiento sigue siendo el de la F16.
+
+> 🔎 **Alcance (2026-11-10, ver C-84)**: esta decisión **sigue vigente para el resto de la aplicación**. **Horarios queda
+> fuera**: allí no se guarda en el aparato nada pendiente de sincronizar, por decisión de Josué. Cuando se construya la
+> fase de C-71, tiene que excluir expresamente las claves de Horarios.
 
 
 
@@ -1690,3 +1698,89 @@ respeta lo ya decidido, sin parar el flujo, y queda **escrito para que Josué lo
 
 Y dos límites de cálculo, también escritos en `ARQUITECTURA_TECNICA.md` §21: por tiempo no se propone subir (no hay
 una regla fiable, prompt 5 §11) y nunca se propone subir el peso (el incremento de los discos no se sabe).
+
+### C-80 — ✅ RESUELTA POR JOSUÉ (2026-11-08, D-H4) · La especificación de Horario Top contra el Documento Maestro del rediseño, y qué documento manda
+
+El rediseño de Horarios tiene cuatro documentos nuevos (`docs/17` a `docs/20`) y una especificación literal anterior,
+`ESPECIFICACION_HORARIO_TOP.md` (las doce fases HT, 11 614 líneas), que en algunos puntos dice otra cosa. **D-H4,
+decidida por Josué**: donde choquen, **manda `docs/17`** (el Documento Maestro), y la especificación HT queda como
+**documentación histórica**. No se edita: es literal, como el resto de `especificaciones/`.
+
+**Y el orden entre los documentos del rediseño**, como lo dejan escrito ellos mismos:
+- `docs/17` es el objetivo funcional, y **su Anexo prevalece**.
+- `docs/19` (arquitectura) prevalece sobre `docs/20` (diseño) donde difieran. Dentro de `docs/19`, manda lo más reciente:
+  **§18.12** sobre todo lo anterior; **el resto del §18** sobre el §17 y los apartados 1 a 16; y **el §17** sobre los
+  apartados 1 a 16. 🔎 **2026-11-15**: por la misma regla, el **§18.13** (la entrega A y la A-bis tal como están
+  implementadas) manda sobre el §18.12 y todo lo anterior donde difieran.
+- Cuando una decisión de Josué recogida en `docs/19` sustituye a una frase de `docs/17` (C-81), `docs/17` no se modifica:
+  la sustitución queda escrita en `docs/19`.
+
+### C-81 — ✅ RESUELTA POR JOSUÉ (2026-11-09) · «También se conservan versiones mediante el autoguardado» (`docs/17` §8) contra un borrador que se autoguarda a los 700 ms
+
+`docs/17` §8 decía que el autoguardado también conserva versiones, y el borrador se autoguarda a los 700 ms de dejar de
+tocar (el patrón de la FIT F40). **Josué fijó la regla definitiva** (`docs/19` §18.10):
+- **El autoguardado conserva el borrador** (`horarioBorradores`) y **no crea versiones históricas**.
+- **Las versiones automáticas** se crean al **confirmar** cambios y en las operaciones de seguridad: **restaurar** y
+  **migrar**.
+- **Las versiones manuales**, solo cuando él lo pide («Guardar una versión»).
+- **Nada más crea versiones**: ni los cambios de un solo día, ni exportar, ni abrir, ver o salir del editor.
+
+`docs/17` no se modifica: manda `docs/19` §18.10 (C-80).
+
+### C-82 — ✅ RESUELTA POR JOSUÉ (2026-11-09, TP-18) · Los días que se podían reordenar contra «de lunes a domingo» del maestro
+
+El Horario actual ordena sus columnas por `posicion`, con los botones «Izquierda» y «Derecha» para moverlas, y el
+Documento Maestro (`docs/17` §2 y §9) dibuja la semana de lunes a domingo. **Josué decidió** (`docs/19` §18.8 y §15, TP-18):
+- Los días van **siempre de lunes a domingo**, en el móvil y en el escritorio, **sin ningún control para reordenarlos**.
+- **`columna.posicion` se conserva intacto**: no se borra ni se modifica, ni al guardar ni en la migración. Solo deja de
+  decidir el orden de los días. Dos columnas del mismo día se ordenan entre sí por `posicion` y luego por `id`.
+- Las columnas nuevas reciben una `posicion` libre al final, para que una copia antigua de la app, que sí ordena por
+  `posicion`, las pinte en un sitio razonable.
+
+### C-83 — ✅ RESUELTA POR JOSUÉ (2026-11-09, TP-13) · Podar versiones y listas antiguas contra «no se borra nada sin autorización»
+
+La arquitectura proponía topes y podas: las últimas 10 versiones por horario, `completadas` a 60 días, `podarMochila`,
+choques resueltos a los 30 días, avisos enviados a los 7, y que vaciar un horario de la papelera se llevara sus versiones.
+**Josué decidió conservarlo todo** (`docs/19` §17.1, §17.7 y §18.7):
+- **No hay ninguna poda ni ningún borrado automático**: ni por número, ni por antigüedad, ni por espacio, ni al vaciar o
+  caducar un horario en la papelera («Versiones de horarios eliminados»).
+- Las versiones **manuales** solo se renombran o eliminan con una acción expresa suya; las **automáticas**, nunca desde la
+  interfaz.
+- El tamaño se **mide** con el diagnóstico de la entrega A. El crecimiento queda como **riesgo aceptado**; cualquier poda
+  futura necesita una autorización expresa para cada caso.
+
+### C-84 — 🔓 DECIDIDA POR JOSUÉ (2026-11-10) · «Lo pendiente se guarda en el iPhone» (C-71) contra «nada pendiente en el aparato» en Horarios
+
+C-71 (2026-10-17) autorizó una fase propia que guarde en el dispositivo lo que no ha llegado a la cuenta, lo reintente y
+lo borre al llegar. El rediseño de Horarios (`docs/19` §18.9, 2026-11-09) decidió lo contrario: **no se guarda en el
+aparato nada pendiente de sincronizar**, ni versiones, ni marcas de eliminación, ni borradores, ni un diario local de
+operaciones. Su redacción de entonces («tampoco en Horarios», ya corregida en `docs/19` §18.9) se podía leer como una
+regla para toda la aplicación.
+
+**Josué delimita el alcance**:
+- **En Horarios**: no se guarda localmente **ninguna operación pendiente**. En el aparato solo hay identificadores y lo ya
+  confirmado; lo que no se confirma en el servidor vive en memoria y no se enseña como hecho.
+- **En el resto de la aplicación**: **C-71 sigue vigente**. Su fase, cuando se construya, tiene que **excluir
+  expresamente** las claves de Horarios (`horarioTop`, `horarioBorradores`, `horarioVersiones:*` y las demás claves
+  nuevas de Horarios; 🔎 desde la A-bis, también `horarioGuardia:*`).
+- 🔎 **La A-bis la cumple** (v3.162.0, `docs/19` §18.13): en el aparato solo está su id; los registros de la guardia sin
+  confirmar viven en memoria y se reconstruyen desde el servidor al volver a abrir.
+- Esta delimitación **no es una regla global**: ni deroga C-71 ni amplía la de Horarios al resto de módulos.
+
+### C-85 — ⏸ PENDIENTE DE JOSUÉ (TP-5) · Las semanas A/B que ya tengan sus horarios: aplicar el ciclo cambiaría lo que ve
+
+La especificación HT tiene semanas A/B, y el diagnóstico puede encontrar **ciclos con grupo** en sus datos: aplicarlos
+cambiaría lo que ve cada semana. **No hay decisión.** Mientras siga pendiente (`docs/19` §15 y §17.6, `docs/20` §12.13):
+- **Ninguna pantalla muestra controles de semanas A/B**; la configuración del ciclo se conserva en los datos, inactiva.
+- **Se decide después del diagnóstico de la entrega A, y solo si aparecen**, y antes de la entrega B (DEP-32).
+- «Cada dos semanas» **no** es esto: se ve siempre y no depende de TP-5.
+- No se implementa ninguna opción sin preguntarle.
+
+### C-86 — ⏸ PENDIENTE DE JOSUÉ (TP-7) · Una actividad vinculada a Fitness en un día de descanso de su plan
+
+Si Josué coloca en el horario una actividad vinculada a Fitness y ese día su plan dice «descanso», hay que decidir cómo
+se ve. **Ninguna opción está aprobada** (`docs/19` §15 y §17.6, `docs/20` §12.13):
+- **En Horarios**: (A) atenuada con «Descanso según tu plan»; o (B) igual que cualquier día, con el título que dé Fitness.
+- **En Inicio**: contarla, no contarla o contarla con otra etiqueta en «N eventos».
+- En todos los casos sigue contando en las coincidencias, porque sus horas son suyas.
+- Se decide antes de la Fase 7. No se implementa ninguna sin preguntarle.
