@@ -51,6 +51,7 @@
 // ============================================================================
 
 import { uid, todayISO, addDays } from './helpers';
+import { DIAS_SEMANA, diaDeFecha } from './fechasSemana';
 
 /* ===========================================================================
    1 · TIPOS DE HORARIO (apartado 4)
@@ -125,22 +126,197 @@ export const TIPOS_FILA = [
 export const tipoColumna = (id) => TIPOS_COLUMNA.find((t) => t.id === id) || TIPOS_COLUMNA[TIPOS_COLUMNA.length - 1];
 export const tipoFila = (id) => TIPOS_FILA.find((t) => t.id === id) || TIPOS_FILA[0];
 
-export const DIAS_SEMANA = [
-  { dia: 1, label: 'Lunes', corto: 'L' },
-  { dia: 2, label: 'Martes', corto: 'M' },
-  { dia: 3, label: 'Miércoles', corto: 'X' },
-  { dia: 4, label: 'Jueves', corto: 'J' },
-  { dia: 5, label: 'Viernes', corto: 'V' },
-  { dia: 6, label: 'Sábado', corto: 'S' },
-  { dia: 7, label: 'Domingo', corto: 'D' },
-];
+/* 🔎 Horarios · Fase 4, entrega A — `DIAS_SEMANA` y `diaDeFecha` viven ahora en la
+   hoja `fechasSemana.js` (`docs/19` §8.7 y §14.1), con la misma firma. Se
+   reexportan aquí para que nadie que las importe de `horario.js` cambie. */
+export { DIAS_SEMANA, diaDeFecha };
 
-/** El día de la semana (1–7, lunes primero) de una fecha local. */
-export function diaDeFecha(fechaISO) {
-  const d = new Date(`${fechaISO}T00:00:00`);
-  if (Number.isNaN(d.getTime())) return null;
-  // `getDay()` da 0 para domingo; en España la semana empieza en lunes.
-  return ((d.getDay() + 6) % 7) + 1;
+/* ===========================================================================
+   🔎 HORARIOS · FASE 4, ENTREGA A — CONSERVAR LO QUE ESTA VERSIÓN NO CONOCE
+   ===========================================================================
+   `docs/19` §0.2 (N1) y §12.1, punto 1: los normalizadores reconstruían cada
+   objeto campo a campo y **descartaban todo lo que no conocían**, también un
+   `version` de primer nivel. Una copia antigua de la app que cargara datos de
+   una versión más nueva y guardara **borraría los campos nuevos**.
+
+   Desde esta entrega, cada normalizador conserva los campos que no conoce, en
+   el primer nivel y en cada entidad: primero lo desconocido, tal cual, y
+   encima lo conocido, normalizado **exactamente como antes**. Así nada de lo
+   que la app ya leía cambia de valor, y lo que no entiende viaja intacto.
+
+   ⚠️ Lo que NO cambia en esta entrega (es de la entrega B, `docs/19` §12.4):
+   los valores de los campos CONOCIDOS se siguen normalizando como siempre —un
+   tipo de excepción desconocido pasa a `cancelado` (N3), una recurrencia
+   desconocida a `siempre` (N5), un bloque sin `horarioId` o sin `columnaId` se
+   descarta (N2), un id ausente recibe `uid()` (N4) y una fecha inválida de una
+   excepción pasa a hoy (P12)—. El diagnóstico de solo lectura los cuenta para
+   que Josué los vea antes de migrar nada. */
+function conservarDesconocidos(g, conocidas) {
+  if (!g || typeof g !== 'object' || Array.isArray(g)) return {};
+  const salida = {};
+  for (const k of Object.keys(g)) if (!conocidas.includes(k)) salida[k] = g[k];
+  return salida;
+}
+
+/** Los campos que cada normalizador conoce (los que escribe, más los antiguos que traduce). */
+export const CAMPOS_CONOCIDOS_HORARIO = Object.freeze({
+  horarioTop: Object.freeze(['horarios', 'actividades', 'bloques', 'excepciones', 'grupos', 'materiales', 'enlacesMaterial',
+    'mochila', 'mochilas', 'inventario', 'kits', 'dependencias', 'reglas', 'completadas', 'automatizaciones',
+    'historialAuto', 'avisos']),
+  horario: Object.freeze(['id', 'nombre', 'tipo', 'periodo', 'descripcion', 'desde', 'hasta', 'porDefecto', 'columnas',
+    'filas', 'activo', 'archivado', 'icono', 'color', 'zonaHoraria', 'ciclo', 'creadoEn', 'actualizadoEn']),
+  columna: Object.freeze(['id', 'nombre', 'corto', 'dia', 'posicion', 'visible', 'color', 'icono', 'tipo', 'bloqueada', 'grupo']),
+  fila: Object.freeze(['id', 'inicio', 'fin', 'etiqueta', 'posicion', 'visible', 'tipo', 'color']),
+  // `profesor` y `activa` son los nombres antiguos que el normalizador traduce a `persona` y `estado`.
+  actividad: Object.freeze(['id', 'nombre', 'tipo', 'color', 'icono', 'asignaturaId', 'material', 'ubicacion', 'persona',
+    'profesor', 'corto', 'descripcion', 'prioridad', 'alias', 'etiquetas', 'favorita', 'estado', 'activa', 'visibilidad',
+    'notas', 'grupoId', 'padreId', 'origen', 'origenId', 'creadoEn', 'actualizadoEn']),
+  bloque: Object.freeze(['id', 'horarioId', 'columnaId', 'actividadId', 'inicio', 'fin', 'titulo', 'ubicacion', 'notas',
+    'etiquetas', 'colorPropio', 'iconoPropio', 'filaId', 'descripcion', 'posicion', 'recurrencia', 'creadoEn',
+    'actualizadoEn']),
+  recurrencia: Object.freeze(['clase', 'ancla']),
+  excepcion: Object.freeze(['id', 'fecha', 'tipo', 'bloqueId', 'horarioId', 'cambios', 'motivo']),
+  cambios: Object.freeze(['inicio', 'fin', 'actividadId', 'titulo', 'ubicacion']),
+});
+
+/* ---------------------------------------------------------------------------
+   🔎 LA GUARDIA DE VERSIÓN (`docs/19` §12.3, entrega A)
+   ---------------------------------------------------------------------------
+   Si `horarioTop.version` es mayor que la que conoce esta copia, la app se pone
+   en **solo lectura** para Horarios: no guarda y lo dice, como
+   `fitnessSoloLectura`. Esta entrega no escribe `version` (no cambia la forma
+   de los datos): la conoce para pararse el día que la entrega B la suba.
+
+   Sin `version` es la 1 (todo lo guardado hasta hoy). Una `version` que no es
+   un número entero positivo no se puede comparar: no se sabe si es más nueva,
+   así que tampoco se guarda encima (no se interpreta lo que no se entiende). */
+export const VERSION_HORARIO = 1;
+/** 🛡 Horarios A-bis (§1) — `version` y `testigo` son de la guardia del horario. El normalizador los conserva TAL
+ *  CUAL (el primer nivel guarda lo que no está en `CAMPOS_CONOCIDOS_HORARIO`), y el diagnóstico no los cuenta
+ *  como «campos que esta versión no conoce». Su forma la lee `guardiaHorario.js`, nunca este archivo. */
+export const CAMPOS_DE_LA_GUARDIA_HORARIO = Object.freeze(['version', 'testigo']);
+
+/** El tipo de un valor, con palabras: lo usa el diagnóstico para decir qué encontró. */
+export function tipoDeValor(v) {
+  if (v === undefined) return 'ausente';
+  if (v === null) return 'nulo';
+  if (Array.isArray(v)) return 'lista';
+  if (typeof v === 'string') return 'texto';
+  if (typeof v === 'number') return 'número';
+  if (typeof v === 'boolean') return 'sí/no';
+  if (typeof v === 'object') return 'objeto';
+  return 'otro';
+}
+const esObjetoPlano = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+/* ---------------------------------------------------------------------------
+   🔎 LA FORMA QUE EL NORMALIZADOR ESPERA (corrección de la entrega A)
+   ---------------------------------------------------------------------------
+   Cada colección que `normalizarHorarioTop` lee con un `Array.isArray(x) ? x : []`
+   (o un mapa con `typeof x === 'object' ? x : {}`) convierte EN SILENCIO lo que no
+   tiene esa forma en una colección vacía, y el siguiente guardado escribiría esa
+   colección vacía encima de lo que había. Esta tabla es la lista de todas ellas.
+
+   · `objetos` — sus elementos tienen que ser objetos: uno que no lo sea se
+     convierte en una entidad nueva vacía o se descarta.
+   · `textos`  — sus elementos tienen que ser textos: los demás se descartan o
+     se convierten en otra cosa.
+   · `libres`  — el normalizador los conserva tal cual: solo importa que sea lista.
+   · `mapas`   — tienen que ser objetos (o listas, que el normalizador también
+     conserva).
+   ⚠️ `undefined` es «no está» (un campo que una versión anterior no tenía) y
+   `null` no guarda nada que se pueda perder: ninguno de los dos bloquea; el
+   diagnóstico avisa del `null`. */
+export const COLECCIONES_HORARIO = Object.freeze({
+  horarioTop: Object.freeze({
+    objetos: Object.freeze(['horarios', 'actividades', 'bloques', 'excepciones', 'grupos']),
+    textos: Object.freeze(['completadas']),
+    libres: Object.freeze(['materiales', 'enlacesMaterial', 'mochila', 'mochilas', 'kits', 'reglas', 'automatizaciones', 'historialAuto', 'avisos']),
+    mapas: Object.freeze(['inventario', 'dependencias']),
+  }),
+  horario: Object.freeze({ objetos: Object.freeze(['columnas', 'filas']), textos: Object.freeze([]), libres: Object.freeze([]), mapas: Object.freeze([]) }),
+  actividad: Object.freeze({ objetos: Object.freeze([]), textos: Object.freeze(['material', 'alias', 'etiquetas']), libres: Object.freeze([]), mapas: Object.freeze([]) }),
+  bloque: Object.freeze({ objetos: Object.freeze([]), textos: Object.freeze(['etiquetas']), libres: Object.freeze([]), mapas: Object.freeze([]) }),
+});
+const ENTIDAD_DE = { horarios: 'horario', actividades: 'actividad', bloques: 'bloque' };
+
+/**
+ * Lo que de lo guardado NO tiene la forma que el normalizador espera, sin
+ * modificar nada. Devuelve `{ raiz, problemas, nulos }`:
+ *   · `raiz`      — `ausente` (null o undefined), `objeto` o `malformada`;
+ *   · `problemas` — `[{ ruta, esperado, encontrado }]`: lo que la carga perdería
+ *                   al guardar. Las rutas llevan índices, nunca un nombre ni un id;
+ *   · `nulos`     — `[ruta]`: colecciones guardadas como `null` (no se pierde nada).
+ */
+export function estructuraDeHorario(crudo) {
+  if (crudo === null || crudo === undefined) return { raiz: 'ausente', problemas: [], nulos: [] };
+  if (!esObjetoPlano(crudo)) {
+    return { raiz: 'malformada', problemas: [{ ruta: '(raíz)', esperado: 'objeto', encontrado: tipoDeValor(crudo) }], nulos: [] };
+  }
+  const problemas = [];
+  const nulos = [];
+  const revisar = (obj, forma, prefijo) => {
+    const ruta = (k) => (prefijo ? `${prefijo}.${k}` : k);
+    for (const k of [...forma.objetos, ...forma.textos, ...forma.libres]) {
+      const v = obj[k];
+      if (v === undefined) continue;
+      if (v === null) { nulos.push(ruta(k)); continue; }
+      if (!Array.isArray(v)) { problemas.push({ ruta: ruta(k), esperado: 'lista', encontrado: tipoDeValor(v) }); continue; }
+      if (forma.objetos.includes(k) || forma.textos.includes(k)) {
+        const quiere = forma.objetos.includes(k) ? 'objeto' : 'texto';
+        v.forEach((item, i) => {
+          if (item === null || item === undefined) { nulos.push(`${ruta(k)}[${i}]`); return; }
+          const vale = quiere === 'objeto' ? esObjetoPlano(item) : typeof item === 'string';
+          if (!vale) problemas.push({ ruta: `${ruta(k)}[${i}]`, esperado: quiere, encontrado: tipoDeValor(item) });
+          else if (quiere === 'objeto' && ENTIDAD_DE[k]) revisar(item, COLECCIONES_HORARIO[ENTIDAD_DE[k]], `${ruta(k)}[${i}]`);
+        });
+      }
+    }
+    for (const k of forma.mapas) {
+      const v = obj[k];
+      if (v === undefined) continue;
+      if (v === null) { nulos.push(ruta(k)); continue; }
+      if (typeof v !== 'object') problemas.push({ ruta: ruta(k), esperado: 'objeto', encontrado: tipoDeValor(v) });
+    }
+  };
+  revisar(crudo, COLECCIONES_HORARIO.horarioTop, '');
+  return { raiz: 'objeto', problemas, nulos };
+}
+
+/** Si un cambio intenta tocar el horario: por la PRESENCIA de la clave, nunca por su
+ *  valor — `{ horarioTop: null }` también es un intento de cambiarlo. */
+export const parcheTocaHorario = (patch) => !!patch && typeof patch === 'object'
+  && Object.prototype.hasOwnProperty.call(patch, 'horarioTop');
+
+export function versionDeHorario(crudo) {
+  if (crudo === null || crudo === undefined) return { valor: null, tipo: 'sin_datos' };
+  if (!esObjetoPlano(crudo)) return { valor: null, tipo: 'raiz_malformada' };
+  if (!Object.prototype.hasOwnProperty.call(crudo, 'version') || crudo.version === null || crudo.version === undefined) {
+    return { valor: null, tipo: 'sin_version' };
+  }
+  const v = crudo.version;
+  if (typeof v !== 'number' || !Number.isInteger(v) || v < 1) return { valor: v, tipo: 'ilegible' };
+  if (v > VERSION_HORARIO) return { valor: v, tipo: 'futura' };
+  return { valor: v, tipo: 'conocida' };
+}
+
+/**
+ * `{ soloLectura, motivo, version, problemas }`, calculada SIEMPRE sobre lo que
+ * llegó de la cuenta, antes de normalizarlo (normalizado ya no se ve lo que falla).
+ *   · ausente (null/undefined): se puede guardar — es una cuenta sin horario;
+ *   · `version_futura` / `version_ilegible`: la versión manda (una versión más
+ *     nueva puede tener otra forma, y decir «malformado» sería falso);
+ *   · `datos_malformados`: la raíz no es un objeto, o una colección no tiene la
+ *     forma esperada. Guardar la sustituiría por una vacía, así que no se guarda.
+ */
+export function guardiaDeVersionHorario(crudo) {
+  const v = versionDeHorario(crudo);
+  if (v.tipo === 'sin_datos') return { soloLectura: false, motivo: null, version: null, problemas: [] };
+  if (v.tipo === 'futura') return { soloLectura: true, motivo: 'version_futura', version: v.valor, problemas: [] };
+  if (v.tipo === 'ilegible') return { soloLectura: true, motivo: 'version_ilegible', version: v.valor, problemas: [] };
+  const forma = estructuraDeHorario(crudo);
+  if (forma.problemas.length) return { soloLectura: true, motivo: 'datos_malformados', version: v.valor, problemas: forma.problemas };
+  return { soloLectura: false, motivo: null, version: v.valor, problemas: [] };
 }
 
 export function crearColumna({ nombre = '', dia = null, posicion = 0, corto = '', color = '', icono = '' } = {}) {
@@ -315,6 +491,7 @@ export function normalizarHorarioObj(guardado) {
   const columnas = (Array.isArray(g.columnas) ? g.columnas : []).map((c, i) => {
     const dia = Number.isInteger(c?.dia) && c.dia >= 1 && c.dia <= 7 ? c.dia : null;
     return {
+      ...conservarDesconocidos(c, CAMPOS_CONOCIDOS_HORARIO.columna),
       id: c?.id || uid(),
       nombre: (c?.nombre || '').trim() || (dia ? DIAS_SEMANA[dia - 1].label : 'Columna'),
       corto: (c?.corto || '').trim() || (dia ? DIAS_SEMANA[dia - 1].corto : ''),
@@ -341,6 +518,7 @@ export function normalizarHorarioObj(guardado) {
     // 08:00 inventado: se quedan vacías, y `resolverDia` no las mira.
     const conHora = tipo === 'hora';
     return {
+      ...conservarDesconocidos(f, CAMPOS_CONOCIDOS_HORARIO.fila),
       id: f?.id || uid(),
       inicio: conHora ? (normalizarHora(f?.inicio) || '08:00') : normalizarHora(f?.inicio),
       fin: conHora ? (normalizarHora(f?.fin) || '09:00') : normalizarHora(f?.fin),
@@ -352,6 +530,7 @@ export function normalizarHorarioObj(guardado) {
     };
   });
   return {
+    ...conservarDesconocidos(g, CAMPOS_CONOCIDOS_HORARIO.horario),
     id: g.id || uid(),
     nombre: (g.nombre || '').trim() || t.label,
     tipo: t.id,
@@ -445,7 +624,7 @@ export const VISTAS_ACTIVIDAD = ['horario', 'hoy', 'calendario', 'mochila'];
 
 export function normalizarVisibilidad(guardada) {
   const g = guardada || {};
-  const salida = {};
+  const salida = { ...conservarDesconocidos(g, VISTAS_ACTIVIDAD) };
   for (const v of VISTAS_ACTIVIDAD) salida[v] = g[v] !== false;
   return salida;
 }
@@ -491,6 +670,7 @@ export function normalizarActividad(guardada) {
   const g = guardada || {};
   const tipo = TIPOS_ACTIVIDAD.some((t) => t.id === g.tipo) ? g.tipo : 'otro';
   return {
+    ...conservarDesconocidos(g, CAMPOS_CONOCIDOS_HORARIO.actividad),
     id: g.id || uid(),
     // Puede quedar vacío **a propósito**: si hay `asignaturaId`, el nombre bueno
     // es el de Estudios y copiarlo aquí sería la duplicación del apartado 25.
@@ -592,8 +772,10 @@ export const CLASES_RECURRENCIA = [
 export function normalizarRecurrencia(r) {
   const g = r || {};
   const clase = CLASES_RECURRENCIA.some((c) => c.id === g.clase) ? g.clase : 'siempre';
-  if (clase === 'siempre') return { clase: 'siempre' };
+  const resto = conservarDesconocidos(g, CAMPOS_CONOCIDOS_HORARIO.recurrencia);
+  if (clase === 'siempre') return { ...resto, clase: 'siempre' };
   return {
+    ...resto,
     clase: 'alternas',
     // El ancla es la semana en la que SÍ toca. Sin ella no hay forma de saber
     // cuál de las dos alternas es esta.
@@ -621,6 +803,7 @@ export function tocaEsaSemana(recurrencia, fecha) {
 export function normalizarBloque(guardado) {
   const g = guardado || {};
   return {
+    ...conservarDesconocidos(g, CAMPOS_CONOCIDOS_HORARIO.bloque),
     id: g.id || uid(),
     horarioId: g.horarioId || null,
     columnaId: g.columnaId || null,
@@ -682,12 +865,14 @@ export function normalizarExcepcion(guardada) {
   const tipo = TIPOS_EXCEPCION.some((t) => t.id === g.tipo) ? g.tipo : 'cancelado';
   const c = g.cambios || {};
   return {
+    ...conservarDesconocidos(g, CAMPOS_CONOCIDOS_HORARIO.excepcion),
     id: g.id || uid(),
     fecha: /^\d{4}-\d{2}-\d{2}$/.test(g.fecha || '') ? g.fecha : todayISO(),
     tipo,
     bloqueId: g.bloqueId || null,
     horarioId: g.horarioId || null,
     cambios: {
+      ...conservarDesconocidos(c, CAMPOS_CONOCIDOS_HORARIO.cambios),
       inicio: normalizarHora(c.inicio) || '',
       fin: normalizarHora(c.fin) || '',
       actividadId: c.actividadId || null,
@@ -705,6 +890,9 @@ export function normalizarExcepcion(guardada) {
 export function normalizarHorarioTop(guardado) {
   const g = guardado || {};
   return {
+    // 🔎 Entrega A — lo que esta versión no conoce en el primer nivel (`version`,
+    // `config`, `ajustesAvisos`, C4…) se conserva tal cual.
+    ...conservarDesconocidos(g, CAMPOS_CONOCIDOS_HORARIO.horarioTop),
     horarios: (Array.isArray(g.horarios) ? g.horarios : []).map(normalizarHorarioObj),
     actividades: (Array.isArray(g.actividades) ? g.actividades : []).map(normalizarActividad),
     bloques: (Array.isArray(g.bloques) ? g.bloques : []).map(normalizarBloque).filter((b) => b.horarioId && b.columnaId),

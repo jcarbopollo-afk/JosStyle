@@ -81,6 +81,14 @@ await build({
           // (E3 F16), y hay una regla invariante que compara las dos listas.
           export const uploadFotoRelacion = nada, deleteFotoRelacion = nada, getSignedFotoRelacionUrl = nada;
           export const uploadFondoFoto = nada, deleteFondoFoto = nada, getSignedFondoUrl = nada;
+          // Horarios (docs/19 §18.9) — el transporte del historial de versiones. En un render sin red, nada.
+          export const leerRegistrosDeVersiones = nada, leerRegistroDeVersiones = nada;
+          export const insertarRegistroDeVersiones = nada, actualizarRegistroDeVersiones = nada;
+          export const transporteDeVersiones = Object.freeze({});
+          // 🛡 Horarios A-bis (§4) — el transporte de la guardia del horario. En un render sin red, nada.
+          export const leerFilasDeGuardiaHorario = nada, leerFilaDeGuardiaHorario = nada, leerHorarioPropio = nada;
+          export const insertarFilaDeGuardiaHorario = nada, actualizarFilaDeGuardiaHorario = nada;
+          export const transporteDeGuardia = Object.freeze({});
         `,
         loader: 'js',
       }));

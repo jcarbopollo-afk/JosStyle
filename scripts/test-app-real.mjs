@@ -160,6 +160,16 @@ const RETRASO_ESCRITURA = {};
    cobertura. Se usa en vez de `setOffline` porque eso cortaría también la conexión de Vite con la página,
    y al volver Vite la recargaría entera. */
 const ABORTAR_ESCRITURA = new Set();
+/* 🛡 Horarios A-bis — las filas de la guardia del horario (`horarioGuardia:<aparato>`) viven en el mismo
+   `almacen`, pero sus escrituras NO van a `guardado` (que cuenta las de `saveData`): van a `guardadoGuardia`,
+   con lo que se intentó escribir aunque no llegara. El doble entiende lo que hace el transporte de la guardia:
+   lectura por prefijo (`like`), `insert` simple (23505 si ya existe) y `update` condicional sobre
+   `value->>ultimaOperacion`. `FALLAR_LECTURA` / `ABORTAR_ESCRITURA` / `FALLAR_ESCRITURA` admiten
+   `'horarioGuardia:*'` para todas ellas, y `RETRASO_GUARDIA` hace lenta su lectura (E0 a la vista). */
+const guardadoGuardia = [];
+const creadasGuardia = {};
+const RETRASO_GUARDIA = { ms: 0 };
+const esFilaGuardia = (k) => typeof k === 'string' && k.startsWith('horarioGuardia:');
 
 /* 🐛 ⚠️ La ruta del navegador estaba **escrita a mano** (`/opt/pw-browsers/
    chromium`), que es donde lo tenía el entorno de aquellas sesiones. En Windows
@@ -208,7 +218,8 @@ const PNG_DE_PRUEBA = Buffer.from(
   'base64',
 );
 
-await page.route(`${SUPA}/**`, async (route) => {
+/* 🛡 A-bis — el doble, con nombre: una segunda pestaña o un segundo aparato (otro contexto) usan el mismo. */
+const manejadorSupa = async (route) => {
   const url = route.request().url();
   if (url.includes('/auth/v1/')) {
     return route.fulfill({
@@ -221,6 +232,49 @@ await page.route(`${SUPA}/**`, async (route) => {
     });
   }
   if (url.includes('/rest/v1/app_data')) {
+    /* 🛡 A-bis — el transporte de la guardia del horario. */
+    {
+      const metodo = route.request().method();
+      const params = new URL(url).searchParams;
+      const filtro = params.get('key') || '';
+      const json = (status, cuerpo) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(cuerpo) });
+      if (metodo === 'GET' && /^like\.horarioGuardia:/.test(filtro)) {
+        if (RETRASO_GUARDIA.ms > 0) await new Promise((r) => setTimeout(r, RETRASO_GUARDIA.ms));
+        if (FALLAR_LECTURA.has('*') || FALLAR_LECTURA.has('horarioGuardia:*')) return json(500, { message: 'fallo de prueba al cargar' });
+        return json(200, Object.keys(almacen).filter(esFilaGuardia).map((k) => ({ key: k, value: almacen[k], updated_at: creadasGuardia[k] || null })));
+      }
+      if (metodo === 'GET' && esFilaGuardia(filtro.replace(/^eq\./, '')) && (FALLAR_LECTURA.has('*') || FALLAR_LECTURA.has('horarioGuardia:*'))) {
+        return json(500, { message: 'fallo de prueba al cargar' });
+      }
+      if (metodo === 'PATCH' && esFilaGuardia(filtro.replace(/^eq\./, ''))) {
+        const k = filtro.replace(/^eq\./, '');
+        const base = (params.get('value->>ultimaOperacion') || '').replace(/^eq\./, '');
+        let cuerpo = {};
+        try { cuerpo = JSON.parse(route.request().postData() || '{}'); } catch { /* vacío */ }
+        guardadoGuardia.push({ tipo: 'update', key: k, value: cuerpo.value, base, llegada: false });
+        if (ABORTAR_ESCRITURA.has('horarioGuardia:*') || ABORTAR_ESCRITURA.has(k)) return route.abort('internetdisconnected');
+        if (FALLAR_ESCRITURA.has('horarioGuardia:*') || FALLAR_ESCRITURA.has(k)) return json(500, { message: 'fallo de prueba' });
+        if (!almacen[k] || almacen[k].ultimaOperacion !== base) return json(200, []);
+        almacen[k] = cuerpo.value;
+        guardadoGuardia[guardadoGuardia.length - 1].llegada = true;
+        return json(200, [{ key: k }]);
+      }
+      if (metodo === 'POST') {
+        let cuerpo = null;
+        try { cuerpo = JSON.parse(route.request().postData() || 'null'); } catch { cuerpo = null; }
+        const prefer = route.request().headers()['prefer'] || '';
+        if (cuerpo && esFilaGuardia(cuerpo.key) && !/merge-duplicates/.test(prefer)) {
+          guardadoGuardia.push({ tipo: 'insert', key: cuerpo.key, value: cuerpo.value, llegada: false, conUpdatedAt: 'updated_at' in cuerpo });
+          if (ABORTAR_ESCRITURA.has('horarioGuardia:*') || ABORTAR_ESCRITURA.has(cuerpo.key)) return route.abort('internetdisconnected');
+          if (FALLAR_ESCRITURA.has('horarioGuardia:*') || FALLAR_ESCRITURA.has(cuerpo.key)) return json(500, { message: 'fallo de prueba' });
+          if (almacen[cuerpo.key] !== undefined) return json(409, { code: '23505', message: 'duplicate key value violates unique constraint' });
+          almacen[cuerpo.key] = cuerpo.value;
+          creadasGuardia[cuerpo.key] = new Date().toISOString();
+          guardadoGuardia[guardadoGuardia.length - 1].llegada = true;
+          return json(201, [{ key: cuerpo.key }]);
+        }
+      }
+    }
     if (route.request().method() !== 'GET') {
       try {
         const cuerpo = JSON.parse(route.request().postData() || '{}');
@@ -284,15 +338,17 @@ await page.route(`${SUPA}/**`, async (route) => {
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   }
   return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-});
+};
+await page.route(`${SUPA}/**`, manejadorSupa);
 
-await page.addInitScript(() => {
+const sesionDePrueba = () => {
   localStorage.setItem('sb-ejemplo-auth-token', JSON.stringify({
     access_token: 'x', token_type: 'bearer', refresh_token: 'x',
     expires_at: Math.floor(Date.now() / 1000) + 3600, expires_in: 3600,
     user: { id: 'usuario-prueba', email: 'prueba@ejemplo.test', aud: 'authenticated', role: 'authenticated' },
   }));
-});
+};
+await page.addInitScript(sesionDePrueba);
 
 await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2500);
@@ -18160,5 +18216,347 @@ await esperarTexto(/141\.01 € \/ 1000\.00 €/);
 ok(errores.length === erroresAntes_a1a4, `A1–A4 — sin un error de JavaScript en toda la sección${errores.length > erroresAntes_a1a4 ? `: ${errores.slice(erroresAntes_a1a4).join(' | ').slice(0, 300)}` : ''}`);
 almacen.perfil = perfilDeAntes_a1a4;
 almacen.economia = economiaDeAntes_a1a4;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🔎 HORARIOS · FASE 4, ENTREGA A — EL DIAGNÓSTICO DE SOLO LECTURA Y LA GUARDIA
+   ═══════════════════════════════════════════════════════════════════════════
+   `docs/19` §12.2 y §12.3, y `docs/20` §12. Todo lo de esta sección son DATOS DE
+   PRUEBA sembrados en el doble de Supabase; ninguno sale de una cuenta.
+     1. Abrir y usar el panel de diagnóstico no escribe nada.
+     2. CONTROL: con la versión conocida, marcar una clase SÍ escribe, y lo que se
+        escribe conserva los campos que esta versión no conoce.
+     3. Con una versión más nueva, la pantalla lo dice, no ofrece editar y el
+        mismo toque NO escribe el horario. */
+const erroresAntes_hea = errores.length;
+const horarioDeAntes_hea = almacen.horarioTop;
+const escriturasHorario_hea = () => guardado.filter((g) => g && g.key === 'horarioTop').length;
+/* ⚠️ El día se calcula AL SEMBRAR cada escenario, no al arrancar el recorrido: la pasada
+   entera dura casi una hora, y si cruza la medianoche el `diaHoy_ge2` del arranque ya no es
+   hoy (la clase dejaría de salir y el toque no existiría, con la aplicación bien). */
+const hoyHea = () => new Date().toLocaleDateString('sv-SE');
+const horarioHea = (id, nombre) => {
+  const h = horarioGe2(id, nombre);
+  return { ...h, columnas: h.columnas.map((c) => ({ ...c, dia: ((new Date().getDay() + 6) % 7) + 1 })) };
+};
+const pasadaHea = (version, extra = {}) => ({
+  ...baseGe2(
+    [{ ...horarioHea('hea1', 'Prueba entrega A'), campoDeOtraVersion: 'se-conserva' }],
+    [{ id: 'bea1', horarioId: 'hea1', columnaId: 'c_hea1', filaId: 'f_hea1', inicio: '00:00', fin: '00:01', titulo: 'Prueba A', serieId: 'se-conserva' }],
+  ),
+  ...(version === null ? {} : { version }),
+  config: { deOtraVersion: true },
+  ...extra,
+});
+
+/* 1 · El panel, abierto y cerrado, sin una sola escritura. */
+almacen.horarioTop = baseGe2(
+  [horarioHea('hea0', 'Diagnóstico de prueba')],
+  [claseGe2('bea0', 'hea0', '08:00', '09:00', 'Clase de prueba'), claseGe2('bea9', 'hea0', '08:30', '09:30', 'Otra de prueba')],
+);
+await abrirHorario_ge2();
+await esperarTexto(/Diagnóstico de tus horarios/);
+const antesPanel_hea = escriturasHorario_hea();
+const todasAntesPanel_hea = guardado.length;
+ok(await pulsar('Diagnóstico de tus horarios'), 'Entrega A — el panel de diagnóstico se abre desde la pantalla de Horario');
+const panel_hea = await esperarTexto(/Lo que hay guardado/i);
+ok(/Lo que hay guardado/i.test(panel_hea) && /Lo que conviene mirar/i.test(panel_hea) && /Lo que este diagnóstico no sabe/i.test(panel_hea),
+  'Entrega A — distingue lo observado, lo que conviene mirar y sus limitaciones');
+ok(/Clases\s*2/.test(panel_hea), `Entrega A — cuenta las dos clases de prueba («${(panel_hea.match(/Clases[^\n]*\n?[^\n]*/) || [''])[0].replace(/\s+/g, ' ')}»)`);
+ok(/se pisan/i.test(panel_hea), 'Entrega A — y señala el choque de las dos clases de prueba');
+ok(!/Clase de prueba|Otra de prueba/.test(await page.evaluate(() => document.querySelector('[aria-label="Diagnóstico de tus horarios"][role="region"]')?.innerText || '')),
+  'Entrega A — el diagnóstico no enseña los títulos de las clases');
+await page.waitForTimeout(1500);
+await pulsar('Diagnóstico de tus horarios');
+await page.waitForTimeout(800);
+{
+  const escritas = guardado.slice(todasAntesPanel_hea).map((g) => g && g.key);
+  ok(escriturasHorario_hea() === antesPanel_hea, `🚨 Entrega A — abrir, leer y cerrar el diagnóstico no escribe el horario (${escriturasHorario_hea() - antesPanel_hea} escrituras)`);
+  ok(!escritas.length, `🚨 Entrega A — ni ninguna otra clave${escritas.length ? `: ${escritas.join(', ')}` : ''}`);
+}
+
+/* 2 · CONTROL, con la versión conocida: el toque escribe, y conserva lo desconocido. */
+almacen.horarioTop = pasadaHea(1);
+await abrirHorario_ge2();
+await pulsar('Ver lo pasado', 2500);
+const antesControl_hea = escriturasHorario_hea();
+ok(/Editar horario/.test(await ver()), 'Entrega A · control — con la versión 1, «Editar horario» está: sigue siendo editable');
+ok(await pulsar('Marcar como hecha Prueba A'), 'Entrega A · control — se marca la clase de prueba como hecha');
+await page.waitForTimeout(1200);
+const escritoControl_hea = guardado.filter((g) => g && g.key === 'horarioTop').at(-1)?.value;
+ok(escriturasHorario_hea() > antesControl_hea, 'Entrega A · control — con la versión conocida, marcarla SÍ guarda el horario (el toque escribe de verdad)');
+ok(escritoControl_hea?.version === 1 && escritoControl_hea?.config?.deOtraVersion === true
+  && escritoControl_hea?.horarios?.[0]?.campoDeOtraVersion === 'se-conserva'
+  && escritoControl_hea?.bloques?.[0]?.serieId === 'se-conserva',
+  `🚨 Entrega A — lo guardado conserva version, config y los campos que esta versión no conoce (${JSON.stringify({ v: escritoControl_hea?.version, c: escritoControl_hea?.config, h: escritoControl_hea?.horarios?.[0]?.campoDeOtraVersion, b: escritoControl_hea?.bloques?.[0]?.serieId })})`);
+
+/* 3 · Con una versión más nueva: solo lectura. */
+almacen.horarioTop = pasadaHea(2);
+await abrirHorario_ge2();
+const lectura_hea = await esperarTexto(/versión más nueva de JosStyle/);
+ok(/Tu horario se guardó con una versión más nueva de JosStyle\. Recarga la aplicación para editarlo\./.test(lectura_hea),
+  'Entrega A — con una versión más nueva la pantalla lo dice (texto de docs/20 §12)');
+ok(/Recargar/.test(lectura_hea), 'Entrega A — y ofrece Recargar');
+ok(!/Editar horario/.test(lectura_hea), 'Entrega A — y no ofrece «Editar horario»');
+ok(/Prueba A/.test(lectura_hea) || await pulsar('Ver lo pasado', 2500), 'Entrega A — todo se ve: la clase sigue en pantalla');
+const antesLectura_hea = escriturasHorario_hea();
+const todasAntesLectura_hea = guardado.length;
+/* Los botones de la pantalla, por su etiqueta o su texto (sin las copias inertes que se van). */
+const botones_hea = () => page.evaluate(() => [...document.querySelectorAll('button')]
+  .filter((b) => !b.closest('[data-capa-saliendo],[data-lista-saliendo]'))
+  .map((b) => (b.getAttribute('aria-label') || b.innerText || '').replace(/\s+/g, ' ').trim()));
+await pulsar('Ver lo pasado', 2500);
+const tablonLectura_hea = await ver();
+ok(/Prueba A/.test(tablonLectura_hea), 'Entrega A — todo se ve: la clase pasada sigue en pantalla');
+ok(!(await botones_hea()).some((b) => /Marcar como hecha/.test(b)), '🚨 Corrección — en solo lectura NO hay «Marcar como hecha»: ningún control que luego no haga nada');
+await page.waitForTimeout(1200);
+ok(escriturasHorario_hea() === antesLectura_hea, `🚨 Entrega A — en solo lectura, abrir y mirar el horario NO lo escribe (${escriturasHorario_hea() - antesLectura_hea} escrituras)`);
+ok(!guardado.slice(todasAntesLectura_hea).some((g) => g && (g.key === 'horarioTop' || g.key === 'historial')),
+  'Entrega A — ni el historial de Deshacer');
+ok(almacen.horarioTop?.version === 2 && almacen.horarioTop?.horarios?.[0]?.campoDeOtraVersion === 'se-conserva',
+  'Entrega A — lo de la cuenta sigue intacto: versión 2 y sus campos');
+ok(await pulsar('Diagnóstico de tus horarios') && /más nueva que esta aplicación/.test(await esperarTexto(/Versión de los datos/i)),
+  'Entrega A — el diagnóstico también dice la versión y que no se guarda');
+
+/* 4 · 🔎 Corrección — solo lectura en TODAS las rutas que se pueden tocar en pantalla:
+   los avisos, la ficha de una actividad, la cuadrícula de la semana y el panel de una
+   clase. Ninguna ofrece una acción de escritura, todo se sigue viendo y nada se escribe. */
+almacen.horarioTop = {
+  ...baseGe2(
+    [{ ...horarioHea('hea1', 'Prueba entrega A'), campoDeOtraVersion: 'se-conserva' }],
+    [
+      { id: 'bea1', horarioId: 'hea1', columnaId: 'c_hea1', filaId: 'f_hea1', inicio: '00:00', fin: '00:01', titulo: 'Prueba A', actividadId: 'aea1' },
+      claseGe2('bea2', 'hea1', '08:00', '09:00', 'Prueba B'),
+    ],
+  ),
+  version: 2,
+  actividades: [{ id: 'aea1', nombre: 'Actividad de prueba' }],
+  avisos: [{ id: 'av1', clave: 'aviso-prueba', tipo: 'recordatorio', titulo: 'Aviso de prueba', cuerpo: '', fecha: hoyHea(), hora: '00:00', leido: false, archivado: false }],
+};
+const crudoRutas_hea = JSON.stringify(almacen.horarioTop);
+await abrirHorario_ge2();
+await esperarTexto(/versión más nueva de JosStyle/);
+const antesRutas_hea = escriturasHorario_hea();
+// Avisos: se leen, sin «Archivar» ni «Marcar todos como leídos».
+ok(await pulsar('AVISOS', 4000), 'Corrección · avisos — el centro de avisos se abre');
+const avisos_hea = await esperarTexto(/Aviso de prueba/);
+const botonesAvisos_hea = await botones_hea();
+ok(/Aviso de prueba/.test(avisos_hea) && !botonesAvisos_hea.some((b) => /^Archivar Aviso de prueba$|Marcar todos como leídos/.test(b)),
+  `🚨 Corrección · avisos — el aviso se lee y no hay ni «Archivar» ni «Marcar todos como leídos»`);
+// La ficha de una actividad: se consulta, sin Editar, Duplicar, Archivar, Eliminar ni favorita.
+ok(await pulsar('Tus asignaturas y actividades', 4000) && await pulsar('Actividad de prueba', 4000), 'Corrección · ficha — se abre la ficha de la actividad');
+await esperarTexto(/Actividad de prueba/);
+const botonesFicha_hea = await botones_hea();
+ok(!botonesFicha_hea.some((b) => /^Editar$|^Duplicar$|^Archivar$|^Recuperar$|^Eliminar$|favorita/.test(b)),
+  `🚨 Corrección · ficha — ni Editar, ni Duplicar, ni Archivar, ni Eliminar, ni favorita (${botonesFicha_hea.filter((b) => /Editar|Duplicar|Archivar|Eliminar|favorita/.test(b)).join(', ') || 'ninguno'})`);
+await pulsar('Cerrar', 2000);
+// La semana: ni celdas para añadir ni menú de columna; la clase se abre sin acciones.
+ok(await pulsar('Semana', 4000), 'Corrección · semana — se abre la vista de la semana');
+await esperarTexto(/Prueba B/);
+const botonesSemana_hea = await botones_hea();
+ok(!botonesSemana_hea.some((b) => /^Añadir en |^Opciones de /.test(b)), '🚨 Corrección · semana — ni una celda «Añadir en…» ni un menú de columna');
+ok(await pulsar('Prueba B', 4000), 'Corrección · clase — se abre el panel de la clase');
+await page.waitForTimeout(600);
+const botonesClase_hea = await botones_hea();
+ok(!botonesClase_hea.some((b) => /^Cambiar hora$|^Mover a…$|^Duplicar en…$|^Eliminar$/.test(b)),
+  '🚨 Corrección · clase — ni «Cambiar hora», ni «Mover a…», ni «Duplicar en…», ni «Eliminar»');
+await page.waitForTimeout(1200);
+ok(escriturasHorario_hea() === antesRutas_hea, `🚨 Corrección — recorrer avisos, ficha, semana y clase en solo lectura no escribe el horario (${escriturasHorario_hea() - antesRutas_hea})`);
+ok(JSON.stringify(almacen.horarioTop) === crudoRutas_hea, 'Corrección — lo de la cuenta sigue byte a byte como estaba');
+
+/* 5 · 🔎 Corrección — una colección malformada (actividades no es una lista): solo lectura,
+   se dice, y lo de la cuenta no se sustituye por una lista vacía. */
+almacen.horarioTop = { ...pasadaHea(1), actividades: 'texto-de-prueba-malformado' };
+const crudoMal_hea = JSON.stringify(almacen.horarioTop);
+await abrirHorario_ge2();
+const mal_hea = await esperarTexto(/no tiene la forma que esta versión sabe leer/);
+ok(/no tiene la forma que esta versión sabe leer/.test(mal_hea), 'Corrección · colección malformada — la pantalla lo dice');
+ok(!/Editar horario/.test(mal_hea), 'Corrección · colección malformada — no ofrece editar');
+const antesMal_hea = escriturasHorario_hea();
+ok(await pulsar('Diagnóstico de tus horarios') && /forma que no se puede leer/i.test(await esperarTexto(/forma que no se puede leer/i)),
+  'Corrección · colección malformada — el diagnóstico la señala');
+ok(/actividades \(se esperaba lista, hay texto\)/.test(await ver()), 'Corrección · colección malformada — y dice cuál y qué hay');
+await page.waitForTimeout(1200);
+ok(escriturasHorario_hea() === antesMal_hea && JSON.stringify(almacen.horarioTop) === crudoMal_hea,
+  '🚨 Corrección · colección malformada — no se escribe nada: la cuenta conserva la colección tal cual');
+
+/* 6 · 🔎 Corrección — una raíz que no es un objeto: solo lectura, sin «Crear», y nada se escribe. */
+almacen.horarioTop = ['raiz', 'de', 'prueba'];
+const antesRaiz_hea = escriturasHorario_hea();
+await abrirHorario_ge2();
+const raiz_hea = await esperarTexto(/no tiene la forma que esta versión sabe leer/);
+ok(/no tiene la forma que esta versión sabe leer/.test(raiz_hea), 'Corrección · raíz malformada — la pantalla lo dice');
+ok(!(await botones_hea()).some((b) => /Crear/.test(b)), 'Corrección · raíz malformada — no ofrece crear un horario encima');
+ok((await botones_hea()).includes('Diagnóstico de tus horarios'), 'Corrección · raíz malformada — el diagnóstico sigue a mano');
+await page.waitForTimeout(1200);
+ok(escriturasHorario_hea() === antesRaiz_hea && Array.isArray(almacen.horarioTop) && almacen.horarioTop.join() === 'raiz,de,prueba',
+  '🚨 Corrección · raíz malformada — no se sustituye por un horario vacío');
+
+ok(errores.length === erroresAntes_hea, `Entrega A — sin un error de JavaScript en toda la sección${errores.length > erroresAntes_hea ? `: ${errores.slice(erroresAntes_hea).join(' | ').slice(0, 300)}` : ''}`);
+almacen.horarioTop = horarioDeAntes_hea;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   🛡 HORARIOS A-BIS — LA GUARDIA DEL HORARIO, EN LA APLICACIÓN DE VERDAD
+   ══════════════════════════════════════════════════════════════════════════
+   Con el doble ampliado (lectura por prefijo, `insert` con 23505 y `update` condicional): E0 solo bloquea
+   Horarios; el primer guardado de E2 sale sin testigo y pone la intención; el siguiente lleva el testigo y se
+   demuestra; una copia antigua simulada deja una B que bloquea hasta apuntarse y se reintenta con los MISMOS
+   identificadores al volver la conexión; una escritura sin testigo con versión 1 deja una C; editar sin
+   conexión sigue funcionando tras una comprobación válida; una lectura que falla bloquea con «Reintentar»; y
+   dos aparatos (dos contextos) tienen cada uno su fila. Todos los datos son DE PRUEBA. */
+console.log('\n── Horarios A-bis · la guardia del horario (E0, testigo, B, C, sin conexión y dos aparatos) ──');
+/* 🕰 Esta sección NO depende de la hora real: la página ve siempre un miércoles a mediodía (`page.clock`, con los
+   temporizadores en marcha). Con la hora real, las tres clases de prueba (00:00–00:03) entraban, en las dos horas
+   siguientes a la medianoche, en la ventana de avisos, y dos o más avisos a la vez disparan el bucle de guardados
+   de `avisosHorario.js` + `HorarioView` (una incidencia anterior a la entrega A, documentada aparte). A mediodía
+   esas clases ya pasaron y sus avisos quedan fuera de la ventana, sea cual sea el día y la hora en que corra.
+   ⚠️ Es la última sección del recorrido: el reloj fijo se queda puesto hasta el final (no hay forma de quitarlo). */
+const AHORA_ABIS = new Date(2026, 10, 11, 12, 0, 0);
+await page.clock.setFixedTime(AHORA_ABIS);
+const erroresAntes_abis = errores.length;
+const horarioDeAntes_abis = almacen.horarioTop;
+for (const k of Object.keys(almacen).filter(esFilaGuardia)) delete almacen[k];
+const aparato_abis = () => page.evaluate(() => localStorage.getItem('josstyle:historialVersiones:aparato'));
+const filaPropia_abis = async () => { const ap = await aparato_abis(); return ap ? almacen[`horarioGuardia:${ap}`] || null : null; };
+const esperarQue_abis = async (fn, tope = 8000) => {
+  const hasta = Date.now() + tope;
+  while (Date.now() < hasta) { if (await fn()) return true; await page.waitForTimeout(150); }
+  return !!(await fn());
+};
+const ultimoHorario_abis = () => guardado.filter((g) => g && g.key === 'horarioTop').at(-1)?.value;
+/* El horario de prueba, entero aquí: su día es el de la fecha fija y su franja no sale de la hora real. */
+const horarioAbis = (id, nombre) => ({
+  id, nombre, activo: true, archivado: false, creadoEn: '2026-11-01',
+  columnas: [{ id: `c_${id}`, horarioId: id, nombre: 'Hoy', dia: ((AHORA_ABIS.getDay() + 6) % 7) + 1, posicion: 0, visible: true }],
+  filas: [{ id: `f_${id}`, tipo: 'hora', inicio: '08:00', fin: '09:00', posicion: 0 }],
+});
+const escenarioAbis = () => baseGe2(
+  [horarioAbis('hab1', 'Prueba A-bis')],
+  [
+    { id: 'bab1', horarioId: 'hab1', columnaId: 'c_hab1', filaId: 'f_hab1', inicio: '00:00', fin: '00:01', titulo: 'Prueba AB1' },
+    { id: 'bab2', horarioId: 'hab1', columnaId: 'c_hab1', filaId: 'f_hab1', inicio: '00:01', fin: '00:02', titulo: 'Prueba AB2' },
+    { id: 'bab3', horarioId: 'hab1', columnaId: 'c_hab1', filaId: 'f_hab1', inicio: '00:02', fin: '00:03', titulo: 'Prueba AB3' },
+  ],
+);
+const sinTestigo_abis = (v, extra = {}) => { const { version, testigo, ...resto } = v || {}; void version; void testigo; return { ...resto, ...extra }; };
+almacen.horarioTop = escenarioAbis();
+
+/* 1 · E0: con la lectura de la guardia lenta, Horarios dice «Comprobando tu horario» y no ofrece editar; el
+   resto de la aplicación ya funciona. Al terminar, vuelve a ser editable. */
+RETRASO_GUARDIA.ms = 6000;
+const horarioAntesE0_abis = guardado.filter((g) => g && g.key === 'horarioTop').length;
+await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'domcontentloaded' });
+ok(await pulsar('Gestión', 10000) && await pulsar('Organización') && await pulsar('Horario'), 'A-bis · E0 — el resto de la aplicación funciona mientras se comprueba (se llega a Horario)');
+const e0_abis = await esperarTexto(/Comprobando tu horario/, 4000);
+ok(/Comprobando tu horario/.test(e0_abis) && !/Editar horario/.test(e0_abis), '🚨 A-bis · E0 — Horarios dice «Comprobando tu horario» y no ofrece «Editar horario»');
+ok(/Prueba A-bis|Hoy|Agenda/.test(e0_abis), 'A-bis · E0 — todo se ve mientras tanto');
+RETRASO_GUARDIA.ms = 0;
+ok(await esperarQue_abis(async () => !/Comprobando tu horario/.test(await ver()) && /Editar horario/.test(await ver()), 12000), 'A-bis · E0 — al terminar la comprobación (E2) el horario vuelve a ser editable');
+ok(guardado.filter((g) => g && g.key === 'horarioTop').length === horarioAntesE0_abis, 'A-bis · E0 — cargar y comprobar no escribe horarioTop');
+/* La visita se escribe DESPUÉS de clasificar (Horarios ya es editable en E2): se espera a que llegue. */
+await esperarQue_abis(async () => !!(await filaPropia_abis()));
+const fila0_abis = await filaPropia_abis();
+ok(fila0_abis && fila0_abis.formato === 1 && fila0_abis.secuencia >= 1 && Object.keys(fila0_abis.visitas || {}).length === 1 && (fila0_abis.detecciones || []).length === 0,
+  `A-bis — la fila de este aparato se crea con su visita y sin incidencias (${JSON.stringify(fila0_abis && { s: fila0_abis.secuencia, v: Object.keys(fila0_abis.visitas || {}) })})`);
+ok(guardadoGuardia.length > 0 && guardadoGuardia.every((g) => !g.conUpdatedAt), 'A-bis — las escrituras de la guardia nunca envían updated_at');
+
+/* 2 · E2: el primer guardado sale con version 1 y SIN testigo, y pone la intención. */
+await pulsar('Ver lo pasado', 2500);
+ok(await pulsar('Marcar como hecha Prueba AB1'), 'A-bis · E2 — se marca una clase de prueba');
+ok(await esperarQue_abis(() => ultimoHorario_abis()?.version === 1), 'A-bis · E2 — el guardado lleva version: 1');
+ok(!('testigo' in (ultimoHorario_abis() || {})), 'A-bis · E2 — y sale sin testigo');
+ok(await esperarQue_abis(async () => ((await filaPropia_abis())?.testigo?.intenciones || []).length === 1), 'A-bis · E2 — la intención queda confirmada en la fila');
+/* 3 · El siguiente guardado lleva el testigo, y la relectura lo demuestra («escrito»). */
+await pulsar('Ver lo pasado', 2500);
+ok(await pulsar('Marcar como hecha Prueba AB2'), 'A-bis — se marca otra clase de prueba');
+ok(await esperarQue_abis(() => ultimoHorario_abis()?.testigo?.formato === 1), 'A-bis — este guardado lleva el testigo');
+const revision_abis = ultimoHorario_abis()?.testigo?.revision;
+ok(await esperarQue_abis(async () => (await filaPropia_abis())?.testigo?.escrito?.ultima?.revision === revision_abis), '🚨 A-bis — la relectura demuestra el testigo: «escrito» con su revisión');
+{
+  const t = almacen.horarioTop && almacen.horarioTop.testigo;
+  ok(t && t.revision === revision_abis && t.aparato === await aparato_abis() && almacen.horarioTop.version === 1, 'A-bis — en la cuenta: version 1 y el testigo de este aparato');
+}
+
+/* 4 · Una copia antigua (sin version ni testigo) tras la demostración → B. Sin red para la guardia, el aviso
+   no se puede apuntar: Horarios queda bloqueado. Al volver la conexión se apunta con los MISMOS ids. */
+almacen.horarioTop = sinTestigo_abis(almacen.horarioTop, { notaAntigua: 'copia-antigua-de-prueba' });
+ABORTAR_ESCRITURA.add('horarioGuardia:*');
+const intentosAntes_abis = guardadoGuardia.length;
+await irAlHorario_ge2();
+const b_abis = await esperarTexto(/todavía no se ha podido apuntar/);
+ok(/todavía no se ha podido apuntar/.test(b_abis) && /Reintentar/.test(b_abis) && !/Editar horario/.test(b_abis), '🚨 A-bis · B — sin poder apuntar el aviso, Horarios queda en solo lectura y ofrece «Reintentar»');
+const intentosB_abis = guardadoGuardia.slice(intentosAntes_abis);
+const regsIntentados_abis = intentosB_abis.flatMap((g) => (g.value && g.value.detecciones) || []).map((d) => d.id);
+ok(regsIntentados_abis.length > 0, 'A-bis · B — se intentó apuntar el registro');
+ABORTAR_ESCRITURA.delete('horarioGuardia:*');
+await page.evaluate(() => window.dispatchEvent(new Event('online')));
+ok(await esperarQue_abis(async () => !/todavía no se ha podido apuntar/.test(await ver()) && /Editar horario/.test(await ver()), 12000), 'A-bis · B — al volver la conexión se apunta y Horarios vuelve a escribir');
+{
+  const f = await filaPropia_abis();
+  const regs = (f && f.detecciones) || [];
+  ok(regs.length === 1 && regs[0].clase === 'perdida' && regs[0].motivo === 'testigo_ausente', `A-bis · B — un solo registro: pérdida por testigo ausente (${JSON.stringify(regs.map((r) => [r.clase, r.motivo]))})`);
+  ok(regs.length === 1 && new Set(regsIntentados_abis).size === 1 && regsIntentados_abis[0] === regs[0].id, '🚨 A-bis · B — el reintento usa el MISMO id del registro (nunca uno nuevo)');
+  const ops = intentosB_abis.map((g) => g.value && g.value.ultimaOperacion).filter(Boolean);
+  ok(ops.length > 0 && f.ultimaOperacion === ops[0] && new Set(ops).size === 1, 'A-bis · B — y el mismo opId');
+}
+
+/* 5 · Una escritura sin testigo con version 1 (una pestaña antigua en E2) → C, en «Casos ambiguos». */
+almacen.horarioTop = { ...sinTestigo_abis(almacen.horarioTop), version: 1, notaPestana: 'pestaña-antigua-de-prueba' };
+await irAlHorario_ge2();
+ok(await esperarQue_abis(async () => ((await filaPropia_abis())?.detecciones || []).some((d) => d.clase === 'ambigua'), 10000), 'A-bis · C — la falta de testigo con version 1 se registra como caso ambiguo');
+ok(await pulsar('Comprobación de tus aparatos'), 'A-bis · C — la pantalla de consulta se abre');
+const consulta_abis = await esperarTexto(/Casos ambiguos/i);
+ok(/Situación ambigua/.test(consulta_abis) && /No se puede saber si antes escribió una copia antigua/.test(consulta_abis), 'A-bis · C — la consulta dice «Situación ambigua» y que no se puede saber');
+/* Los rótulos de bloque llevan `uppercase`: `innerText` los devuelve en mayúsculas (E3 F8), así que van con /i. */
+ok(/Pérdidas[\s\S]*Falta el testigo del horario[\s\S]*Casos ambiguos/i.test(consulta_abis), `A-bis · C — la pérdida de antes sigue en su bloque («${(consulta_abis.match(/Pérdidas[\s\S]{0,400}/i) || [''])[0].replace(/\s+/g, ' ')}»)`);
+ok(/2 · Sin incidencias abiertas: No cumple/.test(await esperarTexto(/Sin incidencias abiertas/)), 'A-bis · C — y la condición 2 no cumple');
+ok(!(await botones_hea()).some((b) => /^Retirar|^Resolver/.test(b)), 'A-bis — la consulta no tiene acciones (retirar y resolver son de la entrega corta)');
+
+/* 6 · Editar sin conexión tras una comprobación válida sigue funcionando: lo guarda la cola de siempre. */
+ABORTAR_ESCRITURA.add('horarioTop');
+await pulsar('Ver lo pasado', 2500);
+ok(await pulsar('Marcar como hecha Prueba AB3'), 'A-bis · sin conexión — se marca una clase sin conexión');
+await page.waitForTimeout(800);
+ok(!/Comprobando tu horario|No se ha podido comprobar|todavía no se ha podido apuntar/.test(await ver()), '🚨 A-bis · sin conexión — la guardia no bloquea por un guardado pendiente de horarioTop');
+ABORTAR_ESCRITURA.delete('horarioTop');
+/* El fallo de red lo provoca esta sección a propósito: `saveData` lo registra en la consola, y se retira. */
+for (let i = errores.length - 1; i >= erroresAntes_abis; i -= 1) if (/^No se pudo guardar horarioTop\b/.test(errores[i])) errores.splice(i, 1);
+await page.evaluate(() => window.dispatchEvent(new Event('online')));
+ok(await esperarQue_abis(() => almacen.horarioTop?.testigo?.formato === 1, 10000), 'A-bis · sin conexión — al volver, la cola lo manda (con su testigo: fuera del arranque)');
+
+/* 7 · Una lectura de la guardia que falla → «no verificable», con «Reintentar». */
+FALLAR_LECTURA.add('horarioGuardia:*');
+const erroresAntesNv_abis = errores.length;
+await irAlHorario_ge2();
+const nv_abis = await esperarTexto(/No se ha podido comprobar tu horario/);
+ok(/No se ha podido comprobar tu horario/.test(nv_abis) && !/Editar horario/.test(nv_abis), '🚨 A-bis · no verificable — Horarios en solo lectura y lo dice');
+FALLAR_LECTURA.delete('horarioGuardia:*');
+/* El 500 de la lectura lo provoca esta sección a propósito: el navegador lo registra, y se retira. */
+for (let i = errores.length - 1; i >= erroresAntesNv_abis; i -= 1) if (/status of 500/.test(errores[i])) errores.splice(i, 1);
+ok(await pulsar('Reintentar'), 'A-bis · no verificable — «Reintentar»');
+ok(await esperarQue_abis(async () => !/No se ha podido comprobar tu horario/.test(await ver()) && /Editar horario/.test(await ver()), 10000), 'A-bis · no verificable — tras reintentar con la lectura arreglada, vuelve a ser editable');
+
+/* 8 · Dos aparatos: un segundo contexto (otro almacenamiento local) tiene su propia fila, y no hay
+   incidencias nuevas (el testigo está). */
+{
+  const regsAntes = Object.keys(almacen).filter(esFilaGuardia).flatMap((k) => almacen[k].detecciones || []).length;
+  const ctx2 = await browser.newContext();
+  await ctx2.clock.setFixedTime(AHORA_ABIS);
+  const pagina2 = await ctx2.newPage();
+  await pagina2.route(`${SUPA}/**`, manejadorSupa);
+  await pagina2.addInitScript(sesionDePrueba);
+  await pagina2.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+  const ap2 = await pagina2.evaluate(() => localStorage.getItem('josstyle:historialVersiones:aparato'));
+  const filaOtra = async () => (ap2 ? almacen[`horarioGuardia:${ap2}`] : null);
+  ok(await esperarQue_abis(async () => !!(await filaOtra()), 10000), 'A-bis · dos aparatos — el segundo tiene su propia fila');
+  ok(ap2 && ap2 !== await aparato_abis(), 'A-bis · dos aparatos — con otro id de aparato');
+  await page.waitForTimeout(600);
+  const regsDespues = Object.keys(almacen).filter(esFilaGuardia).flatMap((k) => almacen[k].detecciones || []).length;
+  ok(regsDespues === regsAntes, `A-bis · dos aparatos — ninguna incidencia nueva con el testigo presente (${regsAntes} → ${regsDespues})`);
+  ok(Object.keys(almacen).filter(esFilaGuardia).every((k) => almacen[k].aparato === k.slice('horarioGuardia:'.length)), 'A-bis · dos aparatos — cada fila con su aparato en la clave');
+  await ctx2.close();
+}
+
+ok(errores.length === erroresAntes_abis, `A-bis — sin un error de JavaScript en toda la sección${errores.length > erroresAntes_abis ? `: ${errores.slice(erroresAntes_abis).join(' | ').slice(0, 300)}` : ''}`);
+almacen.horarioTop = horarioDeAntes_abis;
 
 await salir(browser);
