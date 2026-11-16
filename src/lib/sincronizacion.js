@@ -76,6 +76,9 @@ import { esClaveDeGuardiaHorario } from './guardiaHorario';
 /* 🛡 Horarios E1 (TP-15 A): `horarioTop` y `horarioBorradores` tampoco: los escribe el escritor protegido
    (`escritorHorario.js`), con su escritura condicional. Lo que tiene pendiente se cuenta aquí como «externo». */
 import { esClaveProtegidaDeHorario } from './escritorHorario';
+/* 🛡 Horarios E1-R · R2: una operación protegida YA APLICADA se lleva a lo que esta cola tenga pendiente de sus claves
+   (`llevarOperacionAPendientes`), sin condiciones: es la de la cuenta. Hoja del árbol, como las de arriba. */
+import { aplicarCambios } from './operacionesProtegidas';
 
 /** Cuánto espera un guardado a que termine el anterior de su misma clave antes de salir igual. Con
  *  una petición colgada, la cola no puede quedarse parada para siempre. */
@@ -128,6 +131,10 @@ const nuevoEstado = (usuario = null) => ({
    *  Se enseña en el indicador como lo demás, pero nunca entra en la cola ni en `pendientesParaReintentar`: su
    *  escritor reintenta con su condición. Solo en memoria. */
   externos: new Map(),
+  /** 🛡 E1-R · R2 — clave → [{ hasta, cambios }]: operaciones protegidas YA APLICADAS en la cuenta. Un guardado de esa
+   *  clave pedido antes (`seq <= hasta`) se calculó sin ellas: al salir se le aplican (`alSalir`), para que no las
+   *  deshaga desde este aparato. Solo en memoria, y solo de esta sesión. */
+  operacionesAplicadas: new Map(),
 });
 
 let estado = null;
@@ -236,11 +243,69 @@ export function alSalir(clave, turno, valorPedido) {
   const k = String(clave);
   if (!turno || !turno.seq) return { sale: false, error: ERROR_OTRA_SESION };
   if (turno.generacion !== estado.generacion) { abandonarTurno(k, turno); return { sale: false, error: ERROR_OTRA_SESION }; }
-  if (!turno.reintento) return { sale: true, valor: valorPedido };
+  if (!turno.reintento) return { sale: true, valor: conOperacionesAplicadas(k, valorPedido, turno.seq) };
   const p = estado.pendientes.get(k);
   if (!p) { abandonarTurno(k, turno); return { sale: false, omitido: true }; }
   const d = estado.ultimoDeseado.get(k);
   return { sale: true, valor: d ? d.valor : p.valor };
+}
+
+/* 🛡 E1-R · R2 — un guardado pedido ANTES de que se aplicara una operación protegida de su clave sale con ella encima.
+   Sin condiciones (`aplicarCambios(…, { sinCondiciones: true })`): la operación ya está en la cuenta. */
+function conOperacionesAplicadas(k, valor, seq) {
+  const lista = estado.operacionesAplicadas.get(k);
+  if (!lista || !lista.length || valor === undefined) return valor;
+  let v = valor;
+  for (const o of lista) if (seq <= o.hasta) v = aplicarCambios(v, o.cambios, k, { sinCondiciones: true }).nuevo;
+  return v;
+}
+
+/**
+ * 🛡 Horarios E1-R · R2 — el turno de una OPERACIÓN PROTEGIDA en las colas de sus claves (`estudios`, `papelera`).
+ * `listo` se resuelve cuando ha terminado (o ha vencido su tope) el último guardado de cada clave que ya estaba en la
+ * cola: así la operación lee lo guardado DESPUÉS de lo que este aparato ya mandó. Mientras no se suelte, los guardados
+ * nuevos de esas claves esperan detrás (con su tope de siempre). `soltar()` libera el turno; se puede llamar dos veces.
+ */
+export function reservarClavesParaOperacion(claves, { tope = TOPE_ESPERA_ANTERIOR_MS } = {}) {
+  const ks = [...new Set((claves || []).map(String))];
+  const anteriores = ks.map((k) => estado.colas.get(k) || null).filter(Boolean);
+  let soltar = null;
+  const esta = new Promise((r) => { soltar = r; });
+  const generacion = estado.generacion;
+  ks.forEach((k) => estado.colas.set(k, esta));
+  let suelta = false;
+  return {
+    listo: Promise.all(anteriores.map((a) => esperarAnterior(a, tope))).then(() => undefined),
+    soltar: () => {
+      if (suelta) return;
+      suelta = true;
+      soltar();
+      if (generacion !== estado.generacion) return;
+      ks.forEach((k) => { if (estado.colas.get(k) === esta) estado.colas.delete(k); });
+    },
+  };
+}
+
+/**
+ * 🛡 Horarios E1-R · R2 — una operación protegida ya aplicada en la cuenta, llevada a lo que esta cola tenga de su
+ * clave: el último valor pendiente, el último pedido (lo que mandaría un reintento) y los guardados ya pedidos que
+ * todavía no han salido (al salir, `alSalir` se la aplica). Sin esto, un guardado de antes —con la asignatura que la
+ * operación acaba de borrar— la devolvería a la cuenta desde este mismo aparato.
+ */
+export function llevarOperacionAPendientes(clave, cambios) {
+  const k = String(clave);
+  if (!Array.isArray(cambios) || !cambios.length) return;
+  const aplicar = (v) => (v === undefined ? v : aplicarCambios(v, cambios, k, { sinCondiciones: true }).nuevo);
+  const p = estado.pendientes.get(k);
+  if (p) estado.pendientes.set(k, { ...p, valor: aplicar(p.valor) });
+  const d = estado.ultimoDeseado.get(k);
+  if (d) estado.ultimoDeseado.set(k, { ...d, valor: aplicar(d.valor) });
+  /* Solo hacen falta mientras quede algún guardado de esa clave pedido antes de ellas: las demás se olvidan. */
+  const enCola = [...estado.enVuelo.entries()].filter(([, v]) => v.clave === k).map(([seq]) => seq);
+  const lista = (estado.operacionesAplicadas.get(k) || []).filter((o) => enCola.some((seq) => seq <= o.hasta));
+  if (enCola.length) lista.push({ hasta: estado.seq, cambios });
+  if (lista.length) estado.operacionesAplicadas.set(k, lista); else estado.operacionesAplicadas.delete(k);
+  avisar();
 }
 
 /** El guardado ya ha esperado a su anterior y sale a la red ahora: es lo último ENVIADO de su clave (A4).

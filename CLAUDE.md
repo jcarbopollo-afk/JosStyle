@@ -15,7 +15,8 @@ históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque s
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
 **Estado:** `package.json` **v3.163.0** (Horarios E1, en commits **solo locales** de `claude/horarios-rediseno`:
-`docs/19` §18.14; y **E1-R · R1** —la operación protegida en el servidor, solo laboratorio local, H-18—, `docs/19` §18.15). Vite + React 18 + Tailwind + Supabase + una función serverless en Vercel que hace de proxy a Anthropic.
+`docs/19` §18.14; y **E1-R · R1** —la operación protegida en el servidor, solo laboratorio local, H-18—, `docs/19` §18.15; y **R2** —el motor del
+cliente: `operacionesProtegidas.js`, `escritorOperaciones.js` y `transporteProtegido`, que la aplicación todavía no usa (es R3)—, §18.16). Vite + React 18 + Tailwind + Supabase + una función serverless en Vercel que hace de proxy a Anthropic.
 🛡 **`horarioTop` solo lo escribe su escritor protegido** (`src/lib/escritorHorario.js`): `saveData` lo rechaza, y volver a
 escribirlo por otro camino rompe la protección entre aparatos (DEP-35 en `docs/03`).
 

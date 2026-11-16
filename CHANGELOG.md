@@ -1,5 +1,34 @@
 # CHANGELOG.md
 
+## Sin versión — Horarios E1-R · R2: el motor del cliente (2026-11-16, commit solo local)
+
+> Con la autorización expresa de Josué del 2026-11-16 (**R2**). Rama `claude/horarios-rediseno`, encima de R1 (`d8692ad`).
+> Probado en Node y contra el servidor de R1 **solo en el laboratorio local**; nada en Supabase alojado; sin push, PR, fusión ni
+> despliegue. La aplicación todavía no lo usa: eso es R3. Detalle: `docs/19` §18.16.
+
+### ✨ Qué entra
+- `src/lib/operacionesProtegidas.js`: la operación de formato 1 (congelada: un reintento manda lo mismo), su validación y los
+  cambios por elemento como **espejo** del servidor; calcular qué cambió y **preparar las condiciones con lo guardado** (sin
+  conflictos falsos por normalizar, y sin escribir nunca sobre lo que él no vio); el protocolo y la hora del servidor.
+- `src/lib/supabase.js` → `transporteProtegido`: las siete funciones de R1 por RPC, diciendo si la operación pudo aplicarse.
+- `src/lib/escritorOperaciones.js`: el escritor de E1 adaptado a operaciones, con su mismo contrato: una a la vez, el mismo
+  `opId` en cada reintento, una respuesta perdida se pregunta (`protegido_estado`) antes de reenviar la misma, el conflicto lo
+  aparta el servidor entero, lo automático adopta sin copia, y sin el protocolo del servidor no se escribe nada.
+- `src/lib/sincronizacion.js`: el turno de una operación en la cola de sus claves y una operación aplicada llevada a lo
+  pendiente y a los guardados pedidos antes de ella.
+- Pruebas: `test-operaciones-protegidas.mjs` (108), `test-escritor-operaciones.mjs` (110) y, en el laboratorio,
+  `test-escritor-operaciones-postgrest.mjs` (39: paridad de la validación y de 400 cambios al azar, dos aparatos, respuestas
+  perdidas de verdad, varias claves, C1 y C2). Las de E1 siguen en verde sin tocar una comprobación.
+
+### 🐛 Corregido en R1
+- `protegido_interno.validar` no rechazaba una operación sin `opId` o sin `tipo` (`<>` con NULL). No escribía nada, pero el
+  motivo era falso. Lo destapó la paridad; ahora `is distinct from`, con dos comprobaciones nuevas en la prueba de R1.
+- Las cinco pruebas del laboratorio escuchaban en puertos fijos del rango efímero, y una conexión saliente tumbó la de E1
+  (`EADDRINUSE` en el 55446). Ahora piden un puerto libre al sistema (`listen(0)`); ninguna comprobación cambia.
+
+### ⚠️ Lo que no hace
+- No cambia la aplicación (R3) ni pinta nada (R4). Nada pendiente en el aparato (C-84). Nada en Supabase alojado.
+
 ## Sin versión — Horarios E1-R · R1: la operación protegida en el servidor (2026-11-16, commit solo local)
 
 > Con la autorización expresa de Josué del 2026-11-16 (**H-18** aprobada y **R1** autorizada). Rama `claude/horarios-rediseno`,

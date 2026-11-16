@@ -42,7 +42,8 @@ const filasServidor = (u = HV_U1) => JSON.parse(psql(`select coalesce(json_agg(j
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ── El proxy: quita el `/rest/v1` de supabase-js, contesta CORS y simula fallos de red. ── */
-const PUERTO_PROXY = 55444;
+// El proxy escucha en un puerto que da el sistema (listen(0)): uno fijo de 5544x cae en el rango efímero
+// (32768–60999) y una conexión saliente podía tenerlo ocupado (EADDRINUSE en verificar.sh, R2).
 const directivas = []; const registro = [];
 /* Métodos «sin red»: toda petición de ese método se corta hasta que la prueba los quite. Un solo corte no basta
    para una lectura: el cliente HTTP de Node (undici) repite solo un GET cuya conexión reutilizada se cae. */
@@ -71,8 +72,8 @@ const proxy = http.createServer((req, res) => {
     up.end(Buffer.concat(trozos));
   });
 });
-await new Promise((r) => proxy.listen(PUERTO_PROXY, '127.0.0.1', r));
-const URL_PROXY = `http://127.0.0.1:${PUERTO_PROXY}`;
+await new Promise((r) => proxy.listen(0, '127.0.0.1', r));
+const URL_PROXY = `http://127.0.0.1:${proxy.address().port}`;
 
 /* ── Dos instancias de supabase.js, cada una con la sesión de un usuario (la clave anónima ES su token). ── */
 const entornos = { 1: { VITE_SUPABASE_URL: URL_PROXY, VITE_SUPABASE_ANON_KEY: token(HV_U1) }, 2: { VITE_SUPABASE_URL: URL_PROXY, VITE_SUPABASE_ANON_KEY: token(HV_U2) } };
@@ -276,7 +277,7 @@ window.listo = true;`;
       if (req.url.startsWith('/hv.js')) { res.writeHead(200, { 'content-type': 'text/javascript' }); return res.end(js); }
       res.writeHead(200, { 'content-type': 'text/html' }); res.end('<!doctype html><meta charset="utf-8"><script src="/hv.js"></script>');
     });
-    await new Promise((r) => pagina.listen(55445, '127.0.0.1', r));
+    await new Promise((r) => pagina.listen(0, '127.0.0.1', r));
     const { chromium } = createRequire(import.meta.url)('playwright');
     /* El mismo navegador fijo que usa el recorrido (test-app-real.mjs) cuando existe. */
     const CHROMIUM_FIJO = '/opt/pw-browsers/chromium';
@@ -285,7 +286,7 @@ window.listo = true;`;
     try {
       const ctx = await nav.newContext();
       const p1 = await ctx.newPage(); const p2 = await ctx.newPage();
-      for (const p of [p1, p2]) { p.on('pageerror', (e) => errores.push(String(e))); await p.goto('http://127.0.0.1:55445/'); await p.waitForFunction(() => window.listo); }
+      for (const p of [p1, p2]) { p.on('pageerror', (e) => errores.push(String(e))); await p.goto(`http://127.0.0.1:${pagina.address().port}/`); await p.waitForFunction(() => window.listo); }
       const [a, b] = await Promise.all([p1, p2].map((p, k) => p.evaluate(async (k2) => {
         const rs = await Promise.all(Array.from({ length: 15 }, (_, i) => window.hv.crearVersion({ contenido: { k2, i } }))); return { rs, cuentas: window.hv.cuentas };
       }, k)));

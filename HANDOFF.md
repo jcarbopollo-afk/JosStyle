@@ -2,6 +2,15 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (2026-11-16 — Horarios E1-R · R2; commit SOLO local en `claude/horarios-rediseno`, sin push, PR,
+> fusión ni despliegue, y sin nada ejecutado en Supabase alojado):** **R2 está hecha**: el motor del cliente de la operación
+> protegida —`src/lib/operacionesProtegidas.js` (la operación, su validación y los cambios por elemento como espejo del
+> servidor; las condiciones con lo guardado), `transporteProtegido` en `supabase.js`, `src/lib/escritorOperaciones.js` (el
+> escritor de E1 adaptado: una a la vez, mismo opId, respuestas perdidas preguntando al servidor, conflicto apartado por el
+> servidor) y el turno en la cola de `sincronizacion.js`—. Probado en Node (108 y 110) y contra R1 en el laboratorio (39, con
+> paridad cliente–servidor); la paridad destapó y corrigió un fallo de `validar` en R1 (sin `opId`/`tipo`). La aplicación aún
+> no lo usa: **siguiente, R3 (integración en Horarios), con su autorización.** Detalle en `docs/19` §18.16.
+>
 > **📅 ACTUALIZACIÓN (2026-11-16 — Horarios E1-R · R1; commit SOLO local en `claude/horarios-rediseno`, sin push, PR,
 > fusión ni despliegue, y sin nada ejecutado en Supabase alojado):** Josué aprobó el diseño de E1-R por entregas (R1–R5, E1-P,
 > E1-S, E1-L; construir ≠ publicar) y **H-18** (tablas propias para las copias y el registro, C-87). **R1 está hecha**:

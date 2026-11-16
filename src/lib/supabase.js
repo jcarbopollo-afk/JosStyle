@@ -422,6 +422,49 @@ export const transporteDeHorario = Object.freeze({
   actualizarHorarioSiRevision,
 });
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   🛡 HORARIOS E1-R · R2 · EL TRANSPORTE DE LA OPERACIÓN PROTEGIDA (docs/19 §18.16)
+
+   Las siete funciones del servidor de R1 (`supabase/horarios-protegido.sql`), por RPC, con el mismo tope que el resto
+   (`conTope`). Aquí NO se decide nada: se dice qué contestó el servidor, o por qué no contestó, de forma que el
+   escritor (`escritorOperaciones.js`) sepa si la operación PUDO aplicarse:
+     · `{ ok: true, data }`: el servidor contestó (el estado de la operación va DENTRO de `data`: aplicada, conflicto…);
+     · `{ ok: false, sinRespuesta: true }`: no se sabe si llegó (red, tiempo agotado, una pasarela 5xx sin código):
+       el escritor pregunta por su estado (`protegido_estado`) antes de nada;
+     · `{ ok: false, sinFunciones: true }`: el servidor no tiene las funciones (PGRST202, 42883, o un 404 de la ruta):
+       R1 no está instalada. Horarios no escribe a ciegas: queda en solo lectura;
+     · `{ ok: false, sesion: true }`: sin sesión válida (401, JWT);
+     · `{ ok: false, error, status, definitivo: true }`: la base de datos o PostgREST contestaron un error con código (la
+       transacción se deshizo: la operación NO se aplicó) o un 4xx.
+   ⚠️ Ninguna de estas funciones toca `saveData`, su cola ni la clave `horarioTop` por otro camino.
+   =========================================================================== */
+const esErrorDeBaseDeDatos = (e) => !!e && (/^PGRST\d+$/i.test(String(e.code || '')) || /^[0-9A-Z]{5}$/.test(String(e.code || '')));
+async function llamarProtegido(funcion, args) {
+  const r = await conTope(supabase.rpc(funcion, args));
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error) {
+    const e = r.error;
+    /* PGRST202: PostgREST no la conoce; 42883: Postgres no la tiene (la caché de PostgREST iba por detrás). */
+    if (e.code === 'PGRST202' || e.code === '42883' || (r.status === 404 && !esErrorDeBaseDeDatos(e))) return { ok: false, sinFunciones: true, error: e, status: r.status };
+    if (r.status === 401 || e.code === 'PGRST301' || /jwt/i.test(String(e.message || ''))) return { ok: false, sesion: true, error: e, status: r.status };
+    if (esErrorDeBaseDeDatos(e) || (r.status >= 400 && r.status < 500 && r.status !== 408)) return { ok: false, error: e, status: r.status, definitivo: true };
+    return { ok: false, sinRespuesta: true, error: e, status: r.status };
+  }
+  if (!r.data || typeof r.data !== 'object') return { ok: false, sinRespuesta: true, error: { code: 'respuesta_incompleta' } };
+  return { ok: true, data: r.data };
+}
+
+/** Lo que recibe `crearEscritorDeOperaciones` para hablar con el servidor de R1. */
+export const transporteProtegido = Object.freeze({
+  protocolo: () => llamarProtegido('protegido_protocolo', {}),
+  aplicar: (op) => llamarProtegido('protegido_aplicar', { op }),
+  estado: (opId) => llamarProtegido('protegido_estado', { op_id: opId }),
+  leer: (claves) => llamarProtegido('protegido_leer', { claves }),
+  copiaEliminar: (copiaId) => llamarProtegido('protegido_copia_eliminar', { copia_id: copiaId }),
+  copiaVista: (copiaId) => llamarProtegido('protegido_copia_vista', { copia_id: copiaId }),
+  espacio: () => llamarProtegido('protegido_espacio', {}),
+});
+
 
 /**
  * 🚨 **Perder y recuperar la conexión, dicho en voz alta.**

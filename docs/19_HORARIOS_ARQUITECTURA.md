@@ -55,7 +55,7 @@ exportación visual lleva otro nombre.
 15. Decisiones técnicas pendientes
 16. Criterios de aceptación
 17. Aclaraciones de la revisión (2026-11-08) — **mandan sobre los apartados anteriores donde difieran**
-18. Correcciones del 2026-11-09 (versiones manuales, TP-5/TP-7, funciones que se conservan, colores al exportar, «Cada dos semanas», conservación de versiones, coherencia, TP-18 resuelta, versiones eliminadas entre aparatos —sin nada pendiente en el aparato y con escritura condicional— y la regla definitiva del autoguardado). §18.12: el cierre documental previo a la Fase 4 (TP-4, el historial de versiones tal como está implementado, TP-8 con TP-15, y sus riesgos) y la decisión aprobada del TP-15 (A + B + C, 2026-11-10). §18.13: la entrega A y la A-bis tal como están implementadas (2026-11-15): la guardia `horarioGuardia:<aparato>`, el testigo, la intención, la clasificación E0/E1/E2/AI/B/C, los estados E3–E7, la supresión, el evaluador de la B y C-1 a C-4. §18.14: la entrega E1 (2026-11-16): el escritor protegido de `horarioTop` (TP-15 A y C), el conflicto entre aparatos con la copia apartada (D2 y D2-bis), Deshacer, la incidencia #5 corregida, la entrega corta (retirar, resolver y reabrir, D1) y la regla del servidor preparada y probada solo en local (TP-15 B, sin activar). §18.15: E1-R · R1 (2026-11-16): la operación protegida en el servidor —una transacción, cambios por elemento, tablas propias (H-18) e idempotencia por capas—, probada solo en el laboratorio local
+18. Correcciones del 2026-11-09 (versiones manuales, TP-5/TP-7, funciones que se conservan, colores al exportar, «Cada dos semanas», conservación de versiones, coherencia, TP-18 resuelta, versiones eliminadas entre aparatos —sin nada pendiente en el aparato y con escritura condicional— y la regla definitiva del autoguardado). §18.12: el cierre documental previo a la Fase 4 (TP-4, el historial de versiones tal como está implementado, TP-8 con TP-15, y sus riesgos) y la decisión aprobada del TP-15 (A + B + C, 2026-11-10). §18.13: la entrega A y la A-bis tal como están implementadas (2026-11-15): la guardia `horarioGuardia:<aparato>`, el testigo, la intención, la clasificación E0/E1/E2/AI/B/C, los estados E3–E7, la supresión, el evaluador de la B y C-1 a C-4. §18.14: la entrega E1 (2026-11-16): el escritor protegido de `horarioTop` (TP-15 A y C), el conflicto entre aparatos con la copia apartada (D2 y D2-bis), Deshacer, la incidencia #5 corregida, la entrega corta (retirar, resolver y reabrir, D1) y la regla del servidor preparada y probada solo en local (TP-15 B, sin activar). §18.15: E1-R · R1 (2026-11-16): la operación protegida en el servidor —una transacción, cambios por elemento, tablas propias (H-18) e idempotencia por capas—, probada solo en el laboratorio local. §18.16: E1-R · R2 (2026-11-16): el motor del cliente —la operación y su validación, los cambios por elemento con condiciones de lo guardado, el transporte por RPC, el escritor de operaciones (una a la vez, mismo opId, respuestas perdidas, conflicto apartado por el servidor) y el turno en la cola—, probado en Node y contra R1 en el laboratorio
 
 ---
 
@@ -3055,7 +3055,96 @@ reduce**; con la tabla vacía, la limpieza la acorta a cero en el laboratorio, s
   (H-16) siguen sin aprobar.
 - **No protege `estudios` ni `papelera` de las escrituras ciegas posteriores** (C7): es de E1-S y E1-P.
 
+### 18.16 E1-R · R2: el motor del cliente (2026-11-16)
+
+> Construida con la **autorización expresa de Josué** del 2026-11-16 (R2 autorizada, sobre R1 `d8692ad`). Probada en Node y
+> contra el servidor de R1 **solo en el laboratorio local** (desmontado al terminar). **Commit solo local**: sin push, PR,
+> fusión ni despliegue, y sin nada ejecutado en Supabase alojado. No empieza R3.
+
+#### Qué hay
+
+- **`src/lib/operacionesProtegidas.js`** (hoja del árbol de imports): la operación de formato 1 en el cliente.
+  - `crearOperacion` la construye **congelada** en todos los niveles: un reintento manda exactamente lo mismo (el servidor guarda
+    su huella; con otro contenido contestaría `op_distinta`). `nuevoOpId` usa `crypto`, nunca `Math.random`.
+  - `validarOperacion` es el **espejo** de `protegido_interno.validar`, con los mismos motivos.
+  - `aplicarCambio` / `aplicarCambios` son el **espejo** de `protegido_interno.aplicar_cambio`: quitar y reemplazar si sigue igual,
+    añadir si no existe, ordenar y fijar, con las mismas condiciones y los mismos fallos. Con `sinCondiciones`, sirven para llevar
+    a la cola una operación **ya aplicada** en la cuenta.
+  - `calcularCambios` dice qué cambió entre lo que se veía y lo que se ve, por elementos. Lo que no es una lista con `id`, con
+    `fijar … igual`. **Un campo que desaparece no se puede decir sin reescribir la clave**, y se niega.
+  - `prepararCambios` construye las **condiciones con lo GUARDADO** (lo que devuelve `protegido_leer`), no con lo de pantalla:
+    si lo guardado, normalizado, es lo que él vio, la condición es lo guardado tal cual (sin conflictos falsos por normalizar); si
+    no, la condición es **lo que él vio** y el servidor no la aplicará (y, si es manual, la apartará).
+  - `leerProtocolo` y `horaDelServidor`: la versión del protocolo (1), la versión mínima de la app y el desfase con la hora del
+    servidor, medido a mitad del viaje, para fechar `creadaEn` sin el reloj del aparato.
+- **`src/lib/supabase.js` → `transporteProtegido`**: las siete funciones de R1 por RPC, con el tope de siempre. Dice qué contestó
+  el servidor o por qué no contestó: `sinRespuesta` (no se sabe si llegó), `sinFunciones` (PGRST202 o 42883: R1 no está
+  instalada), `sesion` o `definitivo` (la transacción se deshizo).
+- **`src/lib/escritorOperaciones.js` → `crearEscritorDeOperaciones`**: el escritor protegido de E1 adaptado a operaciones, con
+  **el mismo contrato público** (comprobado pieza a pieza) y la misma política:
+  - **una operación a la vez**, en orden; lo que se pide antes de que salga la anterior se **une** a ella (D-1 B). Las de varias
+    claves no se unen entre sí;
+  - **el mismo `opId` en cada reintento**; una respuesta perdida no se repite a ciegas: se pregunta (`protegido_estado`) y solo
+    con «desconocida» se reenvía la misma, dos vueltas como mucho; si no, queda **pendiente en memoria** (C-84);
+  - **un cambio tuyo que choca** queda apartado **por el servidor**, entero y en la misma transacción. Horarios queda en solo
+    lectura con las dos salidas de siempre. **Un automático que choca** adopta lo de la cuenta sin copia. Lo tuyo que esperaba
+    detrás se manda con **la base que vio la pantalla** (el servidor lo aparta): nunca con la revisión nueva;
+  - **el protocolo** se consulta antes del primer envío: sin funciones, con otra versión o con una app más vieja que la mínima,
+    **solo lectura** (`horario_protocolo`) y nada a ciegas;
+  - **varias claves** (`guardarOperacion`): siempre con el horario; las demás por elementos, preparadas con lo guardado tras
+    esperar el turno de la cola, y al aplicarse se llevan a lo pendiente de esas claves.
+- **`src/lib/sincronizacion.js`**: `reservarClavesParaOperacion` (la operación espera al guardado anterior de sus claves y los
+  nuevos esperan detrás) y `llevarOperacionAPendientes` (una operación aplicada pasa a lo pendiente y a los guardados pedidos
+  **antes** de ella; a los de después, no). Es lo que impide que este mismo aparato la deshaga con un guardado viejo.
+
+#### Lo que R2 ha corregido de R1
+
+- 🐛 **`protegido_interno.validar` no rechazaba una operación sin `opId` o sin `tipo`**: `jsonb_typeof(NULL) <> 'string'` es NULL
+  y la comprobación no saltaba. No se escribía nada (acababa en un error de la clave primaria y la transacción se deshacía), pero
+  el motivo era falso. Lo destapó la paridad cliente–servidor; ahora es `is distinct from`, con dos comprobaciones nuevas en la
+  prueba de R1 y siete casos más en la paridad. Revisado el resto de `validar`: las demás comparaciones van protegidas por `?` o
+  por un `null` previo.
+- 🐛 **Los proxies del laboratorio escuchaban en puertos fijos (55444–55448)**, dentro del rango efímero del sistema
+  (32768–60999): en la pasada completa de `verificar.sh` una conexión saliente tenía el 55446 y la prueba de E1 cayó con
+  `EADDRINUSE` antes de comprobar nada. Las cinco pruebas del laboratorio (historial, guardia, E1, R1 y R2) piden ahora un
+  puerto libre al sistema (`listen(0)`) y construyen la URL con el que les dan; ninguna comprobación cambia.
+
+#### Decisiones de construcción (dentro de lo aprobado)
+
+- **El escritor de operaciones vive aparte hasta R3.** La aplicación sigue con el de E1 (`crearEscritorDeHorario` con su
+  transporte condicional), porque cambiarlo exige el doble de Supabase del recorrido con las funciones del servidor, y eso es
+  R3. Al integrar, el cuerpo condicional de E1 se retira y sus pruebas se dan la vuelta donde cambie lo que guardaban.
+- **Una operación siempre lleva el horario** (`operacion_sin_horario`): la cadena de revisiones es lo que impide que una
+  operación calculada sobre una pantalla vieja se aplique encima de otra. Las de solo `estudios` o `papelera` son de E1-S y E1-P.
+- **En el arranque sin intención confirmada (A-bis §5) no se manda nada.** El servidor exige revisión, y la guardia todavía no
+  pone testigo: el cambio queda pendiente en memoria (`arranque`) y sale en cuanto la guardia confirma la intención (el
+  escritor la escucha). La cuenta real ya tiene testigo (E1), así que solo afecta a una cuenta nueva.
+- **`caducada` no se aplica ni se reenvía sola** (capa 4): queda como un cambio tuyo sin apartar, con sus dos salidas. Con la
+  limpieza del registro sin aprobar (H-16), hoy no puede ocurrir.
+
+#### Pruebas
+
+| Suite | Qué demuestra | Resultado |
+|---|---|---|
+| `test-operaciones-protegidas.mjs` | Crear y congelar; los 30 motivos de `validar`; cada primitiva y cada fallo; calcular (300 parejas al azar: aplicar(calcular(a, b)) = b); condiciones con lo guardado (sin conflictos falsos, C1, C2); protocolo; el turno en la cola y la frontera «antes / después» en la misma clave | 108/108 |
+| `test-escritor-operaciones.mjs` | Contra un servidor simulado que sabe perder la respuesta antes o después de aplicar: una a la vez y la unión; el mismo opId; sin conexión; conflicto con copia y las dos salidas; lo de detrás apartado; automático; protocolo; inválida, sin sesión y error definitivo; varias claves; la guardia; releer; y 40 guardados al azar con fallos: un opId, un contenido, y nunca sin condición | 110/110 |
+| `test-escritor-operaciones-postgrest.mjs` (nivel 3) | El cliente de verdad contra R1 en el laboratorio: sin funciones, nada a ciegas; el transporte; **paridad de la validación** (37 operaciones) y **de los cambios** (400 al azar: el mismo resultado o el mismo fallo); dos aparatos; respuestas perdidas cortando la conexión de verdad; varias claves con C1 y C2; automático; diez carreras sobre la misma revisión (entra uno, el otro se aparta) | 39/39 |
+
+**Las pruebas se ponen rojas** si se quita la condición «sigue igual» (M1), si las condiciones salen de la pantalla (M2), si una
+respuesta perdida se reenvía con un opId nuevo sin preguntar (M3), si lo tuyo de detrás de un automático sale con la revisión
+nueva (M4) o si la cola no lleva la operación a los guardados de antes (M5). Las de E1, la A-bis, A5, A1–A4 y el historial de
+versiones siguen en verde sin tocar una comprobación.
+
+#### Lo que R2 no hace
+
+- No cambia lo que hace la aplicación: la integración en Horarios, borrar una asignatura y Deshacer como operación, H-12 y H-13,
+  y el recorrido de Chromium con dos aparatos son de **R3**; la pantalla de cambios apartados, de **R4**.
+- No guarda nada pendiente en el aparato (C-84; E1-L y H-24 siguen pendientes de Josué).
+- Nada en Supabase alojado.
+
+---
+
 *Fase 2 de 8 terminada, con la revisión documental del 2026-11-08, las correcciones del 2026-11-09, el cierre documental
 previo a la Fase 4 (§18.12), la decisión del TP-15 (2026-11-10) y la sincronización con la entrega A y la A-bis implementadas
-(§18.13, 2026-11-15) y la entrega E1 (§18.14, 2026-11-16, commits locales) y E1-R · R1 (§18.15, commit local). Esta documentación no autoriza la entrega B
+(§18.13, 2026-11-15) y la entrega E1 (§18.14, 2026-11-16, commits locales) y E1-R · R1 y R2 (§18.15 y §18.16, commits locales). Esta documentación no autoriza la entrega B
 ni ninguna instalación, migración, SQL alojado, publicación, despliegue o cambio de datos.*

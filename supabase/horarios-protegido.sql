@@ -208,9 +208,11 @@ declare h jsonb; c jsonb; cb jsonb; x jsonb; vistas text[] := '{}'; nombre text;
 begin
   if op is null or jsonb_typeof(op) <> 'object' then return 'forma'; end if;
   if op ->> 'formato' is distinct from '1' then return 'formato'; end if;
-  if jsonb_typeof(op -> 'opId') <> 'string'
+  -- R2: «is distinct from», no «<>»: sin `opId` o sin `tipo`, `jsonb_typeof` da NULL y «<>» también, así que la
+  -- comprobación no saltaba (la paridad con el cliente lo destapó; terminaba en un error de la clave primaria).
+  if jsonb_typeof(op -> 'opId') is distinct from 'string'
      or (op ->> 'opId') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then return 'opId'; end if;
-  if jsonb_typeof(op -> 'tipo') <> 'string' or length(op ->> 'tipo') = 0 then return 'tipo'; end if;
+  if jsonb_typeof(op -> 'tipo') is distinct from 'string' or length(op ->> 'tipo') = 0 then return 'tipo'; end if;
   if jsonb_typeof(op -> 'manual') is distinct from 'boolean' then return 'manual'; end if;
   if jsonb_typeof(op -> 'creadaEn') is distinct from 'string' then return 'creadaEn'; end if;
   begin ts := (op ->> 'creadaEn')::timestamptz; exception when others then return 'creadaEn'; end;

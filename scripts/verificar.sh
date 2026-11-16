@@ -710,6 +710,19 @@ if node scripts/smoke.mjs test-escritor-horario-vista.jsx >/tmp/jc_horario_e1_vi
 else
   fallo "Falla el conflicto de Horarios en pantalla (E1)"; grep '✗' /tmp/jc_horario_e1_vista.log
 fi
+# 🛡 Horarios · E1-R · R2 — el motor del cliente de la operación protegida: el modelo (espejo de la validación y de los
+# cambios por elemento del servidor), las condiciones con lo guardado, el protocolo y el turno en la cola; y el escritor de
+# operaciones contra un servidor simulado (una a la vez, mismo opId, respuestas perdidas, conflicto con copia, automático).
+if node --import ./scripts/resolver-vite.mjs scripts/test-operaciones-protegidas.mjs >/tmp/jc_horario_r2_op.log 2>&1; then
+  ok "Horarios, E1-R · R2: la operación protegida en el cliente (validar, cambios, condiciones, protocolo, cola) — $(grep -c '✓' /tmp/jc_horario_r2_op.log) comprobaciones"
+else
+  fallo "Falla la operación protegida en el cliente (R2)"; grep '✗' /tmp/jc_horario_r2_op.log
+fi
+if node --import ./scripts/resolver-vite.mjs scripts/test-escritor-operaciones.mjs >/tmp/jc_horario_r2_esc.log 2>&1; then
+  ok "Horarios, E1-R · R2: el escritor de operaciones (idempotencia, respuestas perdidas, conflicto, protocolo) — $(grep -c '✓' /tmp/jc_horario_r2_esc.log) comprobaciones"
+else
+  fallo "Falla el escritor de operaciones (R2)"; grep '✗' /tmp/jc_horario_r2_esc.log
+fi
 
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
@@ -2196,8 +2209,15 @@ if [ -n "${HV_PGRST_URL:-}" ]; then
   else
     fallo "Falla la operación protegida (R1) contra PostgREST local"; grep '✗' /tmp/jc_prpg.log
   fi
+  # 🛡 Horarios E1-R · R2 — el cliente de verdad (transporte, modelo y escritor) contra el servidor de R1: paridad de la
+  # validación y de los cambios, dos aparatos, respuestas perdidas de verdad, varias claves, C1 y C2.
+  if node --import ./scripts/resolver-vite.mjs scripts/test-escritor-operaciones-postgrest.mjs >/tmp/jc_r2pg.log 2>&1; then
+    ok "Horarios · el cliente de la operación protegida (R2) contra PostgREST local — $(grep -c '✓' /tmp/jc_r2pg.log) comprobaciones"
+  else
+    fallo "Falla el cliente de la operación protegida (R2) contra PostgREST local"; grep '✗' /tmp/jc_r2pg.log
+  fi
 else
-  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia, escritor de horarioTop y operación protegida contra PostgREST local: omitidas (sin HV_PGRST_URL)"
+  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia, escritor de horarioTop, operación protegida y su cliente contra PostgREST local: omitidas (sin HV_PGRST_URL)"
 fi
 
 # Entrega 3 · F3 — la iconografía del armario y la categoría de ropa interior.

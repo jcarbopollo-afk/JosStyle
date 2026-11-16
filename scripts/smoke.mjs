@@ -92,6 +92,7 @@ await build({
           // 🛡 Horarios E1 (TP-15 A) — el transporte del escritor protegido de horarioTop. Sin red, nada.
           export const insertarHorarioPropio = nada, actualizarHorarioSiRevision = nada;
           export const transporteDeHorario = Object.freeze({});
+          export const transporteProtegido = Object.freeze({});
         `,
         loader: 'js',
       }));

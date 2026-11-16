@@ -39,7 +39,8 @@ const psql = (sql) => execFileSync('psql', [HV_PSQL, '-Atc', sql]).toString().tr
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ── El proxy: quita el `/rest/v1` de supabase-js y contesta CORS. ── */
-const PUERTO_PROXY = 55445;
+// El proxy escucha en un puerto que da el sistema (listen(0)): uno fijo de 5544x cae en el rango efímero
+// (32768–60999) y una conexión saliente podía tenerlo ocupado (EADDRINUSE en verificar.sh, R2).
 const registro = [];
 const destino = new URL(HV_PGRST_URL);
 const proxy = http.createServer((req, res) => {
@@ -57,8 +58,8 @@ const proxy = http.createServer((req, res) => {
     up.end(cuerpo);
   });
 });
-await new Promise((r) => proxy.listen(PUERTO_PROXY, '127.0.0.1', r));
-const URL_PROXY = `http://127.0.0.1:${PUERTO_PROXY}`;
+await new Promise((r) => proxy.listen(0, '127.0.0.1', r));
+const URL_PROXY = `http://127.0.0.1:${proxy.address().port}`;
 
 const entornos = { 1: { VITE_SUPABASE_URL: URL_PROXY, VITE_SUPABASE_ANON_KEY: token(HV_U1) }, 2: { VITE_SUPABASE_URL: URL_PROXY, VITE_SUPABASE_ANON_KEY: token(HV_U2) } };
 register('data:text/javascript,' + encodeURIComponent(`const E = ${JSON.stringify(entornos)};

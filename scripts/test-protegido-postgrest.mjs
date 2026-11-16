@@ -71,7 +71,8 @@ async function peticion(base, metodo, ruta, { u = HV_U1, cuerpo, cabeceras = {},
 const rpc = (fn, args, opciones = {}) => peticion(HV_PGRST_URL, 'POST', `/rpc/${fn}`, { ...opciones, cuerpo: args });
 const aplicar = (op, opciones = {}) => rpc('protegido_aplicar', { op }, opciones);
 
-const PUERTO_PROXY = 55447;
+// El proxy escucha en un puerto que da el sistema (listen(0)): uno fijo de 5544x cae en el rango efímero
+// (32768–60999) y una conexión saliente podía tenerlo ocupado (EADDRINUSE en verificar.sh, R2).
 const destino = new URL(HV_PGRST_URL);
 const proxy = http.createServer((req, res) => {
   const trozos = []; req.on('data', (c) => trozos.push(c));
@@ -89,8 +90,8 @@ const proxy = http.createServer((req, res) => {
     up.end(Buffer.concat(trozos));
   });
 });
-await new Promise((r) => proxy.listen(PUERTO_PROXY, '127.0.0.1', r));
-const URL_PROXY = `http://127.0.0.1:${PUERTO_PROXY}`;
+await new Promise((r) => proxy.listen(0, '127.0.0.1', r));
+const URL_PROXY = `http://127.0.0.1:${proxy.address().port}`;
 
 /* ── Lo que hay en la base, leído como propietario (sin RLS). ── */
 const valor = (k, u = HV_U1) => { const t = psql(`select value::text from app_data where user_id='${u}' and key='${k}'`); return t ? JSON.parse(t) : null; };
@@ -331,6 +332,9 @@ try {
     ['cambio_mezclado', operacion({ claves: [{ clave: 'papelera', cambios: [{ camino: ['elementos'], fijar: [{ campo: 'a', valor: 1 }], anadir: [{ elemento: { id: 'z' } }] }] }] })],
     ['reemplazar', operacion({ claves: [{ clave: 'estudios', cambios: [{ camino: ['asignaturas'], reemplazar: [{ id: 'asig-2', igual: A2, nuevo: { id: 'otro-id' } }] }] }] })],
     ['creadaEn', operacion({ horario: horarioCon('r0'), creadaEn: 'ayer' })],
+    /* R2 — sin `opId` o sin `tipo` (la paridad con el cliente destapó que no saltaban). */
+    ['opId', (() => { const { opId: _o, ...r } = operacion({ horario: horarioCon('r0') }); void _o; return r; })()],
+    ['tipo', (() => { const { tipo: _t, ...r } = operacion({ horario: horarioCon('r0') }); void _t; return r; })()],
   ];
   sembrar();
   const antesInv = foto();
