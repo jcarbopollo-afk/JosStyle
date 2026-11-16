@@ -2,6 +2,14 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (2026-11-16 — Horarios E1-R · R1; commit SOLO local en `claude/horarios-rediseno`, sin push, PR,
+> fusión ni despliegue, y sin nada ejecutado en Supabase alojado):** Josué aprobó el diseño de E1-R por entregas (R1–R5, E1-P,
+> E1-S, E1-L; construir ≠ publicar) y **H-18** (tablas propias para las copias y el registro, C-87). **R1 está hecha**:
+> `supabase/horarios-protegido.sql` —una transacción que guarda una operación protegida entera o nada, con cambios por elemento,
+> idempotencia por capas y copias de conflicto con la operación completa—, probada solo en el laboratorio local (101/101,
+> `scripts/test-protegido-postgrest.mjs`). Detalle en `docs/19` §18.15. **Siguiente: R2 (motor del cliente), con su
+> autorización.** Pendientes de Josué: H-19, H-20, H-22, H-23, H-24 (⚠️ choca con C-84), H-25 y H-28.
+>
 > **📅 ACTUALIZACIÓN (2026-11-16 — Horarios E1, v3.163.0; commits SOLO locales en `claude/horarios-rediseno`, sin push, PR,
 > fusión ni despliegue):** `horarioTop` ya solo lo escribe su **escritor protegido** (`src/lib/escritorHorario.js`), con
 > escritura condicional sobre la revisión del testigo; `saveData` lo rechaza. Un cambio que choca con el de otro aparato abre

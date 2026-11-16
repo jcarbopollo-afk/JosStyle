@@ -2190,8 +2190,14 @@ if [ -n "${HV_PGRST_URL:-}" ]; then
   else
     fallo "Falla el escritor protegido de horarioTop contra PostgREST local"; grep '✗' /tmp/jc_ehpg.log
   fi
+  # 🛡 Horarios E1-R · R1 — la operación protegida en el servidor (todo o nada, idempotencia I1–I10, tablas propias).
+  if node scripts/test-protegido-postgrest.mjs >/tmp/jc_prpg.log 2>&1; then
+    ok "Horarios · operación protegida (R1) contra PostgREST local — $(grep -c '✓' /tmp/jc_prpg.log) comprobaciones"
+  else
+    fallo "Falla la operación protegida (R1) contra PostgREST local"; grep '✗' /tmp/jc_prpg.log
+  fi
 else
-  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia y escritor de horarioTop contra PostgREST local: omitidas (sin HV_PGRST_URL)"
+  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia, escritor de horarioTop y operación protegida contra PostgREST local: omitidas (sin HV_PGRST_URL)"
 fi
 
 # Entrega 3 · F3 — la iconografía del armario y la categoría de ropa interior.

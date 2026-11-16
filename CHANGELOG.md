@@ -1,5 +1,27 @@
 # CHANGELOG.md
 
+## Sin versión — Horarios E1-R · R1: la operación protegida en el servidor (2026-11-16, commit solo local)
+
+> Con la autorización expresa de Josué del 2026-11-16 (**H-18** aprobada y **R1** autorizada). Rama `claude/horarios-rediseno`,
+> encima de E1 (`47f1847`). **Solo laboratorio local**: nada se ha ejecutado en Supabase alojado; sin push, PR, fusión ni
+> despliegue. La versión se sube al cerrar E1-R. Detalle: `docs/19` §18.15 y `docs/03` C-87.
+
+### ✨ Qué entra
+- `supabase/horarios-protegido.sql` (y su vuelta atrás): las **tablas propias** `operaciones_protegidas`, `copias_apartadas` y
+  `operaciones_corte` (H-18), con RLS, borrado en cascada y una guardia que solo deja escribirlas desde las funciones; y las
+  funciones `protegido_aplicar` (una transacción: todo o nada, cambios por elemento, la operación manual en conflicto se aparta
+  entera), `protegido_estado`, `protegido_leer`, `protegido_copia_eliminar`, `protegido_copia_vista`, `protegido_espacio`
+  (tamaño lógico) y `protegido_protocolo`.
+- Idempotencia por capas: registro con huella, revisión nueva del horario, condiciones por elemento y marca de corte
+  (`caducada`).
+- `scripts/test-protegido-postgrest.mjs`: **101 comprobaciones** contra el PostgREST local (I1–I10, atomicidad con un fallo
+  provocado a mitad, rechazos, concurrencia, RLS, la guardia, copias y espacio, la regla de E1, cascada y vuelta atrás), en
+  `verificar.sh` con las demás de nivel 3.
+
+### ⚠️ Lo que no hace
+- No cambia la aplicación (el cliente llega en R2 y R3). No protege `estudios` ni `papelera` de escrituras ciegas posteriores
+  (C7, es de E1-S y E1-P). Ni mantenimiento físico, ni umbrales, ni limpieza del registro (H-21, H-14, H-16: sin aprobar).
+
 ## Sin versión — Imagen personal: el ciclo posterior a la F65 (Fases A y B, la portada de seis tarjetas) en la rama `claude/imagen-personal-integracion` (2026-11-01)
 
 > Ciclo nuevo abierto por Josué después de la EH F65, que **sigue congelada** (`docs/09` y `cierre.js` sin tocar). La Fase A

@@ -15,7 +15,7 @@ históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque s
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
 **Estado:** `package.json` **v3.163.0** (Horarios E1, en commits **solo locales** de `claude/horarios-rediseno`:
-`docs/19` §18.14). Vite + React 18 + Tailwind + Supabase + una función serverless en Vercel que hace de proxy a Anthropic.
+`docs/19` §18.14; y **E1-R · R1** —la operación protegida en el servidor, solo laboratorio local, H-18—, `docs/19` §18.15). Vite + React 18 + Tailwind + Supabase + una función serverless en Vercel que hace de proxy a Anthropic.
 🛡 **`horarioTop` solo lo escribe su escritor protegido** (`src/lib/escritorHorario.js`): `saveData` lo rechaza, y volver a
 escribirlo por otro camino rompe la protección entre aparatos (DEP-35 en `docs/03`).
 
@@ -4284,7 +4284,8 @@ Seis cosas que conviene tener presentes al retomar:
   **`src/lib/audioEngine.js` el ÚNICO que toca el audio** (SO F1, con regla invariante que lo
   comprueba). Ninguna pantalla toca Supabase ni reproduce sonido por su cuenta.
 - **El horario es una REGLA, no una lista de eventos** (HT F1), **no tiene tablas propias en
-  Supabase** (HT F2, apartado 51) y **sus asignaturas son las de Estudios** (apartado 25).
+  Supabase** (HT F2, apartado 51) —🔓 salvo la excepción **H-18** de E1-R: las copias apartadas y el registro de operaciones
+  (`supabase/horarios-protegido.sql`, C-87)— y **sus asignaturas son las de Estudios** (apartado 25).
 - ⚠️ **`ALCANCES` no tiene valor por defecto** (HT F3, apartados 52-53): editar un bloque sin decir
   si el cambio es de un día o de todos **no escribe nada**. Nunca ponerle un defecto: cambiar la
   hora "porque hoy hubo un cambio" se cargaría todos los lunes del curso, y sin avisar.

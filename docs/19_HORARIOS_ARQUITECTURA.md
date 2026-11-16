@@ -55,7 +55,7 @@ exportación visual lleva otro nombre.
 15. Decisiones técnicas pendientes
 16. Criterios de aceptación
 17. Aclaraciones de la revisión (2026-11-08) — **mandan sobre los apartados anteriores donde difieran**
-18. Correcciones del 2026-11-09 (versiones manuales, TP-5/TP-7, funciones que se conservan, colores al exportar, «Cada dos semanas», conservación de versiones, coherencia, TP-18 resuelta, versiones eliminadas entre aparatos —sin nada pendiente en el aparato y con escritura condicional— y la regla definitiva del autoguardado). §18.12: el cierre documental previo a la Fase 4 (TP-4, el historial de versiones tal como está implementado, TP-8 con TP-15, y sus riesgos) y la decisión aprobada del TP-15 (A + B + C, 2026-11-10). §18.13: la entrega A y la A-bis tal como están implementadas (2026-11-15): la guardia `horarioGuardia:<aparato>`, el testigo, la intención, la clasificación E0/E1/E2/AI/B/C, los estados E3–E7, la supresión, el evaluador de la B y C-1 a C-4. §18.14: la entrega E1 (2026-11-16): el escritor protegido de `horarioTop` (TP-15 A y C), el conflicto entre aparatos con la copia apartada (D2 y D2-bis), Deshacer, la incidencia #5 corregida, la entrega corta (retirar, resolver y reabrir, D1) y la regla del servidor preparada y probada solo en local (TP-15 B, sin activar)
+18. Correcciones del 2026-11-09 (versiones manuales, TP-5/TP-7, funciones que se conservan, colores al exportar, «Cada dos semanas», conservación de versiones, coherencia, TP-18 resuelta, versiones eliminadas entre aparatos —sin nada pendiente en el aparato y con escritura condicional— y la regla definitiva del autoguardado). §18.12: el cierre documental previo a la Fase 4 (TP-4, el historial de versiones tal como está implementado, TP-8 con TP-15, y sus riesgos) y la decisión aprobada del TP-15 (A + B + C, 2026-11-10). §18.13: la entrega A y la A-bis tal como están implementadas (2026-11-15): la guardia `horarioGuardia:<aparato>`, el testigo, la intención, la clasificación E0/E1/E2/AI/B/C, los estados E3–E7, la supresión, el evaluador de la B y C-1 a C-4. §18.14: la entrega E1 (2026-11-16): el escritor protegido de `horarioTop` (TP-15 A y C), el conflicto entre aparatos con la copia apartada (D2 y D2-bis), Deshacer, la incidencia #5 corregida, la entrega corta (retirar, resolver y reabrir, D1) y la regla del servidor preparada y probada solo en local (TP-15 B, sin activar). §18.15: E1-R · R1 (2026-11-16): la operación protegida en el servidor —una transacción, cambios por elemento, tablas propias (H-18) e idempotencia por capas—, probada solo en el laboratorio local
 
 ---
 
@@ -2992,7 +2992,70 @@ Activarla en un entorno alojado es de E2 y lo autoriza Josué.
 
 ---
 
+### 18.15 E1-R · R1: la operación protegida en el servidor (2026-11-16)
+
+> Construida con la **autorización expresa de Josué** del 2026-11-16 (H-18 aprobada y R1 autorizada), **solo en el
+> laboratorio local** (Postgres 16 + PostgREST 12 en 127.0.0.1, sin credenciales reales, desmontado al terminar). **Commit
+> solo local**: sin push, PR, fusión ni despliegue, y **sin ejecutar nada en Supabase alojado**. No empieza R2. Corrige el
+> §18.14 donde difieran: la L-E1-2 (atomicidad) y el sitio de las copias apartadas se resuelven con esta entrega y las
+> siguientes de E1-R.
+
+#### Qué hay
+
+- **`supabase/horarios-protegido.sql`** (y su vuelta atrás, `horarios-protegido-deshacer.sql`), preparado y sin ejecutar
+  fuera del laboratorio.
+- **Tablas propias (H-18)**, las tres con RLS por usuario y borrado en cascada con la cuenta:
+  - `operaciones_protegidas`: el registro de idempotencia (un `opId` por usuario, con la huella SHA-256 de la operación, su
+    resultado, las revisiones de antes y después, las claves y la copia si la hubo). Sin contenido.
+  - `copias_apartadas`: la operación **entera** (H-08) con una cabecera (`meta`) para listarla sin descargar el contenido.
+    Tipos: `conflicto` (lo crea R1); `version_antigua` y `rescate` reservados para R5 (H-22 y H-23, pendientes).
+  - `operaciones_corte`: la marca de corte de una limpieza futura del registro (H-16, sin aprobar: hoy no la escribe nadie).
+  - Una **guardia** (disparador) impide a la aplicación escribir esas tablas fuera de las funciones; lo del propietario (la
+    cascada al borrar una cuenta, el editor SQL) no pasa por ella.
+- **Funciones** (todas `SECURITY INVOKER`: las políticas de `app_data` siguen mandando):
+  - `protegido_aplicar(op)`: **una transacción**. Fase 1, bloquea las filas (el horario primero) y comprueba **todas** las
+    condiciones sin escribir; fase 2, escribe. Si una condición falla no se escribe nada, y una operación **manual** se aparta
+    entera en la misma transacción (una **automática**, no: condición 4).
+  - `protegido_estado(opId)` (sin aplicar nada; espera a una operación en curso), `protegido_leer(claves)` (lo guardado tal
+    cual, con su sello), `protegido_copia_eliminar`, `protegido_copia_vista`, `protegido_espacio` (tamaño **lógico**) y
+    `protegido_protocolo` (versión, versión mínima, reglas activas y la hora del servidor).
+- **La operación** (formato 1): `opId`, `tipo`, `manual`, `aparato`, `versionApp`, `creadaEn`; el **horario** con su
+  `base`/`baseExiste` y el valor con su testigo nuevo (D3); y **claves** (`estudios` y `papelera`, la lista cerrada de R1) con
+  **cambios por elemento** sobre un camino (`["asignaturas"]`, o con tramos `{id}` dentro de listas): `quitar` y `reemplazar`
+  (si el elemento sigue **igual**), `anadir` (si **no existe**), `orden` y `fijar` (un campo, con condición opcional). Ninguna
+  clave se reescribe entera.
+
+#### La idempotencia, por capas
+
+1. **El registro**: el mismo `opId` contesta su resultado sin volver a escribir; con otro contenido, `op_distinta`.
+2. **La revisión nueva del horario**: si la vigente es la de la operación, ya se aplicó aunque falte su registro.
+3. **Las condiciones por elemento**: repetir quitar, reemplazar o añadir falla su condición; fijar sin condición y ordenar
+   dan el mismo contenido.
+4. **La marca de corte**: una operación desconocida anterior a ella es `caducada` y no se aplica nunca.
+5. **La hora del servidor** (protocolo), para fechar `creadaEn` sin el reloj del aparato (la usará R2).
+
+#### Pruebas (nivel 3, solo laboratorio local)
+
+`scripts/test-protegido-postgrest.mjs`, **101 de 101**, y en `verificar.sh` junto a las de E1 (se omite sin el laboratorio):
+instalación y protocolo; una operación de tres claves (todo o nada); **I1–I10** (repetir, respuesta perdida con la conexión
+cortada después de aplicarse, cinco envíos simultáneos, sin registro, cada primitiva, caducada, desconocida, un **fallo
+provocado a mitad** de la escritura, mismo `opId` con otro contenido, conflicto repetido); cada rechazo sin escribir nada y
+con la operación apartada; ocho operaciones inválidas; dos aparatos a la vez; **C1** (no pisa lo de otro aparato) y **C7**
+demostrado (una escritura ciega posterior sigue pudiendo deshacer el efecto: es de E1-S); RLS y la guardia; listar, marcar,
+eliminar y espacio; convivencia con la regla de E1; borrado en cascada; y la vuelta atrás. **La prueba se pone roja** si se
+quita la condición «sigue igual» (3 fallos) o el registro (6 fallos).
+
+**Medida física, solo informativa** (la de verdad es de E2-0): con tres copias la tabla ocupa una página; **borrarlas no la
+reduce**; con la tabla vacía, la limpieza la acorta a cero en el laboratorio, sin otras escrituras.
+
+#### Lo que R1 no hace
+
+- No toca el cliente: la aplicación sigue escribiendo como en E1 hasta R2 y R3.
+- No activa nada en ningún Supabase alojado. El mantenimiento físico (H-21), los umbrales (H-14) y la limpieza del registro
+  (H-16) siguen sin aprobar.
+- **No protege `estudios` ni `papelera` de las escrituras ciegas posteriores** (C7): es de E1-S y E1-P.
+
 *Fase 2 de 8 terminada, con la revisión documental del 2026-11-08, las correcciones del 2026-11-09, el cierre documental
 previo a la Fase 4 (§18.12), la decisión del TP-15 (2026-11-10) y la sincronización con la entrega A y la A-bis implementadas
-(§18.13, 2026-11-15) y la entrega E1 (§18.14, 2026-11-16, commits locales). Esta documentación no autoriza la entrega B
+(§18.13, 2026-11-15) y la entrega E1 (§18.14, 2026-11-16, commits locales) y E1-R · R1 (§18.15, commit local). Esta documentación no autoriza la entrega B
 ni ninguna instalación, migración, SQL alojado, publicación, despliegue o cambio de datos.*

@@ -1785,3 +1785,17 @@ se ve. **Ninguna opción está aprobada** (`docs/19` §15 y §17.6, `docs/20` §
 - **En Inicio**: contarla, no contarla o contarla con otra etiqueta en «N eventos».
 - En todos los casos sigue contando en las coincidencias, porque sus horas son suyas.
 - Se decide antes de la Fase 7. No se implementa ninguna sin preguntarle.
+
+### C-87 — ✅ RESUELTA POR JOSUÉ (2026-11-16, H-18) · Tablas propias para Horarios contra «el horario no tiene tablas propias» (HT F2, apartado 51)
+
+HT F2 (v1.53.0) leyó el apartado 51 de Horario Top como «ni una tabla nueva ni un SQL pendiente» y lo repite CLAUDE.md
+(«el horario no tiene tablas propias en Supabase»). El texto literal del apartado no lo prohíbe: pide que, antes de crear
+tablas definitivas, se comprueben nombres, ids, autenticación, RLS, fechas, usuarios, almacenamiento, los patrones de
+Supabase y la sincronización, y que se adapten a la arquitectura global. Para que eliminar una copia apartada permita
+recuperar espacio físico (H-10) sin compactar `app_data` entera, el diseño de E1-R propuso tablas propias para las copias y
+el registro de operaciones.
+
+**Josué lo aprueba como excepción (H-18, 2026-11-16).** Se construye en R1 (`docs/19` §18.15): `operaciones_protegidas`,
+`copias_apartadas` y `operaciones_corte`, con RLS por usuario, borrado en cascada con la cuenta y una guardia que solo deja
+escribirlas desde las funciones protegidas. Instalarlas en un Supabase alojado es de E2 y requiere su autorización.
+⚠️ La excepción es para estas tablas; el resto de Horarios sigue en `app_data`.
