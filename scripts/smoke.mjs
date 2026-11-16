@@ -89,6 +89,9 @@ await build({
           export const leerFilasDeGuardiaHorario = nada, leerFilaDeGuardiaHorario = nada, leerHorarioPropio = nada;
           export const insertarFilaDeGuardiaHorario = nada, actualizarFilaDeGuardiaHorario = nada;
           export const transporteDeGuardia = Object.freeze({});
+          // 🛡 Horarios E1 (TP-15 A) — el transporte del escritor protegido de horarioTop. Sin red, nada.
+          export const insertarHorarioPropio = nada, actualizarHorarioSiRevision = nada;
+          export const transporteDeHorario = Object.freeze({});
         `,
         loader: 'js',
       }));

@@ -270,6 +270,11 @@ export const AVISOS_ACCION = {
   /* FIT F41, apartado 34 — literal: *"Hay poco espacio disponible para guardar
      estos datos."* Y **no se borra nada para hacer sitio**: se dice. */
   guardado_sin_espacio: { texto: 'Hay poco espacio disponible para guardar estos datos.', deshacer: false, error: true },
+  /* 🛡 Horarios E1 (TP-15, política aprobada) — Deshacer no pisa el horario de otro aparato: no deshace nada y lo dice. */
+  deshacer_bloqueado_horario: { texto: 'No se ha deshecho: tu horario cambió en otro aparato después. No se ha tocado nada.', deshacer: false, error: true },
+  deshacer_cambiado: { texto: 'No se ha deshecho: acabas de guardar otro cambio. Vuelve a intentarlo.', deshacer: false, error: true },
+  /* …y un conflicto que se abre fuera de Horarios se dice donde está (D2): tu cambio no se pierde, y se elige en Horarios. */
+  conflicto_horario: { texto: 'Otro aparato ha cambiado tu horario. Tu cambio no se ha perdido: ábrelo en Horarios para elegir qué hacer.', deshacer: false, error: true },
 };
 
 export const avisoDe = (id) => AVISOS_ACCION[id] || null;

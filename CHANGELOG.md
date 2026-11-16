@@ -50,6 +50,42 @@
 - Los demás accesos rápidos («Afeitarme», «Mi pelo», «Elegir perfume») siguen abriendo su apartado, no su zona.
 - Siete apartados siguen sin pantalla propia y seis librerías sin conectar (CX-13); `docs/09` sigue describiendo la v3.0.0.
 
+## v3.163.0 — Horarios E1: el escritor protegido de `horarioTop`, el conflicto entre aparatos y la entrega corta (commits locales, sin publicar)
+
+> Autorizada por Josué el 2026-11-16 con las decisiones D1, D2 (opción B), D2-bis (opción A, con sus cuatro condiciones), D3,
+> D4 y D5. **Commits solo locales** en `claude/horarios-rediseno`, sobre `c9ec0cc`: sin push, sin PR, sin fusión y sin
+> despliegue; sin tocar Supabase ni datos reales; la regla SQL **no se ha activado en ningún entorno alojado**. Detalle:
+> `docs/19` §18.14, `docs/20` §12 y `docs/03` (DEP-31 a DEP-35). (La v3.162.0 —entregas A y A-bis— está en `docs/19` §18.13.)
+
+### ✨ Qué entra
+- **El escritor protegido de `horarioTop`** (`src/lib/escritorHorario.js`, TP-15 A): toda escritura es condicional sobre la
+  revisión del testigo (`value->testigo->>revision`, D3), la primera fila con `insert` (23505), una a la vez, una respuesta
+  perdida se reconoce al releer y lo pendiente sin conexión queda en memoria (C-84) con el indicador global. `saveData` y su
+  cola rechazan `horarioTop` y `horarioBorradores`.
+- **El conflicto entre aparatos** (D2): un cambio tuyo que choca no se escribe ni se pierde; Horarios lo dice («Otro aparato ha
+  cambiado tu horario») con dos salidas, «Ver lo que hay ahora» y «Descartar mi cambio» (con confirmación). Tu cambio se aparta
+  en el historial del aparato con el motivo `conflicto` (D2-bis). Un guardado automático adopta lo de la cuenta.
+- **Deshacer** no deshace nada si el horario cambió en otro aparato después, y lo dice.
+- **Releer al volver** a la pestaña y al recuperar la conexión (TP-15 C).
+- **La entrega corta** (D1): retirar un aparato sin visitas en 30 días, resolver avisos abiertos (`conforme` / `asumida`) y
+  reabrir una resolución, cada una con su confirmación.
+- **La regla del servidor** (TP-15 B) preparada en `supabase/horarios-regla-revision.sql` (y su vuelta atrás) y probada solo en
+  un PostgREST local.
+
+### 🐛 Qué arregla
+- **La incidencia #5**: dos o más avisos del horario a la vez cerca de medianoche guardaban en bucle (6 y 6 guardados); ahora,
+  uno. `registrarEnviado` devuelve el mismo objeto si no cambia nada y la pantalla solo guarda si cambió.
+- **D5 · Dos comprobaciones de Fitness del recorrido que dependían del día**: «con plan… nada perdido» caía los jueves y
+  domingos (hoy es un descanso del plan con un entrenamiento: «Descanso sacrificado», correcto) y «el pendiente de ayer» caía
+  los lunes (ayer es de la semana anterior). Validadas los siete días con el reloj fijado; las de antes caen el jueves y el lunes.
+
+### ⚠️ Limitaciones
+- L-E1-1: una revisión que no se puede comparar igual en los dos lados bloquea la escritura (no la produce la app).
+- L-E1-2: un guardado combinado guarda las otras claves y, si la parte del horario choca, la aparta (se desvía de «entero o
+  retenido entero», con el precedente de `deleteAsignatura` en la entrega A).
+- Hasta que se active la regla (E2), una copia anterior a E1 todavía puede pisar el horario.
+- Sin probar en Supabase alojado, Safari, el iPhone ni con dos aparatos reales.
+
 ## v3.161.3 — Sueño: lo que no se sabe no se inventa, y «Analizar mi sueño» abre una conversación
 
 > Encargo de Josué del 2026-10-24 (*«Corregir definitivamente la interpretación de los datos incompletos del sueño y revisar la

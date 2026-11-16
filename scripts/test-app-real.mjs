@@ -170,6 +170,11 @@ const guardadoGuardia = [];
 const creadasGuardia = {};
 const RETRASO_GUARDIA = { ms: 0 };
 const esFilaGuardia = (k) => typeof k === 'string' && k.startsWith('horarioGuardia:');
+/* 🛡 E1 — cada escritura protegida de `horarioTop` que se intentó (llegara o no), con su condición. */
+const intentosHorario = [];
+/* …y las escrituras del historial de versiones (la copia apartada de un conflicto, D2-bis). */
+const guardadoVersiones = [];
+const esFilaVersiones = (k) => typeof k === 'string' && k.startsWith('horarioVersiones:');
 
 /* 🐛 ⚠️ La ruta del navegador estaba **escrita a mano** (`/opt/pw-browsers/
    chromium`), que es donde lo tenía el entorno de aquellas sesiones. En Windows
@@ -273,6 +278,70 @@ const manejadorSupa = async (route) => {
           guardadoGuardia[guardadoGuardia.length - 1].llegada = true;
           return json(201, [{ key: cuerpo.key }]);
         }
+      }
+      /* 🛡 E1 — el historial de versiones (`horarioVersiones:<aparato>`), donde va la copia apartada de un conflicto
+         (D2-bis): lectura por prefijo, `insert` simple (23505) y `update` condicional sobre
+         `value->>ultimaOperacion`, como la guardia, pero apuntado en `guardadoVersiones`. */
+      if (metodo === 'GET' && /^like\.horarioVersiones:/.test(filtro)) {
+        return json(200, Object.keys(almacen).filter(esFilaVersiones).map((k) => ({ key: k, value: almacen[k] })));
+      }
+      if (metodo === 'PATCH' && esFilaVersiones(filtro.replace(/^eq\./, ''))) {
+        const k = filtro.replace(/^eq\./, '');
+        const base = (params.get('value->>ultimaOperacion') || '').replace(/^eq\./, '');
+        let cuerpo = {};
+        try { cuerpo = JSON.parse(route.request().postData() || '{}'); } catch { /* vacío */ }
+        const intento = { tipo: 'update', key: k, value: cuerpo.value, base, llegada: false };
+        guardadoVersiones.push(intento);
+        if (ABORTAR_ESCRITURA.has('horarioVersiones:*')) return route.abort('internetdisconnected');
+        if (!almacen[k] || almacen[k].ultimaOperacion !== base) return json(200, []);
+        almacen[k] = cuerpo.value;
+        intento.llegada = true;
+        return json(200, [{ key: k }]);
+      }
+      if (metodo === 'POST') {
+        let cuerpo = null;
+        try { cuerpo = JSON.parse(route.request().postData() || 'null'); } catch { cuerpo = null; }
+        if (cuerpo && esFilaVersiones(cuerpo.key) && !/merge-duplicates/.test(route.request().headers()['prefer'] || '')) {
+          const intento = { tipo: 'insert', key: cuerpo.key, value: cuerpo.value, llegada: false };
+          guardadoVersiones.push(intento);
+          if (ABORTAR_ESCRITURA.has('horarioVersiones:*')) return route.abort('internetdisconnected');
+          if (almacen[cuerpo.key] !== undefined) return json(409, { code: '23505', message: 'duplicate key value violates unique constraint' });
+          almacen[cuerpo.key] = cuerpo.value;
+          intento.llegada = true;
+          return json(201, [{ key: cuerpo.key }]);
+        }
+      }
+      /* 🛡 E1 — el escritor protegido de `horarioTop` (TP-15 A): `update` condicional sobre
+         `value->testigo->>revision` (`eq.X` o `is.null`) e `insert` simple (23505 si ya existe). Lo que LLEGA se
+         apunta también en `guardado` con la forma de siempre (`{ key, value }`), para que las secciones de antes
+         sigan leyendo el horario guardado igual; lo que se INTENTÓ, en `intentosHorario`. Sus fallos y retrasos
+         son los de `saveData`: `ABORTAR_ESCRITURA`, `FALLAR_ESCRITURA` y `RETRASO_ESCRITURA` con `'horarioTop'`. */
+      const esInsertHorario = metodo === 'POST' && (() => {
+        try { const c = JSON.parse(route.request().postData() || 'null'); return !!c && c.key === 'horarioTop' && !/merge-duplicates/.test(route.request().headers()['prefer'] || ''); } catch { return false; }
+      })();
+      if ((metodo === 'PATCH' && filtro === 'eq.horarioTop') || esInsertHorario) {
+        let cuerpo = {};
+        try { cuerpo = JSON.parse(route.request().postData() || '{}'); } catch { /* vacío */ }
+        const condicion = params.get('value->testigo->>revision');
+        const intento = { tipo: esInsertHorario ? 'insert' : 'update', value: cuerpo.value, condicion, llegada: false };
+        intentosHorario.push(intento);
+        const retrasos = RETRASO_ESCRITURA.horarioTop;
+        if (Array.isArray(retrasos) && retrasos.length) { const ms = retrasos.shift(); if (ms > 0) await new Promise((r) => setTimeout(r, ms)); }
+        if (ABORTAR_ESCRITURA.has('horarioTop')) return route.abort('internetdisconnected');
+        if (FALLAR_ESCRITURA.has('horarioTop')) return json(500, { message: 'fallo de prueba' });
+        if (esInsertHorario) {
+          if (almacen.horarioTop !== undefined && almacen.horarioTop !== null) return json(409, { code: '23505', message: 'duplicate key value violates unique constraint' });
+        } else {
+          if (almacen.horarioTop === undefined || almacen.horarioTop === null) return json(200, []);
+          const r = almacen.horarioTop?.testigo?.revision;
+          const actual = r === undefined || r === null ? null : (typeof r === 'object' ? JSON.stringify(r) : String(r));
+          const casa = condicion === 'is.null' ? actual === null : (typeof condicion === 'string' && condicion.startsWith('eq.') && actual === condicion.slice(3));
+          if (!casa) return json(200, []);
+        }
+        almacen.horarioTop = cuerpo.value;
+        intento.llegada = true;
+        guardado.push({ key: 'horarioTop', value: cuerpo.value });
+        return json(esInsertHorario ? 201 : 200, [{ key: 'horarioTop' }]);
       }
     }
     if (route.request().method() !== 'GET') {
@@ -11316,7 +11385,13 @@ await esperarTexto(/Último entrenamiento/i);
 ok(await pulsar('Ver el calendario de cumplimiento') && await pulsar('Ver solo una semana'), 'FIT 8/8 — el calendario unificado, con el plan');
 await page.waitForTimeout(400);
 const conPlanU_fit31 = await etiquetasUnificadas_fit31();
-ok(semanaUnificadaBien_fit31(conPlanU_fit31) && !conPlanU_fit31.some((e) => /Perdido|Descanso sacrificado/.test(e)),
+/* 🕰 D5 (E1) — hoy SÍ se evalúa (el seguimiento empieza al cargar): si hoy es un descanso del plan (jueves o domingo)
+   y el escenario trae un entrenamiento de hoy, el motor lo da, con razón, como «Descanso sacrificado». Antes se exigía
+   «nada sacrificado» en toda la semana y la comprobación caía esos dos días. Lo de antes de hoy, nada perdido. */
+const iHoyPlan_fit31 = Math.round((new Date(`${hoy_fit31}T12:00:00`) - new Date(`${lunes_fit31}T12:00:00`)) / 86400000);
+const sacrificadoHoy_fit31 = (iHoyPlan_fit31 === 3 || iHoyPlan_fit31 === 6) && (porDia_fit31.get(hoy_fit31) || []).length > 0;
+const conPlanBien_fit31 = (e, i) => (i === iHoyPlan_fit31 && sacrificadoHoy_fit31 ? /Descanso sacrificado/.test(e) && !/Perdido/.test(e) : !/Perdido|Descanso sacrificado/.test(e));
+ok(semanaUnificadaBien_fit31(conPlanU_fit31) && conPlanU_fit31.every(conPlanBien_fit31),
   `🚨 FIT 8/8 — con plan: los mismos entrenamientos por día, y nada perdido antes del seguimiento (apartado 28, F32 y PD-09) — ${JSON.stringify(conPlanU_fit31)}`);
 ok(etiquetasEsperadas_fit31(true).filter((e) => /sin entrenamiento planificado/.test(e)).length <= 2, '…(con plan, la F31 solo esperaba jueves y domingo sin entrenamiento planificado)');
 ok(await pulsar('Volver a Progreso'), '…y se vuelve a Progreso');
@@ -14288,7 +14363,13 @@ ok(/3 días\s*Racha actual/.test(hist_f8r || ''), `🚨 FIT 8/8 — la racha del
 ok(await pulsar('Ver solo una semana'), 'FIT 8/8 — el calendario, en semana');
 await page.waitForTimeout(400);
 const sem_f8r = await etiquetasUnificadas_fit31();
-ok(sem_f8r.length === 7 && sem_f8r.some((e) => /: Hoy \(hoy/.test(e)) && sem_f8r.some((e) => /Pendiente de recuperar/.test(e)), `🚨 FIT 8/8 — la semana: hoy y el pendiente de ayer, con sus estados — ${JSON.stringify(sem_f8r)}`);
+/* 🕰 D5 (E1) — el lunes, ayer es de la semana ANTERIOR: el pendiente de ayer está en la semana de antes, no en ésta.
+   Se mira hoy en esta semana y, si ayer cae en la anterior, el pendiente se busca allí (antes caía todos los lunes). */
+const ayerEnOtraSemana_f8r = new Date(`${HOY_F7R}T12:00:00`).getDay() === 1;
+let semAyer_f8r = sem_f8r;
+if (ayerEnOtraSemana_f8r) { ok(await pulsar('Ver la semana anterior'), 'FIT 8/8 — (lunes) se pasa a la semana anterior para ver ayer'); await page.waitForTimeout(400); semAyer_f8r = await etiquetasUnificadas_fit31(); }
+ok(sem_f8r.length === 7 && sem_f8r.some((e) => /: Hoy \(hoy/.test(e)) && semAyer_f8r.length === 7 && semAyer_f8r.some((e) => /Pendiente de recuperar/.test(e)), `🚨 FIT 8/8 — la semana: hoy y el pendiente de ayer, con sus estados — ${JSON.stringify(sem_f8r)}${ayerEnOtraSemana_f8r ? ` · anterior: ${JSON.stringify(semAyer_f8r)}` : ''}`);
+if (ayerEnOtraSemana_f8r) { await pulsar('Ver la semana siguiente'); await page.waitForTimeout(400); }
 for (const [w, h] of [[320, 640], [393, 852], [430, 932], [375, 667]]) {
   await page.setViewportSize({ width: w, height: h });
   await page.waitForTimeout(300);
@@ -18509,19 +18590,24 @@ ok(/Situación ambigua/.test(consulta_abis) && /No se puede saber si antes escri
 /* Los rótulos de bloque llevan `uppercase`: `innerText` los devuelve en mayúsculas (E3 F8), así que van con /i. */
 ok(/Pérdidas[\s\S]*Falta el testigo del horario[\s\S]*Casos ambiguos/i.test(consulta_abis), `A-bis · C — la pérdida de antes sigue en su bloque («${(consulta_abis.match(/Pérdidas[\s\S]{0,400}/i) || [''])[0].replace(/\s+/g, ' ')}»)`);
 ok(/2 · Sin incidencias abiertas: No cumple/.test(await esperarTexto(/Sin incidencias abiertas/)), 'A-bis · C — y la condición 2 no cumple');
-ok(!(await botones_hea()).some((b) => /^Retirar|^Resolver/.test(b)), 'A-bis — la consulta no tiene acciones (retirar y resolver son de la entrega corta)');
+/* 🔓 E1 — se da la vuelta, no se borra: la consulta tenía que ser «solo consulta» hasta la entrega corta (D1). Ahora
+   ofrece resolver los avisos abiertos —cada uno con su casilla— y NO ofrece retirar este aparato (ni los que se usan). */
+ok(await page.evaluate(() => document.querySelectorAll('input[aria-label^="Marcar el aviso"]').length) === 2
+  && !(await botones_hea()).some((b) => /^Retirar /.test(b)),
+  '🔓 E1 · A-bis — la consulta ofrece resolver los dos avisos abiertos, y retirar no se ofrece para aparatos en uso');
 
-/* 6 · Editar sin conexión tras una comprobación válida sigue funcionando: lo guarda la cola de siempre. */
+/* 6 · Editar sin conexión tras una comprobación válida sigue funcionando. 🛡 E1 — ya no lo guarda la cola de
+   `saveData`: queda pendiente en el escritor protegido (en memoria) y sale con su condición al volver la red. */
 ABORTAR_ESCRITURA.add('horarioTop');
 await pulsar('Ver lo pasado', 2500);
 ok(await pulsar('Marcar como hecha Prueba AB3'), 'A-bis · sin conexión — se marca una clase sin conexión');
 await page.waitForTimeout(800);
 ok(!/Comprobando tu horario|No se ha podido comprobar|todavía no se ha podido apuntar/.test(await ver()), '🚨 A-bis · sin conexión — la guardia no bloquea por un guardado pendiente de horarioTop');
 ABORTAR_ESCRITURA.delete('horarioTop');
-/* El fallo de red lo provoca esta sección a propósito: `saveData` lo registra en la consola, y se retira. */
-for (let i = errores.length - 1; i >= erroresAntes_abis; i -= 1) if (/^No se pudo guardar horarioTop\b/.test(errores[i])) errores.splice(i, 1);
+/* 🛡 E1 — el escritor protegido no registra nada en la consola por un fallo de red (lo enseña el indicador):
+   ya no hay un «No se pudo guardar horarioTop» que retirar. Si aparece, es un fallo, y lo cuenta el final. */
 await page.evaluate(() => window.dispatchEvent(new Event('online')));
-ok(await esperarQue_abis(() => almacen.horarioTop?.testigo?.formato === 1, 10000), 'A-bis · sin conexión — al volver, la cola lo manda (con su testigo: fuera del arranque)');
+ok(await esperarQue_abis(() => almacen.horarioTop?.testigo?.formato === 1, 10000), 'A-bis · sin conexión — al volver, el escritor protegido lo manda (con su testigo: fuera del arranque)');
 
 /* 7 · Una lectura de la guardia que falla → «no verificable», con «Reintentar». */
 FALLAR_LECTURA.add('horarioGuardia:*');
@@ -18558,5 +18644,278 @@ ok(await esperarQue_abis(async () => !/No se ha podido comprobar tu horario/.tes
 
 ok(errores.length === erroresAntes_abis, `A-bis — sin un error de JavaScript en toda la sección${errores.length > erroresAntes_abis ? `: ${errores.slice(erroresAntes_abis).join(' | ').slice(0, 300)}` : ''}`);
 almacen.horarioTop = horarioDeAntes_abis;
+
+/* ===========================================================================
+   🛡 HORARIOS E1 — EL ESCRITOR PROTEGIDO DE `horarioTop`, EN LA APLICACIÓN DE VERDAD (TP-15 A y C, D2, D2-bis, D1)
+   ===========================================================================
+   Dos aparatos de verdad (dos contextos con su almacenamiento) sobre el mismo doble de Supabase. Se mide:
+   · que toda escritura de `horarioTop` es condicional (nunca un upsert de `saveData`);
+   · que Deshacer se bloquea si otro aparato escribió después, sin tocar nada;
+   · que un cambio manual sobre una revisión vieja abre el conflicto: lo del otro aparato se queda en la cuenta,
+     el tuyo sigue en pantalla y se aparta en el historial (motivo «conflicto»), con sus dos salidas;
+   · que la política se cumple sin conexión y al recuperarla (también con la copia sin poder apartarse);
+   · y la entrega corta: resolver, reabrir y retirar, cada una con su confirmación.
+   Corre con el reloj fijo de la A-bis (miércoles a mediodía). Todos los datos son DE PRUEBA. */
+console.log('\n── Horarios E1 · el escritor protegido (dos aparatos, conflicto, salidas, Deshacer, sin conexión y entrega corta) ──');
+const erroresAntes_e1 = errores.length;
+const horarioDeAntes_e1 = almacen.horarioTop;
+for (const k of Object.keys(almacen).filter((x) => esFilaGuardia(x) || esFilaVersiones(x))) delete almacen[k];
+const bloqueE1 = (l, i) => ({ id: `be1${l}`, horarioId: 'he1', columnaId: 'c_he1', filaId: 'f_he1', inicio: `00:0${i}`, fin: `00:0${i + 1}`, titulo: `Prueba E1${l.toUpperCase()}` });
+almacen.horarioTop = baseGe2([horarioAbis('he1', 'Prueba E1')], ['a', 'b', 'c', 'd', 'e'].map(bloqueE1));
+const intentos0_e1 = intentosHorario.length;
+const guardados0_e1 = guardado.length;
+const revision_e1 = () => almacen.horarioTop?.testigo?.revision ?? null;
+const completadas_e1 = () => JSON.stringify(almacen.horarioTop?.completadas || []);
+const editable_e1 = async () => /Editar horario/.test(await ver()) && !/Otro aparato ha cambiado tu horario/.test(await ver());
+const marcar_e1 = async (l, accion = 'Marcar como hecha') => { await pulsar('Ver lo pasado', 2500); return pulsar(`${accion} Prueba E1${l}`); };
+const filaVersiones_e1 = async () => { const ap = await aparato_abis(); return ap ? almacen[`horarioVersiones:${ap}`] || null : null; };
+
+/* 1 · Arranque y primeras escrituras: condicionales, por el escritor protegido. */
+await irAlHorario_ge2();
+ok(await esperarQue_abis(editable_e1, 12000), 'E1 — Horarios se puede editar con el escritor protegido');
+ok(await marcar_e1('A'), 'E1 — se marca una clase (primer guardado)');
+ok(await esperarQue_abis(() => almacen.horarioTop?.version === 1 && /be1a/.test(completadas_e1())), 'E1 — el primer guardado llega a la cuenta');
+ok(await marcar_e1('B'), 'E1 — se marca otra (lleva el testigo)');
+ok(await esperarQue_abis(() => almacen.horarioTop?.testigo?.formato === 1 && /be1b/.test(completadas_e1())), 'E1 — el segundo guardado lleva el testigo de este aparato');
+const R0_e1 = revision_e1();
+ok(await marcar_e1('C'), 'E1 — un tercer cambio');
+ok(await esperarQue_abis(() => revision_e1() !== R0_e1 && /be1c/.test(completadas_e1())), 'E1 — llega con una revisión nueva');
+const R1_e1 = revision_e1();
+{
+  const ints = intentosHorario.slice(intentos0_e1);
+  ok(ints.length >= 3 && ints.every((i) => (i.tipo === 'update' || i.tipo === 'insert') && (i.tipo === 'insert' || i.condicion === 'is.null' || /^eq\./.test(i.condicion || ''))),
+    `🚨 E1 — TODA escritura de horarioTop es condicional (${JSON.stringify(ints.map((i) => [i.tipo, i.condicion]))})`);
+  ok(ints.some((i) => i.condicion === `eq.${R0_e1}` && i.llegada), 'E1 — la tercera se condiciona a la revisión que vio (eq.<revisión>)');
+  const llegadas = ints.filter((i) => i.llegada).length;
+  ok(guardado.slice(guardados0_e1).filter((g) => g && g.key === 'horarioTop').length === llegadas, '🚨 E1 — ninguna escritura de horarioTop por saveData ni por su cola (un upsert ciego)');
+}
+
+/* 2 · El segundo aparato cambia el horario. */
+const ctx2_e1 = await browser.newContext();
+await ctx2_e1.clock.setFixedTime(AHORA_ABIS);
+const p2_e1 = await ctx2_e1.newPage();
+p2_e1.on('pageerror', (e) => errores.push(`[aparato 2] ${e.message}`));
+await p2_e1.route(`${SUPA}/**`, manejadorSupa);
+await p2_e1.addInitScript(sesionDePrueba);
+const pulsarEn_e1 = async (p, txt, tope = 6000) => {
+  const hasta = Date.now() + tope;
+  let hecho = false;
+  do {
+    hecho = await p.evaluate((t) => {
+      const bs = [...document.querySelectorAll('button')].filter((x) => !x.closest('[inert], [data-capa-saliendo], [data-lista-saliendo]'));
+      const d = bs.find((x) => x.innerText.trim() === t) || bs.find((x) => x.innerText.includes(t)) || bs.find((x) => (x.getAttribute('aria-label') || '').trim() === t);
+      if (!d) return false; d.click(); return true;
+    }, txt);
+    if (!hecho) await p.waitForTimeout(200);
+  } while (!hecho && Date.now() < hasta);
+  await p.waitForTimeout(600);
+  return hecho;
+};
+const ver2_e1 = () => p2_e1.evaluate(() => document.body.innerText);
+const irAlHorario2_e1 = async () => {
+  await p2_e1.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'networkidle' });
+  await pulsarEn_e1(p2_e1, 'Gestión'); await pulsarEn_e1(p2_e1, 'Organización'); await pulsarEn_e1(p2_e1, 'Horario');
+};
+const marcar2_e1 = async (l, accion = 'Marcar como hecha') => { await pulsarEn_e1(p2_e1, 'Ver lo pasado', 2500); return pulsarEn_e1(p2_e1, `${accion} Prueba E1${l}`); };
+await irAlHorario2_e1();
+ok(await esperarQue_abis(async () => /Editar horario/.test(await ver2_e1()), 12000), 'E1 · dos aparatos — el segundo abre Horarios y puede editar');
+const ap2_e1 = await p2_e1.evaluate(() => localStorage.getItem('josstyle:historialVersiones:aparato'));
+ok(await marcar2_e1('D'), 'E1 · dos aparatos — el segundo marca una clase');
+ok(await esperarQue_abis(() => revision_e1() !== R1_e1 && almacen.horarioTop?.testigo?.aparato === ap2_e1 && /be1d/.test(completadas_e1())), 'E1 · dos aparatos — su cambio llega a la cuenta con su testigo');
+const R2_e1 = revision_e1();
+
+/* 3 · Deshacer en el primero: otro aparato escribió después → no se deshace nada, y se dice. */
+const intentosAntesDeshacer_e1 = intentosHorario.length;
+const todoAntesDeshacer_e1 = guardado.length;
+ok(await pulsar('Ajustes') && await pulsar('Datos'), 'E1 · Deshacer — se abre Ajustes → Datos');
+ok(await pulsar('Deshacer último cambio'), 'E1 · Deshacer — se pulsa «Deshacer último cambio»');
+ok(/tu horario cambió en otro aparato después/.test(await esperarTexto(/tu horario cambió en otro aparato/)), '🚨 E1 · Deshacer — bloqueado: lo dice y no toca nada');
+await page.waitForTimeout(600);
+ok(intentosHorario.length === intentosAntesDeshacer_e1 && revision_e1() === R2_e1 && /be1d/.test(completadas_e1()), 'E1 · Deshacer — ni una escritura de horarioTop: lo del otro aparato sigue en la cuenta');
+ok(guardado.length === todoAntesDeshacer_e1, 'E1 · Deshacer — y tampoco restaura los demás módulos (no se deshace NADA)');
+
+/* 4 · Un cambio manual en el primero, sobre la revisión vieja → conflicto (D2): no se pisa, se conserva y se aparta. */
+await pulsar('Gestión'); await pulsar('Organización'); await pulsar('Horario');
+const intentosAntesConflicto_e1 = intentosHorario.length;
+ok(await marcar_e1('E'), 'E1 · conflicto — el primer aparato marca otra clase sin saber del cambio del segundo');
+const pantallaConflicto_e1 = await esperarTexto(/Otro aparato ha cambiado tu horario/, 10000);
+ok(/Otro aparato ha cambiado tu horario/.test(pantallaConflicto_e1) && /no se ha perdido/.test(pantallaConflicto_e1), '🚨 E1 · conflicto — se dice claramente, y que tu cambio no se ha perdido');
+ok(!/Editar horario/.test(pantallaConflicto_e1), 'E1 · conflicto — Horarios no guarda nada más hasta que elijas');
+ok(/Ver lo que hay ahora/.test(pantallaConflicto_e1) && /Descartar mi cambio/.test(pantallaConflicto_e1) && !/Guardar de todas formas|Sobrescribir/i.test(pantallaConflicto_e1), 'E1 · conflicto — con sus dos salidas y ninguna que fuerce la escritura');
+ok(revision_e1() === R2_e1 && /be1d/.test(completadas_e1()) && !/be1e/.test(completadas_e1()), '🚨 E1 · conflicto — lo del otro aparato sigue en la cuenta: no se ha sobrescrito');
+ok(intentosHorario.slice(intentosAntesConflicto_e1).every((i) => !i.llegada), 'E1 · conflicto — ninguna escritura del primer aparato llegó (no se forzó)');
+ok(intentosHorario.slice(intentosAntesConflicto_e1).every((i) => i.condicion === `eq.${R1_e1}`), 'E1 · conflicto — lo intentó condicionado a lo que vio');
+ok(await esperarQue_abis(async () => { const f = await filaVersiones_e1(); return !!f && /"motivo":"conflicto"/.test(JSON.stringify(f)) && /be1e/.test(JSON.stringify(f)); }, 10000),
+  '🚨 E1 · conflicto — tu cambio queda apartado en el historial de versiones, con motivo «conflicto» (D2-bis)');
+ok(/está apartado en tu cuenta/.test(await esperarTexto(/está apartado en tu cuenta/)), 'E1 · conflicto — y la pantalla dice que está apartado');
+ok(/Desmarcar Prueba E1E|Prueba E1E/.test(await page.evaluate(() => [...document.querySelectorAll('button')].map((b) => b.getAttribute('aria-label') || '').join(' | ')) + await ver()), 'E1 · conflicto — tu cambio sigue en pantalla');
+
+/* 5 · «Descartar mi cambio», con confirmación: la pantalla pasa a lo de la cuenta y la copia apartada se borra. */
+ok(await pulsar('Descartar mi cambio'), 'E1 · descartar — se pulsa');
+ok(/Se perderá el cambio que hiciste/.test(await esperarTexto(/Se perderá el cambio/)), 'E1 · descartar — pide confirmación antes');
+ok(revision_e1() === R2_e1, 'E1 · descartar — pedir la confirmación no cambia nada');
+ok(await pulsar('Sí, descartarlo'), 'E1 · descartar — se confirma');
+ok(await esperarQue_abis(editable_e1, 10000), 'E1 · descartar — el conflicto se cierra y Horarios vuelve a ser editable');
+ok(await esperarQue_abis(async () => /"tipo":"eliminar"/.test(JSON.stringify(await filaVersiones_e1())), 8000), 'E1 · descartar — la copia apartada se borra del historial');
+await pulsar('Ver lo pasado', 2500);
+{
+  const etiquetas = await page.evaluate(() => [...document.querySelectorAll('button')].map((b) => b.getAttribute('aria-label') || '').join(' | '));
+  ok(/Desmarcar Prueba E1D/.test(etiquetas) && /Marcar como hecha Prueba E1E/.test(etiquetas), 'E1 · descartar — la pantalla enseña lo de la cuenta (el cambio del otro aparato, sin el tuyo)');
+}
+ok(revision_e1() === R2_e1, 'E1 · descartar — y no se ha escrito nada en el horario');
+
+/* 6 · Otro conflicto, y «Ver lo que hay ahora»: tu cambio queda apartado y se puede seguir editando. */
+ok(await marcar2_e1('C', 'Desmarcar'), 'E1 · ver ahora — el segundo aparato vuelve a cambiar el horario');
+ok(await esperarQue_abis(() => revision_e1() !== R2_e1 && !/be1c/.test(completadas_e1())), 'E1 · ver ahora — su cambio llega');
+const R3_e1 = revision_e1();
+ok(await marcar_e1('E'), 'E1 · ver ahora — el primero cambia sobre lo viejo');
+ok(/Otro aparato ha cambiado tu horario/.test(await esperarTexto(/Otro aparato ha cambiado tu horario/, 10000)), 'E1 · ver ahora — conflicto');
+ok(await esperarQue_abis(async () => /está apartado en tu cuenta/.test(await ver()), 10000), 'E1 · ver ahora — apartado');
+ok(await pulsar('Ver lo que hay ahora'), 'E1 · ver ahora — se pulsa «Ver lo que hay ahora»');
+ok(await esperarQue_abis(editable_e1, 10000), 'E1 · ver ahora — sin aviso, y Horarios vuelve a ser editable');
+ok(revision_e1() === R3_e1, 'E1 · ver ahora — no escribe nada');
+{
+  const f = await filaVersiones_e1();
+  const txt = JSON.stringify(f || {});
+  ok((txt.split('"motivo":"conflicto"').length - 1) === 2 && (txt.split('"tipo":"eliminar"').length - 1) === 1, 'E1 · ver ahora — la copia apartada se queda (la descartada, eliminada)');
+}
+ok(await marcar_e1('A', 'Desmarcar'), 'E1 · ver ahora — se sigue editando');
+ok(await esperarQue_abis(() => revision_e1() !== R3_e1 && !/be1a/.test(completadas_e1()) && almacen.horarioTop?.testigo?.aparato !== ap2_e1), 'E1 · ver ahora — y lo nuevo llega sobre lo de la cuenta');
+ok(intentosHorario.at(-1)?.condicion === `eq.${R3_e1}` && intentosHorario.at(-1)?.llegada, 'E1 · ver ahora — condicionado a la revisión que adoptó');
+const R4_e1 = revision_e1();
+
+/* 7 · Sin conexión (D2): el segundo cambia; el primero, sin red (ni escribir ni leer el horario), cambia también.
+   Queda pendiente en memoria; al volver la conexión su escritura condicional choca y se abre el conflicto.
+   Primero sin poder apartar la copia (lo dice) y después apartándola. */
+/* El segundo aparato no ha visto el último cambio del primero: vuelve a su pestaña (TP-15 C) y relee antes. */
+const etiquetas2_e1 = () => p2_e1.evaluate(() => [...document.querySelectorAll('button')].map((b) => b.getAttribute('aria-label') || '').join(' | '));
+await p2_e1.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+await pulsarEn_e1(p2_e1, 'Ver lo pasado', 2500);
+ok(await esperarQue_abis(async () => /Marcar como hecha Prueba E1A/.test(await etiquetas2_e1()), 8000), 'E1 · relectura — el segundo aparato, al volver a su pestaña, ve el cambio del primero');
+ok(await marcar2_e1('B', 'Desmarcar'), 'E1 · sin conexión — el segundo aparato cambia el horario');
+ok(await esperarQue_abis(() => revision_e1() !== R4_e1 && !/be1b/.test(completadas_e1())), 'E1 · sin conexión — su cambio llega');
+const R5_e1 = revision_e1();
+const erroresAntesSinRed_e1 = errores.length;
+ABORTAR_ESCRITURA.add('horarioTop'); FALLAR_LECTURA.add('horarioTop'); ABORTAR_ESCRITURA.add('horarioVersiones:*');
+await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+const intentosSinRed_e1 = intentosHorario.length;
+ok(await marcar_e1('D', 'Desmarcar'), 'E1 · sin conexión — el primero cambia sin red');
+await page.waitForTimeout(1200);
+ok(!/Otro aparato ha cambiado tu horario/.test(await ver()), 'E1 · sin conexión — sin red no se puede saber: no se inventa un conflicto');
+ok(intentosHorario.slice(intentosSinRed_e1).every((i) => !i.llegada) && revision_e1() === R5_e1, 'E1 · sin conexión — no llega nada y la cuenta sigue con lo del otro aparato');
+ABORTAR_ESCRITURA.delete('horarioTop'); FALLAR_LECTURA.delete('horarioTop');
+await page.evaluate(() => window.dispatchEvent(new Event('online')));
+const pantallaVuelta_e1 = await esperarTexto(/Otro aparato ha cambiado tu horario/, 12000);
+ok(/Otro aparato ha cambiado tu horario/.test(pantallaVuelta_e1), '🚨 E1 · sin conexión — al recuperarla, la escritura condicional choca y se abre el conflicto');
+ok(revision_e1() === R5_e1 && !/be1b/.test(completadas_e1()) && /be1d/.test(completadas_e1()), '🚨 E1 · sin conexión — y lo del otro aparato NO se sobrescribe');
+ok(intentosHorario.slice(intentosSinRed_e1).some((i) => i.condicion === `eq.${R4_e1}`), 'E1 · sin conexión — el reintento lleva la condición de lo que vio');
+ok(/todavía no está apartado en tu cuenta/.test(await esperarTexto(/todavía no está apartado/, 8000)), 'E1 · sin conexión — si la copia no se puede apartar, lo dice (se pierde si cierras)');
+ABORTAR_ESCRITURA.delete('horarioVersiones:*');
+await page.evaluate(() => window.dispatchEvent(new Event('online')));
+ok(await esperarQue_abis(async () => /está apartado en tu cuenta/.test(await ver()), 12000), 'E1 · sin conexión — al poder, la copia se aparta');
+ok(await esperarQue_abis(async () => (JSON.stringify(await filaVersiones_e1()).split('"motivo":"conflicto"').length - 1) === 3, 8000), 'E1 · sin conexión — una copia más en el historial, con motivo «conflicto»');
+/* El 500 de la lectura lo provoca esta sección a propósito: el navegador lo registra, y se retira. */
+for (let i = errores.length - 1; i >= erroresAntesSinRed_e1; i -= 1) if (/status of 500/.test(errores[i])) errores.splice(i, 1);
+ok(await pulsar('Ver lo que hay ahora'), 'E1 · sin conexión — se sale con «Ver lo que hay ahora»');
+ok(await esperarQue_abis(editable_e1, 10000) && revision_e1() === R5_e1, 'E1 · sin conexión — editable otra vez, sin haber escrito nada');
+
+/* 8 · TP-15 C — volver a la pestaña relee la cuenta (y enseña lo de ahora). */
+ok(await marcar2_e1('B'), 'E1 · relectura — el segundo aparato cambia el horario');
+ok(await esperarQue_abis(() => revision_e1() !== R5_e1 && /be1b/.test(completadas_e1())), 'E1 · relectura — su cambio llega');
+await pulsar('Ver lo pasado', 2500);
+ok(/Marcar como hecha Prueba E1B/.test(await page.evaluate(() => [...document.querySelectorAll('button')].map((b) => b.getAttribute('aria-label') || '').join(' | '))), 'E1 · relectura — antes de volver a la pestaña, el primero todavía no lo ve');
+const intentosAntesRelectura_e1 = intentosHorario.length;
+await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+await pulsar('Ver lo pasado', 2500);
+ok(await esperarQue_abis(async () => /Desmarcar Prueba E1B/.test(await page.evaluate(() => [...document.querySelectorAll('button')].map((b) => b.getAttribute('aria-label') || '').join(' | '))), 8000),
+  'E1 · relectura — al volver a la pestaña, la pantalla enseña lo del otro aparato sin escribir nada');
+ok(intentosHorario.length === intentosAntesRelectura_e1, 'E1 · relectura — releer no escribe nada');
+/* 8a · 🚨 Ronda de correcciones (auditoría global de E1) — después de adoptar lo del otro aparato, Deshacer un paso de
+   ANTES no puede escribir encima de lo suyo (con la cuenta «al día», `sinCambiosAjenos` no lo vería): se bloquea y lo dice. */
+ok(await esperarQue_abis(async () => !(await page.evaluate(() => document.querySelector('[data-aviso]'))), 15000), 'E1 · Deshacer tras adoptar — no queda ningún aviso de antes a la vista');
+const intentosAntesDeshacerAdoptado_e1 = intentosHorario.length;
+const R6a_e1 = revision_e1();
+ok(await pulsar('Ajustes') && await pulsar('Datos') && await pulsar('Deshacer último cambio'), 'E1 · Deshacer tras adoptar — se pulsa «Deshacer último cambio»');
+ok(/tu horario cambió en otro aparato después/.test(await esperarTexto(/tu horario cambió en otro aparato/, 8000)), '🚨 E1 · Deshacer tras adoptar — bloqueado, y lo dice');
+await page.waitForTimeout(600);
+ok(intentosHorario.length === intentosAntesDeshacerAdoptado_e1 && revision_e1() === R6a_e1 && /be1b/.test(completadas_e1()), '🚨 E1 · Deshacer tras adoptar — ni una escritura: el cambio del otro aparato sigue en la cuenta');
+await pulsar('Gestión'); await pulsar('Organización'); await pulsar('Horario');
+
+/* 8b · Deshacer SIN conexión, desde Ajustes, mientras otro aparato escribe: no se puede saber si hay cambios ajenos, así
+   que decide la escritura condicional; al volver la red choca, se abre el conflicto y, como no está en Horarios, el aviso
+   sale donde está (D2: «informa claramente del conflicto»). */
+const R6_e1 = revision_e1();
+ok(await marcar_e1('E'), 'E1 · Deshacer sin conexión — el primero hace un cambio');
+ok(await esperarQue_abis(() => revision_e1() !== R6_e1 && /be1e/.test(completadas_e1())), 'E1 · Deshacer sin conexión — llega');
+const R7_e1 = revision_e1();
+await p2_e1.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+await pulsarEn_e1(p2_e1, 'Ver lo pasado', 2500);
+ok(await esperarQue_abis(async () => /Desmarcar Prueba E1E/.test(await etiquetas2_e1()), 8000), 'E1 · Deshacer sin conexión — el segundo lo ve al volver a su pestaña');
+ok(await marcar2_e1('C'), 'E1 · Deshacer sin conexión — y cambia otra cosa');
+ok(await esperarQue_abis(() => revision_e1() !== R7_e1 && /be1c/.test(completadas_e1())), 'E1 · Deshacer sin conexión — su cambio llega');
+const R8_e1 = revision_e1();
+const erroresAntesDeshacerSinRed_e1 = errores.length;
+ok(await pulsar('Ajustes') && await pulsar('Datos'), 'E1 · Deshacer sin conexión — el primero va a Ajustes → Datos');
+ABORTAR_ESCRITURA.add('horarioTop'); FALLAR_LECTURA.add('horarioTop');
+await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+ok(await pulsar('Deshacer último cambio'), 'E1 · Deshacer sin conexión — se pulsa «Deshacer último cambio» sin red');
+await page.waitForTimeout(1200);
+ok(revision_e1() === R8_e1 && /be1c/.test(completadas_e1()), 'E1 · Deshacer sin conexión — sin red no llega nada: la cuenta sigue con lo del otro aparato');
+ABORTAR_ESCRITURA.delete('horarioTop'); FALLAR_LECTURA.delete('horarioTop');
+await page.evaluate(() => window.dispatchEvent(new Event('online')));
+ok(/Tu cambio no se ha perdido: ábrelo en Horarios/.test(await esperarTexto(/ábrelo en Horarios/, 12000)), '🚨 E1 · Deshacer sin conexión — al volver la red choca, y el aviso sale en Ajustes (donde está)');
+ok(revision_e1() === R8_e1 && /be1c/.test(completadas_e1()) && /be1e/.test(completadas_e1()), '🚨 E1 · Deshacer sin conexión — y lo del otro aparato NO se ha pisado');
+for (let i = errores.length - 1; i >= erroresAntesDeshacerSinRed_e1; i -= 1) if (/status of 500/.test(errores[i])) errores.splice(i, 1);
+await pulsar('Gestión'); await pulsar('Organización'); await pulsar('Horario');
+ok(/Otro aparato ha cambiado tu horario/.test(await esperarTexto(/Otro aparato ha cambiado tu horario/, 8000)), 'E1 · Deshacer sin conexión — en Horarios espera el aviso con sus dos salidas');
+ok(await pulsar('Ver lo que hay ahora') && await esperarQue_abis(editable_e1, 10000) && revision_e1() === R8_e1, 'E1 · Deshacer sin conexión — «Ver lo que hay ahora», sin haber escrito nada');
+await ctx2_e1.close();
+
+/* 9 · La entrega corta (D1): un caso ambiguo resuelto y reabierto, y un aparato viejo retirado. */
+const propia_e1 = await filaPropia_abis();
+ok(!!propia_e1, 'E1 · entrega corta — este aparato tiene su fila');
+almacen['horarioGuardia:viejo-e1'] = {
+  formato: 1, aparato: 'viejo-e1', secuencia: 3, ultimaOperacion: 'op-viejo-e1',
+  primeraVezA: { en: '2026-07-01T10:00:00.000Z', versionApp: '3.100.0' }, etiqueta: 'Tableta vieja E1',
+  visitas: { '3.100.0': { primera: { fecha: '2026-07-01', en: '2026-07-01T10:00:00.000Z' }, ultima: { fecha: '2026-08-01', en: '2026-08-01T10:00:00.000Z' } } },
+  testigo: { intenciones: [] }, detecciones: [], retiradas: [], resoluciones: [],
+};
+almacen.horarioTop = { ...sinTestigo_abis(almacen.horarioTop), version: 1, notaPestana: 'pestaña-antigua-de-prueba-e1' };
+await irAlHorario_ge2();
+ok(await esperarQue_abis(async () => ((await filaPropia_abis())?.detecciones || []).some((d) => d.clase === 'ambigua' && !d.resuelto), 10000), 'E1 · entrega corta — hay un caso ambiguo abierto');
+ok(await marcar_e1('C', /be1c/.test(completadas_e1()) ? 'Desmarcar' : 'Marcar como hecha') && await esperarQue_abis(() => almacen.horarioTop?.testigo?.formato === 1, 10000), 'E1 · entrega corta — un guardado vuelve a dejar el testigo (concepto 2)');
+ok(await pulsar('Comprobación de tus aparatos'), 'E1 · entrega corta — se abre la comprobación');
+await esperarTexto(/Casos ambiguos/i);
+ok(/retirar o resolver pide confirmación|Antes, revisa tu horario|Marca los avisos/.test(await ver()), 'E1 · entrega corta — la consulta ofrece las acciones, con su explicación');
+const marcado_e1 = await page.evaluate(() => { const c = document.querySelector('input[aria-label^="Marcar el aviso"]'); if (!c) return false; c.click(); return true; });
+ok(marcado_e1, 'E1 · entrega corta — se marca el aviso abierto');
+ok(await pulsar('Revisado: el horario está bien'), 'E1 · resolver — se elige «Revisado: el horario está bien»');
+ok(/¿Confirmar\?/.test(await esperarTexto(/¿Confirmar\?/)), 'E1 · resolver — pide confirmación');
+const resolAntes_e1 = ((await filaPropia_abis())?.resoluciones || []).length;
+ok(await pulsar('Confirmar'), 'E1 · resolver — se confirma');
+ok(await esperarQue_abis(async () => ((await filaPropia_abis())?.resoluciones || []).length === resolAntes_e1 + 1, 8000), 'E1 · resolver — la resolución queda apuntada en la fila');
+{
+  const f = await filaPropia_abis();
+  const x = (f.resoluciones || []).at(-1);
+  ok(x && x.decision === 'conforme' && Array.isArray(x.deteccionIds) && x.deteccionIds.length === 1, 'E1 · resolver — «conforme», sobre el aviso marcado');
+  ok(f.testigo && f.testigo.visto, 'E1 · resolver — con un «visto» en la misma operación');
+}
+ok(/Resuelto\./.test(await esperarTexto(/Resuelto\./)), 'E1 · resolver — y lo dice');
+ok(await pulsar('Reabrir'), 'E1 · reabrir — se pulsa «Reabrir»');
+ok(/vuelven a quedar abiertos/.test(await esperarTexto(/vuelven a quedar abiertos/)), 'E1 · reabrir — dice lo que pasa y pide confirmar');
+ok(await pulsar('Confirmar'), 'E1 · reabrir — se confirma');
+ok(await esperarQue_abis(async () => ((await filaPropia_abis())?.resoluciones || []).some((x) => x.decision === 'reabrir'), 8000), 'E1 · reabrir — queda apuntada la reapertura');
+ok(/Reabierta\./.test(await esperarTexto(/Reabierta\./)), 'E1 · reabrir — y lo dice');
+ok(await pulsar('Retirar Tableta vieja E1'), 'E1 · retirar — el aparato sin visitas en 30 días se puede retirar');
+ok(!(await page.evaluate(() => [...document.querySelectorAll('button')].some((b) => /^Retirar .*\(este\)$/.test(b.getAttribute('aria-label') || '')))), 'E1 · retirar — este aparato no se ofrece');
+const motivo_e1 = await page.evaluate(() => { const l = [...document.querySelectorAll('label')].find((x) => x.innerText.trim() === 'Ya no lo uso'); const i = l && l.querySelector('input'); if (!i) return false; i.click(); return true; });
+ok(motivo_e1, 'E1 · retirar — se elige el motivo');
+ok(await pulsar('Confirmar la retirada'), 'E1 · retirar — se confirma');
+ok(await esperarQue_abis(async () => ((await filaPropia_abis())?.retiradas || []).some((x) => x.aparatoRetirado === 'viejo-e1' && x.secuenciaVista === 3 && x.motivo === 'sin_uso'), 8000), 'E1 · retirar — la retirada queda apuntada con su motivo y la secuencia vista');
+ok(/Aparato retirado\./.test(await esperarTexto(/Aparato retirado\./)), 'E1 · retirar — y lo dice');
+ok(almacen['horarioGuardia:viejo-e1'].secuencia === 3 && (almacen['horarioGuardia:viejo-e1'].detecciones || []).length === 0, 'E1 · retirar — la fila del aparato retirado no se toca');
+
+ok(errores.length === erroresAntes_e1, `E1 — sin un error de JavaScript en toda la sección${errores.length > erroresAntes_e1 ? `: ${errores.slice(erroresAntes_e1).join(' | ').slice(0, 300)}` : ''}`);
+almacen.horarioTop = horarioDeAntes_e1;
 
 await salir(browser);

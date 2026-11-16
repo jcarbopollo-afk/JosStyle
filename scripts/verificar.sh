@@ -698,6 +698,18 @@ if node scripts/smoke.mjs test-guardia-horario-vista.jsx >/tmp/jc_horario_abis_v
 else
   fallo "Falla la guardia del horario en pantalla (A-bis)"; grep '✗' /tmp/jc_horario_abis_vista.log
 fi
+# 🛡 Horarios · E1 — el escritor protegido de `horarioTop` (TP-15 A y C): sello, escritura condicional, conflicto con
+# la copia apartada (D2, D2-bis), Deshacer, sin conexión, la entrega corta (D1) y la pantalla del conflicto.
+if node --import ./scripts/resolver-vite.mjs scripts/test-escritor-horario.mjs >/tmp/jc_horario_e1.log 2>&1; then
+  ok "Horarios, E1: el escritor protegido de horarioTop (sello, condicional, conflicto, entrega corta) — $(grep -c '✓' /tmp/jc_horario_e1.log) comprobaciones"
+else
+  fallo "Falla el escritor protegido de horarioTop (E1)"; grep '✗' /tmp/jc_horario_e1.log
+fi
+if node scripts/smoke.mjs test-escritor-horario-vista.jsx >/tmp/jc_horario_e1_vista.log 2>&1; then
+  ok "Horarios, E1: el aviso del conflicto y la entrega corta, pintados — $(grep -c '✓' /tmp/jc_horario_e1_vista.log) comprobaciones"
+else
+  fallo "Falla el conflicto de Horarios en pantalla (E1)"; grep '✗' /tmp/jc_horario_e1_vista.log
+fi
 
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
@@ -2172,8 +2184,14 @@ if [ -n "${HV_PGRST_URL:-}" ]; then
   else
     fallo "Falla la guardia del horario contra PostgREST local"; grep '✗' /tmp/jc_ghpg.log
   fi
+  # 🛡 Horarios E1 — el escritor protegido de horarioTop, contra el mismo PostgREST local (y la regla, si está).
+  if node --import ./scripts/resolver-vite.mjs scripts/test-escritor-horario-postgrest.mjs >/tmp/jc_ehpg.log 2>&1; then
+    ok "Horarios · escritor protegido de horarioTop contra PostgREST local — $(grep -c '✓' /tmp/jc_ehpg.log) comprobaciones"
+  else
+    fallo "Falla el escritor protegido de horarioTop contra PostgREST local"; grep '✗' /tmp/jc_ehpg.log
+  fi
 else
-  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial y guardia del horario contra PostgREST local: omitidas (sin HV_PGRST_URL)"
+  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia y escritor de horarioTop contra PostgREST local: omitidas (sin HV_PGRST_URL)"
 fi
 
 # Entrega 3 · F3 — la iconografía del armario y la categoría de ropa interior.

@@ -288,10 +288,17 @@ export const MINUTOS_SNOOZE = [10, 30, 60];
 export const avisosDe = (estado) => (Array.isArray(estado?.avisos) ? estado.avisos : [])
   .filter((x) => x && x.id && x.clave);
 
+/* 🐛 Incidencia #5 (corregida en E1) — con dos o más avisos a la vez, `agrupar` los junta en uno (`<fecha>|resumen`)
+   y aquí solo se apuntaba esa clave: los avisos sueltos seguían «sin enviar», la vuelta siguiente devolvía otra vez
+   el resumen y, como esto devolvía un objeto NUEVO aunque ya estuviera, el efecto de `HorarioView` guardaba el
+   horario en bucle. Ahora: el resumen apunta también las claves que incluye (`incluye`, y `clavesEnviadas` las
+   cuenta) y, si ya estaba, se devuelve EL MISMO objeto que llegó, sin tocarlo, para que quien llama sepa que no
+   ha cambiado nada. */
 export function registrarEnviado(estado, aviso, { ahora = null, fecha = todayISO() } = {}) {
+  const yaEnviadas = new Set(clavesEnviadas(estado));
+  if (yaEnviadas.has(aviso.clave)) return estado;
   const e = normalizarHorarioTop(estado);
   const previos = avisosDe(e);
-  if (previos.some((x) => x.clave === aviso.clave)) return e;
   const entrada = {
     id: uid(),
     clave: aviso.clave,
@@ -303,13 +310,15 @@ export function registrarEnviado(estado, aviso, { ahora = null, fecha = todayISO
     hora: typeof ahora === 'string' ? ahora : new Date().toTimeString().slice(0, 5),
     leido: false,
     archivado: false,
+    ...(Array.isArray(aviso.incluye) && aviso.incluye.length ? { incluye: aviso.incluye.filter((k) => typeof k === 'string') } : {}),
   };
   return { ...e, avisos: [entrada, ...previos].slice(0, MAX_AVISOS_GUARDADOS) };
 }
 
+/** Las claves ya avisadas (de un día, si se da): las de cada aviso y, si era un resumen, las que incluía. */
 export const clavesEnviadas = (estado, fecha = null) => avisosDe(estado)
   .filter((x) => (fecha ? x.fecha === fecha : true))
-  .map((x) => x.clave);
+  .flatMap((x) => [x.clave, ...(Array.isArray(x.incluye) ? x.incluye.filter((k) => typeof k === 'string') : [])]);
 
 export function marcarLeido(estado, avisoId, leido = true) {
   const e = normalizarHorarioTop(estado);

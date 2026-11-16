@@ -14,8 +14,10 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.161.3**. Vite + React 18 + Tailwind + Supabase + una función
-serverless en Vercel que hace de proxy a Anthropic.
+**Estado:** `package.json` **v3.163.0** (Horarios E1, en commits **solo locales** de `claude/horarios-rediseno`:
+`docs/19` §18.14). Vite + React 18 + Tailwind + Supabase + una función serverless en Vercel que hace de proxy a Anthropic.
+🛡 **`horarioTop` solo lo escribe su escritor protegido** (`src/lib/escritorHorario.js`): `saveData` lo rechaza, y volver a
+escribirlo por otro camino rompe la protección entre aparatos (DEP-35 en `docs/03`).
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y

@@ -763,7 +763,7 @@ console.log('\n── 20 · Rechazos de los cuatro nombres (saveData y la cola) 
     const r = Y.antesDeGuardar(k, { valor: {} });
     ok(r.sale === false && r.error && r.error.code === 'clave_protegida', `${k}: la cola la rechaza antes de la red`);
   }
-  ok(!esClaveDeGuardiaHorario('horarioTop') && !esClaveDeGuardiaHorario('horarioGuardiaX'), 'horarioTop (y un nombre parecido) siguen siendo claves normales');
+  ok(!esClaveDeGuardiaHorario('horarioTop') && !esClaveDeGuardiaHorario('horarioGuardiaX'), 'horarioTop (y un nombre parecido) no son claves de la guardia (horarioTop la protege su escritor, E1)');
   const sup = sinComentarios(leer('src/lib/supabase.js'));
   ok(/if \(esClaveDeGuardiaHorario\(key\)\) \{[\s\S]{0,200}return \{ ok: false, error: ERROR_CLAVE_GUARDIA, bloqueado: true, protegida: true \};/.test(sup)
     && sup.indexOf('esClaveDeGuardiaHorario(key)') < sup.indexOf('antesDeGuardar(key'), 'saveData las rechaza antes de la cola');
@@ -777,12 +777,17 @@ console.log('\n── 20 · Rechazos de los cuatro nombres (saveData y la cola) 
 console.log('\n── 21 · Integración en App.jsx y en la pantalla ──');
 {
   const app = sinComentarios(leer('src/App.jsx'));
-  ok(/if \(patch\.horarioTop\) patch = \{ \.\.\.patch, horarioTop: prepararHorarioParaGuardar\(patch\.horarioTop\) \};/.test(app), 'snapshotAndSave prepara el horario (version y testigo) DESPUÉS de la comprobación de solo lectura');
-  ok(app.indexOf('prepararHorarioParaGuardar(patch.horarioTop)') > app.indexOf('return Promise.resolve(NO_GUARDA_HORARIO());'), '…en ese orden');
-  ok(/const last = !horarioSoloLecturaRef\.current && ultimoPaso\.horarioTop\s*\? \{ \.\.\.ultimoPaso, horarioTop: prepararHorarioParaGuardar\(ultimoPaso\.horarioTop\) \} : ultimoPaso;/.test(app), 'Deshacer también lo prepara (y no en solo lectura)');
-  eq((app.match(/prepararHorarioParaGuardar\(/g) || []).length, 2, 'Se llama solo en los dos puntos de escritura');
-  eq((app.match(/saveData\(uidUser, 'horarioTop'/g) || []).length, 2, 'Siguen siendo dos escrituras de horarioTop');
-  ok(/esperarColaDe\('horarioTop'\)/.test(app), 'La relectura del §7.5 espera al resultado de la cola');
+  /* 🔓 E1 (TP-15 A) — se da la vuelta: la `version` y el testigo ya no los pone App.jsx al guardar, los pone el
+     escritor protegido AL SALIR (`escritorHorario.js` llama a `guardia.prepararEscritura` con la revisión
+     confirmada). Lo que se protege es lo mismo: que el horario no se escriba sin ellos ni en solo lectura. */
+  ok(/if \(patch\.horarioTop\) \{ setHorarioTop\(patch\.horarioTop\); guardados\.push\(guardarHorario\(patch\.horarioTop, \{ automatico \}\)\); \}/.test(app), 'snapshotAndSave guarda el horario por su escritor protegido');
+  ok(app.indexOf('guardarHorario(patch.horarioTop') > app.indexOf('return Promise.resolve(NO_GUARDA_HORARIO());'), '…DESPUÉS de la comprobación de solo lectura');
+  ok(/if \(tocaHorario\) \{ setHorarioTop\(last\.horarioTop\); guardarHorario\(last\.horarioTop\); \}/.test(app) && /const tocaHorario = !horarioSoloLecturaRef\.current/.test(app), 'Deshacer también lo guarda por el escritor (y no en solo lectura)');
+  eq((app.match(/guardarHorario\(/g) || []).length, 2, 'guardarHorario se llama solo en los dos puntos de escritura');
+  eq((app.match(/saveData\(uidUser, 'horarioTop'/g) || []).length, 0, 'Ninguna escritura de horarioTop por saveData');
+  const esc = sinComentarios(leer('src/lib/escritorHorario.js'));
+  ok(/guardia\.prepararEscritura\(d\.valor, s\.confirmado\.existe \? s\.confirmado\.valor : null\)/.test(esc), 'El escritor prepara version y testigo con la revisión CONFIRMADA (la base, §1)');
+  ok(/guardia\.despuesDeGuardar\(preparado, Promise\.resolve\(\)\)/.test(esc), 'La relectura del §7.5 sale después de un guardado ya confirmado');
   ok(/window\.addEventListener\('online', alVolver\)/.test(app) && /window\.removeEventListener\('online', alVolver\)/.test(app), 'Al volver la conexión, la guardia reintenta (y el escuchador se limpia)');
   const primerReturn = app.indexOf('if (session === undefined) return');
   ok(app.indexOf("window.addEventListener('online', alVolver)") < primerReturn && app.indexOf('guardiaHorarioRef = useRef') < primerReturn, 'Los hooks nuevos van antes de los return (regla 4)');

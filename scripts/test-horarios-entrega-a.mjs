@@ -178,18 +178,21 @@ console.log('\n── 6 · La guardia, cableada en App.jsx ──');
   ok(/guardiaDeVersionHorario\(hor\)/.test(app), 'Se calcula con lo que devuelve loadData, sin normalizar');
   ok(/horarioSoloLecturaRef\.current = guardiaHor\.soloLectura/.test(app), 'La guarda va en una referencia (la leen los guardados)');
   ok(/setHorarioCrudo\(hor\)/.test(app), 'El diagnóstico recibe lo crudo');
-  ok(/const snapshotAndSave = \(patch\) => \{\s*if \(parcheTocaHorario\(patch\) && horarioSoloLecturaRef\.current\) return Promise\.resolve\(NO_GUARDA_HORARIO\(\)\);/.test(app),
+  ok(/const snapshotAndSave = \(patch, \{ automatico = false \} = \{\}\) => \{\s*if \(parcheTocaHorario\(patch\) && horarioSoloLecturaRef\.current\) return Promise\.resolve\(NO_GUARDA_HORARIO\(\)\);/.test(app),
     'snapshotAndSave no guarda NADA del cambio si toca el horario en solo lectura (ni el historial), y lo decide por la PRESENCIA de la clave');
   ok(!/patch\.horarioTop && horarioSoloLecturaRef/.test(app), 'Ya no decide por si el valor de patch.horarioTop es verdadero');
   ok(/if \(horarioSoloLecturaRef\.current\) delete snapshot\.horarioTop;/.test(app), 'En solo lectura, el paso de Deshacer no lleva el horario');
-  ok(/if \(!horarioSoloLecturaRef\.current && last\.horarioTop\) \{ setHorarioTop\(last\.horarioTop\); saveData\(uidUser, 'horarioTop', last\.horarioTop\); \}/.test(app),
+  /* 🔓 E1 — se da la vuelta: Deshacer guarda el horario por su escritor protegido, y solo si ese paso lo cambió. */
+  ok(/const tocaHorario = !horarioSoloLecturaRef\.current && !!ultimoPaso\.horarioTop/.test(app) && /if \(tocaHorario\) \{ setHorarioTop\(last\.horarioTop\); guardarHorario\(last\.horarioTop\); \}/.test(app),
     'Deshacer no escribe el horario en solo lectura, ni lo restaura vacío desde un paso que no lo lleva');
   ok(!/last\.horarioTop \|\| DEFAULT_HORARIO_TOP/.test(app), 'Deshacer ya no escribe un horario vacío por defecto');
   ok(/\.\.\.\(horarioSoloLecturaRef\.current \? \{\} : \{ horarioTop: limpiarHorarioDeAsignatura\(/.test(app),
     'Borrar una asignatura en Estudios sigue funcionando y, en solo lectura, no toca el horario');
   ok(/horarioTop=\{horarioSoloLectura \? null : horarioTop\}/.test(app), 'Y el aviso de Estudios no promete borrar clases del horario en solo lectura');
-  const escrituras = app.match(/saveData\(uidUser, 'horarioTop'/g) || [];
-  eq(escrituras.length, 2, 'Solo hay dos escrituras de horarioTop (snapshotAndSave y deshacer), las dos guardadas');
+  /* 🔓 E1 — ninguna escritura de horarioTop por saveData: las dos (snapshotAndSave y deshacer) van por su escritor,
+     después de la comprobación de solo lectura. */
+  eq((app.match(/saveData\(uidUser, 'horarioTop'/g) || []).length, 0, 'Ninguna escritura de horarioTop por saveData (E1)');
+  eq((app.match(/guardarHorario\(/g) || []).length, 2, 'Solo hay dos escrituras de horarioTop (snapshotAndSave y deshacer), las dos guardadas');
   ok(/soloLectura=\{horarioSoloLectura\}/.test(app) && /horarioCrudo=\{horarioCrudo\}/.test(app) && /cargaFallida=\{cargaFallida\('horarioTop'\)\}/.test(app), 'HorarioView recibe la guardia, lo crudo y si la carga falló');
   const primerReturn = app.indexOf("if (session === undefined) return");
   ok(app.indexOf('useState(null);\n  const horarioSoloLecturaRef') > 0 && app.indexOf('horarioSoloLecturaRef = useRef') < primerReturn, 'Los hooks nuevos van antes de los return (regla 4)');
@@ -448,7 +451,7 @@ console.log('\n── 12 · Corrección: la guardia ante datos ausentes, malform
   eq([parcheTocaHorario({ estudios: {} }), parcheTocaHorario({}), parcheTocaHorario(null), parcheTocaHorario('horarioTop')], [false, false, false, false],
     'Sin la clave, no lo toca');
   const app = sinComentarios(leer('src/App.jsx'));
-  ok(app.indexOf('parcheTocaHorario(patch) && horarioSoloLecturaRef.current') < app.indexOf('const nextHist = [...history, snapshot]'),
+  ok(app.indexOf('parcheTocaHorario(patch) && horarioSoloLecturaRef.current') < app.indexOf('const nextHist = [...pilaDeshacer, snapshot]'),
     'App.jsx lo comprueba antes de escribir nada (ni el historial)');
 }
 
@@ -457,7 +460,7 @@ console.log('\n── 13 · Corrección: HorarioView no deja controles de escrit
   const v = sinComentarios(leer('src/views/HorarioView.jsx'));
   ok(/const aplicar = \(nuevo\) => \{ if \(soloLectura\) return SIN_GUARDAR;/.test(v) && /const aplicarResultado = \(r\) => \{\s*if \(soloLectura\) return SIN_GUARDAR;/.test(v),
     'aplicar y aplicarResultado no llaman a onCambiar en solo lectura (segunda puerta)');
-  ok(/if \(cambio && !soloLectura\) onCambiar\(nuevo\);/.test(v), 'Avisos: en solo lectura no se apuntan en el horario');
+  ok(/if \(cambio && !soloLectura\) onCambiar\(nuevo, \{ automatico: true \}\);/.test(v), 'Avisos: en solo lectura no se apuntan en el horario');
   ok(/accionesMochila=\{soloLectura \? null : accionesMochila\}/.test(v), 'Mochila: sin acciones en solo lectura');
   ok(/accionesAvisos=\{soloLectura \? null : accionesAvisos\}/.test(v), 'Avisos: sin leer ni archivar en solo lectura');
   ok(/onCompletar=\{soloLectura \? null :/.test(v), 'Marcar clases como hechas: no en solo lectura');

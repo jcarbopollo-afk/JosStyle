@@ -7,12 +7,14 @@ import { emitir } from './eventos';
 import {
   antesDeGuardar, despuesDeGuardar, esperarAnterior, marcarEnviado, alSalir, respuestaTardia, marcarVencida, apuntarCargaFallida, apuntarCargaBuena,
   pendientesParaReintentar, marcarReintento, usuarioDeLaSesion, generacionActual, marcarSalidaPedida, TOPE_PETICION_MS,
-  ERROR_CLAVE_PROTEGIDA, ERROR_CLAVE_GUARDIA,
+  ERROR_CLAVE_PROTEGIDA, ERROR_CLAVE_GUARDIA, ERROR_CLAVE_HORARIO, reintentosExternos,
 } from './sincronizacion';
 /* 🕰 Horarios (docs/19 §18.9): las claves del historial de versiones tienen su propio camino, abajo. */
 import { esClaveDeHistorialVersiones, PREFIJO_HISTORIAL_VERSIONES } from './historialVersiones';
 /* 🛡 Horarios A-bis (§4): las filas de la guardia del horario, igual: su propio camino, abajo. */
 import { esClaveDeGuardiaHorario, PREFIJO_GUARDIA_HORARIO } from './guardiaHorario';
+/* 🛡 Horarios E1 (TP-15 A): `horarioTop` (y `horarioBorradores`, de la entrega B) los escribe su escritor protegido. */
+import { esClaveProtegidaDeHorario, campoDelSello, RECHAZO_DE_LA_REGLA } from './escritorHorario';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -124,6 +126,12 @@ export async function saveData(userId, key, value, { reintento = false } = {}) {
   if (esClaveDeGuardiaHorario(key)) {
     console.error('No se guarda', key, ERROR_CLAVE_GUARDIA.message);
     return { ok: false, error: ERROR_CLAVE_GUARDIA, bloqueado: true, protegida: true };
+  }
+  /* 🛡 Horarios E1 (TP-15 A) — y `horarioTop`/`horarioBorradores`: este `upsert` sin condición pisaría el cambio
+     de otro aparato. Antes de la cola, sin tocar la red y sin dejar nada pendiente. Los escribe `transporteDeHorario`. */
+  if (esClaveProtegidaDeHorario(key)) {
+    console.error('No se guarda', key, ERROR_CLAVE_HORARIO.message);
+    return { ok: false, error: ERROR_CLAVE_HORARIO, bloqueado: true, protegida: true };
   }
   /* 🚨 MS F16 — antes de salir: una clave que no se pudo cargar no se escribe
      (pisaría lo que hay en la cuenta), un guardado de una sesión que ya se
@@ -366,6 +374,55 @@ export const transporteDeGuardia = Object.freeze({
   leerHorario: leerHorarioPropio,
 });
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   🛡 HORARIOS E1 · EL TRANSPORTE DEL ESCRITOR PROTEGIDO DE `horarioTop` (TP-15 A)
+
+   Lo único de este archivo que escribe `horarioTop`. Fuera de `saveData` y de su cola, con el mismo patrón que
+   el historial y la guardia: `insert` simple para la primera fila (23505 = otro la creó antes) y `update`
+   condicional sobre la revisión del sello (`value->testigo->>revision`, D3), pidiendo la fila de vuelta. La
+   base `null` se condiciona con `is null`: así una fila sin testigo solo la sustituye quien la vio sin testigo.
+   ⚠️ Lleva `updated_at` por compatibilidad con la tabla (lo hacía `saveData`), pero NO es la condición. El
+   rechazo de la regla del servidor (TP-15 B, cuando se active) llega como `rechazada: true`: el escritor relee.
+   =========================================================================== */
+const esRechazoDeLaRegla = (e) => !!e && (e.code === 'P0001' || e.code === 'JSH01') && typeof e.message === 'string' && e.message.includes(RECHAZO_DE_LA_REGLA);
+
+/** La primera escritura de `horarioTop` de una cuenta. `conflicto`: ya existía (23505). */
+export async function insertarHorarioPropio(userId, valor) {
+  const r = await conTope(supabase.from('app_data')
+    .insert({ user_id: userId, key: 'horarioTop', value: valor, updated_at: new Date().toISOString() })
+    .select('key'));
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error && r.error.code === '23505') return { ok: false, conflicto: true, error: r.error };
+  if (r.error && esRechazoDeLaRegla(r.error)) return { ok: false, rechazada: true, error: r.error, status: r.status };
+  if (r.error) return { ok: false, error: r.error, status: r.status, definitivo: r.status >= 400 && r.status < 500 };
+  if (!Array.isArray(r.data)) return { ok: false, sinRespuesta: true, error: { code: 'respuesta_incompleta' } };
+  return { ok: r.data.length === 1 };
+}
+
+/** La escritura condicional de `horarioTop`: SOLO si la revisión del testigo sigue siendo `base` (o no hay, con
+ *  `base` nula). `aplicada: false` = otro escribió antes. */
+export async function actualizarHorarioSiRevision(userId, valor, base) {
+  if (base !== null && (typeof base !== 'string' || !base)) throw new Error('La escritura condicional del horario necesita una base de texto o null');
+  let q = supabase.from('app_data')
+    .update({ value: valor, updated_at: new Date().toISOString() })
+    .eq('user_id', userId).eq('key', 'horarioTop');
+  q = base === null ? q.is(campoDelSello('horarioTop'), null) : q.eq(campoDelSello('horarioTop'), base);
+  const r = await conTope(q.select('key'));
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error && esRechazoDeLaRegla(r.error)) return { ok: false, rechazada: true, error: r.error, status: r.status };
+  if (r.error) return { ok: false, error: r.error, status: r.status, definitivo: r.status >= 400 && r.status < 500 };
+  if (!Array.isArray(r.data)) return { ok: false, sinRespuesta: true, error: { code: 'respuesta_incompleta' } };
+  return { ok: true, aplicada: r.data.length === 1 };
+}
+
+/** Lo que recibe `crearEscritorDeHorario` para hablar con Supabase. */
+export const transporteDeHorario = Object.freeze({
+  leerHorario: leerHorarioPropio,
+  insertarHorario: insertarHorarioPropio,
+  actualizarHorarioSiRevision,
+});
+
+
 /**
  * 🚨 **Perder y recuperar la conexión, dicho en voz alta.**
  *
@@ -415,10 +472,15 @@ export function reintentarGuardados() {
   }
   const usuario = usuarioDeLaSesion();
   const lista = pendientesParaReintentar();
-  if (!usuario || !lista.length) return Promise.resolve(true);
+  /* 🛡 E1 — lo pendiente del escritor del horario se reintenta con SU condición, nunca con `saveData`. */
+  const externos = reintentosExternos();
+  if (!usuario || (!lista.length && !externos.length)) return Promise.resolve(true);
   marcarReintento(true);
   const este = { generacion, promesa: null, siguiente: null };
-  este.promesa = Promise.all(lista.map(({ clave, valor }) => saveData(usuario, clave, valor, { reintento: true })))
+  este.promesa = Promise.all([
+    ...lista.map(({ clave, valor }) => saveData(usuario, clave, valor, { reintento: true })),
+    ...externos.map((fn) => Promise.resolve().then(fn).then((v) => ({ ok: !(v && v.pendiente) }), () => ({ ok: false }))),
+  ])
     .then((r) => r.every((x) => x && x.ok), () => false)
     .then((bien) => {
       if (reintentoEnMarcha === este) reintentoEnMarcha = null;

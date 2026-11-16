@@ -381,7 +381,8 @@ const ARCHIVOS = { 'src/App.jsx': APP };
   ok(/className="indicador-estado fixed inset-x-0 z-flotante/.test(COMP) && /\.indicador-estado \{\s*top: calc\(var\(--safe-top\) \+ 14px\);\s*padding-left: calc\(var\(--safe-left\) \+ 60px\);\s*padding-right: calc\(var\(--safe-right\) \+ 60px\);/.test(CSS),
     'arriba, con las áreas seguras y sitio para la lupa (F15), en su capa con nombre (F6)');
   ok(/reintentarGuardados\(\); \};/.test(SUPA) && /export function reintentarGuardados\(\)/.test(SUPA), 'al volver la conexión, lo pendiente se manda solo (apartado 32)');
-  ok(/if \(!usuario \|\| !lista\.length\) return Promise\.resolve\(true\);/.test(SUPA), '…y sin nada pendiente no hace nada (ni un «Guardado» que nadie pidió)');
+  /* 🔓 E1 — lo pendiente incluye ahora lo del escritor protegido del horario (`reintentosExternos`): sin nada de las dos cosas, nada. */
+  ok(/if \(!usuario \|\| \(!lista\.length && !externos\.length\)\) return Promise\.resolve\(true\);/.test(SUPA), '…y sin nada pendiente no hace nada (ni un «Guardado» que nadie pidió)');
   ok(/export const reintentarGuardados = async \(\) => true;/.test(leer('scripts/smoke.mjs')), 'el doble de Supabase del banco de renderizado lo exporta también (E3 F16)');
   ok(PIEZAS_DE_MOVIMIENTO.includes('src/components/estadosAsincronos.jsx') && PIEZAS_DE_MOVIMIENTO.includes('src/components/vacioMotion.js'),
     'las piezas nuevas las vigila la auditoría del orquestador (temporizadores y escuchas limpios, F11)');

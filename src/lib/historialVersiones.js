@@ -38,6 +38,10 @@ export const TOPE_SESIONES_HISTORIAL = 200;
 export const INTENTOS_HISTORIAL = 2;
 export const TIPOS_OPERACION_HISTORIAL = Object.freeze(['crear', 'eliminar', 'renombrar']);
 export const MOTIVOS_AUTOMATICOS = Object.freeze(['confirmacion', 'restauracion', 'migracion']);
+/** 🛡 E1 (D2-bis, 2026-11-15) — los motivos NO automáticos: la versión manual y la copia apartada por un conflicto
+ *  de edición («conflicto»). Las dos se pueden renombrar y borrar a mano (con confirmación); nada las borra solo. */
+export const MOTIVOS_MANUALES = Object.freeze(['manual', 'conflicto']);
+const esMotivoManual = (m) => MOTIVOS_MANUALES.includes(m);
 
 const esTexto = (x) => typeof x === 'string' && x.length > 0;
 const esEnteroPositivo = (x) => Number.isInteger(x) && x >= 1;
@@ -235,7 +239,7 @@ export function vistaFusionadaDeVersiones(filas) {
   /* Automática si CUALQUIER variante de su creación (de filas válidas) lo es: toda la identidad queda protegida. */
   const automaticas = new Set();
   for (const [, m] of validas) {
-    for (const x of m.values()) if (x.o.tipo === 'crear' && x.o.version && x.o.version.motivo !== 'manual') automaticas.add(x.o.version.id);
+    for (const x of m.values()) if (x.o.tipo === 'crear' && x.o.version && !esMotivoManual(x.o.version.motivo)) automaticas.add(x.o.version.id);
   }
   const eliminadas = new Set();
   const marcasIgnoradas = [];
@@ -260,7 +264,7 @@ export function vistaFusionadaDeVersiones(filas) {
     .sort((a, b) => porTexto(a.opId, b.opId) || porTexto(a.origen, b.origen) || porTexto(a.motivo, b.motivo));
   const renombres = limpias.filter((o) => o.tipo === 'renombrar');
   const visibles = [...versiones.values()].filter((v) => !eliminadas.has(v.id)).map((v) => {
-    const suyos = v.motivo === 'manual' ? renombres.filter((r) => r.versionId === v.id) : [];
+    const suyos = esMotivoManual(v.motivo) ? renombres.filter((r) => r.versionId === v.id) : [];
     const sustituidos = new Set(suyos.flatMap((r) => (Array.isArray(r.sustituye) ? r.sustituye : r.sustituye ? [r.sustituye] : [])));
     const cabezas = suyos.filter((r) => !sustituidos.has(r.opId)).sort((a, b) => porTexto(a.opId, b.opId));
     return {
@@ -483,16 +487,16 @@ export function crearEscritorDeVersiones({
     if (!r.vista.completa) return { error: 'vista_incompleta' };
     const v = r.vista.visibles.find((x) => x.id === versionId);
     if (!v) return { error: r.vista.eliminadas.includes(versionId) ? 'ya_eliminada' : 'version_desconocida' };
-    if (v.protegida || v.motivo !== 'manual') return { error: 'version_automatica' };
+    if (v.protegida || !esMotivoManual(v.motivo)) return { error: 'version_automatica' };
     if (v.afectada) return { error: 'version_afectada' };
     return { version: v };
   }
 
   return {
     clave, sesion, cuentas,
-    /** Crea una versión: `motivo` 'manual' o uno automático; `contenido` es lo que se guarda tal cual. */
+    /** Crea una versión: `motivo` 'manual', 'conflicto' (E1) o uno automático; `contenido` se guarda tal cual. */
     async crearVersion({ contenido, motivo = 'manual', nombre = '', resumen = null, huella = null } = {}) {
-      if (motivo !== 'manual' && !MOTIVOS_AUTOMATICOS.includes(motivo)) return noAplicada(null, 'motivo_desconocido');
+      if (!esMotivoManual(motivo) && !MOTIVOS_AUTOMATICOS.includes(motivo)) return noAplicada(null, 'motivo_desconocido');
       const op = nueva('crear', {});
       op.version = { id: op.opId, motivo, nombre: String(nombre || ''), creadaEn: op.en, resumen, huella, contenido };
       return aplicar(op);

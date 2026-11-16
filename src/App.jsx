@@ -52,7 +52,7 @@ import { eventoDesdeQuickAdd } from './lib/accionesHoyAgenda';
 // Entrega 3 · F14 (HC F9) — la forma de la pantalla mientras carga (apartados 23 y 24).
 import { esqueleto } from './lib/pulidoHC';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
-import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl, uploadFotoRelacion, getSignedFotoRelacionUrl, deleteFotoRelacion, vigilarLaConexion, transporteDeGuardia } from './lib/supabase';
+import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl, uploadFotoRelacion, getSignedFotoRelacionUrl, deleteFotoRelacion, vigilarLaConexion, transporteDeGuardia, transporteDeHorario, transporteDeVersiones } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, addDays, hexToRgba, fechaLocalISO } from './lib/helpers';
 import { normalizarPerfilFoto } from './lib/fotoPerfil';
@@ -155,7 +155,7 @@ import { useContextoFisico } from './components/responsiveMotion';
 /* MS F16 — los estados del sistema: lo que no se pudo cargar, lo que no ha llegado a la cuenta, la
    conexión, la espera del arranque y la sesión que caduca. */
 import { IndicadorDeSincronizacion, ErrorDeArranque, useEspera, AvisoDeEspera } from './components/estadosAsincronos';
-import { empezarSesionDeDatos, usuarioDeLaSesion, clavesSinCargar, consumirSalidaPedida, resumenSincronizacion, resultadoDeGuardados, cargaFallida, esperarColaDe } from './lib/sincronizacion';
+import { empezarSesionDeDatos, usuarioDeLaSesion, clavesSinCargar, consumirSalidaPedida, resumenSincronizacion, resultadoDeGuardados, cargaFallida, apuntarExterno } from './lib/sincronizacion';
 import { arranqueSinDatos, motivoDeSalida } from './lib/estadosAsincronos';
 import { useFuentesListas } from './components/layoutMotion';
 import { AnuncioDeNavegacion } from './components/accesibilidadMotion';
@@ -170,6 +170,11 @@ import EstiloHombreView from './views/EstiloHombreView';
 import { DEFAULT_HORARIO_TOP, normalizarHorarioTop, guardiaDeVersionHorario, parcheTocaHorario } from './lib/horario';
 /* 🛡 Horarios A-bis — la guardia del horario (testigo, filas por aparato y comprobación al cargar). */
 import { crearGuardiaDeHorario } from './lib/guardiaHorario';
+/* 🛡 Horarios E1 (TP-15 A y C) — el escritor protegido de `horarioTop` y, para la copia apartada de un conflicto
+   (D2-bis), el escritor del historial de versiones. */
+import { crearEscritorDeHorario, MOTIVO_CONFLICTO_HORARIO, mismoContenido } from './lib/escritorHorario';
+import { crearEscritorDeVersiones } from './lib/historialVersiones';
+import { AvisoAccion } from './components/quickAdd';
 import { VERSION as VERSION_APP } from './lib/version';
 import { DEFAULT_ESTILO_HOMBRE, normalizarEstiloHombre } from './lib/estiloDeHombre';
 /* ⚠️ **Este import faltaba desde ME F3**, y `DEFAULT_PAPELERA` se usa en un
@@ -567,16 +572,35 @@ export default function App() {
   const [horarioCrudo, setHorarioCrudo] = useState(null);
   /* 🛡 Horarios A-bis (§8) — el motivo de la entrega A va aparte (`horarioMotivoARef`) porque TIENE PRIORIDAD:
      el de solo lectura que leen los guardados (`horarioSoloLecturaRef`) es el de la A o, si no hay, el de la
-     guardia (comprobando · no verificable · incidencia sin confirmar). `horarioTopRef` es el estado de la
-     pantalla en el momento de guardar: de ahí sale la `base` del testigo (§1), nunca de lo que restaura Deshacer.
-     Nada de esto se guarda en el aparato (C-84). */
+     guardia (comprobando · no verificable · incidencia sin confirmar) y, desde la E1, el del conflicto de
+     edición. La `base` de cada guardado sale de lo que el escritor protegido sabe que hay en la cuenta (la carga o
+     su último guardado confirmado), nunca de lo que restaura Deshacer. Nada de esto se guarda en el aparato (C-84). */
   const horarioMotivoARef = useRef(false);
   const guardiaHorarioRef = useRef(null);
-  const horarioTopRef = useRef(DEFAULT_HORARIO_TOP);
   const [guardiaHorario, setGuardiaHorario] = useState(null);
+  /* 🛡 E1 — el escritor protegido de `horarioTop` (uno por sesión) y lo que enseña: estado, conflicto y copias.
+     El del historial de versiones se crea solo si hace falta apartar un cambio (D2-bis). Nada en el aparato. */
+  const escritorHorarioRef = useRef(null);
+  const escritorVersionesRef = useRef(null);
+  const [escritorHorario, setEscritorHorario] = useState(null);
+  /* Un aviso suelto de la aplicación (Deshacer bloqueado por un cambio de otro aparato, o un conflicto abierto
+     desde fuera de Horarios). */
+  const [avisoApp, setAvisoApp] = useState(null);
+  const historyRef = useRef([]);
+  /* La pantalla de ahora, para el aviso de un conflicto que se abre fuera de Horarios (la suscripción del escritor
+     se crea al cargar y no ve el `tab` de cada pintado). */
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  /* 🛡 E1 (auditoría global) — los pasos de Deshacer cuyo horario es de ANTES de un cambio de otro aparato: los que
+     había cuando la pantalla adoptó lo de la cuenta (al volver, «Ver lo que hay ahora», un automático que choca) y, al
+     cargar, todos si lo último de la cuenta no lo escribió este aparato. Esos pasos no pueden reescribir el horario:
+     lo harían encima de lo del otro aparato. Solo en memoria. */
+  const pasosAntesDeAjenoRef = useRef(new WeakSet());
   const aplicarSoloLecturaHorario = () => {
     const g = guardiaHorarioRef.current;
-    const motivo = horarioMotivoARef.current || (g ? g.motivoBloqueo() : null) || false;
+    const w = escritorHorarioRef.current;
+    /* El orden es el de prioridad: la guardia de versión de la A, la guardia de la A-bis y el conflicto (E1). */
+    const motivo = horarioMotivoARef.current || (g ? g.motivoBloqueo() : null) || (w ? w.motivoBloqueo() : null) || false;
     horarioSoloLecturaRef.current = motivo;
     setHorarioSoloLectura(motivo || null);
   };
@@ -682,6 +706,11 @@ export default function App() {
       /* 🛡 A-bis — la guardia del horario es de la sesión: se cierra y no avisa más. */
       if (guardiaHorarioRef.current) { guardiaHorarioRef.current.cerrar(); guardiaHorarioRef.current = null; }
       setGuardiaHorario(null);
+      /* 🛡 E1 — y su escritor: lo que tuviera en memoria era de esta cuenta. */
+      if (escritorHorarioRef.current) { escritorHorarioRef.current.cerrar(); escritorHorarioRef.current = null; }
+      escritorVersionesRef.current = null;
+      setEscritorHorario(null);
+      apuntarExterno('horarioTop', null);
       // Y de paso, fuera de memoria lo más privado.
       setEstiloHombre(DEFAULT_ESTILO_HOMBRE);
       setRelacion(DEFAULT_RELACION);
@@ -891,6 +920,7 @@ export default function App() {
       // de que sea de verdad un array, por si `temasGuardados` no existe todavía en Supabase.
       setTemasGuardados(Array.isArray(temGuard) ? temGuard : DEFAULT_TEMAS_GUARDADOS);
       setHistory(h);
+      historyRef.current = Array.isArray(h) ? h : [];
       // Entrega 2 · ME Fase 3 — la retención se aplica al abrir la app: lo que haya vencido se
       // borra definitivamente aquí, una sola vez, y solo se escribe si de verdad cambió algo.
       const papeleraCargada = purgarCaducados({ ...DEFAULT_PAPELERA, ...(pap || {}) }, new Date().toISOString());
@@ -916,7 +946,6 @@ export default function App() {
       if (migracionSonido.migrada) saveData(uidUser, 'audio', migracionSonido.prefs);
       {
         const horarioNormal = normalizarHorarioTop(hor);
-        horarioTopRef.current = horarioNormal;
         setHorarioTop(horarioNormal);
       }
       /* 🛡 A-bis — la guardia del horario de esta sesión. Nace en E0 («Comprobando tu horario»): solo
@@ -941,6 +970,60 @@ export default function App() {
         setHorarioSoloLectura(horarioSoloLecturaRef.current || null);
         setGuardiaHorario(g.vista());
         setHorarioCrudo(hor);
+        /* 🛡 E1 (TP-15 A) — el escritor protegido de esta sesión. Parte de LO QUE SE CARGÓ (lo que ve la pantalla):
+           la base de cada guardado es la revisión de eso, nunca una lectura posterior que la pantalla no ha visto.
+           `loadData` devuelve el mismo objeto por defecto cuando la fila no existe. */
+        if (escritorHorarioRef.current) escritorHorarioRef.current.cerrar();
+        escritorVersionesRef.current = null;
+        pasosAntesDeAjenoRef.current = new WeakSet();
+        {
+          const ultimoAparato = hor && typeof hor === 'object' && hor.testigo && typeof hor.testigo === 'object' ? hor.testigo.aparato : null;
+          if (!ultimoAparato || ultimoAparato !== g.vista().aparato) for (const paso of historyRef.current) pasosAntesDeAjenoRef.current.add(paso);
+        }
+        const usuarioW = uidUser;
+        const versiones = () => {
+          if (!escritorVersionesRef.current) {
+            try { escritorVersionesRef.current = crearEscritorDeVersiones({ transporte: transporteDeVersiones, usuario: usuarioW }); } catch { escritorVersionesRef.current = null; }
+          }
+          return escritorVersionesRef.current;
+        };
+        const w = crearEscritorDeHorario({
+          transporte: transporteDeHorario, usuario: uidUser, guardia: g,
+          inicial: { valor: hor, existe: hor !== DEFAULT_HORARIO_TOP && !cargaFallida('horarioTop') },
+          /* Lo de la cuenta pasa a la pantalla (un guardado automático que se recalcula, la recarga al volver, o
+             «Ver lo que hay ahora»). Con la guardia de versión de la A: si llega una versión que esta copia no
+             entiende, se queda en solo lectura en vez de normalizarla y guardarla encima. */
+          alAdoptar: (valor) => {
+            if (escritorHorarioRef.current !== w) return;
+            for (const paso of historyRef.current) pasosAntesDeAjenoRef.current.add(paso);
+            const gv = guardiaDeVersionHorario(valor);
+            if (gv.soloLectura) horarioMotivoARef.current = gv.motivo;
+            setHorarioTop(normalizarHorarioTop(valor));
+            aplicarSoloLecturaHorario();
+          },
+          apartar: async (valor) => {
+            const v = versiones();
+            if (!v) return { estado: 'no_aplicada', motivo: 'sin_historial' };
+            return v.crearVersion({ contenido: valor, motivo: 'conflicto', nombre: 'Cambio apartado por un conflicto' });
+          },
+          reintentarApartado: async (opId) => { const v = versiones(); return v ? v.reintentar(opId) : { estado: 'no_aplicada', motivo: 'sin_historial' }; },
+          descartarApartado: async (versionId) => { const v = versiones(); return v ? v.eliminarVersionManual(versionId, { confirmado: true }) : { estado: 'no_aplicada', motivo: 'sin_historial' }; },
+        });
+        escritorHorarioRef.current = w;
+        let habiaConflicto = false;
+        w.suscribir(() => {
+          if (escritorHorarioRef.current !== w) return;
+          const v = w.vista();
+          /* D2 — «informa claramente del conflicto»: si se abre fuera de Horarios (borrar una asignatura desde
+             Estudios, Deshacer sin conexión desde Ajustes), se dice allí mismo; el aviso con sus dos salidas está en
+             Horarios, que se queda en solo lectura hasta que elija. */
+          if (v.conflicto && !habiaConflicto && tabRef.current !== 'horario') setAvisoApp('conflicto_horario');
+          habiaConflicto = !!v.conflicto;
+          setEscritorHorario(v);
+          apuntarExterno('horarioTop', { pendiente: v.estado === 'pendiente', guardando: v.guardando, motivo: v.motivo, reintentar: () => w.reintentar() });
+          aplicarSoloLecturaHorario();
+        });
+        setEscritorHorario(w.vista());
       }
       /* ⚠️ **EH F46** — la migración va **sobre lo que devuelve `loadData`**, no
          sobre lo normalizado: el normalizador ya habría tapado lo que hay que
@@ -1111,9 +1194,17 @@ export default function App() {
      identificadores) o vuelve a comprobar si no pudo. Desde memoria: no hay nada pendiente en el aparato. */
   useEffect(() => {
     if (typeof window === 'undefined' || !window.addEventListener) return undefined;
-    const alVolver = () => { const g = guardiaHorarioRef.current; if (g) g.reintentar(); };
+    /* 🛡 E1 (TP-15 C) — y el horario: al recuperar la conexión, lo pendiente sale con su condición y, si no hay
+       nada tuyo pendiente, se vuelve a leer la cuenta. Lo mismo al volver a primer plano. */
+    const releerHorario = () => { const w = escritorHorarioRef.current; if (w) w.releer(); };
+    const alVolver = () => { const g = guardiaHorarioRef.current; if (g) g.reintentar(); releerHorario(); };
+    const alMostrarse = () => { if (typeof document !== 'undefined' && document.visibilityState === 'visible') releerHorario(); };
     window.addEventListener('online', alVolver);
-    return () => window.removeEventListener('online', alVolver);
+    if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('visibilitychange', alMostrarse);
+    return () => {
+      window.removeEventListener('online', alVolver);
+      if (typeof document !== 'undefined' && document.removeEventListener) document.removeEventListener('visibilitychange', alMostrarse);
+    };
   }, []);
 
   useEffect(() => {
@@ -1343,17 +1434,12 @@ export default function App() {
     error: { code: horarioSoloLecturaRef.current || 'solo_lectura', message: 'Tu horario está en solo lectura en esta aplicación: no se ha guardado nada.' },
   });
 
-  /* 🛡 Horarios A-bis (§1 y §7) — lo que se guarda de `horarioTop`: `version: 1` siempre y el testigo fuera del
-     arranque (o con una intención confirmada). Se llama SOLO desde los dos puntos de escritura (`snapshotAndSave`
-     y Deshacer), cuando ya se ha decidido guardar. El mismo objeto va a la pantalla y a `saveData`. Durante el
-     arranque, después del guardado se relee para demostrar el testigo (la relectura espera a la cola). */
-  const prepararHorarioParaGuardar = (nuevo) => {
-    const g = guardiaHorarioRef.current;
-    if (!g) { horarioTopRef.current = nuevo; return nuevo; }
-    const p = g.prepararEscritura(nuevo, horarioTopRef.current);
-    horarioTopRef.current = p.valor;
-    if (p.conTestigo && p.arranque) queueMicrotask(() => g.despuesDeGuardar(p, esperarColaDe('horarioTop')));
-    return p.valor;
+  /* 🛡 Horarios E1 — lo que se guarda de `horarioTop` lo prepara el escritor protegido AL SALIR (la `version`, el
+     testigo de la A-bis y la condición sobre la revisión confirmada): `escritorHorario.js`. */
+  const guardarHorario = (nuevo, { automatico = false } = {}) => {
+    const w = escritorHorarioRef.current;
+    if (!w) return Promise.resolve({ ok: false, error: { code: 'sin_escritor', message: 'El horario todavía no se puede guardar.' } });
+    return w.guardar(nuevo, { automatico });
   };
 
   const guardarFitness = async (next) => {
@@ -2268,21 +2354,25 @@ export default function App() {
   // devolvería el elemento a su módulo pero dejaría su entrada en la papelera: un fantasma que
   // al restaurarse duplicaría el elemento. Con la papelera dentro del snapshot, deshacer revierte
   // las dos cosas a la vez y los dos sistemas de recuperación no se pisan.
-  const snapshotAndSave = (patch) => {
+  const snapshotAndSave = (patch, { automatico = false } = {}) => {
     if (parcheTocaHorario(patch) && horarioSoloLecturaRef.current) return Promise.resolve(NO_GUARDA_HORARIO());
-    /* 🛡 A-bis (§1) — el horario que se guarda lleva su `version` y, fuera del arranque, su testigo. */
-    if (patch.horarioTop) patch = { ...patch, horarioTop: prepararHorarioParaGuardar(patch.horarioTop) };
     const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion, horarioTop, fitness, cumpleanos };
     /* 🔎 Entrega A — en solo lectura el paso de Deshacer NO lleva el horario: lo que hay en
        pantalla es la versión normalizada (una colección malformada sale vacía) y deshacer ese
        paso más tarde, ya editable, la escribiría encima de lo que hay en la cuenta. */
     if (horarioSoloLecturaRef.current) delete snapshot.horarioTop;
-    const nextHist = [...history, snapshot].slice(-10);
+    /* 🛡 E1 — si este paso cambia el horario (Deshacer lo mira, y no lo deduce comparando con una pantalla que otro
+       aparato ha podido cambiar después). */
+    else snapshot.tocaHorario = !!patch.horarioTop;
+    /* La pila de Deshacer (diez pasos), de la ref y no del estado del pintado: dos guardados seguidos no se pisan. */
+    const pilaDeshacer = historyRef.current;
+    const nextHist = [...pilaDeshacer, snapshot].slice(-10);
     /* 🐛 2026-10-18 — devuelve el resultado de lo guardado (`{ ok, error }` de `saveData`), para que
        una pantalla que tenga algo que decir de SU guardado lo pueda leer (editar un examen). Nadie
        lo esperaba antes, así que quien no lo lea sigue igual. El historial de Deshacer no cuenta. */
     const guardados = [];
     setHistory(nextHist);
+    historyRef.current = nextHist;
     saveData(uidUser, 'historial', nextHist);
     if (patch.sueno) { setSueno(patch.sueno); guardados.push(saveData(uidUser, 'sueno', patch.sueno)); }
     if (patch.calistenia) { setCalistenia(patch.calistenia); guardados.push(saveData(uidUser, 'calistenia', patch.calistenia)); }
@@ -2304,7 +2394,10 @@ export default function App() {
     if (patch.armario) { setArmario(patch.armario); guardados.push(saveData(uidUser, 'armario', patch.armario)); }
     if (patch.rachas) { setRachas(patch.rachas); guardados.push(saveData(uidUser, 'rachas', patch.rachas)); }
     if (patch.gamificacion) { setGamificacion(patch.gamificacion); guardados.push(saveData(uidUser, 'gamificacionRachas', patch.gamificacion)); }
-    if (patch.horarioTop) { setHorarioTop(patch.horarioTop); guardados.push(saveData(uidUser, 'horarioTop', patch.horarioTop)); }
+    /* 🛡 E1 (TP-15 A) — el horario va por su escritor protegido, nunca por `saveData`: escritura condicional sobre la
+       revisión confirmada, y si otro aparato cambió algo, la política aprobada (recalcular lo automático; lo tuyo,
+       conflicto con tu cambio apartado). Las demás claves del mismo parche salen como siempre (límite L-E1-2). */
+    if (patch.horarioTop) { setHorarioTop(patch.horarioTop); guardados.push(guardarHorario(patch.horarioTop, { automatico })); }
     if (patch.estiloHombre) { setEstiloHombre(patch.estiloHombre); guardados.push(saveData(uidUser, 'estiloHombre', patch.estiloHombre)); }
     /* FIT F4 — sin esta línea, eliminar una plantilla no guardaría nada y la
        pantalla se pintaría perfecta: `snapshotAndSave` solo escribe lo que
@@ -2914,14 +3007,30 @@ export default function App() {
     await deleteBibliotecaArchivo(path);
   };
 
-  const undo = () => {
-    if (history.length === 0) return;
-    const ultimoPaso = history[history.length - 1];
-    /* 🛡 A-bis (§1) — el horario que restaura Deshacer también lleva su `version` y su testigo; la `base` sale del
-       estado actual de la pantalla, nunca de la copia que se restaura. */
-    const last = !horarioSoloLecturaRef.current && ultimoPaso.horarioTop
-      ? { ...ultimoPaso, horarioTop: prepararHorarioParaGuardar(ultimoPaso.horarioTop) } : ultimoPaso;
-    const rest = history.slice(0, -1);
+  const undo = async () => {
+    const pila = historyRef.current;
+    if (!pila.length) return;
+    const ultimoPaso = pila[pila.length - 1];
+    /* 🛡 E1 (TP-15, política aprobada: «Deshacer se bloquea si hay cambios de otro aparato posteriores»). El paso
+       lleva una foto de TODOS los módulos; el horario solo se reescribe si ESE paso lo cambió (si no, deshacer algo
+       de Fitness no puede chocar con el horario de otro aparato). Si lo cambió, antes se mira la cuenta: si otro
+       aparato escribió después, no se deshace NADA y se dice. Sin conexión no se puede saber, y entonces decide la
+       escritura condicional (un choque es un conflicto, con tu cambio apartado: nunca se pisa lo suyo). */
+    /* Un paso de antes de E1 no dice si tocó el horario: se compara con la pantalla. */
+    const tocaHorario = !horarioSoloLecturaRef.current && !!ultimoPaso.horarioTop
+      && (ultimoPaso.tocaHorario === true || (ultimoPaso.tocaHorario === undefined && !mismoContenido(ultimoPaso.horarioTop, horarioTop, { sinSello: true })));
+    if (tocaHorario) {
+      const w = escritorHorarioRef.current;
+      if (!w || w.motivoBloqueo()) { setAvisoApp('deshacer_bloqueado_horario'); return; }
+      /* Un paso de antes de que llegara lo de otro aparato: deshacerlo pisaría lo suyo. */
+      if (pasosAntesDeAjenoRef.current.has(ultimoPaso)) { setAvisoApp('deshacer_bloqueado_horario'); return; }
+      const libre = await w.sinCambiosAjenos();
+      if (libre === false) { setAvisoApp('deshacer_bloqueado_horario'); return; }
+      /* Mientras se miraba la cuenta pudo guardarse otro cambio: ese paso ya no es el último. */
+      if (historyRef.current[historyRef.current.length - 1] !== ultimoPaso) { setAvisoApp('deshacer_cambiado'); return; }
+    }
+    const last = ultimoPaso;
+    const rest = historyRef.current.slice(0, -1);
     setSueno(last.sueno); saveData(uidUser, 'sueno', last.sueno);
     setCalistenia(last.calistenia); saveData(uidUser, 'calistenia', last.calistenia);
     setFutbol(last.futbol); saveData(uidUser, 'futbol', last.futbol);
@@ -2945,11 +3054,12 @@ export default function App() {
     /* 🔎 Horarios · Fase 4, entrega A — en solo lectura, deshacer no vuelve a escribir el horario. */
     /* Y un paso que no lleva el horario (uno guardado en solo lectura) no lo toca: antes lo
        restauraba como vacío. */
-    if (!horarioSoloLecturaRef.current && last.horarioTop) { setHorarioTop(last.horarioTop); saveData(uidUser, 'horarioTop', last.horarioTop); }
+    /* 🛡 E1 — y por su escritor protegido, como un cambio tuyo. */
+    if (tocaHorario) { setHorarioTop(last.horarioTop); guardarHorario(last.horarioTop); }
     setEstiloHombre(last.estiloHombre || DEFAULT_ESTILO_HOMBRE); saveData(uidUser, 'estiloHombre', last.estiloHombre || DEFAULT_ESTILO_HOMBRE);
     /* 🎂 Solo si el paso lo tenía: un paso de antes de Cumpleaños no puede vaciarlo. */
     if (last.cumpleanos) { setCumpleanos(last.cumpleanos); saveData(uidUser, 'cumpleanos', last.cumpleanos); }
-    setHistory(rest); saveData(uidUser, 'historial', rest);
+    setHistory(rest); historyRef.current = rest; saveData(uidUser, 'historial', rest);
   };
 
   // relacion queda fuera de currentState/export: es el único módulo protegido por PIN de
@@ -3427,8 +3537,15 @@ export default function App() {
               productividad: { ...productividad, tareas: productividad.tareas.map((t) => (t.id === id ? { ...t, fecha } : t)) },
             })}
             accent={accent}
-            onCambiar={(nuevo) => snapshotAndSave({ horarioTop: nuevo })}
+            onCambiar={(nuevo, opciones) => snapshotAndSave({ horarioTop: nuevo }, opciones)}
             onCrearHorario={(nuevo) => snapshotAndSave({ horarioTop: nuevo })}
+            /* 🛡 E1 — el conflicto de edición (D2) y la entrega corta (D1). */
+            escritor={escritorHorario}
+            onVerLoDeAhora={() => { const w = escritorHorarioRef.current; if (w) w.verLoDeAhora(); }}
+            onDescartarMiCambio={() => { const w = escritorHorarioRef.current; return w ? w.descartarMiCambio({ confirmado: true }) : Promise.resolve({ ok: false }); }}
+            onRetirarAparato={(aparato, motivo) => { const g = guardiaHorarioRef.current; return g ? g.retirarAparato(aparato, motivo) : Promise.resolve({ ok: false, motivo: 'sin_guardia' }); }}
+            onResolverIncidencias={(ids, decision) => { const g = guardiaHorarioRef.current; return g ? g.resolverIncidencias(ids, decision) : Promise.resolve({ ok: false, motivo: 'sin_guardia' }); }}
+            onReabrirResolucion={(id) => { const g = guardiaHorarioRef.current; return g ? g.reabrirResolucion(id) : Promise.resolve({ ok: false, motivo: 'sin_guardia' }); }}
             /* 🚨 AS F1 — escribir una clase puede tocar DOS almacenes: el horario
                y el catálogo compartido de asignaturas, cuando Josué escribe una
                que todavía no existía. Se guardan en **la misma llamada**: dos
@@ -4058,6 +4175,8 @@ export default function App() {
       <SuggestionsButton accent={accent} buildPrompt={buildSuggestionsPrompt} lado="derecha" />
       {/* MS F16 — cómo va lo guardado, arriba y en medio; vacío casi siempre. */}
       <IndicadorDeSincronizacion />
+      {/* 🛡 E1 — un aviso suelto de la aplicación (Deshacer bloqueado por un cambio de otro aparato). */}
+      <AvisoAccion accion={avisoApp} accent={accent} onCerrar={() => setAvisoApp(null)} />
       {showSearch && (
         <UniversalSearchModal
           accent={accent} onClose={() => setShowSearch(false)} buildContext={() => currentState}

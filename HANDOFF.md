@@ -2,6 +2,16 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (2026-11-16 — Horarios E1, v3.163.0; commits SOLO locales en `claude/horarios-rediseno`, sin push, PR,
+> fusión ni despliegue):** `horarioTop` ya solo lo escribe su **escritor protegido** (`src/lib/escritorHorario.js`), con
+> escritura condicional sobre la revisión del testigo; `saveData` lo rechaza. Un cambio que choca con el de otro aparato abre
+> un **conflicto** (no se pisa ni se pierde: se aparta en el historial con el motivo `conflicto` y se sale con «Ver lo que hay
+> ahora» o «Descartar mi cambio»); Deshacer se bloquea si otro aparato escribió después; se relee al volver a la pestaña y al
+> recuperar la conexión; la **incidencia #5** está corregida y la **entrega corta** (retirar, resolver, reabrir) está hecha. La
+> regla del servidor (`supabase/horarios-regla-revision.sql`) está preparada y **probada solo en un PostgREST local**: activarla
+> es E2 y lo autoriza Josué. Todo en `docs/19` §18.14. Pendiente: que Josué autorice push/PR/fusión/despliegue y lo pruebe en
+> sus dos aparatos.
+>
 > **📅 ACTUALIZACIÓN (2026-11-01 — Imagen personal: el ciclo posterior a la F65, Fases A y B, en la rama `claude/imagen-personal-integracion`, basada en `main` y sin la PR #2; versión 3.161.3, sin subir; sin `main` y sin despliegue a producción):**
 > Josué abrió un ciclo nuevo tras la EH F65 (que **sigue congelada**: `docs/09` y `cierre.js` no se tocan) para reorganizar la
 > navegación. **La portada de Imagen personal son ahora seis tarjetas** —Ropa (abre el Armario y lleva el enlace a 👤 Mi

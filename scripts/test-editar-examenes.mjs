@@ -129,7 +129,10 @@ ok(/resumenSincronizacion\(\)\.pendientes\.includes\('estudios'\)/.test(acc) && 
   '🚨 tras un fallo, «Guardar» otra vez es el reintento: se vuelve a mandar');
 ok(/return Promise\.resolve\(onUpdateExamenes\(nuevos\)\)/.test(acc), 'y devuelve el resultado del guardado');
 ok(/crear: \(d\) => onAddExamen\(/.test(acc), 'crear sigue');
-const snap = APP.slice(APP.indexOf('const snapshotAndSave = (patch) => {'), APP.indexOf('const addSueno'));
+/* 🔓 E1 (Horarios) — `snapshotAndSave` recibe también `{ automatico }` y el horario va por su escritor protegido
+   (`guardarHorario`), no por `saveData`: entra igual en la cuenta de lo guardado. */
+const snap = APP.slice(APP.indexOf('const snapshotAndSave = (patch, { automatico = false } = {}) => {'), APP.indexOf('const addSueno'));
+ok(snap.length > 200 && /guardados\.push\(guardarHorario\(patch\.horarioTop, \{ automatico \}\)\)/.test(snap), 'el horario entra en esa cuenta por su escritor protegido (E1)');
 ok(/return resultadoDeGuardados\(guardados\);/.test(snap), '🚨 `snapshotAndSave` devuelve lo que contestó saveData');
 ok(/guardados\.push\(saveData\(uidUser, 'estudios', patch\.estudios\)\)/.test(snap), 'y Estudios entra en esa cuenta');
 ok((snap.match(/guardados\.push\(saveData/g) || []).length === (snap.match(/saveData\(uidUser, '/g) || []).length - 1, 'todas las claves menos el historial de Deshacer');

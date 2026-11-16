@@ -88,7 +88,7 @@ import { exportarHorario, revisarImportacion, importarHorario, estadoDelModulo }
 import { notificarSiCorresponde } from '../lib/notificaciones';
 import { DiagnosticoHorariosEntrada, AvisoSoloLecturaHorario } from '../components/diagnosticoHorarioPanel';
 // 🛡 Horarios A-bis — los avisos de la guardia del horario y su pantalla de consulta (solo lectura).
-import { AvisoGuardiaHorario, ConsultaGuardiaHorarioEntrada, esMotivoDeGuardia } from '../components/guardiaHorarioPanel';
+import { AvisoGuardiaHorario, ConsultaGuardiaHorarioEntrada, esMotivoDeGuardia, AvisoConflictoHorario, AvisoApartadaPendiente, esMotivoDeConflicto } from '../components/guardiaHorarioPanel';
 
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
 const fechaCorta = (iso) => iso.split('-').reverse().slice(0, 2).join('/');
@@ -1973,6 +1973,10 @@ export default function HorarioView({
   // 🛡 Horarios A-bis — la guardia del horario: lo que enseña la pantalla de consulta (`guardia`), «Reintentar»
   // cuando la comprobación no se pudo hacer y la evaluación de las cinco condiciones. Solo lectura.
   guardia = null, onReintentarGuardia = null, onEvaluarGuardia = null,
+  // 🛡 E1 — el escritor protegido (`escritor`: lo que enseña), las dos salidas del conflicto de edición (D2) y las
+  // tres operaciones de la entrega corta (D1). En App.jsx; aquí solo se piden.
+  escritor = null, onVerLoDeAhora = null, onDescartarMiCambio = null,
+  onRetirarAparato = null, onResolverIncidencias = null, onReabrirResolucion = null,
 }) {
   const estado = horarioTop;
   const [horarioId, setHorarioId] = useState(null);
@@ -2158,15 +2162,17 @@ export default function HorarioView({
   useEffect(() => {
     if (!porAvisar.mandar.length) return;
     let nuevo = estado;
-    let cambio = false;
     for (const av of porAvisar.mandar) {
       notificarSiCorresponde(notificaciones, tipoAviso(av.tipo).categoria, av.clave, av.titulo, av.cuerpo);
       nuevo = registrarEnviado(nuevo, av, { fecha: hoy });
-      cambio = true;
     }
+    // 🐛 Incidencia #5 (E1) — solo se guarda si `registrarEnviado` ha cambiado algo DE VERDAD: si ya estaba
+    // apuntado devuelve el mismo objeto, y un guardado sin cambios volvía a disparar este efecto en bucle.
+    const cambio = nuevo !== estado;
     // 🔎 Entrega A — en solo lectura el aviso sale (no escribe el horario: su marca de
     // «ya avisado hoy» vive en el aparato), pero no se apunta en el horario.
-    if (cambio && !soloLectura) onCambiar(nuevo);
+    // 🛡 E1 — y es un guardado AUTOMÁTICO: si otro aparato cambió el horario, se recalcula sobre lo de ahora.
+    if (cambio && !soloLectura) onCambiar(nuevo, { automatico: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [porAvisar]);
 
@@ -2201,9 +2207,12 @@ export default function HorarioView({
          sencillo […] no mostrar demasiadas opciones simultáneamente"*. Los
          textos son los del enunciado, en `VACIO_HORARIOS`. */
       <div className="space-y-3">
-      {esMotivoDeGuardia(soloLectura)
-        ? <AvisoGuardiaHorario motivo={soloLectura} guardia={guardia} accent={accent} onReintentar={onReintentarGuardia} />
-        : <AvisoSoloLecturaHorario motivo={soloLectura} accent={accent} onRecargar={onRecargar} />}
+      {esMotivoDeConflicto(soloLectura)
+        ? <AvisoConflictoHorario escritor={escritor} accent={accent} onVerLoDeAhora={onVerLoDeAhora} onDescartarMiCambio={onDescartarMiCambio} />
+        : esMotivoDeGuardia(soloLectura)
+          ? <AvisoGuardiaHorario motivo={soloLectura} guardia={guardia} accent={accent} onReintentar={onReintentarGuardia} />
+          : <AvisoSoloLecturaHorario motivo={soloLectura} accent={accent} onRecargar={onRecargar} />}
+      <AvisoApartadaPendiente escritor={escritor} />
       <Card className="text-center">
         <Calendar size={22} style={{ color: accent }} className="mx-auto mb-2" />
         <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{VACIO_HORARIOS.titulo}</p>
@@ -2220,7 +2229,7 @@ export default function HorarioView({
         ))}
       </Card>
       <DiagnosticoHorariosEntrada crudo={horarioCrudo} asignaturas={asignaturas} cargaFallida={cargaFallida} hoy={hoy} accent={accent} />
-      <ConsultaGuardiaHorarioEntrada guardia={guardia} onEvaluar={onEvaluarGuardia} accent={accent} />
+      <ConsultaGuardiaHorarioEntrada guardia={guardia} onEvaluar={onEvaluarGuardia} accent={accent} onRetirar={onRetirarAparato} onResolver={onResolverIncidencias} onReabrir={onReabrirResolucion} />
       </div>
     );
   }
@@ -2230,9 +2239,12 @@ export default function HorarioView({
 
   return (
     <div className="space-y-3">
-      {esMotivoDeGuardia(soloLectura)
-        ? <AvisoGuardiaHorario motivo={soloLectura} guardia={guardia} accent={accent} onReintentar={onReintentarGuardia} />
-        : <AvisoSoloLecturaHorario motivo={soloLectura} accent={accent} onRecargar={onRecargar} />}
+      {esMotivoDeConflicto(soloLectura)
+        ? <AvisoConflictoHorario escritor={escritor} accent={accent} onVerLoDeAhora={onVerLoDeAhora} onDescartarMiCambio={onDescartarMiCambio} />
+        : esMotivoDeGuardia(soloLectura)
+          ? <AvisoGuardiaHorario motivo={soloLectura} guardia={guardia} accent={accent} onReintentar={onReintentarGuardia} />
+          : <AvisoSoloLecturaHorario motivo={soloLectura} accent={accent} onRecargar={onRecargar} />}
+      <AvisoApartadaPendiente escritor={escritor} />
       {/* ═══ Entrega 3 · F5, apartados 1, 2, 5 y 6 ═══════════════════════════
           *"Debe existir una separación visual y conceptual evidente"* entre las
           vistas de planificación y las estructuras que las generan. Josué lo
@@ -2498,7 +2510,7 @@ export default function HorarioView({
 
       {/* 🔎 Horarios · Fase 4, entrega A (TP-4) — el diagnóstico de solo lectura, plegado. */}
       <DiagnosticoHorariosEntrada crudo={horarioCrudo} asignaturas={asignaturas} cargaFallida={cargaFallida} hoy={hoy} accent={accent} />
-      <ConsultaGuardiaHorarioEntrada guardia={guardia} onEvaluar={onEvaluarGuardia} accent={accent} />
+      <ConsultaGuardiaHorarioEntrada guardia={guardia} onEvaluar={onEvaluarGuardia} accent={accent} onRetirar={onRetirarAparato} onResolver={onResolverIncidencias} onReabrir={onReabrirResolucion} />
     </div>
   );
 }

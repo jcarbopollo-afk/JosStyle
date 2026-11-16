@@ -55,7 +55,7 @@ exportación visual lleva otro nombre.
 15. Decisiones técnicas pendientes
 16. Criterios de aceptación
 17. Aclaraciones de la revisión (2026-11-08) — **mandan sobre los apartados anteriores donde difieran**
-18. Correcciones del 2026-11-09 (versiones manuales, TP-5/TP-7, funciones que se conservan, colores al exportar, «Cada dos semanas», conservación de versiones, coherencia, TP-18 resuelta, versiones eliminadas entre aparatos —sin nada pendiente en el aparato y con escritura condicional— y la regla definitiva del autoguardado). §18.12: el cierre documental previo a la Fase 4 (TP-4, el historial de versiones tal como está implementado, TP-8 con TP-15, y sus riesgos) y la decisión aprobada del TP-15 (A + B + C, 2026-11-10). §18.13: la entrega A y la A-bis tal como están implementadas (2026-11-15): la guardia `horarioGuardia:<aparato>`, el testigo, la intención, la clasificación E0/E1/E2/AI/B/C, los estados E3–E7, la supresión, el evaluador de la B y C-1 a C-4
+18. Correcciones del 2026-11-09 (versiones manuales, TP-5/TP-7, funciones que se conservan, colores al exportar, «Cada dos semanas», conservación de versiones, coherencia, TP-18 resuelta, versiones eliminadas entre aparatos —sin nada pendiente en el aparato y con escritura condicional— y la regla definitiva del autoguardado). §18.12: el cierre documental previo a la Fase 4 (TP-4, el historial de versiones tal como está implementado, TP-8 con TP-15, y sus riesgos) y la decisión aprobada del TP-15 (A + B + C, 2026-11-10). §18.13: la entrega A y la A-bis tal como están implementadas (2026-11-15): la guardia `horarioGuardia:<aparato>`, el testigo, la intención, la clasificación E0/E1/E2/AI/B/C, los estados E3–E7, la supresión, el evaluador de la B y C-1 a C-4. §18.14: la entrega E1 (2026-11-16): el escritor protegido de `horarioTop` (TP-15 A y C), el conflicto entre aparatos con la copia apartada (D2 y D2-bis), Deshacer, la incidencia #5 corregida, la entrega corta (retirar, resolver y reabrir, D1) y la regla del servidor preparada y probada solo en local (TP-15 B, sin activar)
 
 ---
 
@@ -1883,7 +1883,7 @@ horarioCuarentena = { version: 1, elementos: [{
 |---|---|---|---|
 | **TP-13** | Cualquier poda o borrado automático: `completadas`, `mochila`, choques resueltos, versiones, avisos enviados, cuarentena | 🔎 **RESUELTA por Josué el 2026-11-09**: **se conserva todo**. No hay ninguna poda automática. El crecimiento queda como riesgo aceptado (§17.8.4) | Resuelta |
 | **TP-14** | Aviso de versión nueva para toda la aplicación (`version.json`) | 🔎 **RESUELTA por Josué el 2026-11-09**: **no se incorpora en esta fase**. Las copias antiguas siguen tratándose con la guardia, el testigo y la recuperación (§17.2) | Resuelta |
-| **TP-15** (incluye el **TP-8**) | **Protección de las escrituras entre aparatos.** 🔎 **Unificada con el TP-8 el 2026-11-09.** Hay que separar dos cosas: **(1) el historial de versiones**: protegido por diseño y **ya implementado en código** con la escritura condicional por aparato (§18.9 y §18.12), comprobada con un PostgREST local y pendiente de comprobar en Supabase alojado y en su iPhone; **(2) `horarioTop` y los borradores**: **siguen sin protección**; hoy gana el último que escribe, y una copia anterior a la entrega A puede borrar campos nuevos | ~~Para (2): A, el token sin SQL; B, la versión en el servidor con SQL; o ninguna~~. 🔎 **DECIDIDA por Josué el 2026-11-10: A + B + C**, en ese orden (§18.12): escritor condicional propio en el cliente, regla en el servidor solo para las claves de Horarios y recarga al volver a la app. **Sin implementar.** B se activa en producción solo con su autorización expresa, después de probarla en local y en un Supabase independiente | Decidida; B en producción, **Josué** |
+| **TP-15** (incluye el **TP-8**) | **Protección de las escrituras entre aparatos.** 🔎 **Unificada con el TP-8 el 2026-11-09.** Hay que separar dos cosas: **(1) el historial de versiones**: protegido por diseño y **ya implementado en código** con la escritura condicional por aparato (§18.9 y §18.12), comprobada con un PostgREST local y pendiente de comprobar en Supabase alojado y en su iPhone; **(2) `horarioTop` y los borradores**: **siguen sin protección**; hoy gana el último que escribe, y una copia anterior a la entrega A puede borrar campos nuevos | ~~Para (2): A, el token sin SQL; B, la versión en el servidor con SQL; o ninguna~~. 🔎 **DECIDIDA por Josué el 2026-11-10: A + B + C**, en ese orden (§18.12): escritor condicional propio en el cliente, regla en el servidor solo para las claves de Horarios y recarga al volver a la app. 🔎 **E1 (2026-11-16, commits locales, sin publicar)**: **A y C construidas para `horarioTop`** (§18.14); **B preparada** (`supabase/horarios-regla-revision.sql`) y **probada solo en un PostgREST local**, sin activar en ningún entorno alojado; `horarioBorradores` tiene su contrato de sello (D3) y nadie lo escribe todavía. B se activa en producción solo con su autorización expresa, después de probarla en local y en un Supabase independiente | A y C hechas (sin publicar); B en producción, **Josué** |
 | **TP-16** | Pedir `updated_at` en la carga (para el respaldo y para la opción A del TP-15) | Ampliar `loadData` para Horarios. 🔎 **2026-11-10**: el TP-15 aprobado compara una revisión guardada en `value`, **no** `updated_at`, así que para el TP-15 ya no hace falta; queda, si acaso, para el respaldo. 🔎 **2026-11-15**: la A-bis lee el `updated_at` de las filas de la guardia con **su propio transporte** (`supabase.js`), sin ampliar `loadData`; el TP-16 sigue abierto solo para el respaldo | Fase 4 |
 | **TP-17** | Las claves nuevas ~~`horarioAparatos`, `horarioGuardia`~~ y `horarioCuarentena` (misma tabla, mismas políticas, sin SQL). 🔎 Y los registros `horarioVersiones:<aparato>` (§18.9, 2026-11-09) | Como se describen en 17.2, 17.5 y 18.9. 🔎 **RESUELTA para la guardia (decisión del 2026-11-14, implementada en la A-bis, v3.162.0)**: **una fila por aparato, `horarioGuardia:<aparato>`**, que sustituye a `horarioAparatos` y `horarioGuardia`; las dos y `horarioAparatos:*` se rechazan en `saveData` y en su cola (§17.2, §18.13). `horarioCuarentena` sigue para la entrega B (17.5) | Resuelta (guardia); `horarioCuarentena`, Fase 4 entrega B |
 | **TP-18** | El orden de los días | 🔎 **RESUELTA por Josué el 2026-11-09**: siempre de lunes a domingo, sin controles para reordenar, en el móvil y en el escritorio; `posicion` se conserva intacto y deja de controlar la presentación (§18.8) | Resuelta |
@@ -2622,7 +2622,7 @@ vista siguen sin usarse.
 | Publicado | v3.162.0, PR #6 fusionado en `main` (`dcb649e`), despliegue de producción correcto. Commits `71a2d69` (A y A-bis) y `bcac642` (la prueba de Chromium con reloj fijo), sobre `017a488` y `ba7e258` |
 | Código | `src/lib/guardiaHorario.js` (nuevo: forma de la fila, invariante, huella, clasificación, estados, escritor, intención, testigo, evaluador e id); `src/lib/supabase.js` (transporte de la guardia, lectura propia de `horarioTop`, rechazos en `saveData`); `src/lib/sincronizacion.js` (rechazos en la cola); `src/lib/horario.js` (`version` y `testigo`, campos conocidos); `src/App.jsx` (integración); `src/components/guardiaHorarioPanel.jsx`, `src/views/HorarioView.jsx` (pantalla de consulta y avisos); `src/lib/estadosAsincronos.js`. `historialVersiones.js` no cambia |
 | Probado | `test-guardia-horario.mjs` (267, casos 1–30 y concurrencia), `test-guardia-horario-vista.jsx` (60), la sección A-bis del recorrido de Chromium, con el doble de Supabase ampliado y un reloj fijo (**38 comprobaciones contadas en una ejecución aislada de esa sección**; en el `verificar.sh` final, cuyo registro solo enumera los fallos, **ninguna de esa sección figura entre ellos**), las de la entrega A (507 y 33), y `verificar.sh` en una copia limpia sin `.env.local` (2026-11-15): un único fallo, **«FIT 8/8 — con plan: los mismos entrenamientos por día, y nada perdido antes del seguimiento»**, que **también falla en la base `ba7e258`**, sin A ni A-bis, en una ejecución parcial del mismo día, y que **pasó** en las ejecuciones del 2026-11-14. **Su causa no está determinada**; queda pendiente repetirlo en un día entre semana |
-| Sin probar | El **nivel 3** de la guardia (`test-guardia-horario-postgrest.mjs`: existe y se omite sin un PostgREST local configurado; **no se ha ejecutado**); Supabase alojado; Safari e iPhone; dos aparatos reales |
+| Sin probar | El **nivel 3** de la guardia (`test-guardia-horario-postgrest.mjs`: existe y se omite sin un PostgREST local configurado; **no se ha ejecutado**); Supabase alojado; Safari e iPhone; dos aparatos reales. 🔎 **E1 (2026-11-16)**: el nivel 3 de la guardia **ya se ha ejecutado** en el laboratorio local de E1 (19 de 19, §18.14), y el fallo de «FIT 8/8 — con plan…» tenía causa —el día de la semana— y está corregido en la prueba (D5, §18.14). Siguen sin probar Supabase alojado, Safari, el iPhone y dos aparatos reales |
 
 #### 1. `version` y testigo dentro de `horarioTop`
 
@@ -2638,10 +2638,10 @@ testigo: { formato: 1, desde, ultimaEscritura, revision, base, aparato, ...desco
 - **El testigo va en toda escritura fuera del arranque.** Durante el arranque, solo si existe **alguna intención
   confirmada** (leída en el servidor al cargar, de cualquier aparato, o confirmada por esta sesión); si no, el guardado
   sale sin testigo y sin esperar.
-- Solo en los dos puntos de escritura (`snapshotAndSave` y Deshacer); el mismo objeto va a la pantalla y a `saveData`;
+- Solo en los dos puntos de escritura (`snapshotAndSave` y Deshacer); el mismo objeto va a la pantalla y a `saveData` (🔎 **E1**: ya no a `saveData`, sino al escritor protegido, que es quien llama a `prepararEscritura`, §18.14);
   `base` sale del estado actual, nunca de la copia que restaura Deshacer; un testigo anterior mal formado se sustituye.
 - **Nunca se escribe `horarioTop` al cargar** ni sin que él guarde algo.
-- `revision` y `base` **no protegen nada** hasta el TP-15.
+- `revision` y `base` **no protegen nada** hasta el TP-15. 🔎 **E1**: desde el §18.14 la `revision` es la condición de toda escritura de `horarioTop` (TP-15 A), y `base` es lo que comprobará la regla del servidor cuando se active (TP-15 B).
 
 #### 2. La fila `horarioGuardia:<aparato>`
 
@@ -2809,7 +2809,7 @@ lo usa todavía para migrar: la entrega B no existe.
 - **C-3**: las ambigüedades se resuelven a mano en la entrega corta, junto con las pérdidas.
 - **C-4**: `version: 1` solo separa B de C; nunca permite considerar inocua una ausencia de testigo.
 
-#### 8. Pantalla de consulta (sin acciones)
+#### 8. Pantalla de consulta (sin acciones) — 🔎 desde E1, con las tres acciones de la entrega corta (§18.14)
 
 «Comprobación de tus aparatos», en Horarios, con la indicación «Solo consulta: no cambia nada»: los aparatos (etiqueta,
 versiones, visitas y estado), las **pérdidas (B)** y los **casos ambiguos (C)** en dos bloques, agrupados por huella y
@@ -2847,18 +2847,152 @@ antiguas de Vercel.
 
 #### 11. Lo que queda pendiente
 
-- **La entrega corta** (retirar y resolver, C-3) y la lista definitiva de decisiones de una resolución.
+- ~~**La entrega corta** (retirar y resolver, C-3) y la lista definitiva de decisiones de una resolución.~~ 🔎 **Hecha en
+  E1** (§18.14): retirar, resolver con la lista cerrada `conforme` / `asumida` y reabrir (D1).
 - **Los requisitos previos de la B**: el diagnóstico revisado (§12.2), el margen y la hora del servidor (TP-12),
   `versionMinima`, la confirmación en pantalla y TP-5 si aparecen ciclos con grupo.
 - **El nivel 3 de la guardia** (con su autorización para montar PostgREST local) y las pruebas en Safari, el iPhone y
-  Supabase alojado.
+  Supabase alojado. 🔎 **E1**: el nivel 3 ya se ha ejecutado en local (§18.14); lo demás sigue pendiente.
 - **La incidencia #5** (GitHub): el bucle de guardados de avisos del horario cerca de medianoche, **anterior a la entrega
-  A**, sin corregir. La sección A-bis del recorrido usa un reloj fijo para no depender de ella.
-- **El TP-15**, decidido y sin implementar.
+  A**, sin corregir. La sección A-bis del recorrido usa un reloj fijo para no depender de ella. 🔎 **Corregida en E1**
+  (§18.14, sin publicar; la incidencia de GitHub no se ha tocado).
+- **El TP-15**, decidido y sin implementar. 🔎 **E1**: A y C construidas para `horarioTop`; B preparada y probada solo en
+  local (§18.14).
+
+### 18.14 E1: el escritor protegido de `horarioTop` y la entrega corta (2026-11-16)
+
+> Construida con la autorización expresa de Josué del 2026-11-16, conforme al alcance definitivo y a las decisiones **D1,
+> D2 (opción B), D2-bis (opción A, con sus cuatro condiciones), D3, D4 y D5**. **Commits solo locales** en
+> `claude/horarios-rediseno`, sobre `c9ec0cc`: **sin push, sin PR, sin fusión, sin despliegue**, sin tocar Supabase ni datos
+> reales y **sin activar la regla SQL en ningún entorno alojado**. No empieza E2 ni E3 y no cambia nada de Fitness salvo las
+> dos comprobaciones de su prueba que autoriza D5. **Manda sobre los apartados anteriores donde difieran** (C-80).
+
+#### Estado
+
+| | |
+|---|---|
+| Código | `src/lib/escritorHorario.js` (nuevo: el contrato del sello, el escritor protegido y la política de conflictos); `src/lib/supabase.js` (el transporte de `horarioTop`, y `saveData` lo rechaza); `src/lib/sincronizacion.js` (la cola lo rechaza; el indicador global enseña lo pendiente del escritor con `apuntarExterno`); `src/lib/guardiaHorario.js` (la entrega corta); `src/lib/historialVersiones.js` (el motivo `conflicto`); `src/lib/avisosHorario.js` (#5); `src/lib/accionesHoyAgenda.js` (los dos avisos de Deshacer); `src/App.jsx`, `src/views/HorarioView.jsx` y `src/components/guardiaHorarioPanel.jsx` (la integración y las pantallas). `supabase/horarios-regla-revision.sql` y su vuelta atrás, **preparados y sin ejecutar** fuera del laboratorio |
+| Probado | Node: `test-escritor-horario.mjs` (23 secciones), `test-escritor-horario-vista.jsx`, y las suites de la A, la A-bis, el historial, los avisos, Horario Top y la solo lectura, con sus comprobaciones dadas la vuelta donde E1 cambia lo que guardaban. Chromium: la sección A-bis actualizada y una sección **E1** nueva, con dos aparatos de verdad (dos contextos) sobre el doble de Supabase ampliado (150 comprobaciones en la ejecución aislada de las dos). **Nivel 3** en un Postgres 16 + PostgREST 12 **locales** (127.0.0.1, sin credenciales reales, desmontados al terminar): historial 34, guardia 19 y escritor 47 comprobaciones, regla incluida. D5: las dos comprobaciones de Fitness, validadas los siete días de una semana con el reloj fijado. Las cifras exactas y el `verificar.sh` de la copia limpia están en el informe de la entrega |
+| Sin probar | Supabase alojado, Safari, el iPhone y dos aparatos reales (el protocolo está en el informe). La regla del servidor en un Supabase independiente (es de E2) |
+
+#### 1. El contrato del sello (D3)
+
+- **Una sola ruta por clave** (`RUTA_SELLO`): `horarioTop` → `testigo`; `horarioBorradores` → `sello`. La revisión es
+  `value-><ruta>->>revision`, **el texto en crudo** que compara PostgREST (`campoDelSello`). Nadie escribe todavía
+  `horarioBorradores`: su contrato está para cuando exista.
+- `revisionDelSello` devuelve la revisión como texto, `null` si no hay sello o no tiene revisión, o **ilegible** si es algo
+  que no se puede comparar igual en el cliente y en el servidor (un objeto, un decimal, un entero fuera del rango seguro):
+  entonces **no se escribe nada** (L-E1-1).
+
+#### 2. El escritor protegido (TP-15 A)
+
+- **Lo único que escribe `horarioTop`.** `saveData` y su cola lo rechazan antes de la red (`ERROR_CLAVE_HORARIO`), igual
+  que las filas de la guardia y del historial. Todas las rutas de la app (Horario, planificador, mochila, automatizaciones,
+  centro de avisos, avisos, Deshacer, borrar una asignatura) llegan por `snapshotAndSave` → `guardarHorario`.
+- **Toda escritura es condicional**: `update … where value->testigo->>revision = <la que vio>` (o `is null` si la vio sin
+  testigo), pidiendo la fila de vuelta; la primera fila de una cuenta, `insert` simple (23505 = otro la creó antes).
+- **Un envío a la vez**; lo que se pide mientras vuela sale después con la revisión nueva. **Una respuesta perdida** se
+  reconoce al releer (si en la cuenta está exactamente lo enviado, es suyo): nunca se repite a ciegas.
+- **Sin conexión**: el cambio queda **pendiente en memoria** (C-84: nada en el aparato) y el indicador global lo dice; al
+  volver la conexión sale **con su condición**. Si otro aparato escribió entretanto, es un conflicto (abajo), nunca una
+  escritura encima.
+- **El testigo lo pone la guardia de la A-bis** (`prepararEscritura`): revisión nueva, `base` = la revisión que había,
+  este aparato. El escritor es quien la llama.
+
+#### 3. El conflicto (D2, opción B, y D2-bis, opción A)
+
+- **Un cambio tuyo** (manual) que choca con el de otro aparato **no se escribe y no se pierde**: sigue en pantalla, Horarios
+  pasa a solo lectura (`horario_conflicto`, con la prioridad más baja de los motivos) y el aviso «Otro aparato ha cambiado
+  tu horario» dice qué ha pasado, cómo está tu cambio y ofrece **dos salidas**, ninguna que fuerce la escritura:
+  - **«Ver lo que hay ahora»**: la pantalla pasa a lo de la cuenta y puedes seguir editando; tu cambio queda apartado.
+  - **«Descartar mi cambio»**, con confirmación: la pantalla pasa a lo de la cuenta y su copia apartada se borra.
+- **La copia apartada** va al historial de versiones del aparato (`horarioVersiones:<aparato>`) con el motivo
+  **`conflicto`**, que es **no automático** (condición 1), se puede borrar a mano con confirmación (condición 2) y puede
+  hacer crecer la fila unos 45 KB por conflicto manual (condición 3). Si no se puede apartar (sin conexión), la pantalla lo
+  dice («si cierras la aplicación ahora, se pierde») y se reintenta al volver la conexión, desde memoria.
+- **Un guardado automático** (los avisos) que choca **adopta lo de la cuenta** y se recalcula: ni conflicto ni copia
+  (condición 4). Si detrás hay un cambio tuyo calculado sobre lo viejo, ese sí es un conflicto.
+- 🐛 **Corregido en la auditoría global de E1**: un conflicto que se abre **fuera de Horarios** (borrar una asignatura desde
+  Estudios, Deshacer sin conexión desde Ajustes) se callaba hasta abrir Horarios. Ahora sale donde está un aviso de la
+  aplicación («Otro aparato ha cambiado tu horario. Tu cambio no se ha perdido: ábrelo en Horarios para elegir qué hacer.»),
+  una vez por conflicto.
+- **Un rechazo de la regla del servidor** (cuando se active) se trata igual que un choque: se relee y se decide; si la
+  cuenta sigue con lo que vio, se reintenta y, tras dos vueltas, queda pendiente («conflicto repetido»).
+- **Verificado sin conexión y al recuperarla**, en Node, en Chromium y contra el PostgREST local.
+
+#### 4. Deshacer
+
+- Solo reescribe el horario si **ese paso lo cambió** (comparado sin el testigo): deshacer algo de otro módulo no toca el
+  horario.
+- Si lo cambió, antes **mira la cuenta**: si otro aparato escribió después, **no deshace nada** (ningún módulo) y lo dice
+  («tu horario cambió en otro aparato después»); si mientras miraba se guardó otro cambio, tampoco («acabas de guardar otro
+  cambio»). Sin conexión no se puede saber, y decide la escritura condicional (un choque es un conflicto con tu cambio
+  apartado).
+- 🐛 **Corregido en la auditoría global de E1**: mirar la cuenta no basta cuando la pantalla **ya ha adoptado** lo de otro
+  aparato (al volver a la pestaña, con «Ver lo que hay ahora» o en un guardado automático que choca): la cuenta está «al
+  día» y Deshacer habría escrito un paso de antes encima de lo suyo. Ahora cada paso dice **si tocó el horario**
+  (`tocaHorario`; un paso de antes de E1 se compara con la pantalla), y los pasos que había cuando se adoptó lo de otro
+  aparato —y, al cargar, todos los guardados si lo último de la cuenta no lo escribió este aparato— **no pueden reescribir
+  el horario**: Deshacer no hace nada y lo dice. Un paso que no tocó el horario se deshace sin tocarlo. Es conservador:
+  después de recargar, si el último en escribir fue otro aparato, no se deshace un cambio del horario aunque fuera suyo.
+
+#### 5. Releer al volver (TP-15 C)
+
+Al volver la pestaña a primer plano (`visibilitychange`) y al recuperar la conexión (`online`): si no hay nada tuyo sin
+guardar, se lee la cuenta y la pantalla enseña lo de ahora **sin escribir nada**; si hay algo pendiente, sale con su
+condición; con un conflicto abierto, se reintenta apartar la copia.
+
+#### 6. La incidencia #5, corregida
+
+`registrarEnviado` apunta las claves que incluye un resumen de avisos y **devuelve el mismo objeto** si no cambia nada, y
+`HorarioView` solo guarda si el estado cambió, marcado como **automático**. Con el código de antes, tres clases entre las
+00:00 y las 00:03 consultadas a las 00:05 daban 6 y 6 guardados en bucle; ahora, uno. (La incidencia de GitHub no se ha
+tocado: es una acción externa.)
+
+#### 7. La entrega corta (D1, lista cerrada)
+
+En «Comprobación de tus aparatos», cada una con su confirmación y escrita por el escritor condicional de la guardia:
+
+- **Retirar** un aparato: con el motivo `sin_uso`, `reinstalada` o `no_reconocido`; nunca este aparato; solo si su fila se
+  puede leer y no tiene visitas en 30 días. La retirada apunta la secuencia vista y **se anula sola** si esa secuencia
+  cambia (el aparato vuelve a usarse). No toca la fila retirada.
+- **Resolver** avisos abiertos concretos (por su `id`) con la decisión `conforme` («Revisado: el horario está bien») o
+  `asumida` («Acepto lo que hay, aunque falte algo»). Exige el **concepto 2 ahora** (un testigo válido presente) y escribe un
+  `visto` en la misma operación. No cambia nada del horario.
+- **Reabrir** una resolución: anula **esa** resolución por su `anula`, y sus avisos vuelven a quedar abiertos.
+- `restaurada` queda **reservada para E3**. Una pantalla sin las acciones sigue siendo solo consulta.
+
+#### 8. La regla del servidor (TP-15 B): preparada, sin activar
+
+`supabase/horarios-regla-revision.sql` (y `…-deshacer.sql`): un disparador sobre `app_data` que, para `authenticated` y
+`anon`, deja insertar la primera fila, deja actualizar sin testigo antes ni después (arranque) o con un testigo **nuevo** cuya
+`base` es la revisión que había, y **rechaza** quitar el testigo, repetir la revisión, una `base` que no es la que había y
+borrar la fila, con `P0001` / `horario_revision_obsoleta`. Lo del propietario (el borrado en cascada de una cuenta, el
+editor SQL) no pasa por ella. **Solo se ha ejecutado en el laboratorio local**: allí para el upsert ciego de una copia
+antigua, el `update` sin condición y el borrado, deja pasar al escritor de E1 y se quita entera con su vuelta atrás.
+Activarla en un entorno alojado es de E2 y lo autoriza Josué.
+
+#### 9. Limitaciones
+
+| | |
+|---|---|
+| **L-E1-1** | Una revisión que no se puede comparar igual en los dos lados (un objeto, un decimal) **bloquea la escritura** (estado `bloqueado`, con su frase): no se guarda nada, ni se pierde lo que hay. No la produce la app |
+| **L-E1-2** | Un guardado que lleva el horario **y otras claves** (borrar una asignatura con clases en el horario) guarda las otras claves como siempre; si la parte del horario choca, **se aparta** como cualquier cambio tuyo. 🔎 **Se desvía de la frase «se guarda entero o se retiene entero»** del plan: sigue el precedente de la entrega A con `deleteAsignatura` en solo lectura |
+| **Arranque** | En una cuenta sin testigo todavía, la primera escritura se condiciona con `is null`, que es más débil: cualquiera que vea la fila sin testigo puede escribir. La cuenta real ya está en E1 |
+| **Copias antiguas** | Hasta que se active la regla (E2), una copia de la app anterior a E1 **todavía puede pisar** el horario con su upsert ciego. E1 lo detecta (la guardia) pero no lo impide |
+| **Ventanas de la A-bis** (§18.13 §10) | V4 (un guardado pisado antes de releer) **se cierra** con la escritura condicional; V2 y V5 siguen abiertas hasta la regla del servidor |
+
+#### 10. Lo que queda pendiente
+
+- Probar en Supabase alojado, Safari, el iPhone y con dos aparatos reales (el protocolo de la entrega).
+- **E2**: activar la regla en un Supabase independiente y después en producción, con su autorización; y **E3**
+  (`restaurada`).
+- Lo que ya estaba pendiente del §18.13 que E1 no toca: los requisitos previos de la B (TP-12, `versionMinima`, el
+  diagnóstico revisado), el TP-16 para el respaldo y la escritura de `horarioBorradores`.
 
 ---
 
 *Fase 2 de 8 terminada, con la revisión documental del 2026-11-08, las correcciones del 2026-11-09, el cierre documental
 previo a la Fase 4 (§18.12), la decisión del TP-15 (2026-11-10) y la sincronización con la entrega A y la A-bis implementadas
-(§18.13, 2026-11-15). Solo documentación: no autoriza la entrega B ni ninguna instalación, migración, SQL, despliegue o
-cambio de datos.*
+(§18.13, 2026-11-15) y la entrega E1 (§18.14, 2026-11-16, commits locales). Esta documentación no autoriza la entrega B
+ni ninguna instalación, migración, SQL alojado, publicación, despliegue o cambio de datos.*

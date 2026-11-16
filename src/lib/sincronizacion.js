@@ -73,6 +73,9 @@ import { esClaveDeHistorialVersiones } from './historialVersiones';
 /* 🛡 Horarios A-bis (§4): las filas de la guardia (`horarioGuardia:*`, y los nombres reservados `horarioGuardia`,
    `horarioAparatos` y `horarioAparatos:*`) tampoco entran: las escribe su escritor condicional (`guardiaHorario.js`). */
 import { esClaveDeGuardiaHorario } from './guardiaHorario';
+/* 🛡 Horarios E1 (TP-15 A): `horarioTop` y `horarioBorradores` tampoco: los escribe el escritor protegido
+   (`escritorHorario.js`), con su escritura condicional. Lo que tiene pendiente se cuenta aquí como «externo». */
+import { esClaveProtegidaDeHorario } from './escritorHorario';
 
 /** Cuánto espera un guardado a que termine el anterior de su misma clave antes de salir igual. Con
  *  una petición colgada, la cola no puede quedarse parada para siempre. */
@@ -88,6 +91,8 @@ export const ERROR_CARGA_FALLIDA = Object.freeze({ code: 'carga_fallida', messag
 export const ERROR_CLAVE_PROTEGIDA = Object.freeze({ code: 'clave_protegida', message: 'El historial de versiones no se guarda con saveData: lo escribe su escritor condicional.' });
 /** El de una clave de la guardia del horario (A-bis): solo la escribe su escritor condicional. */
 export const ERROR_CLAVE_GUARDIA = Object.freeze({ code: 'clave_protegida', message: 'La comprobación del horario no se guarda con saveData: la escribe su escritor condicional.' });
+/** El de `horarioTop` o `horarioBorradores` (E1): solo los escribe el escritor protegido. */
+export const ERROR_CLAVE_HORARIO = Object.freeze({ code: 'clave_protegida', message: 'El horario no se guarda con saveData: lo escribe su escritor protegido.' });
 /** Y el de un guardado que llega con el usuario de una sesión que ya no está. */
 export const ERROR_OTRA_SESION = Object.freeze({ code: 'otra_sesion', message: 'Este cambio era de una sesión que ya se cerró.' });
 
@@ -119,6 +124,10 @@ const nuevoEstado = (usuario = null) => ({
   reintentando: false,
   /** Cuándo terminó bien el último reintento: «Guardado», un momento. */
   confirmadoEn: 0,
+  /** 🛡 E1 — clave → { pendiente, guardando, motivo, reintentar } de lo que escribe OTRO escritor (el del horario).
+   *  Se enseña en el indicador como lo demás, pero nunca entra en la cola ni en `pendientesParaReintentar`: su
+   *  escritor reintenta con su condición. Solo en memoria. */
+  externos: new Map(),
 });
 
 let estado = null;
@@ -190,6 +199,7 @@ export function antesDeGuardar(clave, { usuario = null, ahora = Date.now(), valo
   /* Antes que nada: una clave del historial no toca la cola, ni su «último deseado», ni lo pendiente. */
   if (esClaveDeHistorialVersiones(k)) return { sale: false, error: ERROR_CLAVE_PROTEGIDA };
   if (esClaveDeGuardiaHorario(k)) return { sale: false, error: ERROR_CLAVE_GUARDIA };
+  if (esClaveProtegidaDeHorario(k)) return { sale: false, error: ERROR_CLAVE_HORARIO };
   if (estado.usuario && usuario && usuario !== estado.usuario) return { sale: false, error: ERROR_OTRA_SESION };
   if (estado.sinCargar.has(k)) return { sale: false, error: ERROR_CARGA_FALLIDA };
   const seq = ++estado.seq;
@@ -398,6 +408,7 @@ export function esperarAnterior(anterior, tope = TOPE_ESPERA_ANTERIOR_MS) {
 export const pendientesParaReintentar = () => [...estado.pendientes.entries()]
   .filter(([clave]) => !esClaveDeHistorialVersiones(clave))   // segunda barrera: nunca se reenvía una (docs/19 §18.9)
   .filter(([clave]) => !esClaveDeGuardiaHorario(clave))   // ni una de la guardia del horario (A-bis §4)
+  .filter(([clave]) => !esClaveProtegidaDeHorario(clave))   // ni el horario: su escritor reintenta con su condición (E1)
   .map(([clave, p]) => ({ clave, valor: p.valor }));
 
 export function marcarReintento(enMarcha, { ahora = Date.now(), salioBien = false } = {}) {
@@ -427,21 +438,38 @@ export function consumirSalidaPedida() {
    ─────────────────────────────────────────────────────────────────────────── */
 export function resumenSincronizacion() {
   const vuelos = [...estado.enVuelo.values()];
+  const externos = [...estado.externos.entries()];
+  const desdes = [...vuelos.map((v) => v.desde), ...externos.filter(([, x]) => x.guardando && x.desde).map(([, x]) => x.desde)];
   return {
     usuario: estado.usuario,
     sinCargar: [...estado.sinCargar.keys()],
-    pendientes: [...estado.pendientes.keys()],
-    motivos: [...new Set([...estado.pendientes.values()].map((p) => p.motivo).filter(Boolean))],
-    guardando: vuelos.length,
-    guardandoDesde: vuelos.length ? Math.min(...vuelos.map((v) => v.desde)) : null,
+    pendientes: [...new Set([...estado.pendientes.keys(), ...externos.filter(([, x]) => x.pendiente).map(([k]) => k)])],
+    motivos: [...new Set([...estado.pendientes.values(), ...externos.filter(([, x]) => x.pendiente).map(([, x]) => x)].map((p) => p.motivo).filter(Boolean))],
+    guardando: vuelos.length + externos.filter(([, x]) => x.guardando).length,
+    guardandoDesde: desdes.length ? Math.min(...desdes) : null,
     reintentando: estado.reintentando,
     confirmadoEn: estado.confirmadoEn,
   };
 }
 
-/** 🛡 Horarios A-bis (§7.5) — la promesa del último guardado de una clave que está en la cola (o una resuelta si
- *  no hay ninguno): quien quiere releer DESPUÉS del resultado de un guardado la espera. Solo lee. */
-export const esperarColaDe = (clave) => estado.colas.get(String(clave)) || Promise.resolve();
+/** 🛡 Horarios E1 — lo que tiene pendiente OTRO escritor (el del horario), para que el indicador lo cuente:
+ *  `{ pendiente, guardando, motivo, reintentar }`. Con `null`, se quita. `reintentar` lo llama «Guardar ahora». */
+export function apuntarExterno(clave, datos, { ahora = Date.now() } = {}) {
+  const k = String(clave);
+  const antes = estado.externos.get(k);
+  if (!datos || (!datos.pendiente && !datos.guardando)) {
+    if (estado.externos.delete(k)) avisar();
+    return;
+  }
+  estado.externos.set(k, { ...datos, desde: datos.guardando ? (antes && antes.guardando ? antes.desde : ahora) : null });
+  avisar();
+}
+/** Los reintentos de los escritores externos (los llama `reintentarGuardados`). */
+export const reintentosExternos = () => [...estado.externos.values()].filter((x) => x.pendiente && typeof x.reintentar === 'function').map((x) => x.reintentar);
+
+/* 🛡 Horarios E1 — aquí estaba `esperarColaDe` (A-bis §7.5): la relectura que demuestra el testigo esperaba a la cola de
+   `saveData`. Desde E1 `horarioTop` no pasa por la cola y la demostración la lanza su escritor protegido al confirmar,
+   así que nadie la usaba: se retira (MS F20, ni una exportación muerta). */
 
 /** Quien enseña el estado se suscribe; devuelve la función de soltar (apartado 50). */
 export function suscribirSincronizacion(fn) {

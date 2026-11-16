@@ -42,9 +42,22 @@ export const VERSION_ESCRITA_HORARIO = 1;
 export const INTENTOS_GUARDIA = 2;
 /** Una visita es reciente si es de los últimos 30 días (condición 4, §9). */
 export const DIAS_VISITA_RECIENTE = 30;
-/** Las decisiones de una resolución que esta versión reconoce. Las escribe la entrega corta (C-3); una que no
- *  esté aquí NO cuenta (§2). ⚠️ Provisional: la entrega corta fija su lista definitiva. */
-export const DECISIONES_RESOLUCION = Object.freeze(['resuelta']);
+/** Las decisiones de una resolución que esta versión reconoce: la lista CERRADA de la entrega corta (C-3, D1,
+ *  2026-11-15). Una que no esté aquí NO cuenta (§2). `restaurada` queda reservada para la entrega B (cuando
+ *  exista restaurar desde una versión) y todavía no se escribe ni se reconoce. */
+export const DECISIONES_RESOLUCION = Object.freeze(['conforme', 'asumida']);
+/** «Reabrir» anula una resolución concreta por su id (`anula`): la incidencia vuelve a contar como abierta. */
+export const DECISION_REABRIR = 'reabrir';
+export const TEXTOS_DECISION = Object.freeze({
+  conforme: 'Revisado: el horario está bien',
+  asumida: 'Acepto lo que hay, aunque falte algo',
+  [DECISION_REABRIR]: 'Reabierta',
+});
+/** Los motivos de una retirada (D1): solo trazabilidad, no cambian lo que hace. */
+export const MOTIVOS_RETIRADA = Object.freeze(['sin_uso', 'reinstalada', 'no_reconocido']);
+export const TEXTOS_MOTIVO_RETIRADA = Object.freeze({
+  sin_uso: 'Ya no lo uso', reinstalada: 'Reinstalé la app', no_reconocido: 'No lo reconozco',
+});
 export const CLASES_INCIDENCIA = Object.freeze({ perdida: 'B', ambigua: 'C' });
 export const MOTIVOS_INCIDENCIA = Object.freeze(['testigo_ausente', 'testigo_ilegible', 'fila_ausente']);
 /** Los motivos de solo lectura que añade la A-bis (§8). El motivo de la entrega A tiene prioridad sobre ellos. */
@@ -236,22 +249,33 @@ const revisionesDe = (f) => {
   }
   return r;
 };
-const resueltoPor = (filas, idRegistro) => filas.some((f) => f.resoluciones.some((x) => DECISIONES_RESOLUCION.includes(x.decision)
-  && Array.isArray(x.deteccionIds) && x.deteccionIds.includes(idRegistro)));
+/** Las resoluciones anuladas por un «Reabrir» (de cualquier fila): sus `id`. */
+const anuladas = (filas) => new Set(filas.flatMap((f) => f.resoluciones
+  .filter((x) => x.decision === DECISION_REABRIR && typeof x.anula === 'string' && x.anula).map((x) => x.anula)));
+/** Una resolución cuenta si su decisión se reconoce y ningún «Reabrir» la anula. */
+const resolucionVigente = (x, nulas) => DECISIONES_RESOLUCION.includes(x.decision) && !nulas.has(x.id)
+  && Array.isArray(x.deteccionIds) && x.deteccionIds.length > 0;
+const resueltoPor = (filas, idRegistro, nulas = anuladas(filas)) => filas.some((f) => f.resoluciones.some((x) => resolucionVigente(x, nulas)
+  && x.deteccionIds.includes(idRegistro)));
 
 /** Lo que dicen todas las filas juntas: registros, demostración, intenciones y retiradas. No guarda nada. */
 export function resumenDeFilas(filas = []) {
   const registros = [];
   for (const f of filas) for (const d of f.detecciones) registros.push({ ...d, aparato: f.aparato });
   const conocidas = [...new Set(registros.map((r) => r.id))].sort();
+  const nulas = anuladas(filas);
   return {
-    registros: registros.map((r) => ({ ...r, resuelto: resueltoPor(filas, r.id) })),
+    registros: registros.map((r) => ({ ...r, resuelto: resueltoPor(filas, r.id, nulas) })),
     conocidas,
     demostrado: filas.some(tieneDemostracion),
     intencion: filas.some(tieneIntencion),
     intenciones: filas.flatMap((f) => (tieneIntencion(f) ? f.testigo.intenciones.map((i) => ({ ...i, aparato: f.aparato })) : [])),
     retiradas: filas.flatMap((f) => f.retiradas.map((x) => ({ ...x, aparato: f.aparato }))),
-    resoluciones: filas.flatMap((f) => f.resoluciones.map((x) => ({ ...x, aparato: f.aparato, reconocida: DECISIONES_RESOLUCION.includes(x.decision) }))),
+    resoluciones: filas.flatMap((f) => f.resoluciones.map((x) => ({
+      ...x, aparato: f.aparato,
+      reconocida: DECISIONES_RESOLUCION.includes(x.decision) || x.decision === DECISION_REABRIR,
+      vigente: resolucionVigente(x, nulas),
+    }))),
     revisionesDemostradas: [...new Set(filas.flatMap(revisionesDe))].sort(),
   };
 }
@@ -407,6 +431,23 @@ export function parteRegistro(registro) {
   };
 }
 
+/** Entrega corta (D1) — una retirada: `{ id, en, fecha, versionApp, aparatoRetirado, secuenciaVista, motivo }`. */
+export function parteRetirada(retirada) {
+  return {
+    tipo: 'retirada', id: retirada.id,
+    satisfecha: (f) => !!(f && Array.isArray(f.retiradas) && f.retiradas.some((x) => x && x.id === retirada.id)),
+    aplicar: (f, secuencia) => { f.retiradas = [...f.retiradas, { ...retirada, secuencia }]; },
+  };
+}
+/** Entrega corta (D1) — una resolución: `{ id, en, fecha, versionApp, deteccionIds, decision, anula? }`. */
+export function parteResolucion(resolucion) {
+  return {
+    tipo: 'resolucion', id: resolucion.id,
+    satisfecha: (f) => !!(f && Array.isArray(f.resoluciones) && f.resoluciones.some((x) => x && x.id === resolucion.id)),
+    aplicar: (f, secuencia) => { f.resoluciones = [...f.resoluciones, { ...resolucion, secuencia }]; },
+  };
+}
+
 /** La fila nueva a partir de la recién leída (`actual`, o `null` si no existe), o `null` si no hay nada que
  *  cambiar. Se construye SIEMPRE a partir de lo leído: lo que esta versión no conoce viaja tal cual. */
 export function construirFila(actual, partes, { opId, aparato, versionApp, en, fecha }) {
@@ -522,6 +563,34 @@ function condicionVersiones(filas, versionMinima, ahora) {
   if (noVerificable) return { id: 'versiones', estado: 'no_verificable', motivo: 'Hay una versión que no se puede comparar.' };
   return { id: 'versiones', estado: 'cumple', motivo: 'Todos los aparatos están en la versión mínima o posterior.' };
 }
+
+/** Entrega corta (D1) — si un aparato tiene alguna visita de los últimos 30 días (la misma cuenta que la
+ *  condición 4: una fecha inválida o futura cuenta como reciente). Un aparato activo no se puede retirar. */
+export function tieneVisitaReciente(fila, t0 = Date.now()) {
+  return Object.values((fila && fila.visitas) || {}).some((v) => {
+    const en = esObjeto(v) && esObjeto(v.ultima) ? v.ultima.en : null;
+    const t = Date.parse(en);
+    return !Number.isFinite(t) || t > t0 || t0 - t <= DIAS_VISITA_RECIENTE * DIA_MS;
+  });
+}
+/** Lo que la pantalla dice cuando una operación de la entrega corta no se hace. */
+export const TEXTOS_FALLO_ACCION = Object.freeze({
+  cerrada: 'La sesión se cerró.',
+  sin_comprobar: 'Todavía no se ha podido comprobar tu horario.',
+  motivo_desconocido: 'Elige un motivo.',
+  aparato_desconocido: 'Ese aparato ya no aparece en la comprobación.',
+  este_aparato: 'Este aparato no se puede retirar desde sí mismo.',
+  aparato_activo: 'Ese aparato se ha usado en los últimos 30 días: no se puede retirar.',
+  decision_desconocida: 'Elige una de las dos opciones.',
+  sin_incidencias: 'Marca al menos un aviso.',
+  incidencia_no_abierta: 'Alguno de los avisos ya está resuelto o ya no existe.',
+  sin_testigo_valido: 'Para resolverlo, tu horario tiene que estar guardado otra vez desde esta versión: guarda cualquier cambio y vuelve a intentarlo.',
+  resolucion_desconocida: 'Esa resolución ya no aparece.',
+  resolucion_no_vigente: 'Esa resolución ya está reabierta.',
+  sin_conexion: 'Sin conexión: no se ha hecho nada. Vuelve a intentarlo con conexión.',
+  sin_aleatoriedad: 'Este aparato no puede crear un identificador seguro.',
+  sin_confirmar: 'Se ha enviado, pero no se ha podido confirmar. Vuelve a abrir la comprobación para ver si llegó.',
+});
 
 /* ═══════════════════════════════════════════════════════════════════════════
    8 · TEXTOS (para la pantalla de consulta y los avisos)
@@ -808,6 +877,96 @@ export function crearGuardiaDeHorario({
     };
   }
 
+  /* ═════════════════════════════════════════════════════════════════════════
+     LA ENTREGA CORTA (C-3, D1): retirar un aparato, resolver incidencias y reabrir una resolución.
+     Lista cerrada de operaciones; cada una con su lectura NUEVA del servidor antes de escribir, en la fila de ESTE
+     aparato (un solo escritor por fila), con el escritor condicional de siempre. Ninguna toca `horarioTop`.
+     ═════════════════════════════════════════════════════════════════════════ */
+  const comprobada = () => s.estado !== 'E0' && s.estado !== 'no_verificable' && !s.comprobando;
+  async function lecturaParaAccion({ conHorario = false } = {}) {
+    let lt;
+    try { lt = await transporte.leerTodas(usuario); } catch { lt = null; }
+    if (s.cerrada) return { ok: false, motivo: 'cerrada' };
+    if (!lt || !lt.ok) return { ok: false, motivo: lt && lt.sinRespuesta ? 'sin_conexion' : 'lectura_guardia' };
+    const lectura = leerFilasDeGuardia(lt.filas);
+    if (!lectura.ok) return { ok: false, motivo: lectura.motivo };
+    let lh = null;
+    if (conHorario) {
+      try { lh = await transporte.leerHorario(usuario); } catch { lh = null; }
+      if (!lh || !lh.ok) return { ok: false, motivo: lh && lh.sinRespuesta ? 'sin_conexion' : 'lectura_horario' };
+    }
+    /* Lo que se enseña pasa a ser lo recién leído (la fila propia se actualiza sola al confirmar). */
+    s.lectura = lectura;
+    return { ok: true, lectura, resumen: resumenDeFilas(lectura.filas), horario: lh };
+  }
+  const fin = (op, extra = {}) => ({ ok: op.estado === 'E6', estado: op.estado, motivo: op.estado === 'E6' ? null : (op.motivo || 'sin_confirmar'), ...extra });
+
+  /** Retirar un aparato (D1). Solo otro aparato, con su fila legible y sin visitas en los últimos 30 días. Deja
+   *  de contar en la condición 4 mientras su `secuencia` no cambie: si vuelve a abrir la app, se anula sola. */
+  async function retirarAparato(aparatoRetirado, motivo) {
+    if (s.cerrada) return { ok: false, motivo: 'cerrada' };
+    if (!comprobada()) return { ok: false, motivo: 'sin_comprobar' };
+    if (!MOTIVOS_RETIRADA.includes(motivo)) return { ok: false, motivo: 'motivo_desconocido' };
+    if (typeof aparatoRetirado !== 'string' || !aparatoRetirado) return { ok: false, motivo: 'aparato_desconocido' };
+    if (aparatoRetirado === id) return { ok: false, motivo: 'este_aparato' };
+    const l = await lecturaParaAccion();
+    if (!l.ok) return { ok: false, motivo: l.motivo };
+    const fila = l.lectura.filas.find((f) => f.aparato === aparatoRetirado);
+    if (!fila) return { ok: false, motivo: 'aparato_desconocido' };
+    if (tieneVisitaReciente(fila, ahora().getTime())) return { ok: false, motivo: 'aparato_activo' };
+    if (l.resumen.retiradas.some((x) => x.aparatoRetirado === aparatoRetirado && x.secuenciaVista === fila.secuencia)) return { ok: true, yaEstaba: true };
+    const d = marca();
+    const retirada = { id: nuevoUuid(crypto), en: d.en, fecha: d.fecha, versionApp: String(versionApp), aparatoRetirado, secuenciaVista: fila.secuencia, motivo };
+    if (!retirada.id) return { ok: false, motivo: 'sin_aleatoriedad' };
+    const op = nuevaOperacion([parteRetirada(retirada)], 'retirada');
+    avisar();
+    await encolar(op);
+    return fin(op, { retirada });
+  }
+
+  /** Resolver incidencias (D1): ids concretos de incidencias ABIERTAS, una decisión de la lista cerrada y, en
+   *  la cuenta, un testigo válido presente (concepto 2) leído ahora; esa lectura se apunta como `visto` en la
+   *  misma escritura. No cambia ningún dato del horario. */
+  async function resolverIncidencias(ids, decision) {
+    if (s.cerrada) return { ok: false, motivo: 'cerrada' };
+    if (!comprobada()) return { ok: false, motivo: 'sin_comprobar' };
+    if (!DECISIONES_RESOLUCION.includes(decision)) return { ok: false, motivo: 'decision_desconocida' };
+    const lista = Array.isArray(ids) ? [...new Set(ids.filter((x) => typeof x === 'string' && x))].sort() : [];
+    if (!lista.length) return { ok: false, motivo: 'sin_incidencias' };
+    const l = await lecturaParaAccion({ conHorario: true });
+    if (!l.ok) return { ok: false, motivo: l.motivo };
+    const abiertas = new Set(l.resumen.registros.filter((r) => !r.resuelto).map((r) => r.id));
+    if (!lista.every((x) => abiertas.has(x))) return { ok: false, motivo: 'incidencia_no_abierta' };
+    const c = conceptoDelHorario(l.horario);
+    if (c.concepto !== '2') return { ok: false, motivo: 'sin_testigo_valido' };
+    const d = marca();
+    const resolucion = { id: nuevoUuid(crypto), en: d.en, fecha: d.fecha, versionApp: String(versionApp), deteccionIds: lista, decision };
+    if (!resolucion.id) return { ok: false, motivo: 'sin_aleatoriedad' };
+    const op = nuevaOperacion([parteResolucion(resolucion), parteVisto({ revision: c.revision, conocidas: l.resumen.conocidas, en: d.en })], 'resolucion');
+    avisar();
+    await encolar(op);
+    return fin(op, { resolucion });
+  }
+
+  /** Reabrir una resolución vigente (D1): sus incidencias vuelven a contar como abiertas. */
+  async function reabrirResolucion(resolucionId) {
+    if (s.cerrada) return { ok: false, motivo: 'cerrada' };
+    if (!comprobada()) return { ok: false, motivo: 'sin_comprobar' };
+    if (typeof resolucionId !== 'string' || !resolucionId) return { ok: false, motivo: 'resolucion_desconocida' };
+    const l = await lecturaParaAccion();
+    if (!l.ok) return { ok: false, motivo: l.motivo };
+    const res = l.resumen.resoluciones.find((x) => x.id === resolucionId);
+    if (!res) return { ok: false, motivo: 'resolucion_desconocida' };
+    if (!res.vigente) return { ok: false, motivo: 'resolucion_no_vigente' };
+    const d = marca();
+    const reabre = { id: nuevoUuid(crypto), en: d.en, fecha: d.fecha, versionApp: String(versionApp), deteccionIds: [...res.deteccionIds], decision: DECISION_REABRIR, anula: resolucionId };
+    if (!reabre.id) return { ok: false, motivo: 'sin_aleatoriedad' };
+    const op = nuevaOperacion([parteResolucion(reabre)], 'reabrir');
+    avisar();
+    await encolar(op);
+    return fin(op, { resolucion: reabre });
+  }
+
   /** §9 — la evaluación con una lectura NUEVA (la de «esta evaluación»). */
   async function evaluar({ versionMinima, margenDias } = {}) {
     let lt = null; let lh = null;
@@ -823,6 +982,7 @@ export function crearGuardiaDeHorario({
   return {
     aparato: id,
     comprobar, prepararEscritura, despuesDeGuardar, reintentar, vista, evaluar, motivoBloqueo,
+    retirarAparato, resolverIncidencias, reabrirResolucion,
     suscribir: (fn) => { oyentes.add(fn); return () => oyentes.delete(fn); },
     cerrar: () => { s.cerrada = true; oyentes.clear(); },
     /** Para las pruebas: esperar a que terminen las escrituras y demostraciones en marcha. */

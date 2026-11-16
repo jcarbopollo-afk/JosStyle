@@ -127,8 +127,14 @@ console.log('\n── 1 · saveData y la cola rechazan las claves horarioVersion
   ok(turno.sale === false && turno.error === Y.ERROR_CLAVE_PROTEGIDA, 'la entrada de la cola (antesDeGuardar) también la rechaza: segunda barrera');
   ok(Y.pendientesParaReintentar().every((p) => !esClaveDeHistorialVersiones(p.clave)), 'la lista de reintentos no contiene ninguna clave del historial');
   ok(/filter\(\(\[clave\]\) => !esClaveDeHistorialVersiones\(clave\)\)/.test(readFileSync(join(RAIZ, 'src/lib/sincronizacion.js'), 'utf8')), '…porque la filtra (tercera barrera, en el código)');
-  const bien = await S.saveData(U1, 'horarioTop', { nada: 1 });
-  ok(bien.ok === true && llamadas.length === 1 && llamadas[0].fila.key === 'horarioTop', 'una clave normal sigue guardándose como siempre (upsert)');
+  /* 🔓 E1 (TP-15 A) — se da la vuelta: `horarioTop` ya no es una clave normal (lo escribe su escritor protegido),
+     así que la clave normal de esta comprobación pasa a ser otra. Lo que protege es lo mismo. */
+  const bien = await S.saveData(U1, 'sueno', [{ nada: 1 }]);
+  ok(bien.ok === true && llamadas.length === 1 && llamadas[0].fila.key === 'sueno', 'una clave normal sigue guardándose como siempre (upsert)');
+  callarErrores();
+  const horario = await S.saveData(U1, 'horarioTop', { nada: 1 });
+  console.error = errorOriginal;
+  ok(horario.ok === false && horario.protegida === true && llamadas.length === 1, '…y horarioTop ya no: lo rechaza antes de la red (E1)');
   await S.reintentarGuardados();
   ok(llamadas.every((l) => !esClaveDeHistorialVersiones(l.fila.key)), 'reintentarGuardados nunca manda una clave del historial');
   S.supabase.from = fromOriginal;

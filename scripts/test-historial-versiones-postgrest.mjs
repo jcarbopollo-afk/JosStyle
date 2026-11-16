@@ -131,8 +131,16 @@ try {
     console.error = errOriginal;
     ok(r.ok === false && r.protegida === true && registro.length === antes, 'saveData de horarioVersiones:* → protegida, y ninguna petición sale hacia PostgREST');
     ok(JSON.parse(psql("select value from app_data where key='horarioVersiones:pg-a'")).operaciones.length === 32, '…y la fila del servidor no ha cambiado');
-    const normal = await S1.saveData(HV_U1, 'horarioTop', { prueba: true });
-    ok(normal.ok === true && psql("select value->>'prueba' from app_data where key='horarioTop'") === 'true', 'una clave normal sigue guardándose con saveData (upsert real)');
+    /* 🔓 E1 — se da la vuelta, no se borra: `horarioTop` era aquí la «clave normal», y desde E1 lo escribe solo su
+       escritor protegido (TP-15 A). La clave normal es ahora `sueno`, y `horarioTop` se rechaza sin tocar la red. */
+    const antesHorario = registro.length;
+    console.error = () => {};
+    const rechazo = await S1.saveData(HV_U1, 'horarioTop', { prueba: true });
+    console.error = errOriginal;
+    ok(rechazo.ok === false && registro.length === antesHorario && psql("select count(*) from app_data where key='horarioTop' and value->>'prueba' = 'true'") === '0',
+      '🔓 E1 — saveData de horarioTop se rechaza, sin ninguna petición hacia PostgREST');
+    const normal = await S1.saveData(HV_U1, 'sueno', { prueba: true });
+    ok(normal.ok === true && psql("select value->>'prueba' from app_data where key='sueno'") === 'true', 'una clave normal sigue guardándose con saveData (upsert real)');
   }
 
   console.log('\n── C · Lectura por prefijo y RLS ──');
