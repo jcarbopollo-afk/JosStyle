@@ -195,9 +195,10 @@ export function DiagnosticoHorariosEntrada({ crudo, asignaturas = null, cargaFal
 }
 
 /** El aviso de la guardia de versión (`docs/20` §12): todo se ve, nada se guarda. */
-export function AvisoSoloLecturaHorario({ motivo, accent, onRecargar }) {
+export function AvisoSoloLecturaHorario({ motivo, accent, onRecargar, detalle = null }) {
   if (!motivo) return null;
-  const texto = motivo === 'version_ilegible'
+  /* 🛡 E1-R · R3 — sin el protocolo del servidor (o con una versión que no casa), la frase exacta la da el escritor. */
+  const texto = detalle ? detalle : motivo === 'version_ilegible'
     ? 'No se reconoce la versión con la que se guardó tu horario. Para no estropearlo, esta aplicación no guarda cambios en él. Recarga la aplicación para editarlo.'
     : motivo === 'datos_malformados'
       ? 'Parte de tu horario guardado no tiene la forma que esta versión sabe leer. Para no perder nada, no se guardan cambios en él: lo que hay en tu cuenta se conserva tal cual. El diagnóstico de abajo dice qué parte es.'

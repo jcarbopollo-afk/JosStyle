@@ -27,9 +27,10 @@
  * Nada pendiente en el aparato (C-84): lo que no ha llegado vive en memoria. Lo único duradero es la copia apartada,
  * que la guarda el servidor.
  *
- * 🔜 Hasta R3, la aplicación sigue usando el escritor de E1 (`crearEscritorDeHorario`) con su transporte condicional:
- * cambiarlo exige el doble de Supabase del recorrido con las funciones del servidor, que es de R3. Este escritor se
- * prueba en Node y contra el servidor de verdad del laboratorio (`test-escritor-operaciones*.mjs`).
+ * 🔓 Desde R3 es el escritor de la aplicación (`App.jsx`): todo guardado del horario, borrar una asignatura que está
+ * en él y Deshacer de esas operaciones pasan por aquí (§18.17). El de E1 (`crearEscritorDeHorario`) sigue en su
+ * archivo, con sus pruebas, como la referencia del contrato. Este se prueba en Node y contra el servidor de verdad del
+ * laboratorio (`test-escritor-operaciones*.mjs`, `test-asignatura-protegida*.mjs`).
  *
  * ⚠️ Solo importa hojas (`escritorHorario.js`, `operacionesProtegidas.js`, `guardiaHorario.js`).
  */
@@ -195,12 +196,13 @@ export function crearEscritorDeOperaciones({
     for (const c of e.op.claves || []) {
       if (cola && typeof cola.aplicarAPendientes === 'function') { try { cola.aplicarAPendientes(c.clave, c.cambios); } catch { /* la cola decide */ } }
     }
-    if ((e.op.claves || []).length) { try { alAplicar(e.op); } catch { /* la pantalla decide */ } }
+    /* R3 — con su asunto (H-12) y su contexto (lo que la pantalla necesita para el paso de Deshacer). */
+    if ((e.op.claves || []).length) { try { alAplicar(e.op, { asunto: e.asunto || null, contexto: e.contexto || null }); } catch { /* la pantalla decide */ } }
     if (guardia && e.preparado && e.preparado.conTestigo && e.preparado.arranque && typeof guardia.despuesDeGuardar === 'function') {
       guardia.despuesDeGuardar(e.preparado, Promise.resolve());
     }
     quitar(e);
-    resolver(e, { ok: true, error: null, opId: e.op.opId });
+    resolver(e, { ok: true, error: null, opId: e.op.opId, operacion: e.op });
     if (!s.conflicto) poner(s.entradas.some((x) => !x.apartar) ? 'guardando' : 'en_orden');
     else avisar();
   }
@@ -221,7 +223,7 @@ export function crearEscritorDeOperaciones({
   function abrirOSumarConflicto(e, { suyo, motivo, copiaId }) {
     s.cuentas.conflictos += 1;
     if (copiaId) s.cuentas.copias += 1;
-    const copia = { opId: e.op ? e.op.opId : null, copiaId: copiaId || null, estado: copiaId ? 'guardada' : 'sin_guardar', motivo: copiaId ? null : (motivo && motivo.motivo) || 'sin_copia' };
+    const copia = { opId: e.op ? e.op.opId : null, copiaId: copiaId || null, estado: copiaId ? 'guardada' : 'sin_guardar', motivo: copiaId ? null : (motivo && motivo.motivo) || 'sin_copia', asunto: e.asunto || null };
     if (e.grupo && e.grupo !== s.conflicto) {
       e.grupo.copias.push(copia);
       quitar(e);
@@ -379,11 +381,11 @@ export function crearEscritorDeOperaciones({
       const unible = ultima && !ultima.op && !ultima.salida && !ultima.apartar && !ultima.descartada && (!pedido.claves || !ultima.claves);
       if (unible) {
         ultima.horario = pedido.horario;
-        if (pedido.claves) { ultima.claves = pedido.claves; ultima.tipo = pedido.tipo; } else if (pedido.manual && !ultima.manual) ultima.tipo = pedido.tipo;
+        if (pedido.claves) { ultima.claves = pedido.claves; ultima.tipo = pedido.tipo; ultima.asunto = pedido.asunto || null; ultima.contexto = pedido.contexto || null; } else if (pedido.manual && !ultima.manual) ultima.tipo = pedido.tipo;
         ultima.manual = ultima.manual || pedido.manual;
         ultima.esperas.push(r);
       } else {
-        s.entradas.push({ seq: s.seq, tipo: pedido.tipo, manual: pedido.manual, horario: pedido.horario, claves: pedido.claves || null, op: null, salida: false, preparado: null, apartar: false, grupo: null, baseVista: null, reserva: null, esperas: [r], descartada: false });
+        s.entradas.push({ seq: s.seq, tipo: pedido.tipo, manual: pedido.manual, horario: pedido.horario, claves: pedido.claves || null, asunto: pedido.asunto || null, contexto: pedido.contexto || null, op: null, salida: false, preparado: null, apartar: false, grupo: null, baseVista: null, reserva: null, esperas: [r], descartada: false });
       }
     });
     if (s.estado === 'en_orden') poner('guardando');
@@ -411,13 +413,16 @@ export function crearEscritorDeOperaciones({
    * `claves`: `[{ clave, antes, despues, normalizar }]` (lo que se veía, lo que se quiere y la puerta de carga de esa
    * clave). Va entera o no va. 🚨 Siempre lleva el horario: la cadena de revisiones es lo que impide que una
    * operación calculada sobre una pantalla vieja se aplique encima de otra.
+   * R3 — `asunto` (`{ asignaturaId, nombre, accion }`) es de qué va, para el bloqueo selectivo de Estudios (H-12): sale en
+   * `vista().asuntos` mientras la operación vive o su conflicto sigue abierto. `contexto` lo recibe `alAplicar` cuando
+   * se aplica (lo que la pantalla necesita para el paso de Deshacer). Ninguno de los dos viaja al servidor.
    */
-  function guardarOperacion({ tipo, manual = true, horario, claves = [] } = {}) {
+  function guardarOperacion({ tipo, manual = true, horario, claves = [], asunto = null, contexto = null } = {}) {
     if (horario === undefined || !esObjeto(horario)) return Promise.resolve({ ok: false, error: { code: 'operacion_sin_horario', message: 'Una operación protegida lleva siempre el horario.' } });
     if (!Array.isArray(claves) || claves.some((c) => !c || !CLAVES_POR_ELEMENTOS.includes(c.clave))) return Promise.resolve({ ok: false, error: { code: 'clave_no_permitida', message: 'Esa clave no se puede guardar en una operación protegida.' } });
     const no = rechazoInmediato(!manual);
     if (no) return Promise.resolve(no);
-    return encolar({ tipo: tipo || 'editar_horario', manual: !!manual, horario, claves: claves.length ? claves.map((c) => ({ clave: c.clave, antes: c.antes, despues: c.despues, normalizar: typeof c.normalizar === 'function' ? c.normalizar : (v) => v })) : null });
+    return encolar({ tipo: tipo || 'editar_horario', manual: !!manual, horario, claves: claves.length ? claves.map((c) => ({ clave: c.clave, antes: c.antes, despues: c.despues, normalizar: typeof c.normalizar === 'function' ? c.normalizar : (v) => v })) : null, asunto: esObjeto(asunto) ? { ...asunto } : null, contexto });
   }
 
   /** Al recuperar la conexión, con «Guardar ahora» o al volver a la app: lo pendiente sale otra vez (la MISMA
@@ -522,6 +527,12 @@ export function crearEscritorDeOperaciones({
         aparatoSuyo: c.suyo && esObjeto(c.suyo.valor) && esObjeto(c.suyo.valor.testigo) ? c.suyo.valor.testigo.aparato || null : null,
       } : null,
       apartadasSinGuardar: s.entradas.filter((x) => x.apartar).length + (c ? c.copias.filter((x) => x.estado !== 'guardada').length : 0),
+      /* R3 · H-12 — de qué van las operaciones vivas: las que esperan o vuelan (`pendiente`) y las retenidas por un
+         conflicto que sigue abierto (`conflicto`). Al cerrarse el conflicto o aplicarse, desaparecen: sin estado propio. */
+      asuntos: [
+        ...s.entradas.filter((x) => x.asunto && !x.descartada).map((x) => ({ ...x.asunto, estado: x.apartar ? 'conflicto' : 'pendiente' })),
+        ...(c ? c.copias.filter((x) => x.asunto).map((x) => ({ ...x.asunto, estado: 'conflicto' })) : []),
+      ],
       protocolo: s.protocolo ? { desfaseMs: s.protocolo.desfaseMs, reglas: { ...s.protocolo.reglas } } : null,
       cuentas: { ...s.cuentas },
     };

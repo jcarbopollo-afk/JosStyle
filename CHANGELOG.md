@@ -1,5 +1,47 @@
 # CHANGELOG.md
 
+## Sin versión — Horarios E1-R · R3: la integración en Horarios (2026-11-16, commit solo local)
+
+> Con la autorización expresa de Josué del 2026-11-16 (**R3**). Rama `claude/horarios-rediseno`, encima de R1 (`d8692ad`) y R2
+> (`04bc022`). Probado en Node, en el renderizado, en Chromium con dos aparatos y contra R1 **solo en el laboratorio local**;
+> nada en Supabase alojado; sin push, PR, fusión ni despliegue. No empieza R4. Detalle: `docs/19` §18.17.
+
+### ✨ Qué entra
+- **La aplicación escribe el horario por operaciones protegidas** (el escritor de R2 contra las funciones de R1): un conflicto
+  lo aparta el servidor entero en la misma transacción, y sin el protocolo del servidor Horarios queda en solo lectura con la
+  frase exacta (nunca escribe a ciegas).
+- **Borrar una asignatura que está en el horario es UNA operación**: ella, sus exámenes, horas, temas, entregas y eventos, su
+  entrada de la papelera y sus clases. Todo o nada (`src/lib/asignaturaProtegida.js`). Crear una asignatura desde Horario,
+  también.
+- **Deshacer de una operación es su inversa protegida**, calculada de lo que se aplicó: vuelve exactamente lo que estaba
+  guardado, y si otro aparato lo cambió se aparta sin pisar nada.
+- **H-12**: mientras una operación sobre una asignatura vive, solo se bloquean los cambios de Estudios que la tocan (ella o lo
+  que cuelga de ella), con su marca en la fila y su aviso; lo demás sigue libre. Sin estado propio: no puede atascarse.
+- **H-13**: con Horarios en solo lectura, una asignatura con clases no se borra a medias: se dice por qué y se ofrece «Ir a
+  Horario». Sin clases, como siempre.
+- Pruebas: `test-asignatura-protegida.mjs` (100), `test-asignatura-protegida-postgrest.mjs` (27, nivel 3, con la atomicidad
+  provocada a mitad de vuelo en Postgres), la sección «R3» del recorrido de Chromium (dos aparatos: borrado y Deshacer, H-12
+  sin conexión, respuesta perdida, C1–C6, H-13) y cuatro casos de renderizado. El doble de Supabase del recorrido imita ahora
+  las funciones de R1 (`scripts/dobleProtegido.mjs`).
+
+### 🔓 Comprobaciones que se dieron la vuelta (no se borraron)
+- La copia de un conflicto ya no va al historial de versiones: la aparta el servidor (E1, `test-escritor-horario`).
+- En solo lectura, borrar una asignatura con clases ya no la borra dejando sus clases (entrega A → H-13).
+- En el recorrido, E1 mira la operación (`op.horario.base`) y la copia del servidor; la A-bis, que el primer guardado espera a
+  la intención y sale con su testigo (decisión de R2).
+- `auditar-modulos`: el borrado de una asignatura cuenta si `App.jsx` lo delega en `prepararBorradoAsignatura` **y** esa
+  librería pasa por la papelera (`prepararEliminacion`); sin lo segundo, vuelve a salir rojo.
+- ES F3, ES F4, AS F1 y Cumpleaños buscaban en `App.jsx` el texto de la cascada o del paso de Deshacer: ahora ejecutan
+  `prepararBorradoAsignatura` (temas, entregas y eventos en la MISMA entrada) o leen `fotoDelEstado()` y la operación única.
+
+### 🐛 Corregido por el camino
+- Deshacer devolvía los elementos con los campos de la puerta de carga en vez de lo que estaba guardado. Lo destapó el nivel 3
+  con datos de una versión anterior; ahora vuelve exacto, y la pantalla lo normaliza al recibirlo.
+
+### ⚠️ Lo que no hace
+- La pantalla de Cambios apartados es R4. `estudios` y `papelera` siguen sin protección frente a escrituras ciegas (E1-S,
+  E1-P). Nada pendiente en el aparato (C-84). Nada en Supabase alojado; sin probar en Safari ni en el iPhone.
+
 ## Sin versión — Horarios E1-R · R2: el motor del cliente (2026-11-16, commit solo local)
 
 > Con la autorización expresa de Josué del 2026-11-16 (**R2**). Rama `claude/horarios-rediseno`, encima de R1 (`d8692ad`).

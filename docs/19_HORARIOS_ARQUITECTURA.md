@@ -55,7 +55,7 @@ exportación visual lleva otro nombre.
 15. Decisiones técnicas pendientes
 16. Criterios de aceptación
 17. Aclaraciones de la revisión (2026-11-08) — **mandan sobre los apartados anteriores donde difieran**
-18. Correcciones del 2026-11-09 (versiones manuales, TP-5/TP-7, funciones que se conservan, colores al exportar, «Cada dos semanas», conservación de versiones, coherencia, TP-18 resuelta, versiones eliminadas entre aparatos —sin nada pendiente en el aparato y con escritura condicional— y la regla definitiva del autoguardado). §18.12: el cierre documental previo a la Fase 4 (TP-4, el historial de versiones tal como está implementado, TP-8 con TP-15, y sus riesgos) y la decisión aprobada del TP-15 (A + B + C, 2026-11-10). §18.13: la entrega A y la A-bis tal como están implementadas (2026-11-15): la guardia `horarioGuardia:<aparato>`, el testigo, la intención, la clasificación E0/E1/E2/AI/B/C, los estados E3–E7, la supresión, el evaluador de la B y C-1 a C-4. §18.14: la entrega E1 (2026-11-16): el escritor protegido de `horarioTop` (TP-15 A y C), el conflicto entre aparatos con la copia apartada (D2 y D2-bis), Deshacer, la incidencia #5 corregida, la entrega corta (retirar, resolver y reabrir, D1) y la regla del servidor preparada y probada solo en local (TP-15 B, sin activar). §18.15: E1-R · R1 (2026-11-16): la operación protegida en el servidor —una transacción, cambios por elemento, tablas propias (H-18) e idempotencia por capas—, probada solo en el laboratorio local. §18.16: E1-R · R2 (2026-11-16): el motor del cliente —la operación y su validación, los cambios por elemento con condiciones de lo guardado, el transporte por RPC, el escritor de operaciones (una a la vez, mismo opId, respuestas perdidas, conflicto apartado por el servidor) y el turno en la cola—, probado en Node y contra R1 en el laboratorio
+18. Correcciones del 2026-11-09 (versiones manuales, TP-5/TP-7, funciones que se conservan, colores al exportar, «Cada dos semanas», conservación de versiones, coherencia, TP-18 resuelta, versiones eliminadas entre aparatos —sin nada pendiente en el aparato y con escritura condicional— y la regla definitiva del autoguardado). §18.12: el cierre documental previo a la Fase 4 (TP-4, el historial de versiones tal como está implementado, TP-8 con TP-15, y sus riesgos) y la decisión aprobada del TP-15 (A + B + C, 2026-11-10). §18.13: la entrega A y la A-bis tal como están implementadas (2026-11-15): la guardia `horarioGuardia:<aparato>`, el testigo, la intención, la clasificación E0/E1/E2/AI/B/C, los estados E3–E7, la supresión, el evaluador de la B y C-1 a C-4. §18.14: la entrega E1 (2026-11-16): el escritor protegido de `horarioTop` (TP-15 A y C), el conflicto entre aparatos con la copia apartada (D2 y D2-bis), Deshacer, la incidencia #5 corregida, la entrega corta (retirar, resolver y reabrir, D1) y la regla del servidor preparada y probada solo en local (TP-15 B, sin activar). §18.15: E1-R · R1 (2026-11-16): la operación protegida en el servidor —una transacción, cambios por elemento, tablas propias (H-18) e idempotencia por capas—, probada solo en el laboratorio local. §18.16: E1-R · R2 (2026-11-16): el motor del cliente —la operación y su validación, los cambios por elemento con condiciones de lo guardado, el transporte por RPC, el escritor de operaciones (una a la vez, mismo opId, respuestas perdidas, conflicto apartado por el servidor) y el turno en la cola—, probado en Node y contra R1 en el laboratorio. §18.17: E1-R · R3 (2026-11-16): la integración en Horarios —todo guardado del horario como operación protegida, borrar una asignatura con clases y Deshacer como una sola operación (y su inversa), H-12 (el bloqueo selectivo de Estudios) y H-13—, probada en Node, en Chromium con dos aparatos y contra R1 en el laboratorio
 
 ---
 
@@ -3142,9 +3142,110 @@ versiones siguen en verde sin tocar una comprobación.
 - No guarda nada pendiente en el aparato (C-84; E1-L y H-24 siguen pendientes de Josué).
 - Nada en Supabase alojado.
 
+### 18.17 E1-R · R3: la integración en Horarios (2026-11-16)
+
+> Construida con la **autorización expresa de Josué** del 2026-11-16 (R3 autorizada, sobre R1 `d8692ad` y R2 `04bc022`).
+> Probada en Node, en el renderizado, en Chromium con dos aparatos sobre el doble de las funciones del servidor y contra R1
+> **solo en el laboratorio local** (desmontado al terminar). **Commit solo local**: sin push, PR, fusión ni despliegue, y sin
+> nada ejecutado en Supabase alojado. No empieza R4.
+
+#### Qué hace ahora la aplicación
+
+- **Todo guardado del horario es una operación protegida.** `App.jsx` crea el escritor de R2 (`crearEscritorDeOperaciones`)
+  con `transporteProtegido`, la cola de `sincronizacion.js` (espera a los guardados de `estudios` y `papelera` que este
+  aparato ya mandó y, al aplicarse, se lleva a los que quedan) y la guardia. El escritor de E1 (`crearEscritorDeHorario`)
+  sigue en su archivo con sus pruebas, como referencia del contrato, pero la aplicación ya no lo usa.
+- **Un conflicto aparta la operación ENTERA en el servidor**, en la misma transacción (H-08): App.jsx ya no manda la copia al
+  historial de versiones con otra escritura que podía fallar. Las dos salidas (D2) son las de siempre.
+- **Sin el protocolo del servidor** (cuenta sin R1 instalada, otra versión, aplicación antigua), Horarios queda en solo
+  lectura con la frase exacta (`AvisoSoloLecturaHorario` con `detalle`): **nunca escribe a ciegas**.
+- **Borrar una asignatura que está en el horario** (`deleteAsignatura` → `prepararBorradoAsignatura` →
+  `guardarOperacionProtegida`, `src/lib/asignaturaProtegida.js`) es **UNA operación**: la asignatura y todo lo que cuelga de
+  ella (exámenes, horas, temas, entregas, eventos), su entrada de la papelera (con lo arrastrado dentro) y sus clases del
+  horario (actividad, bloques y excepciones). Todo o nada. El horario se ve cambiado al momento (como cualquier cambio del
+  horario, D2); Estudios y la papelera, cuando se guarda (H-12 B). **Sin clases**, el borrado sigue como siempre (H-13).
+- **Crear una asignatura desde Horario** (`onCambiarConAsignatura`) también va en una operación: la clase ya no puede
+  guardarse apuntando a una asignatura que no llegó.
+- **Deshacer de una operación es su INVERSA** (`invertirCambios`, `prepararDeshacerOperacion`), otra operación protegida
+  calculada de los cambios que **se aplicaron** (el paso entra en la pila en `alAplicar`, con ellos): lo que se quitó vuelve si
+  no existe —**exactamente** lo que estaba guardado—, lo que se añadió se quita si sigue igual y el horario vuelve con su
+  condición. Si en pantalla ya no está como lo dejó la operación, no se manda nada; si otro aparato lo cambió, el servidor la
+  aparta entera. Un paso de antes de R3 que cambió el horario **y** Estudios o la papelera **no se deshace** (serían dos
+  escrituras sueltas) y lo dice (`deshacer_mixto`).
+- **H-12, el bloqueo selectivo de Estudios** (`bloqueosDeEstudios`, `cambioTocaBloqueadas`): mientras una operación sobre una
+  asignatura X vive —pendiente, o retenida por un conflicto abierto— **solo** se bloquean los cambios que tocan X o lo que
+  cuelga de ella (editarla, ocultarla, sacarla de un programa, borrarla; añadir, editar o borrar sus exámenes, horas, temas,
+  entregas o eventos; restaurarlos de la papelera). Se decide **comparando lo que llega con lo que hay**, en `snapshotAndSave`
+  (por donde pasan todas las escrituras de Estudios), así que toda pantalla lo hereda. La fila y la cabecera de X llevan la
+  marca («Se está borrando: pendiente de guardar», «Borrado retenido por un conflicto en tu horario»); sus acciones se siguen
+  viendo, y al tocar una el aviso dice por qué (con «Ir a Horario» si es un conflicto). Deshacer no salta a un paso de antes
+  mientras viva (`deshacer_operacion_viva`) y restablecer Estudios tampoco. **No tiene estado propio**: sale de
+  `vista().asuntos` del escritor (el asunto no viaja al servidor), así que sin operación no hay bloqueo y no puede atascarse.
+- **H-13**: con Horarios en solo lectura (conflicto, guardia, versión o protocolo), una asignatura que está en el horario **no
+  se borra**: la confirmación dice «Esta asignatura tiene clases en tu horario. Primero resuelve el aviso de Horarios.» y
+  ofrece «Ir a Horario» en vez de «Eliminar» (y `deleteAsignatura` lo comprueba otra vez). Ya no existe el camino de la
+  entrega A que la borraba dejando sus clases. Una sin clases se borra igual.
+- **Las puertas de carga de Estudios y la papelera** viven en `asignaturaProtegida.js` (`normalizarEstudiosCargados`,
+  `normalizarPapeleraCargada`): las usa App.jsx al cargar y la operación para comparar lo guardado con lo que se ve.
+
+#### Lo que cambió en pruebas anteriores (se dio la vuelta, no se borró)
+
+- `test-escritor-horario.mjs`: «la copia va al historial de versiones» pasa a «la aparta el servidor en la misma transacción».
+- `test-horarios-entrega-a.mjs`: «en solo lectura, borrar una asignatura no toca el horario» pasa a H-13 (sin clases sigue;
+  con clases no se borra a medias) y «Estudios no recibe el horario en solo lectura» a «lo recibe, con `horarioSoloLectura`».
+- `test-app-real.mjs`, E1: cada comprobación del `update` condicional mira ahora la operación (`op.horario.base`), y las de la
+  copia, la del servidor; «si la copia no se puede apartar, lo dice» pasa a «el conflicto llega con su copia ya apartada».
+  A-bis: el primer guardado del arranque ya no sale sin testigo (decisión de R2): espera a la intención y sale con él, y la
+  relectura demuestra ese primer testigo.
+- `auditar-modulos.mjs` (P3/P7b): borrar una asignatura ya no llama a `prepararEliminacion` desde `App.jsx`, sino desde
+  `prepararBorradoAsignatura` (va en UNA operación con el horario). La auditoría no se afloja: reconoce esa cascada delegada
+  solo si `App.jsx` llama a la librería **y** la librería pasa de verdad por `prepararEliminacion(…, 'estudios',
+  'asignaturas', …)`; si la librería deja de pasar por la papelera, P3 y P7b vuelven a ponerse rojas (comprobado).
+- `test-asignaturas.mjs` (ES F3) y `test-fechas-academicas.mjs` (ES F4) buscaban el texto de la cascada en `App.jsx`
+  (`temas: (estudios.temas || []).filter`, `coleccion: 'entregas'`…). Ahora la EJECUTAN: `prepararBorradoAsignatura` saca de
+  Estudios los temas, las entregas y los eventos de esa asignatura y los mete en la MISMA entrada de la papelera, y
+  `deleteAsignatura` la llama. Quitarlos de `COLECCIONES_DE_ASIGNATURA` las pone rojas (comprobado).
+- `test-asignaturas-compartidas.mjs` (AS F1): «el horario y las asignaturas en la MISMA llamada» es ahora la misma
+  operación protegida (`guardarOperacionProtegida` con `horario` y `estudiosDespues`).
+- `test-cumpleanos.mjs`: el paso de Deshacer sale de `fotoDelEstado()`, que lleva `cumpleanos` (quitarlo la pone roja).
+
+#### Pruebas
+
+| Suite | Qué demuestra | Resultado |
+|---|---|---|
+| `test-asignatura-protegida.mjs` | Preparar el borrado (con y sin clases) y H-13; la inversa (vuelve exacto también con datos de una versión anterior); H-12 (qué se bloquea y qué no); el borrado completo en UNA operación y Deshacer; atomicidad (C2: ninguna clave cambia y la operación se aparta entera); C1–C6 con dos aparatos; respuestas perdidas, sin conexión, reintentos e idempotencia; lo que enseña el escritor para H-12 | 100/100 |
+| `test-asignatura-protegida-postgrest.mjs` (nivel 3) | Lo mismo contra R1 en Postgres: una transacción con un registro; **atomicidad provocando el fallo a mitad de vuelo** (la segunda clave, la papelera, falla: ni Estudios ni el horario cambian, ni su `updated_at`); Deshacer; C1, C2, C3, C4 y C6; una respuesta perdida de verdad | 27/27 |
+| `test-app-real.mjs`, sección «R3» (Chromium, dos aparatos) | Borrar desde Estudios en una operación y Deshacer desde Ajustes; H-12 sin conexión (marca, no se deja tocar X, sí otra; Deshacer no salta; al volver la red se guarda una vez); una respuesta perdida; C1–C6; H-13 con «Ir a Horario»; ni un error en la consola | 80/80 (y, en la misma pasada, A-bis 38/38 y E1 108/108) |
+| `smoke-vistas.jsx` | La marca de H-12 (pendiente, retenida, restaurando), Estudios con asignaturas bloqueadas y Horarios en solo lectura, y el aviso sin protocolo | en verde |
+
+**Las pruebas se ponen rojas** si H-12 solo mira la asignatura y no lo que cuelga de ella, si el borrado no lleva lo arrastrado a
+la papelera, si la inversa no da la vuelta a lo añadido, si el escritor olvida las asignaturas retenidas por un conflicto, si
+H-13 solo cuenta clases (y no la actividad), si la inversa se manda sin mirar la pantalla o si devuelve lo normalizado en vez
+de lo guardado. 🐛 **El nivel 3 destapó ese último**: con datos sembrados por una versión anterior, Deshacer devolvía los
+elementos con los campos de la puerta de carga.
+
+#### Decisiones de construcción (dentro de lo aprobado)
+
+- **Una operación solo cuando el cambio toca el horario y otra clave** (borrar una asignatura con clases, crear una desde
+  Horario, y sus Deshacer). Sin clases, Estudios y la papelera siguen escribiéndose como hasta ahora: protegerlas de las
+  escrituras ciegas es E1-S y E1-P (H-17, H-19, H-20).
+- **El paso de Deshacer de una operación entra en la pila cuando se aplica** (con los cambios aplicados): mientras vive no hay
+  paso que deshacer, y Deshacer lo dice en vez de saltar a uno anterior.
+- **«Cancelar el borrado» sin conexión no se construye**: el bloqueo no se atasca (sin operación no hay bloqueo, y con la
+  aplicación cerrada no existe; C-84), y una operación que puede haber salido no se puede retirar sin preguntar al servidor.
+- **El doble de Supabase del recorrido imita las funciones de R1** (`scripts/dobleProtegido.mjs`) con la validación y los
+  cambios por elemento del cliente, cuya paridad con el servidor demuestra el nivel 3; la transacción de verdad, Postgres.
+
+#### Lo que R3 no hace
+
+- La pantalla de **Cambios apartados** (consultar, recuperar como operación nueva, eliminar y el espacio) es de **R4**.
+- No protege `estudios` ni `papelera` de las escrituras ciegas (E1-S, E1-P) ni guarda nada pendiente en el aparato (C-84,
+  E1-L, H-24).
+- Nada en Supabase alojado; sin probar en Safari ni en el iPhone.
+
 ---
 
 *Fase 2 de 8 terminada, con la revisión documental del 2026-11-08, las correcciones del 2026-11-09, el cierre documental
 previo a la Fase 4 (§18.12), la decisión del TP-15 (2026-11-10) y la sincronización con la entrega A y la A-bis implementadas
-(§18.13, 2026-11-15) y la entrega E1 (§18.14, 2026-11-16, commits locales) y E1-R · R1 y R2 (§18.15 y §18.16, commits locales). Esta documentación no autoriza la entrega B
+(§18.13, 2026-11-15) y la entrega E1 (§18.14, 2026-11-16, commits locales) y E1-R · R1, R2 y R3 (§18.15, §18.16 y §18.17, commits locales). Esta documentación no autoriza la entrega B
 ni ninguna instalación, migración, SQL alojado, publicación, despliegue o cambio de datos.*

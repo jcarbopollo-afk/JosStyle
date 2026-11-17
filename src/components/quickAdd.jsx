@@ -251,7 +251,7 @@ export function CambiarHora({ elemento, valor, accent, onGuardar, onCerrar }) {
    quien deshace es el histórico de diez pasos de `App.jsx`: aquí no hay una
    segunda pila. Ofrecerlo sin poder cumplirlo sería un control decorativo
    (regla 8). */
-export function AvisoAccion({ accion, accent, onDeshacer, onCerrar }) {
+export function AvisoAccion({ accion, accent, onDeshacer, onCerrar, onIr = null }) {
   const avisoActual = avisoDe(accion);
   /* 🔓 MS F9, apartado 33 — un aviso aparece, se queda y SE VA. Antes desaparecía de golpe: quien lo
      pinta lo desmontaba al vaciar `accion`. Ahora se monta siempre, y al vaciarse se queda con el último
@@ -288,6 +288,12 @@ export function AvisoAccion({ accion, accent, onDeshacer, onCerrar }) {
         {aviso.deshacer && onDeshacer && avisoActual && (
           <button onClick={() => { onDeshacer(); onCerrar(); }} className="flex items-center gap-1 text-sm font-bold toque-44" style={{ color: accent }}>
             <Undo2 size={14} aria-hidden="true" /> Deshacer
+          </button>
+        )}
+        {/* 🛡 E1-R · R3 — un aviso que se resuelve en otra pantalla lleva su acceso («Ir a Horario»). */}
+        {aviso.ir === 'horario' && onIr && avisoActual && (
+          <button onClick={() => { onIr(aviso.ir); onCerrar(); }} className="text-sm font-bold whitespace-nowrap toque-44" style={{ color: accent }}>
+            Ir a Horario
           </button>
         )}
       </div>

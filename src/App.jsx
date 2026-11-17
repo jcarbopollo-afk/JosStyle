@@ -52,7 +52,7 @@ import { eventoDesdeQuickAdd } from './lib/accionesHoyAgenda';
 // Entrega 3 · F14 (HC F9) — la forma de la pantalla mientras carga (apartados 23 y 24).
 import { esqueleto } from './lib/pulidoHC';
 import { COLORS, ACCENTS, DEFAULT_PERFIL, DEFAULT_ECONOMIA, DEFAULT_CALISTENIA, DEFAULT_SALUD, DEFAULT_NUTRICION, DEFAULT_ESTUDIOS, DEFAULT_NEGOCIO, DEFAULT_PRODUCTIVIDAD, DEFAULT_OBJETIVOS, DEFAULT_DIARIO, DEFAULT_BIBLIOTECA, DEFAULT_RELACION, DEFAULT_FE, DEFAULT_BIENESTAR, DEFAULT_PERSONALIZACION, METRICAS_FAVORITAS_DISPONIBLES, MAX_METRICAS_FAVORITAS, MODOS_APP, DEFAULT_APARIENCIA, aplicarTema, TAMANOS_TEXTO, DEFAULT_NOTIFICACIONES, DEFAULT_SEGURIDAD, OPCIONES_BLOQUEO_AUTOMATICO, ACCIONES_PROTEGIBLES, DEFAULT_HISTORIAL_COLOR, MAX_COLORES_RECIENTES, MAX_COLORES_FAVORITOS, DEFAULT_TEMA_PERSONALIZADO, DEFAULT_TEMAS_GUARDADOS, MAX_TEMAS_GUARDADOS, PALETAS_PREDEFINIDAS, DEFAULT_CALENDARIO, PERFILES_MODULOS } from './tokens';
-import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl, uploadFotoRelacion, getSignedFotoRelacionUrl, deleteFotoRelacion, vigilarLaConexion, transporteDeGuardia, transporteDeHorario, transporteDeVersiones } from './lib/supabase';
+import { getSession, onAuthChange, onAuthEvent, sendPasswordReset, loadData, saveData, signOut, uploadProgressPhoto, deleteProgressPhoto, uploadBibliotecaArchivo, deleteBibliotecaArchivo, uploadPrendaFoto, deletePrendaFoto, uploadFondoFoto, getSignedFondoUrl, uploadFotoRelacion, getSignedFotoRelacionUrl, deleteFotoRelacion, vigilarLaConexion, transporteDeGuardia, transporteProtegido } from './lib/supabase';
 import { exportCSV, exportXLSX } from './lib/exportData';
 import { uid, todayISO, addDays, hexToRgba, fechaLocalISO } from './lib/helpers';
 import { normalizarPerfilFoto } from './lib/fotoPerfil';
@@ -155,7 +155,7 @@ import { useContextoFisico } from './components/responsiveMotion';
 /* MS F16 — los estados del sistema: lo que no se pudo cargar, lo que no ha llegado a la cuenta, la
    conexión, la espera del arranque y la sesión que caduca. */
 import { IndicadorDeSincronizacion, ErrorDeArranque, useEspera, AvisoDeEspera } from './components/estadosAsincronos';
-import { empezarSesionDeDatos, usuarioDeLaSesion, clavesSinCargar, consumirSalidaPedida, resumenSincronizacion, resultadoDeGuardados, cargaFallida, apuntarExterno } from './lib/sincronizacion';
+import { empezarSesionDeDatos, usuarioDeLaSesion, clavesSinCargar, consumirSalidaPedida, resumenSincronizacion, resultadoDeGuardados, cargaFallida, apuntarExterno, reservarClavesParaOperacion, llevarOperacionAPendientes } from './lib/sincronizacion';
 import { arranqueSinDatos, motivoDeSalida } from './lib/estadosAsincronos';
 import { useFuentesListas } from './components/layoutMotion';
 import { AnuncioDeNavegacion } from './components/accesibilidadMotion';
@@ -172,8 +172,15 @@ import { DEFAULT_HORARIO_TOP, normalizarHorarioTop, guardiaDeVersionHorario, par
 import { crearGuardiaDeHorario } from './lib/guardiaHorario';
 /* 🛡 Horarios E1 (TP-15 A y C) — el escritor protegido de `horarioTop` y, para la copia apartada de un conflicto
    (D2-bis), el escritor del historial de versiones. */
-import { crearEscritorDeHorario, MOTIVO_CONFLICTO_HORARIO, mismoContenido } from './lib/escritorHorario';
-import { crearEscritorDeVersiones } from './lib/historialVersiones';
+import { mismoContenido } from './lib/escritorHorario';
+/* 🛡 E1-R · R3 — el escritor de la aplicación es el de operaciones protegidas (R2) contra las funciones del servidor (R1):
+   el horario y, cuando un cambio toca también Estudios y la papelera, las tres claves en UNA operación (§18.17). */
+import { crearEscritorDeOperaciones } from './lib/escritorOperaciones';
+import { aplicarCambios, igualJson } from './lib/operacionesProtegidas';
+import {
+  prepararBorradoAsignatura, prepararDeshacerOperacion, pasoDeOperacion, bloqueosDeEstudios, cambioTocaBloqueadas,
+  normalizarEstudiosCargados, normalizarPapeleraCargada,
+} from './lib/asignaturaProtegida';
 import { AvisoAccion } from './components/quickAdd';
 import { VERSION as VERSION_APP } from './lib/version';
 import { DEFAULT_ESTILO_HOMBRE, normalizarEstiloHombre } from './lib/estiloDeHombre';
@@ -581,8 +588,10 @@ export default function App() {
   /* 🛡 E1 — el escritor protegido de `horarioTop` (uno por sesión) y lo que enseña: estado, conflicto y copias.
      El del historial de versiones se crea solo si hace falta apartar un cambio (D2-bis). Nada en el aparato. */
   const escritorHorarioRef = useRef(null);
-  const escritorVersionesRef = useRef(null);
   const [escritorHorario, setEscritorHorario] = useState(null);
+  /* 🛡 E1-R · R3 · H-12 — las asignaturas con una operación viva (pendiente, o retenida por un conflicto abierto): solo
+     se bloquean los cambios de Estudios que las tocan. Se recalcula de lo que enseña el escritor; no se guarda. */
+  const bloqueadasRef = useRef(new Map());
   /* Un aviso suelto de la aplicación (Deshacer bloqueado por un cambio de otro aparato, o un conflicto abierto
      desde fuera de Horarios). */
   const [avisoApp, setAvisoApp] = useState(null);
@@ -708,7 +717,7 @@ export default function App() {
       setGuardiaHorario(null);
       /* 🛡 E1 — y su escritor: lo que tuviera en memoria era de esta cuenta. */
       if (escritorHorarioRef.current) { escritorHorarioRef.current.cerrar(); escritorHorarioRef.current = null; }
-      escritorVersionesRef.current = null;
+      bloqueadasRef.current = new Map();
       setEscritorHorario(null);
       apuntarExterno('horarioTop', null);
       // Y de paso, fuera de memoria lo más privado.
@@ -864,7 +873,8 @@ export default function App() {
          AQUÍ, al cargar y antes de que nada los lea (regla 5, EH F46): sin esto,
          el primer guardado se llevaría los cuatro campos. Devuelve el módulo
          ENTERO, así que asignaturas, exámenes y horas siguen intactos. */
-      setEstudios(normalizarFechasDe(normalizarAsignaturasDe(normalizarAppsDe(est))));
+      /* 🛡 R3 — la misma puerta que usa la operación protegida para comparar lo guardado con lo que se ve. */
+      setEstudios(normalizarEstudiosCargados(est));
       setNegocio(neg);
       /* 🚨 E3 F26 (PR F4) — LA MIGRACIÓN DE LA FECHA DE LAS TAREAS. Se hace aquí,
          al cargar y ANTES de que nada las lea, porque las cuatro pantallas que
@@ -923,7 +933,7 @@ export default function App() {
       historyRef.current = Array.isArray(h) ? h : [];
       // Entrega 2 · ME Fase 3 — la retención se aplica al abrir la app: lo que haya vencido se
       // borra definitivamente aquí, una sola vez, y solo se escribe si de verdad cambió algo.
-      const papeleraCargada = purgarCaducados({ ...DEFAULT_PAPELERA, ...(pap || {}) }, new Date().toISOString());
+      const papeleraCargada = purgarCaducados(normalizarPapeleraCargada(pap), new Date().toISOString());
       setPapelera(papeleraCargada);
       if (pap && papeleraCargada.elementos.length !== (pap.elementos || []).length) {
         saveData(uidUser, 'papelera', papeleraCargada);
@@ -974,22 +984,21 @@ export default function App() {
            la base de cada guardado es la revisión de eso, nunca una lectura posterior que la pantalla no ha visto.
            `loadData` devuelve el mismo objeto por defecto cuando la fila no existe. */
         if (escritorHorarioRef.current) escritorHorarioRef.current.cerrar();
-        escritorVersionesRef.current = null;
+        bloqueadasRef.current = new Map();
         pasosAntesDeAjenoRef.current = new WeakSet();
         {
           const ultimoAparato = hor && typeof hor === 'object' && hor.testigo && typeof hor.testigo === 'object' ? hor.testigo.aparato : null;
           if (!ultimoAparato || ultimoAparato !== g.vista().aparato) for (const paso of historyRef.current) pasosAntesDeAjenoRef.current.add(paso);
         }
-        const usuarioW = uidUser;
-        const versiones = () => {
-          if (!escritorVersionesRef.current) {
-            try { escritorVersionesRef.current = crearEscritorDeVersiones({ transporte: transporteDeVersiones, usuario: usuarioW }); } catch { escritorVersionesRef.current = null; }
-          }
-          return escritorVersionesRef.current;
-        };
-        const w = crearEscritorDeHorario({
-          transporte: transporteDeHorario, usuario: uidUser, guardia: g,
+        /* 🛡 E1-R · R3 — el escritor de operaciones protegidas: cada guardado del horario es una operación que el
+           servidor (`protegido_aplicar`) guarda entera o no guarda; un cambio tuyo que choca lo aparta el SERVIDOR en
+           la misma transacción (ya no hace falta el historial de versiones para eso). Espera a los guardados de
+           `estudios` y `papelera` que este aparato ya mandó (`cola`) y, al aplicarse, se lleva a los que quedan. */
+        const w = crearEscritorDeOperaciones({
+          transporte: transporteProtegido, usuario: uidUser, guardia: g,
+          aparato: g.vista().aparato || null, versionApp: VERSION_APP,
           inicial: { valor: hor, existe: hor !== DEFAULT_HORARIO_TOP && !cargaFallida('horarioTop') },
+          cola: { reservar: (claves) => reservarClavesParaOperacion(claves), aplicarAPendientes: llevarOperacionAPendientes },
           /* Lo de la cuenta pasa a la pantalla (un guardado automático que se recalcula, la recarga al volver, o
              «Ver lo que hay ahora»). Con la guardia de versión de la A: si llega una versión que esta copia no
              entiende, se queda en solo lectura en vez de normalizarla y guardarla encima. */
@@ -1001,13 +1010,25 @@ export default function App() {
             setHorarioTop(normalizarHorarioTop(valor));
             aplicarSoloLecturaHorario();
           },
-          apartar: async (valor) => {
-            const v = versiones();
-            if (!v) return { estado: 'no_aplicada', motivo: 'sin_historial' };
-            return v.crearVersion({ contenido: valor, motivo: 'conflicto', nombre: 'Cambio apartado por un conflicto' });
+          /* Una operación con Estudios o la papelera, ya guardada: sus cambios pasan a la pantalla (hasta ahora no se
+             veían: H-12 B) y su paso de Deshacer, con los cambios que SE APLICARON, entra en la pila. */
+          alAplicar: (op, { contexto } = {}) => {
+            if (escritorHorarioRef.current !== w) return;
+            for (const c of op.claves || []) {
+              const llevar = (prev) => aplicarCambios(prev, c.cambios, c.clave, { sinCondiciones: true }).nuevo;
+              /* Por su puerta de carga: lo que vuelve con Deshacer es lo guardado tal cual (como al cargar). */
+              if (c.clave === 'estudios') setEstudios((prev) => normalizarEstudiosCargados(llevar(prev)));
+              if (c.clave === 'papelera') setPapelera((prev) => normalizarPapeleraCargada(llevar(prev)));
+            }
+            if (contexto && contexto.paso) {
+              const paso = { ...contexto.paso, operacion: { ...contexto.paso.operacion, claves: (op.claves || []).map((c) => ({ clave: c.clave, cambios: c.cambios })) } };
+              const pilaDeshacer = historyRef.current;
+              const nextHist = [...pilaDeshacer, paso].slice(-10);
+              historyRef.current = nextHist;
+              setHistory(nextHist);
+              saveData(uidUser, 'historial', nextHist);
+            }
           },
-          reintentarApartado: async (opId) => { const v = versiones(); return v ? v.reintentar(opId) : { estado: 'no_aplicada', motivo: 'sin_historial' }; },
-          descartarApartado: async (versionId) => { const v = versiones(); return v ? v.eliminarVersionManual(versionId, { confirmado: true }) : { estado: 'no_aplicada', motivo: 'sin_historial' }; },
         });
         escritorHorarioRef.current = w;
         let habiaConflicto = false;
@@ -1019,6 +1040,7 @@ export default function App() {
              Horarios, que se queda en solo lectura hasta que elija. */
           if (v.conflicto && !habiaConflicto && tabRef.current !== 'horario') setAvisoApp('conflicto_horario');
           habiaConflicto = !!v.conflicto;
+          bloqueadasRef.current = bloqueosDeEstudios(v.asuntos);
           setEscritorHorario(v);
           apuntarExterno('horarioTop', { pendiente: v.estado === 'pendiente', guardando: v.guardando, motivo: v.motivo, reintentar: () => w.reintentar() });
           aplicarSoloLecturaHorario();
@@ -1434,6 +1456,14 @@ export default function App() {
     error: { code: horarioSoloLecturaRef.current || 'solo_lectura', message: 'Tu horario está en solo lectura en esta aplicación: no se ha guardado nada.' },
   });
 
+  /* 🛡 E1-R · R3 · H-12 — lo que devuelve un cambio de Estudios bloqueado, y su aviso (con «Ir a Horario» si lo
+     retiene un conflicto). */
+  const NO_GUARDA_ESTUDIOS = { ok: false, bloqueado: true, error: { code: 'estudios_bloqueado', message: 'Esa asignatura tiene un cambio que todavía no ha llegado a tu cuenta.' } };
+  const avisarBloqueoDeEstudios = (id) => {
+    const b = bloqueadasRef.current.get(id);
+    setAvisoApp(b && b.motivo === 'conflicto' ? 'estudios_bloqueado_conflicto' : 'estudios_bloqueado_pendiente');
+  };
+
   /* 🛡 Horarios E1 — lo que se guarda de `horarioTop` lo prepara el escritor protegido AL SALIR (la `version`, el
      testigo de la A-bis y la condición sobre la revisión confirmada): `escritorHorario.js`. */
   const guardarHorario = (nuevo, { automatico = false } = {}) => {
@@ -1791,6 +1821,8 @@ export default function App() {
   const borrarDatosModulo = async (id) => {
     const cfg = RESET_MODULOS[id];
     if (!cfg) return;
+    /* 🛡 R3 · H-12 — restablecer Estudios lo reescribe entero: no mientras se guarda una operación de una asignatura. */
+    if (id === 'estudios' && bloqueadasRef.current.size) { setAvisoApp('restablecer_bloqueado'); return; }
     cfg.setter(cfg.default);
     await saveData(uidUser, id, cfg.default);
   };
@@ -2354,9 +2386,37 @@ export default function App() {
   // devolvería el elemento a su módulo pero dejaría su entrada en la papelera: un fantasma que
   // al restaurarse duplicaría el elemento. Con la papelera dentro del snapshot, deshacer revierte
   // las dos cosas a la vez y los dos sistemas de recuperación no se pisan.
+  /* La foto de todos los módulos que guarda un paso de Deshacer (la de siempre, ahora con nombre: la usan también las
+     operaciones protegidas de R3). */
+  const fotoDelEstado = () => ({ sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion, horarioTop, fitness, cumpleanos });
+
+  /* 🛡 E1-R · R3 — un cambio que toca el horario Y Estudios o la papelera va en UNA operación protegida: el servidor lo
+     guarda entero o no guarda nada. El horario se ve cambiado enseguida (como cualquier cambio del horario, D2); lo de
+     Estudios y la papelera, cuando se guarda (H-12 B: hasta entonces lo que se guarde de Estudios parte de un valor
+     sin él, y la cola se lo aplica al salir). Si choca, lo aparta el servidor entero. Su paso de Deshacer entra en la
+     pila cuando se aplica, con los cambios que SE APLICARON (`alAplicar`). */
+  const guardarOperacionProtegida = ({ tipo, horario, estudiosDespues = null, papeleraDespues = null, asunto = null }) => {
+    const w = escritorHorarioRef.current;
+    if (!w) return Promise.resolve({ ok: false, error: { code: 'sin_escritor', message: 'El horario todavía no se puede guardar.' } });
+    if (horarioSoloLecturaRef.current) return Promise.resolve(NO_GUARDA_HORARIO());
+    const claves = [];
+    if (estudiosDespues) claves.push({ clave: 'estudios', antes: estudios, despues: estudiosDespues, normalizar: normalizarEstudiosCargados });
+    if (papeleraDespues) claves.push({ clave: 'papelera', antes: papelera, despues: papeleraDespues, normalizar: normalizarPapeleraCargada });
+    const paso = { ...fotoDelEstado(), tocaHorario: true, claves: ['horarioTop', ...claves.map((c) => c.clave)], operacion: { tipo, asunto, horarioAntes: horarioTop } };
+    setHorarioTop(horario);
+    return w.guardarOperacion({ tipo, manual: true, horario, claves, asunto, contexto: { paso } });
+  };
+
   const snapshotAndSave = (patch, { automatico = false } = {}) => {
     if (parcheTocaHorario(patch) && horarioSoloLecturaRef.current) return Promise.resolve(NO_GUARDA_HORARIO());
-    const snapshot = { sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion, horarioTop, fitness, cumpleanos };
+    /* 🛡 E1-R · R3 · H-12 — mientras una operación sobre una asignatura X vive (pendiente o retenida por un conflicto),
+       un cambio de Estudios que toca X o lo que cuelga de ella no se guarda, y se dice por qué. Lo demás pasa. Todas
+       las pantallas que escriben Estudios llegan aquí, así que lo heredan sin código propio. */
+    if (patch.estudios && bloqueadasRef.current.size) {
+      const x = cambioTocaBloqueadas(estudios, patch.estudios, bloqueadasRef.current);
+      if (x) { avisarBloqueoDeEstudios(x); return Promise.resolve(NO_GUARDA_ESTUDIOS); }
+    }
+    const snapshot = fotoDelEstado();
     /* 🔎 Entrega A — en solo lectura el paso de Deshacer NO lleva el horario: lo que hay en
        pantalla es la versión normalizada (una colección malformada sale vacía) y deshacer ese
        paso más tarde, ya editable, la escribiría encima de lo que hay en la cuenta. */
@@ -2364,6 +2424,8 @@ export default function App() {
     /* 🛡 E1 — si este paso cambia el horario (Deshacer lo mira, y no lo deduce comparando con una pantalla que otro
        aparato ha podido cambiar después). */
     else snapshot.tocaHorario = !!patch.horarioTop;
+    /* 🛡 R3 — qué claves cambió este paso: Deshacer no reescribe a la vez el horario y Estudios o la papelera a ciegas. */
+    snapshot.claves = Object.keys(patch).filter((k) => patch[k] !== undefined);
     /* La pila de Deshacer (diez pasos), de la ref y no del estado del pintado: dos guardados seguidos no se pisan. */
     const pilaDeshacer = historyRef.current;
     const nextHist = [...pilaDeshacer, snapshot].slice(-10);
@@ -2526,50 +2588,26 @@ export default function App() {
     });
   };
   const addAsignatura = (a) => snapshotAndSave({ estudios: { ...estudios, asignaturas: [...estudios.asignaturas, a] } });
-  // Único borrado en cascada de la app: quitar una asignatura se lleva por delante sus exámenes
-  // y sus horas de estudio, para no dejar registros huérfanos apuntando a algo que ya no existe.
+  // Único borrado en cascada de la app: quitar una asignatura se lleva por delante sus exámenes, horas, temas, entregas
+  // y eventos, para no dejar registros huérfanos. `conArrastrados` mete en la MISMA entrada de la papelera lo que cayó
+  // con ella, y restaurarla devuelve todo a la vez. Lo prepara `prepararBorradoAsignatura` (asignaturaProtegida.js).
   //
-  // Por eso no puede usar `eliminarConPapelera` tal cual: si la papelera guardara solo la
-  // asignatura, recuperarla devolvería una asignatura vacía y los exámenes se habrían perdido
-  // para siempre. `conArrastrados` mete en la misma entrada lo que cayó con ella, y restaurar
-  // devuelve las tres cosas a la vez (especificación: "recupera sus relaciones cuando sea posible").
+  // 🛡 E1-R · R3 — si la asignatura está en el horario (AS F2: sus clases se limpian a la vez), las TRES claves van en
+  // UNA operación protegida: todo o nada, y si otro aparato cambió algo, se aparta entera sin pisar nada. Sin clases, el
+  // borrado sigue como siempre (H-13). Y con Horarios en solo lectura, una asignatura con clases NO se borra (H-13): se
+  // haría a medias (el «Caso 4»); se dice por qué, con el acceso a Horario. Ya no existe el camino de la entrega A que
+  // la borraba dejando sus clases.
   const deleteAsignatura = (id) => {
-    const resultado = prepararEliminacion(estudios, 'estudios', 'asignaturas', id, new Date().toISOString());
-    if (!resultado) return;
-    const examenesArrastrados = estudios.examenes.filter((e) => e.asignaturaId === id);
-    const horasArrastradas = estudios.horas.filter((h) => h.asignaturaId === id);
-    // E3 F43 (ES F3) — y sus temas, que son la tercera lista que cuelga de una asignatura. Sin esto
-    // se quedarían huérfanos e invisibles, y restaurarla devolvería una asignatura sin su contenido.
-    const temasArrastrados = (estudios.temas || []).filter((t) => t.asignaturaId === id);
-    // E3 F44 (ES F4) — y sus entregas y eventos, las otras dos listas que cuelgan de una asignatura.
-    const entregasArrastradas = (estudios.entregas || []).filter((t) => t.asignaturaId === id);
-    const eventosArrastrados = (estudios.eventos || []).filter((v) => v.asignaturaId === id);
-    const entrada = conArrastrados(resultado.entrada, [
-      { coleccion: 'examenes', elementos: examenesArrastrados },
-      { coleccion: 'horas', elementos: horasArrastradas },
-      { coleccion: 'temas', elementos: temasArrastrados },
-      { coleccion: 'entregas', elementos: entregasArrastradas },
-      { coleccion: 'eventos', elementos: eventosArrastrados },
-    ]);
-    snapshotAndSave({
-      estudios: {
-        ...resultado.moduloActualizado,
-        examenes: estudios.examenes.filter((e) => e.asignaturaId !== id),
-        horas: estudios.horas.filter((h) => h.asignaturaId !== id),
-        temas: (estudios.temas || []).filter((t) => t.asignaturaId !== id),
-        entregas: (estudios.entregas || []).filter((t) => t.asignaturaId !== id),
-        eventos: (estudios.eventos || []).filter((v) => v.asignaturaId !== id),
-      },
-      /* 🚨 AS F2, apartados 7 y 9 — Y SE LIMPIA EL HORARIO EN LA MISMA LLAMADA.
-         Hasta ahora eliminar una asignatura solo tocaba `estudios`, así que las
-         clases del horario se quedaban apuntando a un id que ya no existía: el
-         «Caso 4» que el enunciado prohíbe. ⚠️ Va aquí dentro y no en otro
-         `snapshotAndSave` porque dos escrituras seguidas se pisan (E3 F26). */
-      /* 🔎 Entrega A — en solo lectura el horario no se toca, y Estudios sigue funcionando: la
-         asignatura se borra y sus clases se quedan como estaban (el diagnóstico lo cuenta). */
-      ...(horarioSoloLecturaRef.current ? {} : { horarioTop: limpiarHorarioDeAsignatura(horarioTop, id, { confirmado: true }) }),
-      papelera: { ...papelera, elementos: [...papelera.elementos, entrada] },
-    });
+    if (bloqueadasRef.current.has(id)) { avisarBloqueoDeEstudios(id); return Promise.resolve(NO_GUARDA_ESTUDIOS); }
+    const plan = prepararBorradoAsignatura({ estudios, papelera, horarioTop, id });
+    if (!plan) return Promise.resolve({ ok: false, error: { code: 'no_existe', message: 'Esa asignatura ya no existe.' } });
+    if (!plan.enHorario) return snapshotAndSave({ estudios: plan.estudios, papelera: plan.papelera });
+    const w = escritorHorarioRef.current;
+    if (horarioSoloLecturaRef.current || !w || w.motivoBloqueo()) {
+      setAvisoApp('asignatura_en_horario_solo_lectura');
+      return Promise.resolve({ ok: false, bloqueado: true, error: { code: 'asignatura_en_horario', message: 'Esta asignatura tiene clases en tu horario. Primero resuelve el aviso de Horarios.' } });
+    }
+    return guardarOperacionProtegida({ tipo: 'borrar_asignatura', horario: plan.horario, estudiosDespues: plan.estudios, papeleraDespues: plan.papelera, asunto: plan.asunto });
   };
   // E3 F43 (ES F3) — editar y ocultar una asignatura, y su contenido por temas.
   const updateAsignaturas = (asignaturas) => snapshotAndSave({ estudios: { ...estudios, asignaturas } });
@@ -3007,10 +3045,39 @@ export default function App() {
     await deleteBibliotecaArchivo(path);
   };
 
+  /* 🛡 E1-R · R3 — Deshacer un paso que fue una operación protegida (borrar una asignatura que estaba en el horario,
+     crear una desde Horario): su INVERSA, otra operación protegida calculada de los cambios que se aplicaron. Lo que
+     quitó vuelve si no existe; lo que añadió se quita si sigue igual; el horario vuelve con su condición. Todo o nada:
+     si otro aparato cambió algo, el servidor la aparta entera y no se pisa nada. Las mismas comprobaciones que Deshacer
+     del horario (E1): sin cambios de otro aparato después, y el paso sigue siendo el último. */
+  const deshacerOperacion = async (paso) => {
+    const w = escritorHorarioRef.current;
+    if (!w || w.motivoBloqueo() || horarioSoloLecturaRef.current) { setAvisoApp('deshacer_bloqueado_horario'); return; }
+    if (pasosAntesDeAjenoRef.current.has(paso)) { setAvisoApp('deshacer_bloqueado_horario'); return; }
+    const libre = await w.sinCambiosAjenos();
+    if (libre === false) { setAvisoApp('deshacer_bloqueado_horario'); return; }
+    if (historyRef.current[historyRef.current.length - 1] !== paso) { setAvisoApp('deshacer_cambiado'); return; }
+    const plan = prepararDeshacerOperacion(paso, { estudios, papelera });
+    if (!plan.ok) { setAvisoApp('deshacer_cambiado'); return; }
+    const rest = historyRef.current.slice(0, -1);
+    setHistory(rest); historyRef.current = rest; saveData(uidUser, 'historial', rest);
+    const asunto = paso.operacion.asunto ? { ...paso.operacion.asunto, accion: paso.operacion.asunto.accion === 'borrar' ? 'restaurar' : paso.operacion.asunto.accion } : null;
+    setHorarioTop(plan.horario);
+    w.guardarOperacion({
+      tipo: 'deshacer', manual: true, horario: plan.horario, asunto,
+      claves: plan.claves.map((c) => ({ ...c, normalizar: c.clave === 'estudios' ? normalizarEstudiosCargados : normalizarPapeleraCargada })),
+    });
+  };
+
   const undo = async () => {
     const pila = historyRef.current;
     if (!pila.length) return;
     const ultimoPaso = pila[pila.length - 1];
+    /* 🛡 E1-R · R3 · H-12 — mientras una operación protegida vive (se guarda, o está retenida por un conflicto), Deshacer
+       no salta a un paso de antes: el de esa operación todavía no está en la pila (entra al aplicarse), y su salida es
+       «Descartar mi cambio» en Horarios. */
+    if (bloqueadasRef.current.size) { setAvisoApp('deshacer_operacion_viva'); return; }
+    if (pasoDeOperacion(ultimoPaso)) { await deshacerOperacion(ultimoPaso); return; }
     /* 🛡 E1 (TP-15, política aprobada: «Deshacer se bloquea si hay cambios de otro aparato posteriores»). El paso
        lleva una foto de TODOS los módulos; el horario solo se reescribe si ESE paso lo cambió (si no, deshacer algo
        de Fitness no puede chocar con el horario de otro aparato). Si lo cambió, antes se mira la cuenta: si otro
@@ -3022,6 +3089,12 @@ export default function App() {
     if (tocaHorario) {
       const w = escritorHorarioRef.current;
       if (!w || w.motivoBloqueo()) { setAvisoApp('deshacer_bloqueado_horario'); return; }
+      /* 🛡 R3 — un paso que cambió el horario Y Estudios o la papelera sin ser una operación (los de antes de R3) no se
+         deshace: serían dos escrituras sueltas, una protegida y otra a ciegas. Lo dice y no toca nada. */
+      const mixto = Array.isArray(ultimoPaso.claves)
+        ? ultimoPaso.claves.some((k) => k === 'estudios' || k === 'papelera')
+        : !igualJson(ultimoPaso.estudios ?? null, estudios) || !igualJson(ultimoPaso.papelera ?? null, papelera);
+      if (mixto) { setAvisoApp('deshacer_mixto'); return; }
       /* Un paso de antes de que llegara lo de otro aparato: deshacerlo pisaría lo suyo. */
       if (pasosAntesDeAjenoRef.current.has(ultimoPaso)) { setAvisoApp('deshacer_bloqueado_horario'); return; }
       const libre = await w.sinCambiosAjenos();
@@ -3349,10 +3422,14 @@ export default function App() {
             estudios={estudios} sueno={sueno}
             /* 🚨 AS F2 — el horario se LEE para saber en cuántas clases se usa
                una asignatura antes de eliminarla. Nunca se escribe desde aquí:
-               quien lo hace es `deleteAsignatura`, en una sola llamada. 🔎 En solo lectura
-               no se le pasa: borrar la asignatura no tocará el horario, así que el aviso
-               no puede prometer que se lleva sus clases. */
-            horarioTop={horarioSoloLectura ? null : horarioTop}
+               quien lo hace es `deleteAsignatura`, en una sola llamada. 🔓 R3 · H-13 — se le pasa
+               también en solo lectura: una asignatura con clases ya no se borra a medias, y la
+               pantalla tiene que saberlo para decir por qué y llevar a Horario. */
+            horarioTop={horarioTop}
+            horarioSoloLectura={!!horarioSoloLectura}
+            /* 🛡 R3 · H-12 — las asignaturas con una operación viva llevan su marca. */
+            asignaturasBloqueadas={bloqueosDeEstudios(escritorHorario ? escritorHorario.asuntos : null)}
+            onIrAHorario={() => navegarDesdeHoy('horario')}
             onAddPrograma={addPrograma} onUpdateProgramas={updateProgramas} onDeletePrograma={deletePrograma}
             onAddAsignatura={addAsignatura} onUpdateAsignaturas={updateAsignaturas} onDeleteAsignatura={deleteAsignatura}
             onAddTema={addTema} onUpdateTemas={updateTemas} onDeleteTema={deleteTema}
@@ -3551,12 +3628,15 @@ export default function App() {
                que todavía no existía. Se guardan en **la misma llamada**: dos
                `snapshotAndSave` seguidos parten del mismo estado del cierre y el
                segundo borra lo que acaba de escribir el primero (E3 F26). */
-            onCambiarConAsignatura={(nuevo, asignaturaNueva) => snapshotAndSave({
-              horarioTop: nuevo,
-              ...(asignaturaNueva
-                ? { estudios: { ...estudios, asignaturas: [...(estudios.asignaturas || []), asignaturaNueva] } }
-                : {}),
-            })}
+            /* 🛡 E1-R · R3 — y con una asignatura nueva, en UNA operación protegida: sin ella, una clase podía
+               guardarse apuntando a una asignatura que no llegó (el «Caso 4»). */
+            onCambiarConAsignatura={(nuevo, asignaturaNueva) => (asignaturaNueva
+              ? guardarOperacionProtegida({
+                tipo: 'editar_horario', horario: nuevo,
+                estudiosDespues: { ...estudios, asignaturas: [...(estudios.asignaturas || []), asignaturaNueva] },
+                asunto: { asignaturaId: asignaturaNueva.id, nombre: asignaturaNueva.nombre || null, accion: 'crear' },
+              })
+              : snapshotAndSave({ horarioTop: nuevo }))}
           />
         );
       case 'negocio':
@@ -4176,7 +4256,7 @@ export default function App() {
       {/* MS F16 — cómo va lo guardado, arriba y en medio; vacío casi siempre. */}
       <IndicadorDeSincronizacion />
       {/* 🛡 E1 — un aviso suelto de la aplicación (Deshacer bloqueado por un cambio de otro aparato). */}
-      <AvisoAccion accion={avisoApp} accent={accent} onCerrar={() => setAvisoApp(null)} />
+      <AvisoAccion accion={avisoApp} accent={accent} onCerrar={() => setAvisoApp(null)} onIr={(d) => navegarDesdeHoy(d)} />
       {showSearch && (
         <UniversalSearchModal
           accent={accent} onClose={() => setShowSearch(false)} buildContext={() => currentState}

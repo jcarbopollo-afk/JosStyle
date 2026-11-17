@@ -723,6 +723,13 @@ if node --import ./scripts/resolver-vite.mjs scripts/test-escritor-operaciones.m
 else
   fallo "Falla el escritor de operaciones (R2)"; grep '✗' /tmp/jc_horario_r2_esc.log
 fi
+# 🛡 Horarios E1-R · R3 — la integración: borrar una asignatura en UNA operación, Deshacer como inversa, H-12, H-13 y
+# C1–C6, con el escritor de R2 contra el doble de las funciones del servidor (el mismo del recorrido de Chromium).
+if node --import ./scripts/resolver-vite.mjs scripts/test-asignatura-protegida.mjs >/tmp/jc_horario_r3.log 2>&1; then
+  ok "Horarios, E1-R · R3: borrar una asignatura (todo o nada), Deshacer, H-12, H-13 y C1–C6 — $(grep -c '✓' /tmp/jc_horario_r3.log) comprobaciones"
+else
+  fallo "Falla la integración de la operación protegida (R3)"; grep '✗' /tmp/jc_horario_r3.log
+fi
 
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
@@ -2216,8 +2223,14 @@ if [ -n "${HV_PGRST_URL:-}" ]; then
   else
     fallo "Falla el cliente de la operación protegida (R2) contra PostgREST local"; grep '✗' /tmp/jc_r2pg.log
   fi
+  # 🛡 E1-R · R3 — borrar una asignatura y deshacerlo contra el servidor de verdad: la atomicidad la demuestra Postgres.
+  if node --import ./scripts/resolver-vite.mjs scripts/test-asignatura-protegida-postgrest.mjs >/tmp/jc_r3pg.log 2>&1; then
+    ok "Horarios · borrar una asignatura y Deshacer (R3) contra PostgREST local — $(grep -c '✓' /tmp/jc_r3pg.log) comprobaciones"
+  else
+    fallo "Falla R3 contra PostgREST local"; grep '✗' /tmp/jc_r3pg.log
+  fi
 else
-  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia, escritor de horarioTop, operación protegida y su cliente contra PostgREST local: omitidas (sin HV_PGRST_URL)"
+  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia, escritor de horarioTop, operación protegida, su cliente y R3 contra PostgREST local: omitidas (sin HV_PGRST_URL)"
 fi
 
 # Entrega 3 · F3 — la iconografía del armario y la categoría de ropa interior.

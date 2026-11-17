@@ -456,7 +456,9 @@ import WellbeingView from '../src/views/WellbeingView.jsx';
 import HealthView from '../src/views/HealthView.jsx';
 import NutritionView, { AguaTab } from '../src/views/NutritionView.jsx';
 import { JarraDeAgua } from '../src/components/jarraAgua.jsx';
-import EstudiosView, { FormFecha as FormFechaEstudios, ExamenItem as ExamenItemEstudios } from '../src/views/EstudiosView.jsx';
+import EstudiosView, { FormFecha as FormFechaEstudios, ExamenItem as ExamenItemEstudios, MarcaOperacionViva } from '../src/views/EstudiosView.jsx';
+/* 🛡 E1-R · R3 — el bloqueo selectivo de Estudios (H-12): de dónde sale la marca. */
+import { bloqueosDeEstudios } from '../src/lib/asignaturaProtegida.js';
 import CumpleanosView, { FormularioCumpleanos, TarjetaCumpleanos } from '../src/views/CumpleanosView.jsx';
 import BusinessView from '../src/views/BusinessView.jsx';
 import PersonalizationView from '../src/views/PersonalizationView.jsx';
@@ -1398,6 +1400,8 @@ const CASOS = [
         props(lleno, { horarioCrudo: lleno })],
       ['AvisoSoloLecturaHorario · versión más nueva', AvisoSoloLecturaHorario, () => ({ motivo: 'version_futura', accent, onRecargar: noop })],
       ['AvisoSoloLecturaHorario · versión ilegible', AvisoSoloLecturaHorario, () => ({ motivo: 'version_ilegible', accent, onRecargar: noop })],
+      /* 🛡 E1-R · R3 — sin el protocolo del servidor, la frase exacta del escritor (nunca «versión más nueva»). */
+      ['AvisoSoloLecturaHorario · sin el protocolo del servidor', AvisoSoloLecturaHorario, () => ({ motivo: 'horario_protocolo', accent, onRecargar: noop, detalle: 'Tu cuenta todavía no tiene la protección de los cambios del horario. Para no guardar nada a ciegas, Horarios no guarda cambios.' })],
       ['DiagnosticoHorariosEntrada (cerrado, datos de prueba)', DiagnosticoHorariosEntrada, () => ({ crudo: conChoque, asignaturas: [], hoy: HOY, accent })],
       /* 🛡 Horarios A-bis — la guardia: sus tres avisos de solo lectura y la consulta (datos de prueba). */
       ['AvisoGuardiaHorario · comprobando', AvisoGuardiaHorario, () => ({ motivo: 'guardia_comprobando', accent })],
@@ -3158,6 +3162,14 @@ const CASOS = [
       ['EstudiosView · sin áreas', EstudiosView, () => propsEs({ programas: [], asignaturas: [], examenes: [], horas: [] })],
       /* Y con un examen destacado desde el Dashboard, que abre su rama sola. */
       ['EstudiosView · con foco en un examen', EstudiosView, () => propsEs(conApps, { foco: { examenId: 'e1' } })],
+      /* 🛡 E1-R · R3 · H-12 y H-13 — con una asignatura bloqueada (pendiente y retenida) y Horarios en solo lectura. */
+      ['EstudiosView · con asignaturas bloqueadas y Horarios en solo lectura', EstudiosView, () => propsEs(conApps, {
+        horarioSoloLectura: true, onIrAHorario: noop, foco: { examenId: 'e1' },
+        asignaturasBloqueadas: bloqueosDeEstudios([{ asignaturaId: 'a1', nombre: 'Matemáticas', accion: 'borrar', estado: 'pendiente' }, { asignaturaId: 'a2', nombre: 'Biología', accion: 'borrar', estado: 'conflicto' }]),
+      })],
+      ['MarcaOperacionViva · pendiente', MarcaOperacionViva, () => ({ bloqueo: bloqueosDeEstudios([{ asignaturaId: 'a1', accion: 'borrar', estado: 'pendiente' }]).get('a1') })],
+      ['MarcaOperacionViva · retenida por un conflicto', MarcaOperacionViva, () => ({ bloqueo: bloqueosDeEstudios([{ asignaturaId: 'a1', accion: 'borrar', estado: 'conflicto' }]).get('a1') })],
+      ['MarcaOperacionViva · restaurando', MarcaOperacionViva, () => ({ bloqueo: bloqueosDeEstudios([{ asignaturaId: 'a1', accion: 'restaurar', estado: 'pendiente' }]).get('a1') })],
       /* 🐛 2026-10-18 — editar un examen: el formulario de crear, con todo lo que tiene el examen, y la
          tarjeta con su «Editar». Sin la edición, la tarjeta era solo repaso y borrar. */
       /* 🎂 2026-10-18 — Cumpleaños (Mente): vacío, con cumpleaños (uno hoy, uno sin año y un 29 de

@@ -93,7 +93,9 @@ ok(/cumpleanos: 'los cumpleaños'/.test(leer('src/lib/estadosAsincronos.js')) &&
 ok(/loadData\(uidUser, 'cumpleanos', DEFAULT_CUMPLEANOS\)/.test(APP) && /setCumpleanos\(normalizarCumpleanos\(cumple\)\)/.test(APP), 'App.jsx la carga y la pasa por su puerta');
 ok(/guardados\.push\(saveData\(uidUser, 'cumpleanos', patch\.cumpleanos\)\)/.test(APP), 'y la guarda por `snapshotAndSave` (con Deshacer y con su `{ ok }`)');
 ok(/if \(last\.cumpleanos\) \{ setCumpleanos\(last\.cumpleanos\)/.test(APP), 'Deshacer la devuelve, y un paso viejo sin ella no la vacía');
-ok(/snapshot = \{[^}]*cumpleanos \};/.test(APP), 'y entra en el paso de Deshacer');
+/* 🔓 Horarios E1-R · R3 — el paso de Deshacer sale de `fotoDelEstado()`, la misma foto para `snapshotAndSave` y para el
+   paso de una operación protegida. */
+ok(/const fotoDelEstado = \(\) => \(\{[^}]*cumpleanos \}\);/.test(APP) && /const snapshot = fotoDelEstado\(\);/.test(APP), 'y entra en el paso de Deshacer');
 
 console.log('\n4 · Cada año, sin duplicados');
 const evs = eventosDeCumpleanos({ lista: [marta, leo] });

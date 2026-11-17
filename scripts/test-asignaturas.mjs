@@ -260,8 +260,21 @@ eq(impactoDeEliminarAsignatura(norm, 'a2').tieneDatos, false, 'Una asignatura si
 ok(/recuperar/i.test(impactoDeEliminarAsignatura(norm, 'a2').aviso), 'y aun así dice que se recupera');
 // 🚨 ENSEÑA, no borra.
 ok(!/eliminarConPapelera|saveData/.test(CODIGO_LIB), '🚨 La librería no borra nada: quien borra es App.jsx (ME F3)');
-ok(/temas: \(estudios\.temas \|\| \[\]\)\.filter/.test(APP), '🚨 Y App.jsx se lleva los temas en la cascada de la asignatura');
-ok(/coleccion: 'temas'/.test(APP), '⚠️ en la MISMA entrada de papelera, para que restaurar la devuelva entera');
+/* 🔓 Horarios E1-R · R3 — la cascada ya no está escrita en `App.jsx`: borrar una asignatura va en UNA operación con su
+   horario, así que la prepara `prepararBorradoAsignatura`. La promesa es la misma y se comprueba EJECUTÁNDOLA (antes
+   se buscaba el texto de la cascada en `App.jsx`): los temas salen de Estudios y van en la MISMA entrada. */
+{
+  const { prepararBorradoAsignatura } = await import('../src/lib/asignaturaProtegida.js');
+  const estR3 = { asignaturas: [{ id: 'a1', nombre: 'Biología' }, { id: 'a2', nombre: 'Física' }], examenes: [], horas: [],
+    temas: [{ id: 't1', asignaturaId: 'a1', nombre: 'Célula' }, { id: 't2', asignaturaId: 'a1', nombre: 'ADN' }, { id: 't3', asignaturaId: 'a2', nombre: 'Ondas' }] };
+  const plan = prepararBorradoAsignatura({ estudios: estR3, papelera: { elementos: [] }, horarioTop: null, id: 'a1', ahoraISO: '2026-11-16T10:00:00.000Z' });
+  ok(/const deleteAsignatura = [\s\S]{0,400}prepararBorradoAsignatura\(/.test(APP) && !!plan
+    && plan.estudios.temas.map((t) => t.id).join() === 't3',
+  '🚨 Y App.jsx se lleva los temas en la cascada de la asignatura');
+  const rel = (plan.entrada.relacionados || []).find((r) => r.coleccion === 'temas');
+  ok(plan.papelera.elementos.length === 1 && rel && rel.elementos.map((t) => t.id).join() === 't1,t2',
+    '⚠️ en la MISMA entrada de papelera, para que restaurar la devuelva entera');
+}
 
 console.log('\n── 10. La relación con las fechas (apartado 12) ──');
 

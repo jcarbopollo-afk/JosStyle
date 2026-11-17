@@ -2,6 +2,15 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (2026-11-16 — Horarios E1-R · R3; commit SOLO local en `claude/horarios-rediseno`, sin push, PR,
+> fusión ni despliegue, y sin nada ejecutado en Supabase alojado):** **R3 está hecha**: la aplicación escribe el horario por
+> operaciones protegidas (el escritor de R2 contra R1); **borrar una asignatura que está en el horario es UNA operación** (ella,
+> todo lo suyo, su entrada de la papelera y sus clases: todo o nada) y **Deshacer es su inversa protegida**; **H-12** bloquea
+> solo los cambios de Estudios que tocan la asignatura de una operación viva (con su marca), y **H-13** no deja borrar a medias
+> una asignatura con clases con Horarios en solo lectura («Ir a Horario»). Lógica en `src/lib/asignaturaProtegida.js`. Probado
+> en Node (100), contra R1 en el laboratorio (27, atomicidad provocada a mitad de vuelo) y en Chromium con dos aparatos
+> (sección «R3»: C1–C6). **Siguiente: R4 (la pantalla de Cambios apartados), con su autorización.** Detalle en `docs/19` §18.17.
+>
 > **📅 ACTUALIZACIÓN (2026-11-16 — Horarios E1-R · R2; commit SOLO local en `claude/horarios-rediseno`, sin push, PR,
 > fusión ni despliegue, y sin nada ejecutado en Supabase alojado):** **R2 está hecha**: el motor del cliente de la operación
 > protegida —`src/lib/operacionesProtegidas.js` (la operación, su validación y los cambios por elemento como espejo del

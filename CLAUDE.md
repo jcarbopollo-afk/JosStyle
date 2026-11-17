@@ -16,9 +16,11 @@ transcripción literal, pero **no se usan en código nuevo, documentación nueva
 
 **Estado:** `package.json` **v3.163.0** (Horarios E1, en commits **solo locales** de `claude/horarios-rediseno`:
 `docs/19` §18.14; y **E1-R · R1** —la operación protegida en el servidor, solo laboratorio local, H-18—, `docs/19` §18.15; y **R2** —el motor del
-cliente: `operacionesProtegidas.js`, `escritorOperaciones.js` y `transporteProtegido`, que la aplicación todavía no usa (es R3)—, §18.16). Vite + React 18 + Tailwind + Supabase + una función serverless en Vercel que hace de proxy a Anthropic.
-🛡 **`horarioTop` solo lo escribe su escritor protegido** (`src/lib/escritorHorario.js`): `saveData` lo rechaza, y volver a
-escribirlo por otro camino rompe la protección entre aparatos (DEP-35 en `docs/03`).
+cliente: `operacionesProtegidas.js`, `escritorOperaciones.js` y `transporteProtegido`—, §18.16; y **R3** —la integración: el horario se escribe por
+operaciones protegidas, borrar una asignatura con clases y su Deshacer son UNA operación, H-12 y H-13 (`asignaturaProtegida.js`)—, §18.17). Vite + React 18 + Tailwind + Supabase + una función serverless en Vercel que hace de proxy a Anthropic.
+🛡 **`horarioTop` solo lo escribe su escritor protegido** —desde R3, el de operaciones (`src/lib/escritorOperaciones.js`) contra las
+funciones del servidor—: `saveData` lo rechaza, y volver a escribirlo por otro camino rompe la protección entre aparatos (DEP-35 en
+`docs/03`). Un cambio que toque el horario Y Estudios o la papelera va en UNA operación (`guardarOperacionProtegida` de `App.jsx`).
 
 🏁 **Y LA ENTREGA 4 —FITNESS, 45 FASES— ESTÁ CERRADA: 45 de 45.** Josué la pasó el 2026-09-13 —33 251 líneas—
 para convertir Entrenamiento en una aplicación de fitness completa. ⚠️ **El documento va del revés y

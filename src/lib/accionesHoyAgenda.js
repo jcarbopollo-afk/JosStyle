@@ -274,7 +274,15 @@ export const AVISOS_ACCION = {
   deshacer_bloqueado_horario: { texto: 'No se ha deshecho: tu horario cambió en otro aparato después. No se ha tocado nada.', deshacer: false, error: true },
   deshacer_cambiado: { texto: 'No se ha deshecho: acabas de guardar otro cambio. Vuelve a intentarlo.', deshacer: false, error: true },
   /* …y un conflicto que se abre fuera de Horarios se dice donde está (D2): tu cambio no se pierde, y se elige en Horarios. */
-  conflicto_horario: { texto: 'Otro aparato ha cambiado tu horario. Tu cambio no se ha perdido: ábrelo en Horarios para elegir qué hacer.', deshacer: false, error: true },
+  conflicto_horario: { texto: 'Otro aparato ha cambiado tu horario. Tu cambio no se ha perdido: ábrelo en Horarios para elegir qué hacer.', deshacer: false, error: true, ir: 'horario' },
+  /* 🛡 E1-R · R3 — H-12 (el bloqueo selectivo de Estudios), H-13 (no borrar a medias una asignatura con clases) y
+     Deshacer de una operación protegida. Cada uno dice qué ha pasado y qué hacer; `ir` ofrece el acceso a Horario. */
+  estudios_bloqueado_pendiente: { texto: 'No se puede cambiar esta asignatura hasta que llegue a tu cuenta el cambio que está guardando.', deshacer: false, error: true },
+  estudios_bloqueado_conflicto: { texto: 'Esta asignatura está retenida por un conflicto en tu horario. Resuélvelo en Horarios.', deshacer: false, error: true, ir: 'horario' },
+  asignatura_en_horario_solo_lectura: { texto: 'Esta asignatura tiene clases en tu horario. Primero resuelve el aviso de Horarios.', deshacer: false, error: true, ir: 'horario' },
+  deshacer_operacion_viva: { texto: 'No se ha deshecho: hay un cambio que todavía se está guardando o está retenido en Horarios.', deshacer: false, error: true, ir: 'horario' },
+  deshacer_mixto: { texto: 'No se ha deshecho: ese cambio tocó tu horario y Estudios a la vez y no se puede deshacer sin riesgo. No se ha tocado nada.', deshacer: false, error: true },
+  restablecer_bloqueado: { texto: 'No se pueden borrar los datos de Estudios mientras se guarda un cambio de una asignatura.', deshacer: false, error: true },
 };
 
 export const avisoDe = (id) => AVISOS_ACCION[id] || null;

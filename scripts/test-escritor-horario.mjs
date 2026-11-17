@@ -582,7 +582,10 @@ console.log('\n── 23 · Cableado en App.jsx ──');
   ok(/escritorHorarioRef\.current\.cerrar\(\)/.test(app) && /apuntarExterno\('horarioTop', null\)/.test(app), 'Al cambiar de usuario, el escritor de la sesión anterior se cierra');
   ok(/inicial: \{ valor: hor, existe: hor !== DEFAULT_HORARIO_TOP && !cargaFallida\('horarioTop'\) \}/.test(app), 'El escritor parte de LO CARGADO (la base es lo que ve la pantalla)');
   ok(/const gv = guardiaDeVersionHorario\(valor\);\s*if \(gv\.soloLectura\) horarioMotivoARef\.current = gv\.motivo;/.test(app), 'Lo que adopta de la cuenta pasa por la guardia de versión de la A (una versión futura no se normaliza encima)');
-  ok(/motivo: 'conflicto', nombre: 'Cambio apartado por un conflicto'/.test(app), 'D2-bis: la copia va al historial de versiones con motivo conflicto');
+  /* 🔓 E1-R · R3 — se da la vuelta, no se borra: la copia de un conflicto la aparta el SERVIDOR, entera y en la misma
+     transacción que lo detecta (H-08). App.jsx ya no la manda al historial de versiones con otra escritura que podía fallar. */
+  ok(/crearEscritorDeOperaciones\(\{\s*transporte: transporteProtegido/.test(app) && !/crearEscritorDeVersiones|motivo: 'conflicto', nombre:/.test(app),
+    '🔓 R3 (H-08, D2-bis) — la copia de un conflicto la aparta el servidor en la misma transacción, no el historial de versiones');
   ok(/\(w \? w\.motivoBloqueo\(\) : null\)/.test(app), 'El conflicto pone Horarios en solo lectura (después de la A y la guardia)');
   ok(/if \(libre === false\) \{ setAvisoApp\('deshacer_bloqueado_horario'\); return; \}/.test(app), 'Deshacer se bloquea si otro aparato cambió el horario después (y lo dice)');
   ok(/\|\| !mismoContenido\(ultimoPaso\.horarioTop, horarioTop, \{ sinSello: true \}\)|&& !mismoContenido\(ultimoPaso\.horarioTop, horarioTop, \{ sinSello: true \}\)/.test(app), 'Deshacer solo reescribe el horario si ESE paso lo cambió');

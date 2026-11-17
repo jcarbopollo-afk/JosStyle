@@ -27,6 +27,8 @@ import {
 /* 🚨 AS F2 — los usos y el aviso salen de UNA sola librería, la misma que mira
    Horario: el apartado 5 pide expresamente que no haya dos fuentes de verdad. */
 import { usosDeAsignatura, avisoEliminarAsignatura } from '../lib/usosAsignatura';
+/* 🛡 E1-R · R3 — H-13: con Horarios en solo lectura, una asignatura que está en el horario no se borra. */
+import { asignaturaEnHorario } from '../lib/asignaturaProtegida';
 import {
   TIPOS_EVENTO_ACADEMICO, TIPO_EVENTO_POR_DEFECTO, tipoEventoAcademico, tipoDeFecha,
   ESTADOS_EXAMEN, ESTADOS_ENTREGA, estadoExamen, estadoEntrega,
@@ -281,7 +283,20 @@ export function ExamenItem({ examen, asignaturas = [], onUpdate, onEditar, onDel
    página larga"*. Sus dos funciones **no se han perdido**, se han mudado a la
    pantalla de la asignatura, que es donde el árbol las pone. */
 
-function FilaAsignatura({ asignatura, linea, accent, onAbrir }) {
+/* 🛡 E1-R · R3 · H-12 — la marca de una asignatura con una operación viva: «Se está borrando: pendiente de guardar» o
+   «Borrado retenido por un conflicto en tu horario». Sus acciones se siguen viendo; al tocar una, el aviso dice por qué
+   no se puede (y, en el conflicto, lleva a Horario). Icono y palabra: el color nunca va solo (EH F42). */
+export function MarcaOperacionViva({ bloqueo }) {
+  if (!bloqueo) return null;
+  const conflicto = bloqueo.motivo === 'conflicto';
+  return (
+    <span role="status" className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: conflicto ? COLORS.negative : COLORS.warning }}>
+      <Clock size={11} aria-hidden="true" /> {bloqueo.marca}
+    </span>
+  );
+}
+
+function FilaAsignatura({ asignatura, linea, accent, onAbrir, bloqueo = null }) {
   const col = asignatura.acento ? (COLORS[asignatura.acento] || accent) : accent;
   return (
     <button
@@ -299,6 +314,7 @@ function FilaAsignatura({ asignatura, linea, accent, onAbrir }) {
           : (asignatura.profesor || asignatura.aula)
             ? <span className="block text-xs truncate" style={{ color: COLORS.textMuted }}>{[asignatura.profesor, asignatura.aula].filter(Boolean).join(' · ')}</span>
             : null}
+        <MarcaOperacionViva bloqueo={bloqueo} />
       </span>
       <ChevronRight size={16} style={{ color: COLORS.textMuted }} />
     </button>
@@ -1120,7 +1136,7 @@ function TodosLosEventos({ estudios, accent, onIr, onCerrar }) {
   );
 }
 
-export default function EstudiosView({ estudios, horarioTop = null, sueno, onAddPrograma, onUpdateProgramas, onDeletePrograma, onAddAsignatura, onUpdateAsignaturas, onDeleteAsignatura, onAddTema, onUpdateTemas, onDeleteTema, onAddEntrega, onUpdateEntregas, onDeleteEntrega, onAddEvento, onUpdateEventos, onDeleteEvento, onUpdateExamenes, onAddActividad, onDeleteActividad, objetivos, onCrearObjetivoApp, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
+export default function EstudiosView({ estudios, horarioTop = null, horarioSoloLectura = false, asignaturasBloqueadas = null, onIrAHorario = null, sueno, onAddPrograma, onUpdateProgramas, onDeletePrograma, onAddAsignatura, onUpdateAsignaturas, onDeleteAsignatura, onAddTema, onUpdateTemas, onDeleteTema, onAddEntrega, onUpdateEntregas, onDeleteEntrega, onAddEvento, onUpdateEventos, onDeleteEvento, onUpdateExamenes, onAddActividad, onDeleteActividad, objetivos, onCrearObjetivoApp, onAddExamen, onUpdateExamen, onDeleteExamen, onAddHoras, onDeleteHoras, accent, foco, onFocoConsumido }) {
   const [ruta, setRuta] = useState(RUTA_RAIZ);
   const [creando, setCreando] = useState(false);
   const [organizando, setOrganizando] = useState(false);
@@ -1467,6 +1483,7 @@ export default function EstudiosView({ estudios, horarioTop = null, sueno, onAdd
               {[asig.profesor, asig.aula].filter(Boolean).join(' · ')}
             </p>
           )}
+          <MarcaOperacionViva bloqueo={asignaturasBloqueadas ? asignaturasBloqueadas.get(asig.id) || null : null} />
         </div>
       </div>
     );
@@ -1599,6 +1616,8 @@ export default function EstudiosView({ estudios, horarioTop = null, sueno, onAdd
     /* 🚨 AS F2, apartados 2 y 5 — los usos salen de la MISMA función que usa
        Horario, para que los dos avisos no digan números distintos. */
     const avisoBorrado = avisoEliminarAsignatura(usosDeAsignatura(estudios, horarioTop, asig.id), asig.nombre);
+    /* 🛡 R3 · H-13 — con Horarios en solo lectura, una asignatura con clases no se borra: se haría a medias. */
+    const borradoRetenidoH13 = horarioSoloLectura && asignaturaEnHorario(horarioTop, asig.id).enHorario;
     const proximoAsig = proximoDeAsignatura(estudios, asig.id);
 
     return (
@@ -1681,7 +1700,25 @@ export default function EstudiosView({ estudios, horarioTop = null, sueno, onAdd
                 🚨 **AS F2** — y ahora también DÓNDE SE USA, mirando los dos módulos: antes solo
                 contaba lo de Estudios, así que eliminar una asignatura se llevaba por delante las
                 clases del horario **sin avisar**. */}
-            {confirmarBorrado && (
+            {confirmarBorrado && borradoRetenidoH13 && (
+              <Card style={{ background: COLORS.surface2 }}>
+                <p role="alert" className="text-sm font-semibold" style={{ color: COLORS.text }}>Esta asignatura tiene clases en tu horario. Primero resuelve el aviso de Horarios.</p>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: COLORS.textMuted }}>
+                  Tu horario está en solo lectura en este momento. Borrarla ahora dejaría sus clases apuntando a una asignatura que ya no existe, así que no se borra nada.
+                </p>
+                <div className="flex items-center gap-2 mt-3">
+                  <button onClick={() => setConfirmarBorrado(false)} className="flex-1 rounded-xl py-2.5 text-sm font-semibold" style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, color: COLORS.text }}>
+                    Cancelar
+                  </button>
+                  {onIrAHorario && (
+                    <button onClick={() => { setConfirmarBorrado(false); onIrAHorario(); }} className="flex-1 rounded-xl py-2.5 text-sm font-semibold" style={{ background: accent, color: COLORS.textOnAccent }}>
+                      Ir a Horario
+                    </button>
+                  )}
+                </div>
+              </Card>
+            )}
+            {confirmarBorrado && !borradoRetenidoH13 && (
               <Card style={{ background: COLORS.surface2 }}>
                 <p className="text-sm font-semibold" style={{ color: COLORS.text }}>{avisoBorrado.titulo}</p>
                 {avisoBorrado.hayUsos && (
@@ -1746,6 +1783,7 @@ export default function EstudiosView({ estudios, horarioTop = null, sueno, onAdd
             {visiblesApp.map((a) => (
               <FilaAsignatura
                 key={a.id} asignatura={a} linea={lineaDeAsignatura(estudios, a.id)} accent={accent}
+                bloqueo={asignaturasBloqueadas ? asignaturasBloqueadas.get(a.id) || null : null}
                 onAbrir={() => setRuta(abrirAsignatura(app.id, ruta.ramaId, a.id))}
               />
             ))}

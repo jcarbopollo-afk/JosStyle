@@ -186,9 +186,15 @@ console.log('\n── 6 · La guardia, cableada en App.jsx ──');
   ok(/const tocaHorario = !horarioSoloLecturaRef\.current && !!ultimoPaso\.horarioTop/.test(app) && /if \(tocaHorario\) \{ setHorarioTop\(last\.horarioTop\); guardarHorario\(last\.horarioTop\); \}/.test(app),
     'Deshacer no escribe el horario en solo lectura, ni lo restaura vacío desde un paso que no lo lleva');
   ok(!/last\.horarioTop \|\| DEFAULT_HORARIO_TOP/.test(app), 'Deshacer ya no escribe un horario vacío por defecto');
-  ok(/\.\.\.\(horarioSoloLecturaRef\.current \? \{\} : \{ horarioTop: limpiarHorarioDeAsignatura\(/.test(app),
-    'Borrar una asignatura en Estudios sigue funcionando y, en solo lectura, no toca el horario');
-  ok(/horarioTop=\{horarioSoloLectura \? null : horarioTop\}/.test(app), 'Y el aviso de Estudios no promete borrar clases del horario en solo lectura');
+  /* 🔓 E1-R · R3 · H-13 — se da la vuelta, no se borra. Antes, en solo lectura, la asignatura se borraba y sus clases se
+     quedaban apuntando a ella (el «Caso 4»). Ahora: sin clases, el borrado sigue igual (y no toca el horario); con clases,
+     NO se borra nada y se dice por qué, con el acceso a Horario. */
+  ok(/if \(!plan\.enHorario\) return snapshotAndSave\(\{ estudios: plan\.estudios, papelera: plan\.papelera \}\);/.test(app),
+    'Borrar una asignatura SIN clases sigue funcionando también en solo lectura, sin tocar el horario');
+  ok(/if \(horarioSoloLecturaRef\.current \|\| !w \|\| w\.motivoBloqueo\(\)\) \{\s*setAvisoApp\('asignatura_en_horario_solo_lectura'\);/.test(app),
+    '🔓 H-13 — CON clases y Horarios en solo lectura no se borra a medias: se dice por qué');
+  ok(/horarioTop=\{horarioTop\}/.test(app) && /horarioSoloLectura=\{!!horarioSoloLectura\}/.test(app),
+    '🔓 H-13 — el aviso de Estudios sabe si el horario está en solo lectura (retiene el borrado en vez de prometer borrar sus clases)');
   /* 🔓 E1 — ninguna escritura de horarioTop por saveData: las dos (snapshotAndSave y deshacer) van por su escritor,
      después de la comprobación de solo lectura. */
   eq((app.match(/saveData\(uidUser, 'horarioTop'/g) || []).length, 0, 'Ninguna escritura de horarioTop por saveData (E1)');

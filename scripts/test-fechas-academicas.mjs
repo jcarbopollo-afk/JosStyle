@@ -220,8 +220,20 @@ eq(secs.find((s) => s.id === 'entregas').linea, null, 'que no se pinta como "0 e
 const imp = impactoDeEliminarAsignatura(norm, 'a2');
 ok(/2 entregas/.test(imp.aviso), '🚨 Borrar una asignatura avisa de las entregas que se lleva');
 ok(/recuperar/i.test(imp.aviso), 'y de que se recuperan');
-ok(/entregas: \(estudios\.entregas \|\| \[\]\)\.filter/.test(APP), '🚨 y App.jsx se las lleva de verdad en la cascada');
-ok(/coleccion: 'entregas'/.test(APP) && /coleccion: 'eventos'/.test(APP), '⚠️ en la MISMA entrada de papelera');
+/* 🔓 Horarios E1-R · R3 — la cascada la prepara `prepararBorradoAsignatura` (va en UNA operación con su horario), así
+   que se comprueba ejecutándola, no buscando su texto en `App.jsx`. */
+{
+  const { prepararBorradoAsignatura } = await import('../src/lib/asignaturaProtegida.js');
+  const estR3 = { asignaturas: [{ id: 'a2', nombre: 'Física' }, { id: 'a3', nombre: 'Química' }], examenes: [], horas: [], temas: [],
+    entregas: [{ id: 'e1', asignaturaId: 'a2' }, { id: 'e2', asignaturaId: 'a2' }, { id: 'e3', asignaturaId: 'a3' }],
+    eventos: [{ id: 'v1', asignaturaId: 'a2' }, { id: 'v2', asignaturaId: 'a3' }] };
+  const plan = prepararBorradoAsignatura({ estudios: estR3, papelera: { elementos: [] }, horarioTop: null, id: 'a2', ahoraISO: '2026-11-16T10:00:00.000Z' });
+  ok(/const deleteAsignatura = [\s\S]{0,400}prepararBorradoAsignatura\(/.test(APP) && !!plan
+    && plan.estudios.entregas.map((x) => x.id).join() === 'e3' && plan.estudios.eventos.map((x) => x.id).join() === 'v2',
+  '🚨 y App.jsx se las lleva de verdad en la cascada');
+  const rel = (c) => ((plan.entrada.relacionados || []).find((r) => r.coleccion === c) || { elementos: [] }).elementos.map((x) => x.id).join();
+  ok(plan.papelera.elementos.length === 1 && rel('entregas') === 'e1,e2' && rel('eventos') === 'v1', '⚠️ en la MISMA entrada de papelera');
+}
 ok(CATALOGO_PAPELERA['estudios.entregas'] && CATALOGO_PAPELERA['estudios.eventos'], '⚠️ y las dos listas están en el catálogo de la papelera (EH F45)');
 
 const impFila = impactoDeEliminarFecha({ tipo: 'entrega', notas: 'Importante' });

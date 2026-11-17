@@ -120,7 +120,9 @@ eq(rA.actividad.asignaturaId, rA.asignaturaNueva.id,
 /* ⚠️ Y escribe en DOS almacenes, así que devuelve un plan y guarda `App.jsx`
    en UNA sola llamada: dos escrituras seguidas se pisan (E3 F26). */
 const APP = sinComentarios(leer('src/App.jsx'));
-ok(/horarioTop:[\s\S]{0,200}estudios:|estudios:[\s\S]{0,200}horarioTop:/.test(APP),
+/* 🔓 Horarios E1-R · R3 — desde que el horario se escribe por operaciones protegidas, esa llamada es
+   `guardarOperacionProtegida`, con el horario y Estudios en la MISMA operación (todo o nada en el servidor). */
+ok(/onCambiarConAsignatura=\{[\s\S]{0,120}guardarOperacionProtegida\(\{[\s\S]{0,80}horario: nuevo,[\s\S]{0,40}estudiosDespues: \{ \.\.\.estudios, asignaturas: \[/.test(APP),
   '🚨 AS F1 — `App.jsx` guarda el horario y las asignaturas en la MISMA llamada');
 
 // Y ahora Estudio la ve, con el MISMO id.

@@ -30,6 +30,8 @@
 //   la misma función `moverBloque`.
 // ============================================================================
 
+/* 🛡 E1-R · R3 — el motivo y las frases de Horarios sin el protocolo del servidor. */
+import { MOTIVO_PROTOCOLO_HORARIO, TEXTOS_PROTOCOLO } from '../lib/escritorOperaciones';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Calendar, Plus, ChevronLeft, ChevronRight, ArrowLeft, Trash2, Copy,
@@ -2211,7 +2213,7 @@ export default function HorarioView({
         ? <AvisoConflictoHorario escritor={escritor} accent={accent} onVerLoDeAhora={onVerLoDeAhora} onDescartarMiCambio={onDescartarMiCambio} />
         : esMotivoDeGuardia(soloLectura)
           ? <AvisoGuardiaHorario motivo={soloLectura} guardia={guardia} accent={accent} onReintentar={onReintentarGuardia} />
-          : <AvisoSoloLecturaHorario motivo={soloLectura} accent={accent} onRecargar={onRecargar} />}
+          : <AvisoSoloLecturaHorario motivo={soloLectura} accent={accent} onRecargar={onRecargar} detalle={soloLectura === MOTIVO_PROTOCOLO_HORARIO && escritor ? TEXTOS_PROTOCOLO[escritor.motivo] || null : null} />}
       <AvisoApartadaPendiente escritor={escritor} />
       <Card className="text-center">
         <Calendar size={22} style={{ color: accent }} className="mx-auto mb-2" />
@@ -2243,7 +2245,7 @@ export default function HorarioView({
         ? <AvisoConflictoHorario escritor={escritor} accent={accent} onVerLoDeAhora={onVerLoDeAhora} onDescartarMiCambio={onDescartarMiCambio} />
         : esMotivoDeGuardia(soloLectura)
           ? <AvisoGuardiaHorario motivo={soloLectura} guardia={guardia} accent={accent} onReintentar={onReintentarGuardia} />
-          : <AvisoSoloLecturaHorario motivo={soloLectura} accent={accent} onRecargar={onRecargar} />}
+          : <AvisoSoloLecturaHorario motivo={soloLectura} accent={accent} onRecargar={onRecargar} detalle={soloLectura === MOTIVO_PROTOCOLO_HORARIO && escritor ? TEXTOS_PROTOCOLO[escritor.motivo] || null : null} />}
       <AvisoApartadaPendiente escritor={escritor} />
       {/* ═══ Entrega 3 · F5, apartados 1, 2, 5 y 6 ═══════════════════════════
           *"Debe existir una separación visual y conceptual evidente"* entre las

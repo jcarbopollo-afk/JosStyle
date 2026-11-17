@@ -51,6 +51,18 @@ for (const m of app.matchAll(/eliminarConPapelera\('(\w+)',\s*(?:'(\w+)'|null)/g
 for (const m of app.matchAll(/prepararEliminacion\([^,]+,\s*'(\w+)',\s*(?:'(\w+)'|null)/g)) {
   borradas.add(clave(m[1], m[2]));
 }
+/* 🛡 Horarios E1-R · R3 — un borrado en cascada que App.jsx delega en una librería (porque va en UNA operación
+   protegida con el horario) cuenta solo si App.jsx llama a esa librería Y la librería pasa de verdad por
+   `prepararEliminacion` (la papelera). Si cualquiera de las dos cosas falta, la colección vuelve a salir sin borrado. */
+const CASCADAS_DELEGADAS = [
+  { llamada: 'prepararBorradoAsignatura', archivo: 'src/lib/asignaturaProtegida.js' },
+];
+for (const { llamada, archivo } of CASCADAS_DELEGADAS) {
+  if (!new RegExp(`\\b${llamada}\\(`).test(app)) continue;
+  const lib = readFileSync(new URL(`../${archivo}`, import.meta.url), 'utf8');
+  if (!new RegExp(`export function ${llamada}\\b`).test(lib)) continue;
+  for (const m of lib.matchAll(/prepararEliminacion\([^,]+,\s*'(\w+)',\s*(?:'(\w+)'|null)/g)) borradas.add(clave(m[1], m[2]));
+}
 
 // Excepciones documentadas: no son listas de elementos que Josué "crea y borra".
 //   · papelera.elementos       — es la propia papelera; tiene `eliminarDefinitivo` y `vaciarPapelera`.
