@@ -19710,4 +19710,140 @@ const nuevos_f123 = errores.slice(erroresAntes_f123);
 ok(nuevos_f123.length === 0, `F-1 · F-2 · F-3 — ni un error en la consola${nuevos_f123.length ? `: ${nuevos_f123.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
 for (const [k, v] of Object.entries(deAntes_f123)) { if (v === undefined) delete almacen[k]; else almacen[k] = v; }
 
+/* ===========================================================================
+   🧯 C-89 — DESHACER REVIERTE SOLO LO QUE CAMBIÓ SU PASO (corrección autorizada por Josué, 2026-11-17)
+
+   `undo` reescribía desde la foto TODAS las claves, también las que el paso no tocó, y algunas se guardan también
+   FUERA de los pasos (Pomodoro, las rutinas hechas, la revisión de objetivos, los logros, la papelera…). Aquí, con el
+   dedo y contra lo guardado:
+   · un Deshacer de otro módulo conserva los pomodoros, la rutina modificada y ejecutada, la revisión y un logro;
+   · deshacer un borrado de Productividad devuelve la tarea y conserva un pomodoro hecho después, y no resucita una
+     entrada de la papelera eliminada definitivamente después;
+   · si lo que cambió el paso se modificó después (otro aparato), no se deshace nada y se dice;
+   · un paso guardado por una versión anterior (sin lo que cambió) no se deshace a ciegas: se dice;
+   · sin conexión, Deshacer se guarda al volver la red.
+   El escenario es suyo: se siembra y se deja como estaba (E3 F6).
+   =========================================================================== */
+console.log('\n── 🧯 C-89 — Deshacer revierte solo lo que cambió su paso (Pomodoro, rutinas, revisión, logros, papelera) ──');
+const erroresAntes_c89 = errores.length;
+const deAntes_c89 = Object.fromEntries(['productividad', 'objetivos', 'gamificacionRachas', 'papelera', 'historial', 'economia'].map((k) => [k, almacen[k]]));
+const HOY_C89 = new Date().toLocaleDateString('sv-SE');
+const AYER_C89 = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toLocaleDateString('sv-SE'); })();
+const prod_c89 = () => almacen.productividad || {};
+const eco_c89 = () => ((almacen.economia || {}).movimientos || []);
+const avisoDeshacer_c89 = /No se ha deshecho/;
+const pomodoroCancelado_c89 = async () => (await pulsar('Vida')) && (await pulsar('Productividad')) && (await pulsar('Abrir Pomodoro'))
+  && /25:00/.test(await esperarTexto(/25:00/) || '') && (await pulsar('Iniciar la sesión')) && (await pulsar('Cancelar'));
+almacen.historial = [];
+almacen.papelera = { retencionDias: 30, elementos: [{ id: 'c89-e0', modulo: 'sueno', coleccion: null, tipo: 'Registro de sueño', icono: 'sueno', privado: false,
+  idOriginal: 'c89-s0', indice: 0, creadoEn: AYER_C89, eliminadoEn: new Date().toISOString(), datos: { id: 'c89-s0', fecha: AYER_C89, horaDormir: '23:00', horaDespertar: '07:00' } }] };
+almacen.economia = { saldoInicial: 0, hucha: 0, movimientos: [{ id: 'c89-mv', fecha: AYER_C89, tipo: 'gasto', concepto: 'Gasto C89', cantidad: 7 }], objetivoHucha: null, aportaciones: [] };
+almacen.productividad = {
+  tareas: [{ id: 'c89-t1', texto: 'Tarea C89 uno', hecha: false, fecha: null }, { id: 'c89-t2', texto: 'Tarea C89 dos', hecha: false, fecha: null }],
+  habitos: [], rutinas: [{ id: 'c89-r', nombre: 'Rutina C89', pasos: [{ id: 'c89-p', titulo: 'Estirar' }] }], rutinaEjecuciones: [], metas: [],
+  pomodoros: {}, pomodoroSesiones: [], apuntes: [], pomodoroConfig: null, pomodoroEnCurso: null,
+};
+almacen.objetivos = { lista: [{ id: 'c89-o', texto: 'Objetivo C89', plazo: '1 año', cumplido: false }], ultimaRevision: null };
+almacen.gamificacionRachas = { desbloqueados: [], hitos: {} };
+await recargar_fit45();
+
+/* 1 · Un paso de OTRO módulo (borrar un movimiento) y, después, lo que se guarda fuera de los pasos. */
+ok(await pulsar('Gestión') && await pulsar('Economía') && /Gasto C89/.test(await esperarTexto(/Gasto C89/) || '') && await pulsar('Eliminar movimiento'), 'C-89 · 1 — se borra un movimiento (un paso de Economía)');
+await page.waitForTimeout(800);
+ok(!eco_c89().some((m) => m.id === 'c89-mv'), 'C-89 · 1 — sale de la cuenta');
+ok(await pomodoroCancelado_c89(), 'C-89 · 1 — después, un pomodoro de verdad (se empieza y se interrumpe: se registra sin paso de Deshacer)');
+await page.waitForTimeout(900);
+ok((prod_c89().pomodoroSesiones || []).length === 1, `C-89 · 1 — la sesión de Pomodoro está en la cuenta (${(prod_c89().pomodoroSesiones || []).length})`);
+/* Lo que se guarda directamente desde otras pantallas (o en otra sesión): una rutina modificada y hecha, la revisión
+   de los objetivos y un logro. */
+almacen.productividad = { ...prod_c89(), rutinas: prod_c89().rutinas.map((r) => ({ ...r, nombre: 'Rutina C89 cambiada' })),
+  rutinaEjecuciones: [{ id: 'c89-ej', rutinaId: 'c89-r', fecha: HOY_C89, pasos: [{ pasoId: 'c89-p', titulo: 'Estirar', hecho: true }] }] };
+almacen.objetivos = { ...almacen.objetivos, ultimaRevision: HOY_C89 };
+almacen.gamificacionRachas = { desbloqueados: [{ id: 'c89-logro', definicionId: 'constancia', rachaId: null, desbloqueadoEn: HOY_C89 }], hitos: {} };
+const despues1_c89 = JSON.stringify([prod_c89().pomodoroSesiones, prod_c89().rutinas, prod_c89().rutinaEjecuciones]);
+await recargar_fit45();
+ok(await deshacer_f123(), 'C-89 · 1 — Deshacer');
+await page.waitForTimeout(1200);
+ok(eco_c89().some((m) => m.id === 'c89-mv'), 'C-89 · 1 — vuelve el movimiento (lo que cambió el paso SÍ se deshace)');
+ok(JSON.stringify([prod_c89().pomodoroSesiones, prod_c89().rutinas, prod_c89().rutinaEjecuciones]) === despues1_c89,
+  '🚨 C-89 · 1 — los POMODOROS, la rutina modificada y la rutina hecha SOBREVIVEN al Deshacer');
+ok(almacen.objetivos?.ultimaRevision === HOY_C89, '🚨 C-89 · 1 — la fecha de revisión de los objetivos se conserva');
+ok((almacen.gamificacionRachas?.desbloqueados || []).some((l) => l.id === 'c89-logro'), '🚨 C-89 · 1 — el logro conseguido después no desaparece');
+
+/* 2 · Un paso de Productividad (borrar una tarea): vuelve la tarea, se conserva un pomodoro de después, y una entrada
+   de la papelera eliminada definitivamente después NO vuelve. */
+await recargar_fit45();
+ok(await pulsar('Gestión') && await pulsar('Organización') && await pulsar('Tareas') && /Tarea C89 uno/.test(await esperarTexto(/Tarea C89 uno/) || ''), 'C-89 · 2 — en Tareas');
+ok(await pulsar('Eliminar Tarea C89 uno'), 'C-89 · 2 — se borra «Tarea C89 uno» (un paso de Productividad)');
+await page.waitForTimeout(900);
+ok(!(prod_c89().tareas || []).some((t) => t.id === 'c89-t1'), 'C-89 · 2 — sale de la cuenta');
+await recargar_fit45();
+ok(await pomodoroCancelado_c89(), 'C-89 · 2 — después, otro pomodoro');
+await page.waitForTimeout(900);
+await recargar_fit45();
+ok(await pulsar('Ajustes') && await pulsar('Eliminados recientemente') && /Registro de sueño|C89|sueño/i.test(await esperarTexto(/Eliminados recientemente/) || ''), 'C-89 · 2 — Ajustes → Eliminados recientemente');
+const definitivo_c89 = await page.evaluate(() => {
+  /* De dentro afuera: la fila más pequeña con «Registro de sueño» y su papelera (la lista entera también los contiene). */
+  const fila = [...document.querySelectorAll('div')].reverse().find((el) => /Registro de sueño/.test(el.innerText || '') && el.querySelector('button[aria-label="Eliminar definitivamente"]'));
+  const b = fila && fila.querySelector('button[aria-label="Eliminar definitivamente"]');
+  if (!b) return false;
+  b.click();
+  return true;
+});
+await page.waitForTimeout(500);
+ok(definitivo_c89 && await pulsar('Eliminar definitivamente'), 'C-89 · 2 — y una entrada vieja se elimina definitivamente');
+await page.waitForTimeout(800);
+ok(!(almacen.papelera?.elementos || []).some((e) => e.id === 'c89-e0'), 'C-89 · 2 — ya no está en la papelera');
+const sesiones2_c89 = (prod_c89().pomodoroSesiones || []).length;
+ok(sesiones2_c89 === 2, `C-89 · 2 — hay dos sesiones de Pomodoro (${sesiones2_c89})`);
+await recargar_fit45();
+ok(await deshacer_f123(), 'C-89 · 2 — Deshacer (el último paso es el borrado de la tarea)');
+await page.waitForTimeout(1200);
+ok((prod_c89().tareas || []).map((t) => t.id).join() === 'c89-t1,c89-t2', 'C-89 · 2 — la tarea vuelve, a su sitio');
+ok((prod_c89().pomodoroSesiones || []).length === 2, '🚨 C-89 · 2 — y el pomodoro hecho DESPUÉS sigue ahí');
+ok(!(almacen.papelera?.elementos || []).some((e) => e.idOriginal === 'c89-t1'), 'C-89 · 2 — la entrada de la tarea sale de la papelera');
+ok(!(almacen.papelera?.elementos || []).some((e) => e.id === 'c89-e0'), '🚨 C-89 · 2 — y la entrada ELIMINADA DEFINITIVAMENTE no vuelve');
+
+/* 3 · Conflicto: el mismo elemento cambió después (otro aparato vuelve a crear el movimiento borrado, distinto). */
+await recargar_fit45();
+ok(await pulsar('Gestión') && await pulsar('Economía') && /Gasto C89/.test(await esperarTexto(/Gasto C89/) || '') && await pulsar('Eliminar movimiento'), 'C-89 · 3 — se borra el movimiento otra vez');
+await page.waitForTimeout(800);
+almacen.economia = { ...almacen.economia, movimientos: [...eco_c89(), { id: 'c89-mv', fecha: AYER_C89, tipo: 'gasto', concepto: 'Gasto C89 corregido en otro aparato', cantidad: 8 }] };
+await recargar_fit45();
+const escritas3_c89 = guardado.length;
+ok(await deshacer_f123(), 'C-89 · 3 — Deshacer');
+ok(avisoDeshacer_c89.test(await esperarTexto(avisoDeshacer_c89) || ''), '🚨 C-89 · 3 — NO se deshace, y se dice por qué');
+await page.waitForTimeout(600);
+ok(eco_c89().find((m) => m.id === 'c89-mv')?.concepto === 'Gasto C89 corregido en otro aparato' && guardado.slice(escritas3_c89).every((g) => g.key !== 'economia'),
+  '🚨 C-89 · 3 — el cambio posterior se queda: no se escribe nada encima');
+
+/* 4 · Datos ausentes: un paso guardado por una versión anterior (sin qué cambió) no se deshace a ciegas. */
+almacen.historial = [{ economia: { saldoInicial: 0, hucha: 0, movimientos: [], objetivoHucha: null, aportaciones: [] }, productividad: { tareas: [] }, papelera: { elementos: [], retencionDias: 30 } }];
+await recargar_fit45();
+const escritas4_c89 = guardado.length;
+ok(await deshacer_f123(), 'C-89 · 4 — Deshacer un paso de una versión anterior');
+ok(avisoDeshacer_c89.test(await esperarTexto(avisoDeshacer_c89) || ''), '🚨 C-89 · 4 — no se deshace a ciegas, y se dice');
+await page.waitForTimeout(600);
+ok(guardado.slice(escritas4_c89).every((g) => !['economia', 'productividad', 'papelera'].includes(g.key)) && (prod_c89().tareas || []).length === 2,
+  '🚨 C-89 · 4 — y no se escribe nada (las tareas, los movimientos y la papelera siguen)');
+
+/* 5 · Reintento: sin conexión, Deshacer se queda pendiente y llega al volver la red. */
+almacen.historial = [];
+almacen.economia = { ...almacen.economia, movimientos: [{ id: 'c89-mv5', fecha: AYER_C89, tipo: 'gasto', concepto: 'Gasto C89 cinco', cantidad: 5 }] };
+await recargar_fit45();
+ok(await pulsar('Gestión') && await pulsar('Economía') && /Gasto C89 cinco/.test(await esperarTexto(/Gasto C89 cinco/) || '') && await pulsar('Eliminar movimiento'), 'C-89 · 5 — se borra un movimiento');
+await page.waitForTimeout(800);
+ABORTAR_ESCRITURA.add('economia');
+ok(await deshacer_f123(), 'C-89 · 5 — Deshacer sin conexión');
+await page.waitForTimeout(1200);
+ok(!eco_c89().some((m) => m.id === 'c89-mv5'), 'C-89 · 5 — sin red, todavía no ha llegado a la cuenta');
+ABORTAR_ESCRITURA.delete('economia');
+await page.evaluate(() => window.dispatchEvent(new Event('online')));
+ok(await esperarQue_abis(() => eco_c89().some((m) => m.id === 'c89-mv5'), 12000), '🚨 C-89 · 5 — al volver la red, el movimiento vuelve a la cuenta (el reintento)');
+
+const nuevos_c89 = errores.slice(erroresAntes_c89).filter((e) => !/Failed to fetch|ERR_|net::/.test(e));
+ok(nuevos_c89.length === 0, `C-89 — ni un error en la consola${nuevos_c89.length ? `: ${nuevos_c89.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
+errores.splice(erroresAntes_c89);
+for (const [k, v] of Object.entries(deAntes_c89)) { if (v === undefined) delete almacen[k]; else almacen[k] = v; }
+
 await salir(browser);

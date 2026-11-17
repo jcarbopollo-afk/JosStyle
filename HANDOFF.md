@@ -2,15 +2,22 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (2026-11-17 — 🧯 Corrección C-89, v3.164.2; commit SOLO local en `claude/horarios-rediseno`, sin
+> push, PR, fusión ni despliegue):** Deshacer **revierte solo lo que cambió su paso**. Antes reescribía cada clave del paso
+> entera con la foto de antes, y así borraba lo guardado después fuera de los pasos (pomodoros, rutinas hechas, la revisión de
+> objetivos, logros) y resucitaba lo eliminado definitivamente de la papelera. Ahora cada paso apunta qué cambió en cada clave
+> (`cambiosDeUnPaso`) y Deshacer aplica la inversa sobre lo de ahora (`deshacerConCambios`), para **todas** las claves salvo
+> `horarioTop` (su escritor protegido). Si lo que cambió el paso se modificó después, no se deshace nada y se dice; un paso de
+> una versión anterior no se deshace a ciegas (`deshacer_paso_antiguo`). C-89 resuelta en `docs/03`. Siguiente: lo que decida
+> Josué (E1-P, E1-S, E1-L).
+>
 > **📅 ACTUALIZACIÓN (2026-11-17 — 🧯 Corrección F-1 · F-2 · F-3, v3.164.1; commit SOLO local en `claude/horarios-rediseno`,
 > sin push, PR, fusión ni despliegue):** tres fallos que están **en producción**, encontrados en la auditoría de E1-P y
 > corregidos con la autorización de Josué: **F-1** cualquier Deshacer dejaba Imagen personal con los valores de fábrica (la
 > foto no llevaba `estiloHombre`); **F-2** deshacer un borrado de Fitness perdía el elemento (se restauraba la papelera y no
 > Fitness); **F-3** borrar una apariencia guardada no la borraba (y Gestión de temas la borraba para siempre). Fitness y las
 > apariencias se deshacen ahora **por cambios** (`src/lib/deshacerPorCambios.js`), sin pisar lo guardado después. Reproducido
-> antes en Chromium (22 de 53 en rojo) y verde después (53/53). ⏸ **C-89, pendiente de Josué**: `productividad`, `objetivos`
-> y `gamificacionRachas` tienen el mismo riesgo (Deshacer pisa los pomodoros, las rutinas hechas y los logros guardados
-> después). Siguiente: lo que decida Josué (C-89, E1-P).
+> antes en Chromium (22 de 53 en rojo) y verde después (53/53). ✅ **C-89 resuelta después, en la v3.164.2** (arriba).
 >
 > **📅 ACTUALIZACIÓN (2026-11-17 — Horarios E1-R · R5, v3.164.0; commit SOLO local en `claude/horarios-rediseno`, sin
 > push, PR, fusión ni despliegue, y sin nada ejecutado ni activado en Supabase alojado):** **R5 está hecha y con ella E1-R

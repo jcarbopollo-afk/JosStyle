@@ -286,6 +286,8 @@ export const AVISOS_ACCION = {
   /* 🧯 F-2 y F-3 — Fitness y las apariencias se deshacen por cambios: si lo que cambió ese paso se ha modificado
      después, deshacerlo lo pisaría, así que no se toca nada y se dice. Lo borrado sigue en Eliminados recientemente. */
   deshacer_no_seguro: { texto: 'No se ha deshecho: lo que cambió ese paso se ha modificado después, y deshacerlo lo pisaría. No se ha tocado nada.', deshacer: false, error: true },
+  /* 🧯 C-89 — un paso guardado por una versión anterior no dice qué cambió: deshacerlo a ciegas pisaría lo de después. */
+  deshacer_paso_antiguo: { texto: 'No se ha deshecho: ese cambio se guardó con una versión anterior de JosStyle y deshacerlo podría pisar lo que guardaste después. No se ha tocado nada.', deshacer: false, error: true },
   deshacer_fitness_solo_lectura: { texto: 'No se ha deshecho: Fitness está en solo lectura en este aparato. No se ha tocado nada.', deshacer: false, error: true },
 };
 

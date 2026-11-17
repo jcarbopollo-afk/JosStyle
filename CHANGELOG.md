@@ -1,5 +1,43 @@
 # CHANGELOG.md
 
+## v3.164.2 — 🧯 Corrección C-89: Deshacer revierte SOLO lo que cambió su paso, sin pisar lo guardado después (2026-11-17, commit solo local)
+
+> Con la autorización expresa de Josué del 2026-11-17 («CORRECCIÓN C-89 (DESHACER SIN PÉRDIDA DE DATOS)»). Rama
+> `claude/horarios-rediseno`, encima de F-1 · F-2 · F-3 (`ac7ddf4`), en un commit independiente. El fallo está **en
+> producción**. Sin push, PR, fusión ni despliegue; ni SQL, ni Supabase, ni datos reales. No empieza E1-P, E1-S ni E1-L.
+
+### 🐛 La causa
+Un paso de Deshacer guardaba la foto de los módulos ANTES del cambio y `undo` volvía a escribir **cada clave del paso
+entera** con esa foto. Eso solo es correcto si nada más cambia esa clave entre el paso y el Deshacer, y muchas claves se
+guardan también **fuera de los pasos**: `productividad` (las sesiones, la configuración y el pomodoro en curso, el contador,
+las rutinas hechas y la que está en curso: `guardarProductividadSinDeshacer`, `completarPomodoro`), `objetivos` (la última
+revisión: `marcarRevisionHecha`), `gamificacionRachas` (los logros: `evaluarGamificacion`), `papelera` (eliminar
+definitivamente, vaciar, la retención, la purga al cargar), `fitness`, `temasGuardados`, «Borrar los datos» de Privacidad
+(cualquier módulo), las operaciones protegidas de Estudios y otro aparato. Deshacer **borraba** un pomodoro, una rutina hecha,
+una revisión o un logro guardados después, y **resucitaba** lo eliminado definitivamente de la papelera.
+
+### ✨ La corrección (para todas las claves, no para tres)
+- **`src/lib/deshacerPorCambios.js`** (reescrito). Cada paso apunta **qué cambió en cada clave que toca**
+  (`cambiosDeUnPaso`: el formato de las operaciones protegidas de R2, con la posición de lo quitado y el orden de antes; si
+  una clave no se puede por elementos, la **huella** del resultado). `deshacerConCambios` aplica la **inversa sobre lo de
+  ahora**: lo quitado vuelve a su sitio, lo añadido se quita si sigue igual, lo cambiado vuelve si sigue como lo dejó el paso,
+  el orden solo en un paso que solo reordenó. Lo ya deshecho no se repite (un reintento no cambia nada). Lo que el paso cambió
+  y se cambió después es un **conflicto**. Se retiran `CLAVES_DESHACER_POR_CAMBIOS`, `inversaDeUnPaso` y `papeleraAlDeshacer`
+  (la papelera ya se deshace como las demás: sale SU entrada y lo eliminado después no vuelve).
+- **`App.jsx`**: `snapshotAndSave` apunta `cambios` de cada clave del paso salvo `horarioTop` (`CLAVES_FUERA_DE_CAMBIOS`: va
+  por su escritor protegido, como desde E1). `undo` recorre **solo `paso.claves`**, calcula todo **antes** de escribir y, si
+  hay un conflicto, no escribe nada y lo dice (`deshacer_no_seguro`). Un paso de una versión anterior (sin `claves` o sin
+  `cambios`) no se deshace a ciegas: aviso nuevo `deshacer_paso_antiguo` (`accionesHoyAgenda.js`) y no se toca nada (antes,
+  uno así podía dejar un módulo a medias).
+
+### ✅ Pruebas
+- **Reproducción antes del arreglo**: la sección nueva «🧯 C-89» del recorrido de Chromium salió **15 de 37 en rojo** con el
+  código de `ac7ddf4` (pomodoros, rutina modificada, rutinas hechas, revisión y logro perdidos; la entrada eliminada
+  definitivamente, resucitada; y un paso antiguo dejaba la aplicación con un error al pintar).
+- **`test-deshacer-por-cambios.mjs`** (71): Productividad, objetivos, logros, papelera, orden, huella, conflictos, reintento y
+  datos ausentes, más lo que hace `App.jsx` leído del código. `test-cumpleanos.mjs` se da la vuelta otra vez (la regla común).
+- **Recorrido**: «🧯 C-89» y «🧯 F-1 · F-2 · F-3» en verde; `verificar.sh` completo en una copia limpia: **TODO CORRECTO**, 0 fallos (4500 casos de renderizado, 4524 comprobaciones en Chromium).
+
 ## v3.164.1 — 🧯 Corrección F-1 · F-2 · F-3: Deshacer no pierde Imagen personal ni Fitness, y las apariencias se borran de verdad (2026-11-17, commit solo local)
 
 > Con la autorización expresa de Josué del 2026-11-17 («corrección F-1, F-2 y F-3»), tras la auditoría de diseño de E1-P.

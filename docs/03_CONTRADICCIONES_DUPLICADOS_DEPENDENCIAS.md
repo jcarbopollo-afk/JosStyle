@@ -1819,7 +1819,7 @@ instalarse. Con ella, aprobadas a la vez:
 ⚠️ Todo está **preparado y probado solo en el laboratorio local**; activarlo en un Supabase alojado (P1 y P4) es de E2 y lo
 autoriza Josué paso a paso. `estudios` (apartar, H-19) y `papelera` (fusionar, H-20) son de E1-S y E1-P.
 
-### C-89 — ⏸ PENDIENTE DE JOSUÉ (2026-11-17) · Deshacer reescribe claves que también se guardan fuera de los pasos
+### C-89 — ✅ RESUELTA (v3.164.2, 2026-11-17, autorizada por Josué) · Deshacer reescribía claves que también se guardan fuera de los pasos
 
 La corrección F-1 · F-2 · F-3 (v3.164.1, autorizada tras la auditoría de E1-P) encontró la causa común: un paso de Deshacer
 guarda la foto de los módulos ANTES del cambio y `undo` los vuelve a escribir **todos**, no solo los que cambió ese paso. Eso
@@ -1837,3 +1837,20 @@ desde R3), y que esas tres se deshagan también por cambios (añadirlas a `CLAVE
 paso antiguo sin `claves` seguiría como hoy. Hasta que lo decida Josué, el comportamiento de esas claves no cambia.
 ⚠️ Relacionado y tampoco tocado: Deshacer devuelve la papelera de la foto, así que una entrada **eliminada definitivamente**
 después del paso vuelve a aparecer (no se pierde nada; reaparece). Es de E1-P (H-20/H-28).
+
+🔓 **Resolución (v3.164.2, commit solo local; autorización «CORRECCIÓN C-89 (DESHACER SIN PÉRDIDA DE DATOS)»).** No se
+añadieron tres claves a una lista: se cambió la regla para **todas**. El inventario completo de lo que se escribe fuera de
+los pasos era más largo que las tres: `papelera` (eliminar definitivamente, vaciar, retención, purga al cargar), `fitness`,
+`temasGuardados`, «Borrar los datos» de Privacidad (cualquier módulo), las operaciones protegidas de Estudios, la migración de
+`estiloHombre` al cargar y otro aparato. Así que:
+- **Cada paso apunta qué cambió en CADA clave que toca** (`cambiosDeUnPaso`, el formato de R2 con la posición de lo quitado y
+  el orden de antes; si una clave no se puede por elementos, la huella del resultado). Solo `horarioTop` queda fuera
+  (`CLAVES_FUERA_DE_CAMBIOS`): va por su escritor protegido, como desde E1.
+- **Deshacer recorre solo `paso.claves`** y aplica la inversa **sobre lo que hay ahora** (`deshacerConCambios`): lo que no tocó
+  el paso no se toca; lo ya deshecho no se repite (un reintento no cambia nada); lo que el paso cambió y se cambió después es
+  un **conflicto**: no se deshace **nada** (todo se calcula antes de escribir) y se dice (`deshacer_no_seguro`).
+- **La papelera también**: deshacer un borrado saca SU entrada; lo eliminado definitivamente después **no vuelve** (lo que la
+  nota anterior dejaba para E1-P queda resuelto aquí, sin tocar H-20/H-28).
+- **Un paso de una versión anterior** (sin `claves` o sin `cambios`) **no se deshace a ciegas**: aviso
+  `deshacer_paso_antiguo` y no se escribe nada (antes, uno así podía dejar módulos a medias).
+Pruebas: `test-deshacer-por-cambios.mjs` (71) y la sección «🧯 C-89» del recorrido (roja antes del arreglo: 15 de 37).

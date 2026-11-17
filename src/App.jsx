@@ -193,10 +193,10 @@ import { DEFAULT_ESTILO_HOMBRE, normalizarEstiloHombre } from './lib/estiloDeHom
    invariante que se añadió en esta misma fase (`scripts/test-imports.mjs`),
    escrita justo después de cometer el mismo fallo con `eliminarRegistroPiel`. */
 import { DEFAULT_PAPELERA, purgarCaducados, prepararEliminacion, prepararRestauracion, conArrastrados } from './lib/papelera';
-/* 🧯 F-2 y F-3 (auditoría de E1-P) — Fitness y las apariencias se guardan también FUERA de los pasos de Deshacer, así
-   que un paso suyo apunta qué cambió (por elementos) y Deshacer aplica su inversa sobre lo de ahora, sin pisar lo de
-   después; y la papelera no suelta la entrada de algo que no vuelve a su módulo. */
-import { CLAVES_DESHACER_POR_CAMBIOS, cambiosDeUnPaso, deshacerConCambios, papeleraAlDeshacer } from './lib/deshacerPorCambios';
+/* 🧯 F-2, F-3 y C-89 — muchas claves se guardan también FUERA de los pasos de Deshacer (Fitness, las apariencias,
+   Pomodoro, las rutinas hechas, la revisión de objetivos, los logros, la papelera…), así que cada paso apunta qué cambió
+   en cada clave (por elementos) y Deshacer aplica solo su inversa sobre lo de ahora, sin pisar lo de después. */
+import { CLAVES_FUERA_DE_CAMBIOS, cambiosDeUnPaso, deshacerConCambios } from './lib/deshacerPorCambios';
 import { normalizarBiblioteca } from './lib/biblioteca';
 import { convertirIdea } from './lib/ideas';
 // EH F15 — los registros de piel entran y salen de la papelera que YA existe.
@@ -2488,12 +2488,15 @@ export default function App() {
     else snapshot.tocaHorario = !!patch.horarioTop;
     /* 🛡 R3 — qué claves cambió este paso: Deshacer no reescribe a la vez el horario y Estudios o la papelera a ciegas. */
     snapshot.claves = Object.keys(patch).filter((k) => patch[k] !== undefined && !(k === 'fitness' && fitnessSoloLecturaRef.current));
-    /* 🧯 F-2 y F-3 — Fitness y las apariencias también se guardan fuera de los pasos (entrenar, editar una plantilla,
-       guardar o renombrar una apariencia): el paso apunta QUÉ cambió, elemento a elemento, para deshacer solo eso. */
+    /* 🧯 F-2, F-3 y C-89 — el paso apunta QUÉ cambió en CADA clave que toca (salvo el horario, que va por su escritor),
+       elemento a elemento: Deshacer revierte solo eso, y lo que se guarde después fuera de los pasos (un pomodoro, una
+       rutina hecha, la revisión de objetivos, un logro, un entrenamiento, una entrada eliminada para siempre) se queda. */
     const cambiosDelPaso = {};
-    if (patch.fitness && !fitnessSoloLecturaRef.current) { const c = cambiosDeUnPaso(fitness, patch.fitness); if (c) cambiosDelPaso.fitness = c; }
-    if (patch.temasGuardados) { const c = cambiosDeUnPaso(temasGuardados, patch.temasGuardados); if (c) cambiosDelPaso.temasGuardados = c; }
-    if (Object.keys(cambiosDelPaso).length) snapshot.cambios = cambiosDelPaso;
+    for (const k of snapshot.claves) {
+      if (CLAVES_FUERA_DE_CAMBIOS.includes(k)) continue;
+      cambiosDelPaso[k] = cambiosDeUnPaso(k === 'temasGuardados' ? temasGuardados : snapshot[k], patch[k]);
+    }
+    snapshot.cambios = cambiosDelPaso;
     /* La pila de Deshacer (diez pasos), de la ref y no del estado del pintado: dos guardados seguidos no se pisan. */
     const pilaDeshacer = historyRef.current;
     const nextHist = [...pilaDeshacer, snapshot].slice(-10);
@@ -3149,6 +3152,9 @@ export default function App() {
        «Descartar mi cambio» en Horarios. */
     if (bloqueadasRef.current.size) { setAvisoApp('deshacer_operacion_viva'); return; }
     if (pasoDeOperacion(ultimoPaso)) { await deshacerOperacion(ultimoPaso); return; }
+    /* 🧯 C-89 — un paso guardado por una versión anterior (sin `claves` ni lo que cambió) no se deshace: reescribir su foto
+       pisaría lo guardado después, y no hay forma de saber qué fue de ese paso. Se dice y no se toca nada. */
+    if (!Array.isArray(ultimoPaso.claves) || !ultimoPaso.cambios || typeof ultimoPaso.cambios !== 'object') { setAvisoApp('deshacer_paso_antiguo'); return; }
     /* 🛡 E1 (TP-15, política aprobada: «Deshacer se bloquea si hay cambios de otro aparato posteriores»). El paso
        lleva una foto de TODOS los módulos; el horario solo se reescribe si ESE paso lo cambió (si no, deshacer algo
        de Fitness no puede chocar con el horario de otro aparato). Si lo cambió, antes se mira la cuenta: si otro
@@ -3174,60 +3180,40 @@ export default function App() {
       if (historyRef.current[historyRef.current.length - 1] !== ultimoPaso) { setAvisoApp('deshacer_cambiado'); return; }
     }
     const last = ultimoPaso;
-    /* 🧯 F-2 y F-3 (auditoría de E1-P) — Fitness y las apariencias NO se reescriben con la foto: también se guardan
-       fuera de los pasos (un entrenamiento registrado después se perdería). Si el paso las cambió y apuntó QUÉ
-       cambió, se deshace eso sobre lo de ahora, con condiciones; si algo se modificó después, no se deshace NADA y
-       se dice. Se calcula todo ANTES de escribir nada. Un paso antiguo sin cambios apuntados no las toca (y la
-       papelera, abajo, conserva sus entradas). */
-    const clavesDelPaso = Array.isArray(last.claves) ? last.claves : null;
-    const cambioEnPaso = (k) => !!clavesDelPaso && clavesDelPaso.includes(k);
-    const porCambios = {};
-    for (const k of CLAVES_DESHACER_POR_CAMBIOS) {
-      const registro = cambioEnPaso(k) && last.cambios ? last.cambios[k] : null;
-      if (!registro) continue;
+    /* 🧯 F-1, F-2, F-3 y C-89 — Deshacer revierte SOLO lo que cambió este paso: en cada clave que tocó (salvo el horario,
+       abajo, por su escritor), la inversa de lo apuntado, sobre lo de ahora y con condiciones. Las claves que el paso no
+       tocó no se escriben, y lo guardado después fuera de los pasos (un pomodoro, una rutina hecha, la revisión, un
+       logro, un entrenamiento, una entrada eliminada para siempre de la papelera) se queda. Si algo de lo que cambió el
+       paso se modificó después, NO se deshace nada y se dice. Todo se calcula ANTES de escribir. */
+    const ACTUAL = { ...fotoDelEstado(), temasGuardados };
+    const GUARDAR = {
+      sueno: [setSueno], calistenia: [setCalistenia], futbol: [setFutbol], economia: [setEconomia], salud: [setSalud],
+      nutricion: [setNutricion], estudios: [setEstudios], negocio: [setNegocio], productividad: [setProductividad],
+      objetivos: [setObjetivos], calendario: [setCalendario], diario: [setDiario], biblioteca: [setBiblioteca],
+      relacion: [setRelacion], fe: [setFe], bienestar: [setBienestar], papelera: [setPapelera], armario: [setArmario],
+      rachas: [setRachas], gamificacion: [setGamificacion, 'gamificacionRachas'], estiloHombre: [setEstiloHombre],
+      fitness: [setFitness], cumpleanos: [setCumpleanos], temasGuardados: [setTemasGuardados],
+    };
+    const deshechos = [];
+    for (const k of last.claves) {
+      if (CLAVES_FUERA_DE_CAMBIOS.includes(k)) continue;
+      const guardar = GUARDAR[k];
+      const registro = last.cambios[k];
+      if (!guardar || !registro) { setAvisoApp('deshacer_paso_antiguo'); return; }
       if (k === 'fitness' && fitnessSoloLecturaRef.current) { setAvisoApp('deshacer_fitness_solo_lectura'); return; }
-      if (cargaFallida(k)) { setAvisoApp('deshacer_no_seguro'); return; }
-      const r = deshacerConCambios(k === 'fitness' ? fitness : temasGuardados, registro);
+      const clave = guardar[1] || k;
+      if (cargaFallida(clave)) { setAvisoApp('deshacer_no_seguro'); return; }
+      const r = deshacerConCambios(ACTUAL[k], registro, { antes: last[k] });
       if (!r.ok) { setAvisoApp('deshacer_no_seguro'); return; }
-      porCambios[k] = r.valor;
+      deshechos.push([guardar[0], clave, r.valor]);
     }
-    /* 🧯 F-1 — Imagen personal solo se reescribe si ESTE paso la cambió (y la lleva): todas sus escrituras son pasos,
-       así que la foto es exactamente lo de antes. Un paso antiguo no la lleva y ya no la deja de fábrica. */
-    const ehVuelve = cambioEnPaso('estiloHombre') && last.estiloHombre !== undefined && last.estiloHombre !== null;
-    /* Las claves que la foto devuelve tal cual. 🧯 Solo las que el paso LLEVA: una que falte no se rellena con su valor
-       de fábrica (eso borraría lo que hay). */
-    const DE_LA_FOTO = [
-      ['sueno', setSueno], ['calistenia', setCalistenia], ['futbol', setFutbol], ['economia', setEconomia],
-      ['salud', setSalud], ['nutricion', setNutricion], ['estudios', setEstudios], ['negocio', setNegocio],
-      ['productividad', setProductividad], ['objetivos', setObjetivos], ['calendario', setCalendario],
-      ['diario', setDiario], ['biblioteca', setBiblioteca], ['relacion', setRelacion], ['fe', setFe],
-      ['bienestar', setBienestar], ['armario', setArmario], ['rachas', setRachas],
-      ['gamificacion', setGamificacion, 'gamificacionRachas'], ['cumpleanos', setCumpleanos],
-    ];
-    const enPaso = (k) => last[k] !== undefined && last[k] !== null;
-    const vuelven = new Set(DE_LA_FOTO.filter(([k]) => enPaso(k)).map(([k]) => k));
-    if (ehVuelve) vuelven.add('estiloHombre');
-    for (const k of Object.keys(porCambios)) vuelven.add(k);
-    /* 🧯 La papelera: la de la foto, pero sin soltar la entrada de algo que NO vuelve a su módulo con este Deshacer
-       (seguiría fuera y ya no estaría en la papelera), y con la retención de ahora (es un ajuste, no un paso). */
-    const claveDeEntrada = (e) => (MODULOS_PAPELERA[e.modulo] ? e.modulo : 'estiloHombre');
     const rest = historyRef.current.slice(0, -1);
-    for (const [k, set, clave = k] of DE_LA_FOTO) {
-      if (!enPaso(k)) continue;
-      set(last[k]); saveData(uidUser, clave, last[k]);
-    }
-    if (enPaso('papelera')) {
-      const pap = papeleraAlDeshacer(last.papelera, papelera, (e) => vuelven.has(claveDeEntrada(e)));
-      setPapelera(pap); saveData(uidUser, 'papelera', pap);
-    }
+    for (const [set, clave, valor] of deshechos) { set(valor); saveData(uidUser, clave, valor); }
     /* 🔎 Horarios · Fase 4, entrega A — en solo lectura, deshacer no vuelve a escribir el horario. */
     /* Y un paso que no lleva el horario (uno guardado en solo lectura) no lo toca: antes lo
        restauraba como vacío. */
     /* 🛡 E1 — y por su escritor protegido, como un cambio tuyo. */
     if (tocaHorario) { setHorarioTop(last.horarioTop); guardarHorario(last.horarioTop); }
-    if (ehVuelve) { setEstiloHombre(last.estiloHombre); saveData(uidUser, 'estiloHombre', last.estiloHombre); }
-    if ('fitness' in porCambios) { setFitness(porCambios.fitness); saveData(uidUser, 'fitness', porCambios.fitness); }
-    if ('temasGuardados' in porCambios) { setTemasGuardados(porCambios.temasGuardados); saveData(uidUser, 'temasGuardados', porCambios.temasGuardados); }
     setHistory(rest); historyRef.current = rest; saveData(uidUser, 'historial', rest);
   };
 
