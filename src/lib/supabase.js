@@ -496,6 +496,14 @@ export const transporteProtegido = Object.freeze({
     if (!Array.isArray(r.data)) return { ok: false, sinRespuesta: true, error: { code: 'respuesta_incompleta' } };
     return { ok: true, data: r.data[0] || null };
   },
+  /* R5 (H-23) — las copias de versión antigua que todavía no ha visto: lo que una versión anterior intentó guardar y
+     no se aplicó. Es lo único que la pantalla avisa sin abrirla (una consulta pequeña, sin el contenido). */
+  copiasNuevasDeVersionAntigua: async () => {
+    const r = await leerTablaProtegida(supabase.from('copias_apartadas').select(COLUMNAS_LISTA_COPIAS)
+      .eq('tipo', 'version_antigua').eq('vista', false).order('creada_en', { ascending: false }).limit(50));
+    if (r.ok && !Array.isArray(r.data)) return { ok: false, sinRespuesta: true, error: { code: 'respuesta_incompleta' } };
+    return r;
+  },
 });
 
 

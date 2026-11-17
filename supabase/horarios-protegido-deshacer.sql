@@ -4,6 +4,8 @@
 -- ⛔ NO EJECUTAR EN SUPABASE sin la autorización de Josué. Quita las funciones, la guardia y las tablas propias.
 -- ⚠️ BORRA las copias apartadas y el registro de operaciones: antes, si las hay, hay que guardarlas aparte
 --    (consulta de abajo). `app_data` no se toca.
+-- ⚠️ Si están instaladas la red de rescate o el apartado de versiones antiguas (R5), se van con el esquema
+--    `protegido_interno` (sus disparadores dependen de sus funciones): quítalas antes con sus propios archivos.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 -- Antes (solo lectura): ¿hay copias apartadas que conservar?

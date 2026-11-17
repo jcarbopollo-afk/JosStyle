@@ -18,8 +18,18 @@
  *         cambiar; si no, se puede ver y eliminar, pero no recuperar.
  * Nada se borra solo: eliminar una copia es SIEMPRE una acción suya (`protegido_copia_eliminar`), también después de
  * recuperarla.
+ *
+ * 🛟 R5 (docs/19 §18.19) — dos tipos más, que no son una operación sino un valor ENTERO que guardó el servidor:
+ *   · `rescate` (H-22): lo que había antes de que una versión anterior de JosStyle guardara encima a ciegas, con lo que
+ *     escribió (`antes`, `despues`);
+ *   · `version_antigua` (H-23): lo que una versión anterior intentó guardar y el servidor apartó sin aplicar, con lo que
+ *     había entonces (`intentado`, `vigente`).
+ * No son UN cambio suyo sino lo que dejó o quiso dejar otra versión, así que no se recuperan enteras: se recuperan
+ * ELEMENTO A ELEMENTO, eligiendo él (`prepararRecuperacion` con `elegidas`), y solo lo que sigue como lo encontró la
+ * copia; lo que cambió después no se puede elegir (nunca se pisa). Las de Estudios y Eliminados recientes se ven y se
+ * eliminan, pero no se recuperan desde aquí (su protección es E1-S y E1-P).
  */
-import { aplicarCambio, igualJson, CAMPOS_DE_MARCA_HORARIO } from './operacionesProtegidas';
+import { aplicarCambio, igualJson, CAMPOS_DE_MARCA_HORARIO, cambiosDelHorario, calcularCambios } from './operacionesProtegidas';
 import { prepararBorradoAsignatura, normalizarEstudiosCargados, normalizarPapeleraCargada, asignaturaEnHorario } from './asignaturaProtegida';
 import { normalizarHorarioTop } from './horario';
 
@@ -74,12 +84,14 @@ export const MOTIVOS_NO_RECUPERABLE = Object.freeze({
   sin_detalle: 'Esta copia es de antes de que JosStyle guardara el detalle de cada cambio, y tu horario ha cambiado desde entonces: recuperarla pisaría lo de ahora.',
   ilegible: 'Esta copia no se puede leer con esta versión de JosStyle.',
   tipo_desconocido: 'Esta versión de JosStyle no sabe recuperar este tipo de copia. Puedes verla y eliminarla.',
+  todo_cambio: 'Todo lo que se podría recuperar cambió después: recuperarlo pisaría lo de ahora, así que no se toca. Puedes verla y eliminarla.',
+  clave_sin_recuperacion: 'Las copias de Estudios y de Eliminados recientes se pueden ver y eliminar, pero no recuperar desde aquí. Lo que contiene no se pierde mientras no la elimines.',
 });
 
 /** Lo que dice la pantalla de las condiciones y de lo que pasa después (todo en un sitio, para el barrido). */
 export const TEXTOS_CAMBIOS_APARTADOS = Object.freeze({
   titulo: 'Cambios apartados',
-  subtitulo: 'Lo que no se pudo guardar porque chocaba con otro aparato. Nada se borra solo.',
+  subtitulo: 'Lo que no se pudo guardar porque chocaba con otro aparato, y lo que se guardó a salvo de versiones anteriores de JosStyle. Nada se borra solo.',
   cargando: 'Leyendo tus cambios apartados…',
   vacio: 'No tienes cambios apartados.',
   sinConexion: 'Sin conexión: no se pueden leer tus cambios apartados. Vuelve a intentarlo cuando tengas red.',
@@ -108,6 +120,16 @@ export const TEXTOS_CAMBIOS_APARTADOS = Object.freeze({
   eliminadaYaNoEstaba: 'Ya no estaba: se eliminó en otro aparato.',
   errorAccion: 'No se ha podido hacer. Vuelve a intentarlo.',
   espacioExplica: 'Es el tamaño de los datos guardados, no el espacio en disco. Al eliminar una copia deja de contar aquí al momento; la base de datos reutiliza ese hueco más adelante, pero su tamaño en disco no baja al momento.',
+  elegirExplica: 'Elige qué quieres recuperar. Solo se puede elegir lo que sigue como lo encontró la copia: lo que cambió después no se toca.',
+  elegirTodo: 'Elegir todo lo que se puede',
+  elegirNada: 'Quitar la selección',
+  recuperarElegidos: 'Recuperar lo elegido…',
+  elegidosNinguno: 'Elige al menos una cosa para recuperar.',
+  piezaHecha: 'Ya está así.',
+  piezaChoque: 'Cambió después: no se toca.',
+  avisoVersionAntiguaUna: 'Una versión anterior de JosStyle intentó guardar un cambio en tu horario que no se aplicó. Está a salvo en Cambios apartados: ahí decides qué recuperar.',
+  avisoVersionAntiguaVarias: 'Una versión anterior de JosStyle intentó guardar {n} cambios en tu horario que no se aplicaron. Están a salvo en Cambios apartados: ahí decides qué recuperar.',
+  avisoVer: 'Ver',
   nueva: 'Nueva',
   esteAparato: 'Este aparato',
   otroAparato: 'Otro aparato',
@@ -160,6 +182,27 @@ export function describirCopia(fila, { aparato = null } = {}) {
   const meta = esObjeto(fila.meta) ? fila.meta : {};
   const tipoOperacion = typeof meta.tipoOperacion === 'string' ? meta.tipoOperacion : null;
   const motivo = esObjeto(meta.motivo) ? meta.motivo.motivo : null;
+  /* R5 — una copia de rescate o de versión antigua no es una operación: su título sale de la clave y de lo que pasó. */
+  if (esCopiaCompleta(fila)) {
+    const clave = typeof meta.clave === 'string' ? meta.clave : null;
+    return {
+      id: fila.id,
+      tipo: fila.tipo,
+      tipoTexto: TIPOS_COPIA[fila.tipo],
+      tipoOperacion: null,
+      titulo: tituloDeCopiaCompleta(fila.tipo, clave, meta.accion),
+      fecha: fechaDeCopia(meta.creadaEn) || fechaDeCopia(fila.creada_en) || 'Sin fecha',
+      deEsteAparato: !!aparato && fila.aparato === aparato,
+      aparatoTexto: !!aparato && fila.aparato === aparato ? TEXTOS_CAMBIOS_APARTADOS.esteAparato : TEXTOS_CAMBIOS_APARTADOS.otroAparato,
+      tamano: Number.isFinite(Number(fila.tamano)) ? Number(fila.tamano) : null,
+      tamanoTexto: tamanoLegible(fila.tamano),
+      nueva: fila.vista === false,
+      motivo: null,
+      motivoTexto: MOTIVOS_COPIA_COMPLETA[fila.tipo],
+      claves: clave ? [clave] : [],
+      conHorario: clave === 'horarioTop',
+    };
+  }
   return {
     id: fila.id,
     tipo: fila.tipo,
@@ -428,8 +471,9 @@ const noRecuperable = (motivo, detalle = null) => ({ estado: 'no_recuperable', m
  *   · `{ estado: 'ya_aplicada', resumen }`: todo lo de la copia ya está en la cuenta;
  *   · `{ estado: 'no_recuperable', motivo, texto, detalle }`: recuperarla pisaría algo posterior, o no se puede leer.
  */
-export function prepararRecuperacion({ fila, actual, ahoraISO = new Date().toISOString() } = {}) {
+export function prepararRecuperacion({ fila, actual, ahoraISO = new Date().toISOString(), elegidas = null } = {}) {
   if (!esObjeto(fila)) return noRecuperable('ilegible');
+  if (esCopiaCompleta(fila)) return prepararCopiaCompleta({ fila, actual, elegidas });
   if (fila.tipo !== 'conflicto') return noRecuperable('tipo_desconocido');
   const op = fila.contenido;
   if (!esObjeto(op) || op.formato !== 1 || (op.horario !== undefined && op.horario !== null && !esObjeto(op.horario))) return noRecuperable('ilegible');
@@ -549,7 +593,7 @@ function asignaturaQueToca(op) {
 /** El estado de la copia en la pantalla, de lo que dijo `prepararRecuperacion` (o `null`: sin comprobar). */
 export function estadoDeCopia(preparacion) {
   if (!preparacion) return ESTADOS_COPIA.sin_comprobar;
-  if (preparacion.estado === 'recuperable') return ESTADOS_COPIA.pendiente;
+  if (preparacion.estado === 'recuperable' || preparacion.estado === 'por_elementos') return ESTADOS_COPIA.pendiente;
   if (preparacion.estado === 'ya_aplicada') return ESTADOS_COPIA.recuperada;
   return ESTADOS_COPIA.no_recuperable;
 }
@@ -562,4 +606,188 @@ export function mismaRecuperacion(a, b) {
   if (!a || !b || a.estado !== 'recuperable' || b.estado !== 'recuperable') return false;
   const forma = (p) => [sinMarcas(p.horario), (p.claves || []).map((c) => [c.clave, c.despues])];
   return igualJson(forma(a), forma(b));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   5 · R5 — LAS COPIAS DE RESCATE Y DE VERSIÓN ANTIGUA (un valor entero, no una operación)
+   =========================================================================== */
+/** ¿Es una copia de la red de rescate (H-22) o del apartado de versiones antiguas (H-23)? */
+export const esCopiaCompleta = (fila) => esObjeto(fila) && (fila.tipo === 'rescate' || fila.tipo === 'version_antigua');
+
+/** Por qué existe (en la lista, debajo del título). */
+export const MOTIVOS_COPIA_COMPLETA = Object.freeze({
+  rescate: 'Se guardó a salvo: una versión anterior de JosStyle guardó encima sin comprobar lo que había.',
+  version_antigua: 'No se aplicó: llegó de una versión anterior de JosStyle, que guarda sin comprobar lo que hay.',
+});
+
+/** «Tu horario: lo que había antes de que una versión anterior guardara encima». */
+export function tituloDeCopiaCompleta(tipo, clave, accion = 'escritura') {
+  const quien = NOMBRES_CLAVE[clave] || 'Tus datos';
+  if (tipo === 'rescate') {
+    return accion === 'borrado'
+      ? `${quien}: lo que había antes de que una versión anterior lo borrara`
+      : `${quien}: lo que había antes de que una versión anterior guardara encima`;
+  }
+  return `${quien}: lo que intentó guardar una versión anterior`;
+}
+
+const NORMALIZADORES_CLAVE = Object.freeze({ horarioTop: normalizarHorarioTop, estudios: normalizarEstudiosCargados, papelera: normalizarPapeleraCargada });
+
+/**
+ * Desde dónde y hacia dónde va la copia: `desde` es lo que hay que cambiar (lo que escribió la versión anterior, o lo
+ * que había cuando intentó guardar) y `hacia` lo que trae la copia (lo que había antes, o lo que intentó guardar).
+ * `null` si no se puede leer.
+ */
+export function lecturaDeCopiaCompleta(fila) {
+  if (!esCopiaCompleta(fila)) return null;
+  const c = fila.contenido;
+  if (!esObjeto(c) || c.formato !== 1 || !CLAVES_RECUPERACION.includes(c.clave)) return null;
+  if (fila.tipo === 'rescate') {
+    if (!esObjeto(c.antes) || (c.despues !== null && c.despues !== undefined && !esObjeto(c.despues))) return null;
+    return { clave: c.clave, desde: esObjeto(c.despues) ? c.despues : null, hacia: c.antes, borrado: !esObjeto(c.despues) };
+  }
+  if (!esObjeto(c.intentado) || (c.vigente !== null && c.vigente !== undefined && !esObjeto(c.vigente))) return null;
+  return { clave: c.clave, desde: esObjeto(c.vigente) ? c.vigente : null, hacia: c.intentado, borrado: false };
+}
+
+/**
+ * Las diferencias de la copia, por elementos, de `desde` a `hacia`, las dos por la puerta de carga de su clave (como
+ * las ve la pantalla). Un campo que la copia no tiene no se cuenta: quitar un campo entero no se puede expresar sin
+ * reescribir la clave, y no se hace. `{ clave, cambios, desde, hacia }` o `null`.
+ */
+export function cambiosDeCopiaCompleta(fila) {
+  const l = lecturaDeCopiaCompleta(fila);
+  if (!l) return null;
+  const norm = NORMALIZADORES_CLAVE[l.clave];
+  let desde; let hacia;
+  try {
+    desde = sinMarcas(l.desde ? norm(copiar(l.desde)) : {});
+    hacia = sinMarcas(norm(copiar(l.hacia)));
+  } catch { return null; }
+  for (const k of Object.keys(desde)) if (!tiene(hacia, k) || hacia[k] === undefined) delete desde[k];
+  let cambios;
+  if (l.clave === 'horarioTop') cambios = cambiosDelHorario(desde, hacia);
+  else {
+    const r = calcularCambios(desde, hacia);
+    cambios = r.ok ? r.cambios.map((cb) => { if (!Array.isArray(cb.orden)) return cb; const { orden, ...resto } = cb; return resto; })
+      .filter((cb) => ['quitar', 'reemplazar', 'anadir', 'fijar'].some((k) => tiene(cb, k))) : null;
+  }
+  if (!Array.isArray(cambios)) return null;
+  return { clave: l.clave, cambios, desde, hacia, borrado: l.borrado };
+}
+
+/** El nombre con el que se reconoce un elemento: la actividad y las horas de una clase, el nombre de lo demás. */
+function nombreDePieza(clave, campo, e, contexto) {
+  if (!esObjeto(e)) return null;
+  if (clave === 'horarioTop' && campo === 'bloques') {
+    const act = [contexto.hacia, contexto.desde].map((v) => (esObjeto(v) ? enLista(v.actividades, e.actividadId) : undefined)).find(Boolean);
+    const nombre = (esObjeto(act) && typeof act.nombre === 'string' && act.nombre.trim()) || (typeof e.titulo === 'string' && e.titulo.trim()) || null;
+    const horas = typeof e.inicio === 'string' && typeof e.fin === 'string' ? `${e.inicio}–${e.fin}` : null;
+    if (nombre && horas) return `«${nombre}» (${horas})`;
+    return nombre ? `«${nombre}»` : horas ? `de ${horas}` : null;
+  }
+  if (clave === 'horarioTop' && campo === 'excepciones' && typeof e.fecha === 'string') return `del ${e.fecha}`;
+  const n = nombreElemento(e);
+  return n ? `«${n}»` : null;
+}
+
+/** Una pieza dicha como lo que haría recuperarla: «Volver a poner la clase «Física» (08:00–09:00)». */
+export function textoDePieza(tipo, clave, cambio, contexto = {}) {
+  const rescate = tipo === 'rescate';
+  const camino = lista(cambio && cambio.camino);
+  if (esObjeto(cambio && cambio.conjunto)) {
+    const campo = String(camino[0] || '');
+    const an = lista(cambio.conjunto.anadir).length; const qu = lista(cambio.conjunto.quitar).length;
+    if (clave === 'horarioTop' && campo === 'completadas') {
+      if (an) return `${rescate ? 'Volver a marcar' : 'Marcar'} como hecha ${an === 1 ? 'una clase' : `${an} clases`}`;
+      return `${rescate ? 'Volver a desmarcar' : 'Desmarcar'} ${qu === 1 ? 'una clase' : `${qu} clases`}`;
+    }
+    return an ? `${rescate ? 'Volver a añadir' : 'Añadir'} un valor en ${campo}` : `${rescate ? 'Volver a quitar' : 'Quitar'} un valor de ${campo}`;
+  }
+  if (cambio && Array.isArray(cambio.fijar)) {
+    const campo = cambio.fijar[0] && cambio.fijar[0].campo;
+    return rescate ? `Volver a dejar «${campo}» como estaba` : `Dejar «${campo}» como lo guardaba la versión anterior`;
+  }
+  const campo = String(camino[camino.length - 1] || '');
+  const par = (NOMBRES_LISTA[clave] || {})[campo];
+  const art = generoDe(clave, campo) === 'f' ? 'la' : 'el';
+  const sing = par ? par[0] : 'elemento';
+  const x = lista(cambio && (cambio.anadir || cambio.quitar || cambio.reemplazar))[0] || {};
+  const e = x.elemento || x.nuevo || x.igual;
+  const nombre = nombreDePieza(clave, campo, e, contexto);
+  const cosa = `${art} ${sing}${nombre ? ` ${nombre}` : ''}`;
+  if (cambio.anadir) return rescate ? `Volver a poner ${cosa}` : `Añadir ${cosa}`;
+  if (cambio.quitar) return rescate ? `Quitar ${cosa}, que puso la versión anterior` : `Quitar ${cosa}`;
+  return rescate ? `Volver a dejar ${cosa} como estaba` : `Dejar ${cosa} como lo guardaba la versión anterior`;
+}
+
+/** Qué contiene una copia de rescate o de versión antigua, dicho como en `resumenDeOperacion`. */
+function resumenDeCopiaCompleta(fila) {
+  const x = cambiosDeCopiaCompleta(fila);
+  if (!x) return [];
+  const nombre = NOMBRES_CLAVE[x.clave] || x.clave;
+  const frases = frasesDeCambios(x.clave, x.cambios);
+  let frase;
+  if (fila.tipo === 'rescate') {
+    const queEs = x.borrado ? 'lo que había antes de que una versión anterior lo borrara' : 'lo que había antes de que una versión anterior guardara encima';
+    frase = frases.length ? `${queEs}. Recuperarlo todo supondría: ${frases.join(', ')}` : `${queEs}. No hay diferencias con lo que guardó encima`;
+  } else {
+    frase = frases.length ? `lo que intentó guardar una versión anterior. Aplicarlo todo supondría: ${frases.join(', ')}` : 'lo que intentó guardar una versión anterior. No hay diferencias con lo que había entonces';
+  }
+  return [{ clave: x.clave, nombre, frases: [frase] }];
+}
+
+/** Qué contiene CUALQUIER copia (la operación de un conflicto, o el valor de un rescate o de una versión antigua). */
+export function resumenDeCopia(fila) {
+  if (!esObjeto(fila)) return [];
+  if (esCopiaCompleta(fila)) return resumenDeCopiaCompleta(fila);
+  return resumenDeOperacion(fila.contenido);
+}
+
+/**
+ * Cómo se recuperaría hoy una copia de rescate o de versión antigua. Sin `elegidas`, las piezas para que él elija:
+ * `{ estado: 'por_elementos', piezas: [{ id, estado, texto, motivo }] }` (o `ya_aplicada` si todo está ya así, o
+ * `no_recuperable` si todo cambió después). Con `elegidas` (ids de pieza), el plan para mandar (`recuperable`, como
+ * en R4: `horario`, `claves`, `resumen`) SOLO si todas las elegidas siguen sin cambiar; si no, `no_recuperable`.
+ */
+function prepararCopiaCompleta({ fila, actual, elegidas }) {
+  const x = cambiosDeCopiaCompleta(fila);
+  if (!x) return noRecuperable('ilegible');
+  if (x.clave !== 'horarioTop') return noRecuperable('clave_sin_recuperacion');
+  const h = leida(actual && actual.horarioTop);
+  const base = sinMarcas(h.existe && esObjeto(h.valor) ? normalizarHorarioTop(h.valor) : {});
+  const contexto = { desde: x.desde, hacia: x.hacia };
+  const piezas = clasificarCambios(base, x.cambios).map((p, i) => ({
+    id: `p${i}`, estado: p.estado, motivo: p.motivo || null, cambio: p.cambio,
+    texto: textoDePieza(fila.tipo, x.clave, p.cambio, contexto),
+  }));
+  const aplicables = piezas.filter((p) => p.estado === 'aplicable');
+  if (!aplicables.length) {
+    if (piezas.some((p) => p.estado === 'choque')) return { ...noRecuperable('todo_cambio'), piezas };
+    return { estado: 'ya_aplicada', resumen: ['Todo lo de esta copia ya está como en ella.'], piezas };
+  }
+  const sel = Array.isArray(elegidas) ? [...new Set(elegidas.filter((id) => typeof id === 'string'))].sort() : [];
+  if (!sel.length) return { estado: 'por_elementos', piezas, resumen: [] };
+  const elegidasP = piezas.filter((p) => sel.includes(p.id));
+  if (elegidasP.length !== sel.length || elegidasP.some((p) => p.estado !== 'aplicable')) {
+    return { ...noRecuperable('conflicto_posterior', 'Algo de lo que elegiste cambió después.'), piezas };
+  }
+  const r = aplicarPiezas(base, elegidasP, 'horarioTop');
+  if (r.fallo) return { ...noRecuperable('conflicto_posterior'), piezas };
+  return {
+    estado: 'recuperable',
+    horario: { ...(h.existe && esObjeto(h.valor) ? h.valor : {}), ...r.nuevo },
+    claves: [],
+    asunto: null,
+    resumen: elegidasP.map((p) => `${p.texto}.`),
+    elegidas: sel,
+    piezas,
+  };
+}
+
+/** El aviso de lo que una versión anterior intentó guardar y no se aplicó (H-23), de las copias sin ver. `null` si no hay. */
+export function avisoDeVersionesAntiguas(filas) {
+  const n = lista(filas).filter((f) => esObjeto(f) && f.tipo === 'version_antigua' && f.vista === false).length;
+  if (!n) return null;
+  return { cuantas: n, texto: n === 1 ? TEXTOS_CAMBIOS_APARTADOS.avisoVersionAntiguaUna : TEXTOS_CAMBIOS_APARTADOS.avisoVersionAntiguaVarias.replace('{n}', String(n)) };
 }

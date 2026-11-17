@@ -9,6 +9,8 @@
 // cliente (`operacionesProtegidas.js`), cuya paridad con el servidor de verdad demuestra el nivel 3
 // (`test-escritor-operaciones-postgrest.mjs`: 37 operaciones y 400 cambios al azar, el mismo resultado o el mismo fallo).
 //
+// 🛟 R5: también imita la red de rescate y el apartado de versiones antiguas (`escrituraAntigua`), con las mismas
+// reglas que su SQL, que prueba de verdad `test-rescate-postgrest.mjs`.
 // No sustituye al laboratorio: es para que la APLICACIÓN entera, en Chromium y con dos aparatos, hable con algo que se
 // comporta como R1. La transacción de verdad se prueba contra Postgres (nivel 3).
 // ═══════════════════════════════════════════════════════════════════════════
@@ -30,6 +32,9 @@ export function crearDobleProtegido(almacen) {
     copias: new Map(),     // copiaId → { op, meta, vista, tipo, creadaEn }
     corte: null,
     protocolo: { version: 1, versionMinima: null, reglas: { horarioTop: false } },
+    /* R5 — qué reglas de `app_data` están «instaladas» en el doble (las de `horarios-rescate.sql` y
+       `horarios-versiones-antiguas.sql`). Las usa `escrituraAntigua`. */
+    reglas: { rescate: false, versionesAntiguas: false },
     aplicaciones: 0,
   };
   const existe = (k) => almacen[k] !== undefined && almacen[k] !== null;
@@ -129,12 +134,50 @@ export function crearDobleProtegido(almacen) {
   });
   /* R4 — la tabla `copias_apartadas` tal como la lee la aplicación (solo las propias, más nuevas primero). */
   const fila = (id, c, conContenido) => ({
-    id, tipo: c.tipo, op_id: c.op.opId, aparato: c.op.aparato || null, version_app: c.op.versionApp || null,
+    id, tipo: c.tipo, op_id: c.op.opId || null, aparato: c.aparato !== undefined ? c.aparato : (c.op.aparato || null), version_app: c.op.versionApp || null,
     creada_en: c.creadaEn, vista: c.vista, meta: copia(c.meta), tamano: tamano(c.op), ...(conContenido ? { contenido: copia(c.op) } : {}),
   });
   const listarCopias = () => [...S.copias.entries()].map(([id, c]) => fila(id, c, false)).sort((a, b) => (a.creada_en < b.creada_en ? 1 : a.creada_en > b.creada_en ? -1 : 0));
   const leerCopia = (id) => (S.copias.has(id) ? [fila(id, S.copias.get(id), true)] : []);
-  const protocolo = () => ({ ...S.protocolo, ahora: new Date().toISOString() });
+  const protocolo = () => ({ ...S.protocolo, reglas: { ...S.protocolo.reglas, rescate: S.reglas.rescate, versionesAntiguas: S.reglas.versionesAntiguas, horarioTop: !!(S.protocolo.reglas.horarioTop || S.reglas.versionesAntiguas) }, ahora: new Date().toISOString() });
+  const listarNuevasDeVersionAntigua = () => listarCopias().filter((f) => f.tipo === 'version_antigua' && f.vista === false);
 
-  return { S, aplicar, estado, leer, copiaEliminar, copiaVista, espacio, protocolo, listarCopias, leerCopia };
+  /* 🛟 R5 — una escritura A CIEGAS de una versión anterior (su `upsert` de `saveData`), con las reglas de R5 que
+     estén «instaladas»: la de versiones antiguas aparta la de `horarioTop` sin aplicarla (H-23); la red de rescate
+     guarda lo que había antes de una que sí se aplica (H-22). Mismas reglas que el SQL (no repite una idéntica ni
+     aparta o rescata lo que no cambia). Devuelve `{ aplicada, copiaId }`. */
+  const huellas = new Set();
+  const escrituraAntigua = (clave, valor, { aparato = null } = {}) => {
+    const vigente = existe(clave) ? copia(almacen[clave]) : null;
+    if (S.reglas.versionesAntiguas && clave === 'horarioTop') {
+      if (vigente !== null && textoCanonico(vigente) === textoCanonico(valor)) return { aplicada: false, copiaId: null };
+      const h = `v|${clave}|${textoCanonico(valor)}|${vigente === null ? '-' : textoCanonico(vigente)}`;
+      if (huellas.has(h)) return { aplicada: false, copiaId: null };
+      huellas.add(h);
+      const id = globalThis.crypto.randomUUID();
+      S.copias.set(id, {
+        op: { formato: 1, clave, intentado: copia(valor), vigente, existia: vigente !== null }, tipo: 'version_antigua', vista: false,
+        aparato: (valor && valor.testigo && valor.testigo.aparato) || aparato, creadaEn: new Date().toISOString(),
+        meta: { clave, accion: 'escritura', huella: h, creadaEn: new Date().toISOString() },
+      });
+      return { aplicada: false, copiaId: id };
+    }
+    let copiaId = null;
+    if (S.reglas.rescate && ['horarioTop', 'estudios', 'papelera'].includes(clave) && vigente !== null && textoCanonico(vigente) !== textoCanonico(valor)) {
+      const h = `r|${clave}|${textoCanonico(vigente)}|${textoCanonico(valor)}`;
+      if (!huellas.has(h)) {
+        huellas.add(h);
+        copiaId = globalThis.crypto.randomUUID();
+        S.copias.set(copiaId, {
+          op: { formato: 1, clave, antes: vigente, despues: copia(valor) }, tipo: 'rescate', vista: false,
+          aparato: clave === 'horarioTop' ? ((valor && valor.testigo && valor.testigo.aparato) || aparato) : null, creadaEn: new Date().toISOString(),
+          meta: { clave, accion: 'escritura', huella: h, creadaEn: new Date().toISOString() },
+        });
+      }
+    }
+    almacen[clave] = copia(valor);
+    return { aplicada: true, copiaId };
+  };
+
+  return { S, aplicar, estado, leer, copiaEliminar, copiaVista, espacio, protocolo, listarCopias, leerCopia, listarNuevasDeVersionAntigua, escrituraAntigua };
 }

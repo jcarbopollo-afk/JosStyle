@@ -291,7 +291,11 @@ seccion('H · Copias antiguas, de otro tipo o ilegibles');
   ok(pv.estado === 'no_recuperable' && pv.motivo === 'sin_detalle' && pv.texto === MOTIVOS_NO_RECUPERABLE.sin_detalle, 'sin el detalle por elementos y con el horario cambiado: no se recupera (pisaría)');
   const pigual = prepararRecuperacion({ fila: { id: 'v', tipo: 'conflicto', contenido: copia(vieja) }, actual: { ...actualDistinto, horarioTop: { existe: true, valor: conTestigo(conBloque(HORARIO(), 'b1', { aula: 'Z' }), 'r9') } } });
   ok(pigual.estado === 'ya_aplicada', 'y si el horario ya es el de la copia, «Ya está en tu cuenta»');
-  ok(prepararRecuperacion({ fila: { id: 'x', tipo: 'version_antigua', contenido: copia(vieja) }, actual: actualDistinto }).motivo === 'tipo_desconocido', 'un tipo que esta versión no sabe recuperar: se ve y se elimina');
+  /* 🔁 R5 — esta comprobación decía que una copia de versión antigua era un tipo «desconocido»: desde R5 se sabe
+     recuperar (por elementos), así que ahora mira las dos cosas que siguen valiendo: un tipo que esta versión no conoce
+     se ve y se elimina, y una de versión antigua con un contenido que no es el suyo no se puede leer. */
+  ok(prepararRecuperacion({ fila: { id: 'x', tipo: 'otro_tipo', contenido: copia(vieja) }, actual: actualDistinto }).motivo === 'tipo_desconocido', 'un tipo que esta versión no sabe recuperar: se ve y se elimina');
+  ok(prepararRecuperacion({ fila: { id: 'x', tipo: 'version_antigua', contenido: copia(vieja) }, actual: actualDistinto }).motivo === 'ilegible', 'una de versión antigua con el contenido de una operación (no el suyo): «no se puede leer», nunca un fallo');
   ok(['ilegible', 'ilegible', 'ilegible', 'ilegible'].every((m, i) => prepararRecuperacion({ fila: [null, { tipo: 'conflicto' }, { tipo: 'conflicto', contenido: { formato: 9 } }, { tipo: 'conflicto', contenido: { formato: 1, horario: 'x' } }][i], actual: actualDistinto }).motivo === m), 'contenido ilegible: nunca un fallo, «no se puede leer»');
   ok(prepararRecuperacion({ fila: { id: 'y', tipo: 'conflicto', contenido: { formato: 1, tipo: 'editar_horario', claves: [{ clave: 'fitness', cambios: [] }] } }, actual: actualDistinto }).estado === 'no_recuperable', 'una clave que no es de esta operación: no se recupera');
   ok(estadoDeCopia(null) === ESTADOS_COPIA.sin_comprobar, 'sin poder leer lo de ahora: «Sin comprobar»');

@@ -9,6 +9,8 @@
  *   `marcarVista(id)`, `eliminar(id)` y `recuperar(fila, preparacion)` → lo que contestó, sin decidir nada.
  * Motion: el desplegable es `Plegable`, la lista `ListaAnimada` (cada copia con `data-flip-id`), los botones que
  * esperan llevan `estado="cargando"` (o `TextoDeBoton`) y el giro de carga su texto (`GiroDeCarga`). Nada propio.
+ * 🛟 R5: las copias de rescate y de versión antigua se recuperan ELIGIENDO elemento a elemento (`ListaDePiezas`), y lo
+ * que una versión anterior intentó guardar sin aplicarse se avisa sin abrir la pantalla (`servicio.nuevasDeVersionAntigua`).
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { Archive, CircleAlert, RotateCw } from 'lucide-react';
@@ -20,8 +22,8 @@ import { Card, EmptyHint, TextoDeBoton } from './ui';
 import { COLORS } from '../tokens';
 import { hexToRgba } from '../lib/helpers';
 import {
-  TEXTOS_CAMBIOS_APARTADOS as T, describirCopia, textoDelEspacio, resumenDeOperacion, tituloConContenido,
-  prepararRecuperacion, estadoDeCopia, ESTADOS_COPIA, motivoDeLectura, motivoParaNoRecuperar,
+  TEXTOS_CAMBIOS_APARTADOS as T, describirCopia, textoDelEspacio, resumenDeCopia,
+  prepararRecuperacion, estadoDeCopia, ESTADOS_COPIA, motivoDeLectura, motivoParaNoRecuperar, avisoDeVersionesAntiguas,
 } from '../lib/cambiosApartados';
 
 /** Las copias de un conflicto que sigue abierto: se eliminan con «Descartar mi cambio» de su aviso, no desde aquí. */
@@ -43,8 +45,29 @@ function BotonTexto({ onClick, children, color, estado, textoCargando, disabled,
   );
 }
 
+/** R5 — las piezas de una copia de rescate o de versión antigua: lo que sigue como estaba se elige; lo demás se dice. */
+function ListaDePiezas({ copia, piezas, elegidas, onElegir, deshabilitada }) {
+  return (
+    <ul className="mt-1 space-y-0.5" aria-label={`Qué recuperar de: ${copia.titulo}`}>
+      {piezas.map((p) => (p.estado === 'aplicable' && onElegir ? (
+        <li key={p.id}>
+          <label className="flex items-start gap-1.5 text-xs toque-44" style={{ color: COLORS.text }}>
+            <input type="checkbox" checked={elegidas.includes(p.id)} onChange={() => onElegir(p.id)} disabled={deshabilitada}
+              aria-label={p.texto} className="mt-0.5" data-pieza={p.id} />
+            <span>{p.texto}</span>
+          </label>
+        </li>
+      ) : (
+        <li key={p.id} className="text-xs" style={{ color: p.estado === 'aplicable' ? COLORS.text : COLORS.textMuted }} data-pieza-estado={p.estado}>
+          {p.texto}{p.estado === 'hecha' ? ` · ${T.piezaHecha}` : p.estado === 'choque' ? ` · ${T.piezaChoque}` : ''}
+        </li>
+      )))}
+    </ul>
+  );
+}
+
 /** El detalle de una copia: qué contiene, qué pasaría si se recupera ahora, y las dos acciones. Se exporta para probarlo. */
-export function DetalleCopia({ copia, detalle, accion, puedeRecuperar, enConflictoAbierto, accent, onRecuperar, onEliminar, onConfirmar, onCancelar, onReintentar }) {
+export function DetalleCopia({ copia, detalle, accion, puedeRecuperar, enConflictoAbierto, accent, onRecuperar, onEliminar, onConfirmar, onCancelar, onReintentar, elegidas = [], onElegir, onElegirTodo, onElegirNada }) {
   const color = accent || COLORS.info;
   if (!detalle || detalle.estado === 'cargando') return <div className="py-2 flex items-center gap-2"><GiroDeCarga texto="Leyendo la copia…" size={14} /><Linea>Leyendo la copia…</Linea></div>;
   if (detalle.estado === 'error') {
@@ -58,7 +81,9 @@ export function DetalleCopia({ copia, detalle, accion, puedeRecuperar, enConflic
   const fila = detalle.fila;
   const prep = detalle.prep;
   const estado = detalle.motivoActual ? ESTADOS_COPIA.sin_comprobar : estadoDeCopia(prep);
-  const resumen = resumenDeOperacion(fila && fila.contenido);
+  const resumen = resumenDeCopia(fila);
+  const porElementos = !!(prep && prep.estado === 'por_elementos');
+  const aplicables = porElementos ? prep.piezas.filter((p) => p.estado === 'aplicable').map((p) => p.id) : [];
   const confirmando = accion && accion.fase !== 'listo' ? accion : null;
   return (
     <div className="pt-1 space-y-2" data-estado-copia={estado.id}>
@@ -77,6 +102,16 @@ export function DetalleCopia({ copia, detalle, accion, puedeRecuperar, enConflic
         {prep && prep.estado === 'recuperable' && <ul className="mt-0.5 space-y-0.5">{prep.resumen.map((l) => <li key={l} className="text-xs" style={{ color: COLORS.text }}>{l}</li>)}</ul>}
         {prep && prep.estado === 'ya_aplicada' && <Linea>{prep.resumen.join(' ')} {ESTADOS_COPIA.recuperada.explica}</Linea>}
         {prep && prep.estado === 'no_recuperable' && <Linea>{prep.texto}{prep.detalle ? ` ${prep.detalle}` : ''}</Linea>}
+        {porElementos && <Linea>{T.elegirExplica}</Linea>}
+        {prep && Array.isArray(prep.piezas) && prep.piezas.length > 0 && (
+          <ListaDePiezas copia={copia} piezas={prep.piezas} elegidas={elegidas} onElegir={porElementos ? onElegir : null} deshabilitada={!!confirmando} />
+        )}
+        {porElementos && !confirmando && aplicables.length > 1 && (
+          <div className="flex flex-wrap gap-x-4">
+            <BotonTexto onClick={onElegirTodo} color={color}>{T.elegirTodo}</BotonTexto>
+            {elegidas.length > 0 && <BotonTexto onClick={onElegirNada} color={COLORS.textMuted}>{T.elegirNada}</BotonTexto>}
+          </div>
+        )}
       </div>
 
       {accion && accion.resultado && (
@@ -85,6 +120,9 @@ export function DetalleCopia({ copia, detalle, accion, puedeRecuperar, enConflic
 
       {confirmando && confirmando.tipo === 'recuperar' ? (
         <div className="rounded-xl p-2" style={{ background: hexToRgba(color, 0.08) }}>
+          {confirmando.plan && Array.isArray(confirmando.plan.resumen) && (
+            <ul className="mb-1 space-y-0.5">{confirmando.plan.resumen.map((l) => <li key={l} className="text-xs font-semibold" style={{ color: COLORS.text }}>{l}</li>)}</ul>
+          )}
           <p className="text-xs" style={{ color: COLORS.text }}>{T.recuperarExplica}</p>
           <div className="mt-1 flex flex-wrap gap-x-4">
             <BotonTexto onClick={onConfirmar} color={color} estado={confirmando.fase === 'trabajando' ? 'cargando' : 'reposo'} textoCargando={T.recuperando} ariaLabel={`Recuperar ahora: ${copia.titulo}`}>{T.recuperarConfirmar}</BotonTexto>
@@ -104,8 +142,12 @@ export function DetalleCopia({ copia, detalle, accion, puedeRecuperar, enConflic
           {prep && prep.estado === 'recuperable' && (
             <BotonTexto onClick={onRecuperar} color={color} disabled={!!puedeRecuperar} ariaLabel={`Recuperar: ${copia.titulo}`}>{T.recuperar}</BotonTexto>
           )}
+          {porElementos && (
+            <BotonTexto onClick={onRecuperar} color={color} disabled={!!puedeRecuperar || elegidas.length === 0} ariaLabel={`Recuperar lo elegido: ${copia.titulo}`}>{T.recuperarElegidos}</BotonTexto>
+          )}
           <BotonTexto onClick={onEliminar} color={COLORS.negative} destructivo disabled={enConflictoAbierto} ariaLabel={`Eliminar: ${copia.titulo}`}>{T.eliminar}</BotonTexto>
-          {prep && prep.estado === 'recuperable' && puedeRecuperar ? <p className="w-full text-[11px]" style={{ color: COLORS.textMuted }}>{puedeRecuperar}</p> : null}
+          {prep && (prep.estado === 'recuperable' || porElementos) && puedeRecuperar ? <p className="w-full text-[11px]" style={{ color: COLORS.textMuted }}>{puedeRecuperar}</p> : null}
+          {porElementos && !puedeRecuperar && elegidas.length === 0 ? <p className="w-full text-[11px]" style={{ color: COLORS.textMuted }}>{T.elegidosNinguno}</p> : null}
           {enConflictoAbierto ? <p className="w-full text-[11px]" style={{ color: COLORS.textMuted }}>{T.recuperarConConflicto}</p> : null}
         </div>
       )}
@@ -147,6 +189,7 @@ export function CambiosApartados({ servicio, escritor = null, soloLectura = fals
   const [detalles, setDetalles] = useState({});
   const [acciones, setAcciones] = useState({});
   const [avisoLista, setAvisoLista] = useState(null);
+  const [elegidas, setElegidas] = useState({});
   const color = accent || COLORS.info;
   const aparato = servicio && servicio.aparato ? servicio.aparato : null;
 
@@ -177,7 +220,10 @@ export function CambiosApartados({ servicio, escritor = null, soloLectura = fals
       if (!rc.data) { setDetalles((d) => ({ ...d, [fila.id]: { estado: 'error', motivo: 'eliminadaYaNoEstaba' } })); return; }
       const actual = ra && ra.ok && ra.data && ra.data.estado === 'leidas' ? ra.data.claves : null;
       const prep = actual ? prepararRecuperacion({ fila: rc.data, actual }) : null;
-      setDetalles((d) => ({ ...d, [fila.id]: { estado: 'listo', fila: rc.data, prep, motivoActual: actual ? null : motivoDeLectura(ra) } }));
+      setDetalles((d) => ({ ...d, [fila.id]: { estado: 'listo', fila: rc.data, prep, actual, motivoActual: actual ? null : motivoDeLectura(ra) } }));
+      /* Lo elegido se queda solo si sigue pudiéndose elegir (la cuenta ha podido cambiar). */
+      const siguen = prep && prep.estado === 'por_elementos' ? prep.piezas.filter((p) => p.estado === 'aplicable').map((p) => p.id) : [];
+      setElegidas((e) => ({ ...e, [fila.id]: (e[fila.id] || []).filter((id) => siguen.includes(id)) }));
       if (fila.vista === false && typeof servicio.marcarVista === 'function') {
         try { await servicio.marcarVista(fila.id); } catch { /* marcarla vista no es imprescindible */ }
       }
@@ -193,6 +239,25 @@ export function CambiosApartados({ servicio, escritor = null, soloLectura = fals
   };
 
   const ponerAccion = (id, a) => setAcciones((x) => ({ ...x, [id]: a }));
+  const alternarPieza = (id, pieza) => setElegidas((e) => {
+    const ya = e[id] || [];
+    return { ...e, [id]: ya.includes(pieza) ? ya.filter((x) => x !== pieza) : [...ya, pieza] };
+  });
+  const elegirTodo = (id) => {
+    const det = detalles[id];
+    const prep = det && det.prep;
+    if (prep && prep.estado === 'por_elementos') setElegidas((e) => ({ ...e, [id]: prep.piezas.filter((p) => p.estado === 'aplicable').map((p) => p.id) }));
+  };
+  /* Pedir recuperar: en una copia de rescate o de versión antigua, primero se prepara el plan de lo elegido (lo que se
+     confirma es exactamente eso); en las demás, la copia entera como en R4. */
+  const pedirRecuperar = (id) => {
+    const det = detalles[id];
+    if (!det || !det.prep) return;
+    if (det.prep.estado !== 'por_elementos') { ponerAccion(id, { tipo: 'recuperar', fase: 'confirmar', resultado: null }); return; }
+    const plan = prepararRecuperacion({ fila: det.fila, actual: det.actual, elegidas: elegidas[id] || [] });
+    if (!plan || plan.estado !== 'recuperable') { ponerAccion(id, { tipo: 'recuperar', fase: 'listo', resultado: { ok: false, texto: T.recuperacionCambio } }); return; }
+    ponerAccion(id, { tipo: 'recuperar', fase: 'confirmar', resultado: null, plan });
+  };
 
   async function confirmar(fila) {
     const a = acciones[fila.id];
@@ -215,10 +280,11 @@ export function CambiosApartados({ servicio, escritor = null, soloLectura = fals
         ponerAccion(fila.id, { tipo: 'eliminar', fase: 'listo', resultado: { ok: false, texto: T[motivoDeLectura(r)] || T.errorAccion } });
         return;
       }
-      const r = await servicio.recuperar(det.fila, det.prep);
+      const r = await servicio.recuperar(det.fila, a.plan || det.prep);
       if (!vivo.current) return;
       if (r && r.ok) {
         ponerAccion(fila.id, { tipo: 'recuperar', fase: 'listo', resultado: { ok: true, texto: T.recuperada } });
+        setElegidas((e) => ({ ...e, [fila.id]: [] }));
         leerDetalle(fila);
         return;
       }
@@ -272,7 +338,9 @@ export function CambiosApartados({ servicio, escritor = null, soloLectura = fals
               <DetalleCopia
                 copia={c} detalle={detalles[c.id]} accion={acciones[c.id]} accent={accent}
                 puedeRecuperar={noRecuperar} enConflictoAbierto={delConflicto.has(c.id)}
-                onRecuperar={() => ponerAccion(c.id, { tipo: 'recuperar', fase: 'confirmar', resultado: null })}
+                onRecuperar={() => pedirRecuperar(c.id)}
+                elegidas={elegidas[c.id] || []} onElegir={(pieza) => alternarPieza(c.id, pieza)}
+                onElegirTodo={() => elegirTodo(c.id)} onElegirNada={() => setElegidas((e) => ({ ...e, [c.id]: [] }))}
                 onEliminar={() => ponerAccion(c.id, { tipo: 'eliminar', fase: 'confirmar', resultado: null })}
                 onConfirmar={() => confirmar(filas.find((f) => f.id === c.id))}
                 onCancelar={() => ponerAccion(c.id, null)}
@@ -286,9 +354,27 @@ export function CambiosApartados({ servicio, escritor = null, soloLectura = fals
   );
 }
 
-/** El plegable de Horario y de Ajustes → Datos. No lee nada hasta que se abre. */
+/**
+ * El plegable de Horario y de Ajustes → Datos. Cerrado, solo pregunta una cosa pequeña (R5, H-23): si una versión
+ * anterior intentó guardar algo que no se aplicó y todavía no lo ha visto; entonces lo avisa con «Ver». Lo demás se
+ * lee al abrirlo.
+ */
 export function CambiosApartadosEntrada({ servicio, escritor = null, soloLectura = false, accent = null }) {
   const [abierto, setAbierto] = useState(false);
+  const [aviso, setAviso] = useState(null);
+  const turnos = useTurnos();
+  useEffect(() => {
+    if (abierto || !servicio || typeof servicio.nuevasDeVersionAntigua !== 'function') return;
+    const t = turnos.nuevo();
+    (async () => {
+      try {
+        const r = await servicio.nuevasDeVersionAntigua();
+        if (t.vigente()) setAviso(r && r.ok ? avisoDeVersionesAntiguas(r.data) : null);
+      } catch {
+        if (t.vigente()) setAviso(null);
+      }
+    })();
+  }, [servicio, abierto]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!servicio) return null;
   const color = accent || COLORS.info;
   return (
@@ -303,6 +389,13 @@ export function CambiosApartadosEntrada({ servicio, escritor = null, soloLectura
         </span>
         <ChevronDespliegue abierto={abierto} size={16} style={{ color: COLORS.textMuted }} />
       </button>
+      {aviso && !abierto && (
+        <div role="status" className="mt-2 flex items-start gap-2" data-aviso-version-antigua={aviso.cuantas}>
+          <CircleAlert size={14} className="flex-shrink-0 mt-0.5" style={{ color: COLORS.warning }} aria-hidden="true" />
+          <p className="text-xs flex-1" style={{ color: COLORS.text }}>{aviso.texto}</p>
+          <BotonTexto onClick={() => setAbierto(true)} color={color} ariaLabel={`${T.avisoVer}: ${T.titulo}`}>{T.avisoVer}</BotonTexto>
+        </div>
+      )}
       <Plegable abierto={abierto}>{() => <div className="mt-2"><CambiosApartados servicio={servicio} escritor={escritor} soloLectura={soloLectura} accent={accent} /></div>}</Plegable>
     </Card>
   );

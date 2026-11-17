@@ -263,7 +263,10 @@ const manejadorSupa = async (route) => {
     if (FALLO_COPIAS.modo === 'sin_funciones') return json(404, { code: 'PGRST205', message: "Could not find the table 'public.copias_apartadas' in the schema cache" });
     if (FALLO_COPIAS.modo === 'error') return json(500, { message: 'fallo de prueba' });
     if (route.request().method() !== 'GET') return json(403, { code: 'P0001', message: 'protegido_solo_por_funciones' });
-    const idFiltro = (new URL(url).searchParams.get('id') || '').replace(/^eq\./, '');
+    const params = new URL(url).searchParams;
+    const idFiltro = (params.get('id') || '').replace(/^eq\./, '');
+    /* 🛟 R5 — las copias de versión antigua sin ver (el aviso de la entrada, sin abrirla). */
+    if (params.get('tipo') === 'eq.version_antigua' && params.get('vista') === 'eq.false') return json(200, protegido.listarNuevasDeVersionAntigua());
     return json(200, idFiltro ? protegido.leerCopia(idFiltro) : protegido.listarCopias());
   }
   if (url.includes('/rest/v1/rpc/protegido_')) {
@@ -19397,5 +19400,133 @@ ok(LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r4 + 1, '🚨 R4 — en toda la s
 ok(errores.length === erroresAntes_r4, `R4 — sin un error de JavaScript en toda la sección${errores.length > erroresAntes_r4 ? `: ${errores.slice(erroresAntes_r4).join(' | ').slice(0, 300)}` : ''}`);
 protegido.S.copias.clear();
 almacen.horarioTop = horarioDeAntes_r4; almacen.estudios = estudiosDeAntes_r4; almacen.papelera = papeleraDeAntes_r4;
+
+/* ===========================================================================
+   🛟 HORARIOS · E1-R · R5 — LA RED DE RESCATE Y LAS VERSIONES ANTIGUAS (docs/19 §18.19)
+
+   Con el doble de R1 imitando las reglas de R5 (`escrituraAntigua`, las mismas que su SQL, que prueba de verdad
+   `test-rescate-postgrest.mjs`): una versión anterior de JosStyle pisa el horario (P1: queda rescatado) y después
+   intenta guardar (P4: se aparta sin aplicarse). Desde Cambios apartados se inspecciona cada copia, se elige qué
+   recuperar ELEMENTO A ELEMENTO (lo que cambió después no se puede elegir), se recupera como operación protegida y la
+   copia se queda. Y el aviso de lo que no se aplicó, sin abrir la pantalla, y una copia de Estudios que solo se ve.
+   =========================================================================== */
+console.log('\n── Horarios E1-R · R5 · Rescate y versiones antiguas (inspeccionar, elegir, recuperar sin pisar, aviso) ──');
+const erroresAntes_r5 = errores.length;
+const horarioDeAntes_r5 = almacen.horarioTop; const estudiosDeAntes_r5 = almacen.estudios; const papeleraDeAntes_r5 = almacen.papelera;
+for (const k of Object.keys(almacen).filter((x) => esFilaGuardia(x) || esFilaVersiones(x))) delete almacen[k];
+protegido.S.copias.clear();
+protegido.S.reglas.rescate = true; protegido.S.reglas.versionesAntiguas = false;
+const ASIG_R5 = [['qui', 'Química R5'], ['fis', 'Física R5'], ['lat', 'Latín R5']];
+almacen.estudios = { programas: [{ id: 'r5p', nombre: 'Ciencias R5', tipo: 'formal' }], asignaturas: ASIG_R5.map(([k, nombre]) => ({ id: `r5${k}`, nombre, programaIds: ['r5p'] })), examenes: [], horas: [], temas: [], entregas: [], eventos: [], actividades: [] };
+almacen.papelera = { elementos: [], retencionDias: 30 };
+almacen.horarioTop = {
+  ...baseGe2([horarioAbis('hr5', 'Prueba R5')], ASIG_R5.map(([k], i) => ({ id: `br5${k}`, horarioId: 'hr5', columnaId: 'c_hr5', filaId: 'f_hr5', actividadId: `ar5${k}`, inicio: `00:${String(i).padStart(2, '0')}`, fin: `00:${String(i + 1).padStart(2, '0')}`, aula: `A${i}` }))),
+  actividades: ASIG_R5.map(([k, nombre]) => ({ id: `ar5${k}`, nombre, asignaturaId: `r5${k}` })),
+};
+const ops0_r5 = intentosProtegidos.length;
+const opsR5 = () => intentosProtegidos.slice(ops0_r5);
+const elim0_r5 = LLAMADAS_PROTEGIDAS.copiaEliminar;
+const copiasR5 = () => [...protegido.S.copias.values()];
+const bloqueR5 = (id) => (almacen.horarioTop?.bloques || []).find((b) => b.id === id);
+/* Lo que guarda una versión anterior: el horario entero con su testigo (A-bis), con un upsert sin condición. */
+const escribeVieja_r5 = (cambiar) => {
+  const h = JSON.parse(JSON.stringify(almacen.horarioTop));
+  const nuevo = cambiar(h);
+  return protegido.escrituraAntigua('horarioTop', { ...nuevo, version: 1, testigo: { formato: 1, revision: crypto.randomUUID(), base: h.testigo?.revision || null, aparato: 'aparato-viejo' } });
+};
+const casilla_r5 = (p, etiqueta) => p.evaluate((t) => { const c = [...document.querySelectorAll('input[type="checkbox"]')].find((x) => x.getAttribute('aria-label') === t); if (!c || c.disabled) return false; c.click(); return true; }, etiqueta);
+const casillas_r5 = (p) => p.evaluate(() => [...document.querySelectorAll('input[type="checkbox"][data-pieza]')].map((c) => c.getAttribute('aria-label')));
+const botonApagado_r5 = (p, etiqueta) => p.evaluate((t) => { const b = [...document.querySelectorAll('button')].find((x) => (x.getAttribute('aria-label') || '').startsWith(t)); return b ? b.disabled : null; }, etiqueta);
+
+ok(await cargar_r3(page), 'R5 — el aparato nuevo abre Horarios');
+ok(protegido.protocolo().reglas.rescate === true && protegido.protocolo().reglas.versionesAntiguas === false, 'R5 — P1: el servidor tiene la red de rescate');
+
+/* 1 · P1: una versión anterior pisa el horario (quita Latín y cambia el aula de Química). Queda rescatado. */
+const r1_r5 = escribeVieja_r5((h) => ({ ...h, bloques: h.bloques.filter((b) => b.id !== 'br5lat').map((b) => (b.id === 'br5qui' ? { ...b, aula: 'VIEJA' } : b)) }));
+ok(r1_r5.aplicada && !!r1_r5.copiaId && !bloqueR5('br5lat') && bloqueR5('br5qui').aula === 'VIEJA', 'R5 · rescate — la versión antigua pisa (sin Latín, Química con otra aula) y lo de antes queda rescatado');
+ok(await cargar_r3(page), 'R5 · rescate — el aparato nuevo vuelve a abrir Horarios');
+{
+  const t = await abrirApartados_r4(page);
+  ok(/Horario: lo que había antes de que una versión anterior guardara encima/.test(t) && /Se guardó a salvo/.test(t) && /Nueva/i.test(t), 'R5 · rescate — en la lista: «lo que había antes de que una versión anterior guardara encima», a salvo y nueva');
+}
+ok(await pulsar_r3(page, 'Horario: lo que había antes'), 'R5 · rescate — se abre');
+{
+  const t = await esperarEn_r3(page, /Si la recuperas ahora/, 10000);
+  ok(/Recuperarlo todo supondría: .*1 clase añadida/.test(t) && /1 clase cambiada/.test(t), 'R5 · rescate — qué contiene: «Recuperarlo todo supondría: 1 clase añadida, 1 clase cambiada»');
+  ok(/Elige qué quieres recuperar/.test(t), 'R5 · rescate — y que se elige, cosa a cosa');
+  const cs = await casillas_r5(page);
+  ok(cs.includes('Volver a poner la clase «Latín R5» (00:02–00:03)') && cs.some((c) => /Química R5/.test(c)), `R5 · rescate — una casilla por cosa: volver a poner Latín, volver a dejar Química (${cs.join(' | ')})`);
+  ok(await botonApagado_r5(page, 'Recuperar lo elegido') === true && /Elige al menos una cosa/.test(t), 'R5 · rescate — sin elegir nada, «Recuperar lo elegido…» está apagado y dice por qué');
+  ok(await esperarQue_abis(() => copiasR5().find((c) => c.tipo === 'rescate')?.vista === true, 5000), 'R5 · rescate — al abrirla queda vista');
+}
+/* Mientras lo mira, otro aparato (nuevo, protegido) cambia otra vez el aula de Química: esa pieza deja de poder elegirse. */
+{
+  const h = almacen.horarioTop;
+  almacen.horarioTop = { ...h, bloques: h.bloques.map((b) => (b.id === 'br5qui' ? { ...b, aula: 'DE-OTRO' } : b)), testigo: { ...(h.testigo || {}), revision: crypto.randomUUID(), aparato: 'otro-aparato' } };
+}
+ok(await pulsar_r3(page, 'Cambios apartados') && await pulsar_r3(page, 'Cambios apartados'), 'R5 · rescate — se vuelve a abrir la pantalla (relee lo de ahora)');
+await esperarEn_r3(page, /lo que había antes/, 10000);
+ok(await pulsar_r3(page, 'Horario: lo que había antes'), 'R5 · rescate — y la copia');
+{
+  const t = await esperarEn_r3(page, /Cambió después: no se toca/, 10000);
+  const cs = await casillas_r5(page);
+  ok(/Química R5.*Cambió después: no se toca/.test(t) && !cs.some((c) => /Química R5/.test(c)), '🚨 R5 · rescate — Química cambió después: se dice «no se toca» y no tiene casilla');
+  ok(cs.includes('Volver a poner la clase «Latín R5» (00:02–00:03)'), 'R5 · rescate — Latín se sigue pudiendo elegir');
+}
+ok(await casilla_r5(page, 'Volver a poner la clase «Latín R5» (00:02–00:03)'), 'R5 · rescate — elige Latín');
+await page.waitForTimeout(300);
+ok(await botonApagado_r5(page, 'Recuperar lo elegido') === false, 'R5 · rescate — el botón se enciende');
+ok(await pulsar_r3(page, 'Recuperar lo elegido…'), 'R5 · rescate — «Recuperar lo elegido…»');
+ok(/Volver a poner la clase «Latín R5» \(00:02–00:03\)\./.test(await esperarEn_r3(page, /Se guarda como un cambio nuevo/)), 'R5 · rescate — la confirmación dice exactamente lo elegido');
+ok(await pulsar_r3(page, 'Recuperar ahora'), 'R5 · rescate — se confirma');
+ok(await esperarQue_abis(() => !!bloqueR5('br5lat'), 15000), 'R5 · rescate — Latín vuelve a la cuenta');
+{
+  const op = opsR5().filter((i) => i.op?.tipo === 'recuperar_copia').at(-1);
+  ok(!!op && op.llegada && typeof op.op.horario.base === 'string', '🚨 R5 · rescate — como UNA operación protegida (recuperar_copia, con su condición)');
+  ok(bloqueR5('br5qui').aula === 'DE-OTRO', '🚨 R5 · rescate — lo que cambió después (Química) se queda como estaba');
+  ok(copiasR5().length === 1 && LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r5, '🚨 R5 · rescate — la copia NO se borra sola');
+  ok(/Recuperado\. La copia sigue aquí/.test(await esperarEn_r3(page, /Recuperado\./, 10000)), 'R5 · rescate — «Recuperado», y la copia sigue');
+}
+
+/* 2 · P4: la versión anterior intenta guardar otra vez. No se aplica: se aparta, y se avisa sin abrir la pantalla. */
+protegido.S.reglas.versionesAntiguas = true;
+const antesP4_r5 = JSON.stringify(almacen.horarioTop);
+const r2_r5 = escribeVieja_r5((h) => ({ ...h, bloques: [...h.bloques, { id: 'br5bio', horarioId: 'hr5', columnaId: 'c_hr5', filaId: 'f_hr5', actividadId: 'ar5fis', inicio: '00:05', fin: '00:06', aula: 'LAB' }] }));
+ok(!r2_r5.aplicada && !!r2_r5.copiaId && JSON.stringify(almacen.horarioTop) === antesP4_r5, '🚨 R5 · versión antigua — desde P4 no se aplica: la cuenta no cambia y queda apartada');
+ok(await cargar_r3(page), 'R5 · versión antigua — el aparato nuevo vuelve a abrir Horarios');
+{
+  const t = await esperarEn_r3(page, /intentó guardar un cambio en tu horario que no se aplicó/, 10000);
+  ok(/Una versión anterior de JosStyle intentó guardar un cambio en tu horario que no se aplicó/.test(t) && /a salvo en Cambios apartados/.test(t), 'R5 · aviso — sin abrir nada: «Una versión anterior de JosStyle intentó guardar un cambio… que no se aplicó»');
+  ok(await page.evaluate(() => !!document.querySelector('[data-aviso-version-antigua="1"][role="status"]')), 'R5 · aviso — como un estado (se anuncia)');
+}
+ok(await pulsar_r3(page, 'Ver: Cambios apartados'), 'R5 · aviso — «Ver» abre Cambios apartados');
+ok(/lo que intentó guardar una versión anterior/.test(await esperarEn_r3(page, /lo que intentó guardar una versión anterior/, 10000)), 'R5 · versión antigua — en la lista');
+ok(await pulsar_r3(page, 'Horario: lo que intentó guardar'), 'R5 · versión antigua — se abre');
+{
+  const t = await esperarEn_r3(page, /Si la recuperas ahora/, 10000);
+  const cs = await casillas_r5(page);
+  ok(/No se aplicó: llegó de una versión anterior/.test(t) && /Aplicarlo todo supondría: 1 clase añadida/.test(t), 'R5 · versión antigua — «No se aplicó», y qué supondría aplicarlo');
+  ok(cs.length === 1 && cs[0] === 'Añadir la clase «Física R5» (00:05–00:06)', `R5 · versión antigua — una casilla: «Añadir la clase «Física R5» (00:05–00:06)» (${cs.join(' | ')})`);
+}
+ok(await casilla_r5(page, 'Añadir la clase «Física R5» (00:05–00:06)') && await pulsar_r3(page, 'Recuperar lo elegido…') && await pulsar_r3(page, 'Recuperar ahora'), 'R5 · versión antigua — se elige y se recupera');
+ok(await esperarQue_abis(() => !!bloqueR5('br5bio'), 15000) && !!bloqueR5('br5lat') && bloqueR5('br5qui').aula === 'DE-OTRO', '🚨 R5 · versión antigua — la clase entra, y nada de lo demás cambia');
+ok(copiasR5().length === 2 && LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r5, '🚨 R5 · versión antigua — las dos copias siguen');
+ok(await cargar_r3(page) && !(await page.evaluate(() => !!document.querySelector('[data-aviso-version-antigua]'))), 'R5 · aviso — vista la copia, al volver ya no se avisa');
+
+/* 3 · Una copia de Estudios (rescate): se ve qué contiene y se puede eliminar, pero no se recupera desde aquí. */
+protegido.escrituraAntigua('estudios', { ...almacen.estudios, asignaturas: almacen.estudios.asignaturas.filter((a) => a.id !== 'r5lat') });
+ok(copiasR5().length === 3, 'R5 · Estudios — una versión antigua pisa Estudios: queda rescatado');
+{
+  await abrirApartados_r4(page);
+  ok(await pulsar_r3(page, 'Estudios: lo que había antes'), 'R5 · Estudios — se abre');
+  const t = await esperarEn_r3(page, /no recuperar desde aquí/, 10000);
+  const botones = await page.evaluate(() => [...document.querySelectorAll('button')].map((b) => b.innerText.trim()));
+  ok(/1 asignatura añadida/.test(t) && /se pueden ver y eliminar, pero no recuperar desde aquí/.test(t) && !botones.includes('Recuperar lo elegido…') && botones.includes('Eliminar…'), 'R5 · Estudios — qué contiene, «no se recupera desde aquí», con «Eliminar…»');
+}
+
+ok(LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r5 && copiasR5().length === 3, '🚨 R5 — en toda la sección, ninguna copia eliminada');
+ok(errores.length === erroresAntes_r5, `R5 — sin un error de JavaScript en toda la sección${errores.length > erroresAntes_r5 ? `: ${errores.slice(erroresAntes_r5).join(' | ').slice(0, 300)}` : ''}`);
+protegido.S.copias.clear(); protegido.S.reglas.rescate = false; protegido.S.reglas.versionesAntiguas = false;
+almacen.horarioTop = horarioDeAntes_r5; almacen.estudios = estudiosDeAntes_r5; almacen.papelera = papeleraDeAntes_r5;
 
 await salir(browser);

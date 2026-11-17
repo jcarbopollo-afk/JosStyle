@@ -55,7 +55,7 @@ exportación visual lleva otro nombre.
 15. Decisiones técnicas pendientes
 16. Criterios de aceptación
 17. Aclaraciones de la revisión (2026-11-08) — **mandan sobre los apartados anteriores donde difieran**
-18. Correcciones del 2026-11-09 (versiones manuales, TP-5/TP-7, funciones que se conservan, colores al exportar, «Cada dos semanas», conservación de versiones, coherencia, TP-18 resuelta, versiones eliminadas entre aparatos —sin nada pendiente en el aparato y con escritura condicional— y la regla definitiva del autoguardado). §18.12: el cierre documental previo a la Fase 4 (TP-4, el historial de versiones tal como está implementado, TP-8 con TP-15, y sus riesgos) y la decisión aprobada del TP-15 (A + B + C, 2026-11-10). §18.13: la entrega A y la A-bis tal como están implementadas (2026-11-15): la guardia `horarioGuardia:<aparato>`, el testigo, la intención, la clasificación E0/E1/E2/AI/B/C, los estados E3–E7, la supresión, el evaluador de la B y C-1 a C-4. §18.14: la entrega E1 (2026-11-16): el escritor protegido de `horarioTop` (TP-15 A y C), el conflicto entre aparatos con la copia apartada (D2 y D2-bis), Deshacer, la incidencia #5 corregida, la entrega corta (retirar, resolver y reabrir, D1) y la regla del servidor preparada y probada solo en local (TP-15 B, sin activar). §18.15: E1-R · R1 (2026-11-16): la operación protegida en el servidor —una transacción, cambios por elemento, tablas propias (H-18) e idempotencia por capas—, probada solo en el laboratorio local. §18.16: E1-R · R2 (2026-11-16): el motor del cliente —la operación y su validación, los cambios por elemento con condiciones de lo guardado, el transporte por RPC, el escritor de operaciones (una a la vez, mismo opId, respuestas perdidas, conflicto apartado por el servidor) y el turno en la cola—, probado en Node y contra R1 en el laboratorio. §18.17: E1-R · R3 (2026-11-16): la integración en Horarios —todo guardado del horario como operación protegida, borrar una asignatura con clases y Deshacer como una sola operación (y su inversa), H-12 (el bloqueo selectivo de Estudios) y H-13—, probada en Node, en Chromium con dos aparatos y contra R1 en el laboratorio. §18.18: E1-R · R4 (2026-11-17): Cambios apartados —consultar, inspeccionar, recuperar como operación nueva sin pisar lo posterior (el cambio del horario por elementos dentro de la copia), eliminar solo a petición y el espacio lógico—, probada en Node, en Chromium con dos aparatos y contra R1 en el laboratorio
+18. Correcciones del 2026-11-09 (versiones manuales, TP-5/TP-7, funciones que se conservan, colores al exportar, «Cada dos semanas», conservación de versiones, coherencia, TP-18 resuelta, versiones eliminadas entre aparatos —sin nada pendiente en el aparato y con escritura condicional— y la regla definitiva del autoguardado). §18.12: el cierre documental previo a la Fase 4 (TP-4, el historial de versiones tal como está implementado, TP-8 con TP-15, y sus riesgos) y la decisión aprobada del TP-15 (A + B + C, 2026-11-10). §18.13: la entrega A y la A-bis tal como están implementadas (2026-11-15): la guardia `horarioGuardia:<aparato>`, el testigo, la intención, la clasificación E0/E1/E2/AI/B/C, los estados E3–E7, la supresión, el evaluador de la B y C-1 a C-4. §18.14: la entrega E1 (2026-11-16): el escritor protegido de `horarioTop` (TP-15 A y C), el conflicto entre aparatos con la copia apartada (D2 y D2-bis), Deshacer, la incidencia #5 corregida, la entrega corta (retirar, resolver y reabrir, D1) y la regla del servidor preparada y probada solo en local (TP-15 B, sin activar). §18.15: E1-R · R1 (2026-11-16): la operación protegida en el servidor —una transacción, cambios por elemento, tablas propias (H-18) e idempotencia por capas—, probada solo en el laboratorio local. §18.16: E1-R · R2 (2026-11-16): el motor del cliente —la operación y su validación, los cambios por elemento con condiciones de lo guardado, el transporte por RPC, el escritor de operaciones (una a la vez, mismo opId, respuestas perdidas, conflicto apartado por el servidor) y el turno en la cola—, probado en Node y contra R1 en el laboratorio. §18.17: E1-R · R3 (2026-11-16): la integración en Horarios —todo guardado del horario como operación protegida, borrar una asignatura con clases y Deshacer como una sola operación (y su inversa), H-12 (el bloqueo selectivo de Estudios) y H-13—, probada en Node, en Chromium con dos aparatos y contra R1 en el laboratorio. §18.18: E1-R · R4 (2026-11-17): Cambios apartados —consultar, inspeccionar, recuperar como operación nueva sin pisar lo posterior (el cambio del horario por elementos dentro de la copia), eliminar solo a petición y el espacio lógico—, probada en Node, en Chromium con dos aparatos y contra R1 en el laboratorio. §18.19: E1-R · R5 (2026-11-17): la red de rescate (H-22, H-25) y las escrituras de versiones antiguas apartadas (H-23), preparadas y probadas solo en el laboratorio (la secuencia P1 → P4), y en la aplicación su recuperación eligiendo elemento a elemento y el aviso de lo que no se aplicó
 
 ---
 
@@ -3008,7 +3008,8 @@ Activarla en un entorno alojado es de E2 y lo autoriza Josué.
   - `operaciones_protegidas`: el registro de idempotencia (un `opId` por usuario, con la huella SHA-256 de la operación, su
     resultado, las revisiones de antes y después, las claves y la copia si la hubo). Sin contenido.
   - `copias_apartadas`: la operación **entera** (H-08) con una cabecera (`meta`) para listarla sin descargar el contenido.
-    Tipos: `conflicto` (lo crea R1); `version_antigua` y `rescate` reservados para R5 (H-22 y H-23, pendientes).
+    Tipos: `conflicto` (lo crea R1); `version_antigua` y `rescate` reservados para R5 (H-22 y H-23). 🔁 Construidos en R5
+    (§18.19), con las decisiones aprobadas el 2026-11-17.
   - `operaciones_corte`: la marca de corte de una limpieza futura del registro (H-16, sin aprobar: hoy no la escribe nadie).
   - Una **guardia** (disparador) impide a la aplicación escribir esas tablas fuera de las funciones; lo del propietario (la
     cascada al borrar una cuenta, el editor SQL) no pasa por ella.
@@ -3287,7 +3288,8 @@ elementos con los campos de la puerta de carga.
   Eliminados recientes con ella, así que no se pierde. Si ya no está, no hay nada que recuperar; si ya no está pero quedan
   clases suyas, no se adivina.
 - Una copia **sin el detalle por elementos** (de antes de R4) solo se recupera si ya no hay nada que cambiar; si no, se ve y se
-  elimina. Una de otro tipo (`version_antigua`, `rescate`, R5) o ilegible, igual.
+  elimina. Una de otro tipo (`version_antigua`, `rescate`, R5) o ilegible, igual. 🔁 Desde R5 (§18.19), las de rescate y de
+  versión antigua del horario se recuperan **eligiendo elemento a elemento**.
 - Solo con el escritor en reposo (nada esperando, ningún conflicto abierto, Horarios editable y nada de Estudios retenido):
   si no, se dice por qué. **Al recuperarla, la copia no se borra**: se ofrece eliminarla.
 
@@ -3329,9 +3331,96 @@ conexión» (al leer, un 5xx tuvo respuesta: es un error).
   H-23), ni nada pendiente en el aparato (C-84, E1-L).
 - Nada en Supabase alojado; sin probar en Safari ni en el iPhone.
 
+
+### 18.19 E1-R · R5: la red de rescate y las escrituras de versiones antiguas (2026-11-17)
+
+> Con la autorización expresa de Josué del 2026-11-17 (**R5**), sobre R4 (`8a4e3cc`), que aprueba **H-22**, **H-23** y
+> **H-25** (C-88 en `docs/03`). Commit solo local; nada en Supabase alojado, ni SQL alojado, ni datos reales, sin push, PR,
+> fusión ni despliegue. No empieza E1-P, E1-S ni E1-L. Con R5, **E1-R está completa en local**.
+
+#### Qué se construye
+
+| Pieza | Paso de E2 | Qué hace |
+|---|---|---|
+| `supabase/horarios-rescate.sql` (H-22, H-25) | **P1**, antes de publicar | Un disparador **después** de escribir en `app_data`: cada escritura de la aplicación que **no** pasa por las funciones protegidas (el `upsert` de `saveData`, que es como guardan las versiones anteriores) y que cambia o borra `horarioTop`, `estudios` o `papelera` deja en `copias_apartadas` (tipo `rescate`), en la misma transacción, lo que había (`antes`) y lo que se escribió encima (`despues`). **Si la copia falla, la escritura se rechaza** (`P0001 rescate_fallido`): no hay escritura sin red |
+| `supabase/horarios-versiones-antiguas.sql` (H-23) | **P4**, cuando los aparatos ya tienen la versión nueva | Un disparador **antes** de escribir: una escritura de `horarioTop` que no pasa por las funciones protegidas **no se aplica y no se rechaza**: se aparta (tipo `version_antigua`) con lo que intentó escribir (`intentado`) y lo que había (`vigente`), y la versión antigua recibe «guardado». Si apartarla falla, se rechaza (`version_antigua_no_apartada`). Borrar la fila del horario desde la aplicación se rechaza. **Quita la regla de E1** (rechazar, TP-15 B): H-23 la sustituye |
+| Las dos vueltas atrás (`…-deshacer.sql`) | — | Quitan su disparador y sus funciones. **No borran ninguna copia** |
+| `protegido_protocolo` (R1) | — | Dice qué reglas están activas: `rescate`, `versionesAntiguas` y `horarioTop` (la de E1 o la de R5) |
+
+Las dos reglas: solo los roles de la API (lo del propietario —el borrado en cascada, el editor SQL— no pasa por ellas); lo que
+escriben las funciones protegidas no se toca (llevan su condición y su registro); un guardado que no cambia nada no deja copia;
+una copia idéntica a otra que ya existe no se repite (un reintento no ocupa el doble: la `huella` en `meta`); una fila de otra
+cuenta la para su política, no estas reglas. Cada copia guarda en `meta` la clave, la acción, las revisiones del testigo, el
+aparato que escribió (del testigo) y el navegador (la cabecera `user-agent`, recortada). **Nada se borra solo** (H-10).
+
+#### Qué hace la aplicación
+
+- **Cambios apartados** lista también estas copias, con su título («Horario: lo que había antes de que una versión anterior
+  guardara encima», «… lo borrara», «Horario: lo que intentó guardar una versión anterior») y su motivo («Se guardó a salvo…»,
+  «No se aplicó…»). Al abrir una se dice qué contiene («Recuperarlo todo supondría: 1 clase añadida, 1 clase cambiada»).
+- **Se recupera eligiendo, elemento a elemento** (`prepararRecuperacion` con `elegidas`): no son UN cambio suyo sino lo que
+  dejó o quiso dejar otra versión, así que no se recuperan enteras (R4 sigue con todo o nada para las de conflicto, que sí son
+  una operación suya). Cada pieza dice lo que haría («Volver a poner la clase «Latín» (09:00–10:00)», «Añadir la clase
+  «Física»», «Volver a marcar como hecha una clase») y solo se puede elegir **lo que sigue como lo encontró la copia**: lo que
+  cambió después sale con «Cambió después: no se toca» y sin casilla. Lo elegido se recupera como una operación NUEVA y
+  protegida (`recuperar_copia`), con la revisión leída como condición, por el mismo camino de R4 (si la cuenta cambia entre la
+  vista previa y la confirmación, no se manda y se vuelve a enseñar). La copia no se borra.
+- **El aviso (H-23, «cómo se informa»)**: la entrada de Cambios apartados, cerrada, pregunta solo si hay copias de versión
+  antigua sin ver (`transporteProtegido.copiasNuevasDeVersionAntigua`, una consulta pequeña sin el contenido) y, si las hay,
+  dice «Una versión anterior de JosStyle intentó guardar un cambio en tu horario que no se aplicó. Está a salvo en Cambios
+  apartados…» con «Ver». Al abrir la copia queda vista y el aviso desaparece. Los rescates no se avisan así: entre P1 y P2 los
+  hacen todos los guardados normales de la versión anterior y el aviso sería ruido; se ven en la lista, nuevos.
+- Las copias de **Estudios** y de **Eliminados recientes** se ven (qué contienen) y se eliminan, pero no se recuperan desde
+  aquí: su protección es E1-S y E1-P.
+
+#### La activación (E2), y lo que tiene que estar antes
+
+1. **Antes de P1**: E1-R, E1-P, E1-S y E1-L hechas y probadas, y publicadas juntas. ⚠️ Mientras Estudios y la papelera no
+   tengan sus operaciones protegidas, la versión nueva también las guarda a ciegas y cada guardado suyo dejaría una copia de
+   rescate: por eso P1 no se activa con R5 sola.
+2. **P1**: `horarios-protegido.sql` (R1) + `horarios-rescate.sql`. Aditivo, sin reglas que paren nada.
+3. **P2**: publicar. **P3**: que los aparatos se actualicen (la comprobación de aparatos).
+4. **P4**: `horarios-versiones-antiguas.sql` (y, con E1-S y E1-P, sus reglas de `estudios` y `papelera`).
+5. **Vuelta atrás**: primero las reglas (P4), después volver a la versión anterior en Vercel y la red de rescate la última.
+   Ninguna vuelta atrás borra copias.
+Cada paso lo autoriza Josué y se prueba antes en el Supabase independiente (E2-0): cuánto crecen las copias de rescate entre
+P1 y P4 (H-14, H-16) y cuánto tarda una escritura con la red.
+
+#### Pruebas
+
+| Suite | Qué demuestra | Resultado |
+|---|---|---|
+| `test-rescate-postgrest.mjs` (nivel 3) | Contra Postgres de verdad, con la «versión antigua» guardando como la v3.162 (`upsert` sin condición, el mismo cliente) y la nueva con el escritor de R2: antes de P1 lo pisado se pierde (la situación de hoy); P1 rescata cambios y borrados de las tres claves, no rescata lo protegido, lo que no cambia, la primera fila ni otras claves, no repite una pareja, no deja ver ni escribir lo de otra cuenta, y **con la copia rota rechaza la escritura sin cambiar nada (H-25)**; P2–P3 con las dos versiones a la vez y la recuperación de lo pisado eligiendo; P4 aparta sin aplicar (la versión antigua recibe 2xx), un reintento no repite, sin horario no lo crea, borrar se rechaza, Estudios sigue en la red, **sin poder apartar se rechaza**, y lo apartado se recupera eligiendo; doce escrituras a la vez; **la secuencia P1 → P4 entera, con una versión antigua escribiendo en cada momento, sin perder nada**; y las vueltas atrás, que no borran copias | 53/53 |
+| `test-rescate-versiones.mjs` | El SQL preparado por su forma; describir; qué contiene; recuperar por elementos (lo posterior no se puede elegir, ni un elegido que no existe; todo cambió después; ya está; un horario borrado); versión antigua (también sin horario); Estudios y la papelera; el flujo con el escritor y el doble (que imita las reglas de R5); la cuenta que cambia antes de mandar; reintentos y duplicados; el aviso; nada se elimina solo | 80/80 |
+| `test-rescate-vista.jsx` | Lo que se pinta: una casilla por cosa elegible y con su nombre, el botón apagado hasta elegir, la confirmación con lo elegido, «no se toca» sin casilla, «ya está», Estudios sin recuperar, nada roto | 19/19 |
+| `test-app-real.mjs`, sección «R5» (Chromium) | Una versión antigua pisa (P1): inspeccionar, la pieza que cambió después pierde su casilla, elegir, recuperar como operación protegida sin pisar; P4: no se aplica, el aviso sin abrir nada, «Ver», recuperar lo que intentó; el aviso desaparece al verla; una copia de Estudios; ninguna eliminación; sin errores de JavaScript | 43/43 (y, en la misma pasada, A-bis, E1, R3 y R4: 327 de 327) |
+| `smoke-vistas.jsx` | Ocho casos del detalle (rescate para elegir, con una elegida, confirmar, algo cambió después, todo cambió, ya está, versión antigua, Estudios) | en verde |
+
+**Se ponen rojas** (comprobado con mutaciones) si la red se traga el fallo de la copia en vez de rechazar (H-25), si la regla
+de P4 aplica la escritura en vez de apartarla, si un elegido inexistente o que cambió después se acepta, o si se recupera el
+valor entero de la copia en vez de lo elegido (pisaría lo de después).
+
+#### Lo que cambió en pruebas anteriores
+
+- `test-cambios-apartados.mjs` (R4) decía que una copia de versión antigua era de un tipo que esta versión no sabe recuperar:
+  se ha **dado la vuelta** —un tipo desconocido sigue siendo «desconocido», y una de versión antigua con un contenido que no es
+  el suyo es «ilegible»— (97/97).
+- `dobleProtegido.mjs` imita también las reglas de R5 (`escrituraAntigua`, `reglas`) y lista las de versión antigua sin ver.
+- `horarios-protegido.sql` (R1): `protegido_protocolo` dice las reglas de R5 y hay un ayudante del navegador; las suites de R1
+  a R4 contra el laboratorio siguen en verde (103, 39, 27, 32) y las de E1 y A-bis también.
+
+#### Lo que R5 no hace
+
+- No activa nada en ningún Supabase ni ejecuta SQL alojado (P1 y P4 son de E2, con su autorización).
+- No aparta `estudios` (H-19, E1-S) ni fusiona `papelera` (H-20, E1-P); no guarda nada pendiente en el aparato (E1-L, H-24).
+- No marca cada diferencia como «probablemente suyo» o «probablemente antiguo» (lo proponía el diseño de H-23 como
+  orientación): saberlo exige un registro de qué elementos tocó cada operación, que no existe; hoy decide él, elemento a
+  elemento, y lo que cambió después no se puede elegir.
+- Ni umbrales de espacio (H-14), ni limpieza (H-16), ni mantenimiento físico (H-21); sin probar en Safari ni en el iPhone.
+
 ---
 
 *Fase 2 de 8 terminada, con la revisión documental del 2026-11-08, las correcciones del 2026-11-09, el cierre documental
 previo a la Fase 4 (§18.12), la decisión del TP-15 (2026-11-10) y la sincronización con la entrega A y la A-bis implementadas
-(§18.13, 2026-11-15) y la entrega E1 (§18.14, 2026-11-16, commits locales) y E1-R · R1, R2, R3 y R4 (§18.15, §18.16, §18.17 y §18.18, commits locales). Esta documentación no autoriza la entrega B
+(§18.13, 2026-11-15) y la entrega E1 (§18.14, 2026-11-16, commits locales) y E1-R · R1, R2, R3, R4 y R5 (§18.15 a §18.19, commits locales). Esta documentación no autoriza la entrega B
 ni ninguna instalación, migración, SQL alojado, publicación, despliegue o cambio de datos.*

@@ -737,6 +737,19 @@ else
   fallo "Falla Cambios apartados (R4)"; grep '✗' /tmp/jc_horario_r4.log
 fi
 
+# 🛟 Horarios · E1-R · R5 — la red de rescate (H-22, H-25) y las escrituras de versiones antiguas (H-23) en el cliente:
+# describir, recuperar eligiendo elemento a elemento sin pisar lo posterior, el aviso, y el SQL preparado por su forma.
+if node --import ./scripts/resolver-vite.mjs scripts/test-rescate-versiones.mjs >/tmp/jc_horario_r5.log 2>&1; then
+  ok "Horarios, E1-R · R5: rescate y versiones antiguas (recuperar eligiendo, nada se pisa, nada se elimina solo) — $(grep -c '✓' /tmp/jc_horario_r5.log) comprobaciones"
+else
+  fallo "Falla el rescate y las versiones antiguas (R5)"; grep '✗' /tmp/jc_horario_r5.log
+fi
+if node scripts/smoke.mjs test-rescate-vista.jsx >/tmp/jc_horario_r5_vista.log 2>&1; then
+  ok "Horarios, E1-R · R5: las copias de rescate y de versión antigua en pantalla — $(grep -c '✓' /tmp/jc_horario_r5_vista.log) comprobaciones"
+else
+  fallo "Fallan las copias de rescate y de versión antigua en pantalla (R5)"; grep '✗' /tmp/jc_horario_r5_vista.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else
@@ -2240,8 +2253,13 @@ if [ -n "${HV_PGRST_URL:-}" ]; then
   else
     fallo "Falla R4 contra PostgREST local"; grep '✗' /tmp/jc_r4pg.log
   fi
+  if node --import ./scripts/resolver-vite.mjs scripts/test-rescate-postgrest.mjs >/tmp/jc_r5pg.log 2>&1; then
+    ok "Horarios · la red de rescate y las versiones antiguas (R5, P1 → P4) contra PostgREST local — $(grep -c '✓' /tmp/jc_r5pg.log) comprobaciones"
+  else
+    fallo "Falla R5 contra PostgREST local"; grep '✗' /tmp/jc_r5pg.log
+  fi
 else
-  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia, escritor de horarioTop, operación protegida, su cliente, R3 y R4 contra PostgREST local: omitidas (sin HV_PGRST_URL)"
+  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia, escritor de horarioTop, operación protegida, su cliente, R3, R4 y R5 contra PostgREST local: omitidas (sin HV_PGRST_URL)"
 fi
 
 # Entrega 3 · F3 — la iconografía del armario y la categoría de ropa interior.

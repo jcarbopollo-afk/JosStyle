@@ -2,6 +2,16 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (2026-11-17 — Horarios E1-R · R5, v3.164.0; commit SOLO local en `claude/horarios-rediseno`, sin
+> push, PR, fusión ni despliegue, y sin nada ejecutado ni activado en Supabase alojado):** **R5 está hecha y con ella E1-R
+> completa en local.** Josué aprobó **H-22** (la red de rescate, antes de publicar), **H-23** (apartar las escrituras de
+> versiones antiguas en vez de rechazarlas; sustituye a TP-15 B, C-88) y **H-25** (si el rescate falla, la escritura se
+> rechaza). SQL preparado: `supabase/horarios-rescate.sql` (P1) y `supabase/horarios-versiones-antiguas.sql` (P4), con sus
+> vueltas atrás, probados **solo en el laboratorio** con la secuencia P1 → P4 entera (53). En la aplicación, Cambios apartados
+> recupera esas copias **eligiendo elemento a elemento** (lo que cambió después no se puede elegir) y avisa de lo que una
+> versión antigua intentó guardar sin aplicarse. **Siguiente: E1-P, E1-S y E1-L, con su autorización; nada se activa hasta
+> E2.** Detalle en `docs/19` §18.19.
+>
 > **📅 ACTUALIZACIÓN (2026-11-17 — Horarios E1-R · R4; commit SOLO local en `claude/horarios-rediseno`, sin push, PR,
 > fusión ni despliegue, y sin nada ejecutado en Supabase alojado):** **R4 está hecha: la pantalla de Cambios apartados**, en
 > Horario y en Ajustes → Datos. Consultar, inspeccionar antes de decidir, **recuperar como operación nueva y protegida sin

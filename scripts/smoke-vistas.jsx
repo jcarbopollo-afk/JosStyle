@@ -1434,6 +1434,32 @@ const CASOS = [
           ['DetalleCopia · de un conflicto abierto (no se elimina desde aquí)', DetalleCopia, () => ({ ...base, detalle: det('A'), enConflictoAbierto: true })],
         ];
       })(),
+      /* 🛟 E1-R · R5 — las copias de rescate y de versión antigua: se recuperan eligiendo elemento a elemento. */
+      ...(() => {
+        const H0 = { actividades: [{ id: 'am', nombre: 'Matemáticas' }, { id: 'ah', nombre: 'Historia' }], bloques: [
+          { id: 'b1', horarioId: 'hh', columnaId: 'c1', actividadId: 'am', inicio: '08:00', fin: '09:00', aula: 'A1' },
+          { id: 'b2', horarioId: 'hh', columnaId: 'c1', actividadId: 'ah', inicio: '09:00', fin: '10:00', aula: 'A2' }], completadas: ['x|b1'] };
+        const pisado = { ...H0, bloques: [{ ...H0.bloques[0], aula: 'VIEJO' }], completadas: [], testigo: { revision: 'r2', aparato: 'viejo' } };
+        const filaR = { id: 'r1', tipo: 'rescate', aparato: 'viejo', creada_en: '2026-11-17T10:00:00Z', vista: false, tamano: 1800, meta: { clave: 'horarioTop', accion: 'escritura', creadaEn: '2026-11-17T10:00:00Z' }, contenido: { formato: 1, clave: 'horarioTop', antes: H0, despues: pisado } };
+        const filaV = { id: 'v1', tipo: 'version_antigua', aparato: 'viejo', creada_en: '2026-11-17T11:00:00Z', vista: false, tamano: 900, meta: { clave: 'horarioTop', accion: 'escritura', creadaEn: '2026-11-17T11:00:00Z' }, contenido: { formato: 1, clave: 'horarioTop', intentado: pisado, vigente: H0, existia: true } };
+        const filaE = { id: 'e1', tipo: 'rescate', aparato: null, creada_en: '2026-11-17T12:00:00Z', vista: true, tamano: 400, meta: { clave: 'estudios', accion: 'escritura' }, contenido: { formato: 1, clave: 'estudios', antes: { asignaturas: [{ id: 'mat', nombre: 'Matemáticas' }] }, despues: { asignaturas: [] } } };
+        const actual = (v) => ({ horarioTop: { existe: true, valor: v }, estudios: { existe: false }, papelera: { existe: false } });
+        const det = (fila, v) => ({ estado: 'listo', fila, actual: actual(v), prep: prepararRecuperacionR4({ fila, actual: actual(v) }) });
+        const baseR = (fila) => ({ copia: describirCopiaR4(fila, { aparato: 'A' }), accent, onRecuperar: noop, onEliminar: noop, onConfirmar: noop, onCancelar: noop, onReintentar: noop, onElegir: noop, onElegirTodo: noop, onElegirNada: noop, puedeRecuperar: null, enConflictoAbierto: false });
+        const dR = det(filaR, pisado);
+        const plan = prepararRecuperacionR4({ fila: filaR, actual: actual(pisado), elegidas: [dR.prep.piezas[0].id] });
+        const cambiadoDespues = { ...pisado, bloques: [{ ...pisado.bloques[0], aula: 'DE-B' }], completadas: ['x|b1'] };
+        return [
+          ['DetalleCopia · rescate, para elegir (nada elegido)', DetalleCopia, () => ({ ...baseR(filaR), detalle: dR })],
+          ['DetalleCopia · rescate, con una cosa elegida', DetalleCopia, () => ({ ...baseR(filaR), detalle: dR, elegidas: [dR.prep.piezas[0].id] })],
+          ['DetalleCopia · rescate, confirmar lo elegido', DetalleCopia, () => ({ ...baseR(filaR), detalle: dR, elegidas: [dR.prep.piezas[0].id], accion: { tipo: 'recuperar', fase: 'confirmar', plan } })],
+          ['DetalleCopia · rescate, con algo que cambió después', DetalleCopia, () => ({ ...baseR(filaR), detalle: det(filaR, { ...pisado, bloques: [...pisado.bloques.map((b) => ({ ...b, aula: 'DE-B' }))] }) })],
+          ['DetalleCopia · rescate, todo cambió después', DetalleCopia, () => ({ ...baseR(filaR), detalle: det(filaR, { ...cambiadoDespues, bloques: [{ ...cambiadoDespues.bloques[0] }, { ...H0.bloques[1] }] }) })],
+          ['DetalleCopia · rescate, ya está en tu cuenta', DetalleCopia, () => ({ ...baseR(filaR), detalle: det(filaR, H0) })],
+          ['DetalleCopia · versión antigua, para elegir', DetalleCopia, () => ({ ...baseR(filaV), detalle: det(filaV, H0) })],
+          ['DetalleCopia · rescate de Estudios (se ve, no se recupera aquí)', DetalleCopia, () => ({ ...baseR(filaE), detalle: det(filaE, H0) })],
+        ];
+      })(),
       ['DiagnosticoHorariosEntrada (cerrado, datos de prueba)', DiagnosticoHorariosEntrada, () => ({ crudo: conChoque, asignaturas: [], hoy: HOY, accent })],
       /* 🛡 Horarios A-bis — la guardia: sus tres avisos de solo lectura y la consulta (datos de prueba). */
       ['AvisoGuardiaHorario · comprobando', AvisoGuardiaHorario, () => ({ motivo: 'guardia_comprobando', accent })],

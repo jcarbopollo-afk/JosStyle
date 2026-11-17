@@ -51,8 +51,9 @@ create table if not exists public.operaciones_protegidas (
   primary key (user_id, op_id)
 );
 
--- Las copias apartadas: la operación ENTERA (H-08). `conflicto` la crea esta función; `version_antigua` y `rescate`
--- están reservadas para R5 (decisiones H-22 y H-23, pendientes).
+-- Las copias apartadas: la operación ENTERA (H-08). `conflicto` la crea esta función; `rescate` la crea la red de
+-- rescate (`horarios-rescate.sql`, H-22) y `version_antigua` el apartado de las versiones antiguas
+-- (`horarios-versiones-antiguas.sql`, H-23), los dos de R5.
 create table if not exists public.copias_apartadas (
   user_id uuid not null references auth.users(id) on delete cascade,
   id uuid not null,
@@ -121,6 +122,19 @@ create trigger copias_solo_por_funciones before insert or update or delete on pu
 -- Las claves de `app_data` que una operación puede tocar por elementos (además de `horarioTop`, que va aparte).
 create or replace function protegido_interno.claves_permitidas() returns text[]
 language sql immutable set search_path = '' as $$ select array['estudios', 'papelera']::text[] $$;
+
+-- El navegador que envió la petición (la cabecera `user-agent` que PostgREST deja en `request.headers`), recortado.
+-- Lo usan la red de rescate y el apartado de versiones antiguas (R5) para decir de dónde llegó una escritura que no
+-- pasó por estas funciones. Sin cabecera, o si no se puede leer, `null`: nunca falla por esto.
+create or replace function protegido_interno.navegador() returns text
+language plpgsql stable set search_path = '' as $$
+declare h text := current_setting('request.headers', true);
+begin
+  if h is null or h = '' then return null; end if;
+  return left(h::jsonb ->> 'user-agent', 300);
+exception when others then return null;
+end;
+$$;
 
 -- Posición (desde 0) del elemento con ese `id` en una lista, o -1.
 create or replace function protegido_interno.indice(col jsonb, id text) returns integer
@@ -359,8 +373,15 @@ language sql stable security invoker set search_path = '' as $$
     'versionMinima', null,
     'ahora', now(),
     'reglas', jsonb_build_object(
+      -- Una regla del servidor para `horarioTop`: la de E1 (rechazar, TP-15 B) o la de R5 (apartar, H-23).
       'horarioTop', exists (select 1 from pg_catalog.pg_trigger
-                            where tgname = 'horario_regla_revision' and not tgisinternal and tgenabled <> 'D')))
+                            where tgname in ('horario_regla_revision', 'horarios_versiones_antiguas')
+                              and not tgisinternal and tgenabled <> 'D'),
+      -- R5: la red de rescate (P1, H-22) y el apartado de las escrituras de versiones antiguas (P4, H-23).
+      'rescate', exists (select 1 from pg_catalog.pg_trigger
+                         where tgname = 'horarios_rescate' and not tgisinternal and tgenabled <> 'D'),
+      'versionesAntiguas', exists (select 1 from pg_catalog.pg_trigger
+                                   where tgname = 'horarios_versiones_antiguas' and not tgisinternal and tgenabled <> 'D')))
 $$;
 
 -- LA OPERACIÓN PROTEGIDA. Devuelve { estado: 'aplicada' | 'conflicto' | 'caducada' | 'invalida' | 'sin_sesion', … }.

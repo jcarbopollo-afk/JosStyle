@@ -1436,6 +1436,8 @@ export default function App() {
     actual: () => transporteProtegido.leer(CLAVES_RECUPERACION),
     marcarVista: (id) => transporteProtegido.copiaVista(id),
     eliminar: (id) => transporteProtegido.copiaEliminar(id),
+    /* 🛟 R5 (H-23) — lo que una versión anterior intentó guardar y no se aplicó, sin ver: se avisa sin abrir la pantalla. */
+    nuevasDeVersionAntigua: () => transporteProtegido.copiasNuevasDeVersionAntigua(),
     recuperar: (fila, vistaPrevia) => (recuperarCopiaRef.current ? recuperarCopiaRef.current(fila, vistaPrevia) : Promise.resolve({ ok: false, motivo: 'errorAccion' })),
   } : null), [idUsuarioCambiosApartados]);
 
@@ -2452,7 +2454,8 @@ export default function App() {
       return { ok: false, motivo: r && r.sesion ? 'sesion' : r && r.sinFunciones ? 'sinFunciones' : r && r.sinRespuesta ? 'sinConexion' : 'errorAccion' };
     }
     const actual = r.data.claves;
-    const prep = prepararRecuperacion({ fila, actual });
+    /* 🛟 R5 — en una copia de rescate o de versión antigua se recupera SOLO lo que él eligió (y lo que él revisó). */
+    const prep = prepararRecuperacion({ fila, actual, elegidas: vistaPrevia && Array.isArray(vistaPrevia.elegidas) ? vistaPrevia.elegidas : null });
     if (!mismaRecuperacion(prep, vistaPrevia)) return { ok: false, motivo: 'cambio', prep };
     const despues = libre();
     if (despues) return { ok: false, motivo: despues };

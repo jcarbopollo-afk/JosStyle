@@ -1,5 +1,43 @@
 # CHANGELOG.md
 
+## v3.164.0 — Horarios E1-R · R5: la red de rescate y las escrituras de versiones antiguas (2026-11-17, commit solo local)
+
+> Con la autorización expresa de Josué del 2026-11-17 (**R5**), que aprueba **H-22**, **H-23** y **H-25** (C-88 en
+> `docs/03`). Rama `claude/horarios-rediseno`, encima de R4 (`8a4e3cc`). El SQL está **preparado y probado solo en el
+> laboratorio local**: nada activado en Supabase, ni SQL alojado, ni datos reales; sin push, PR, fusión ni despliegue. No
+> empieza E1-P, E1-S ni E1-L. Con R5, **E1-R está completa en local**. Detalle: `docs/19` §18.19.
+
+### ✨ Qué entra
+- **La red de rescate (P1, H-22)** — `supabase/horarios-rescate.sql`: cada escritura de la aplicación que no pasa por las
+  funciones protegidas (como guardan las versiones anteriores) y que cambia o borra `horarioTop`, `estudios` o `papelera`
+  deja en `copias_apartadas` (tipo `rescate`), en la misma transacción, lo que había y lo que se escribió encima. **H-25: si
+  la copia falla, la escritura se rechaza** (`rescate_fallido`). No rescata lo protegido, lo que no cambia, la primera fila,
+  otras claves ni lo del propietario; no repite una pareja idéntica.
+- **Apartar las escrituras de versiones antiguas (P4, H-23)** — `supabase/horarios-versiones-antiguas.sql`: una escritura de
+  `horarioTop` que no pasa por las funciones **no se aplica y no se rechaza: se aparta** (tipo `version_antigua`, con lo que
+  intentó y lo que había), y la versión antigua recibe «guardado». Si no se puede apartar, se rechaza. Borrar la fila del
+  horario desde la aplicación se rechaza. **Sustituye a la regla de E1** (rechazar, TP-15 B), que quita al instalarse.
+- Sus **vueltas atrás**, que no borran ninguna copia, y **`protegido_protocolo`** dice qué reglas están activas.
+- **En la aplicación**: Cambios apartados describe estas copias y dice qué contienen, y **se recuperan eligiendo elemento a
+  elemento** (una casilla por lo que sigue como lo encontró la copia; lo que cambió después dice «no se toca» y no se puede
+  elegir), como operación protegida y sin borrar la copia. **El aviso de lo que no se aplicó**: cerrada, la entrada dice
+  «Una versión anterior de JosStyle intentó guardar un cambio en tu horario que no se aplicó…» con «Ver». Las de Estudios y
+  Eliminados recientes se ven y se eliminan (su recuperación es de E1-S y E1-P).
+- Pruebas: `test-rescate-postgrest.mjs` (53, nivel 3: la secuencia P1 → P4 entera con una versión antigua escribiendo en cada
+  momento, concurrencia, H-25 y las vueltas atrás), `test-rescate-versiones.mjs` (80), `test-rescate-vista.jsx` (19), la
+  sección «R5» del recorrido de Chromium (43) y ocho casos de renderizado.
+
+### 🔁 Pruebas anteriores que se dan la vuelta
+- `test-cambios-apartados.mjs` (R4) daba una copia de versión antigua por «tipo desconocido»: ahora se sabe recuperar; la
+  comprobación mira que un tipo desconocido siga siéndolo y que una de versión antigua con un contenido ajeno sea «ilegible».
+
+### ⏸ Lo que sigue pendiente
+- **E1-P** (la papelera protegida, H-20 y H-28), **E1-S** (Estudios, H-19) y **E1-L** (lo pendiente en el aparato, H-24),
+  con su autorización; P1 no se activa hasta que las cuatro entregas estén hechas y se publiquen juntas.
+- La activación (E2): E2-0 en un Supabase independiente (medir cuánto crecen los rescates entre P1 y P4, H-14 y H-16), E2-1
+  con aparatos reales y E2-2 (P1 → P4), cada paso con su autorización. Sin probar en Safari ni en el iPhone.
+
+
 ## Sin versión — Horarios E1-R · R4: Cambios apartados (2026-11-17, commit solo local)
 
 > Con la autorización expresa de Josué del 2026-11-17 (**R4**). Rama `claude/horarios-rediseno`, encima de R3 (`c4f159c`).
