@@ -2,6 +2,14 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (2026-11-17 — Horarios E1-R · R4; commit SOLO local en `claude/horarios-rediseno`, sin push, PR,
+> fusión ni despliegue, y sin nada ejecutado en Supabase alojado):** **R4 está hecha: la pantalla de Cambios apartados**, en
+> Horario y en Ajustes → Datos. Consultar, inspeccionar antes de decidir, **recuperar como operación nueva y protegida sin
+> pisar nada posterior** (si algo cambió después en otro aparato, no se recupera nada; la copia lleva para eso el cambio del
+> horario por elementos), **eliminar solo a petición** y el espacio como tamaño lógico (nunca «liberado»). Probado en Node
+> (96), contra R1 en el laboratorio (32) y en Chromium con dos aparatos (sección «R4», 55). **Siguiente: R5, con su
+> autorización.** Detalle en `docs/19` §18.18.
+>
 > **📅 ACTUALIZACIÓN (2026-11-16 — Horarios E1-R · R3; commit SOLO local en `claude/horarios-rediseno`, sin push, PR,
 > fusión ni despliegue, y sin nada ejecutado en Supabase alojado):** **R3 está hecha**: la aplicación escribe el horario por
 > operaciones protegidas (el escritor de R2 contra R1); **borrar una asignatura que está en el horario es UNA operación** (ella,

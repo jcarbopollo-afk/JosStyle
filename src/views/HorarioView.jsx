@@ -90,6 +90,7 @@ import { exportarHorario, revisarImportacion, importarHorario, estadoDelModulo }
 import { notificarSiCorresponde } from '../lib/notificaciones';
 import { DiagnosticoHorariosEntrada, AvisoSoloLecturaHorario } from '../components/diagnosticoHorarioPanel';
 // 🛡 Horarios A-bis — los avisos de la guardia del horario y su pantalla de consulta (solo lectura).
+import { CambiosApartadosEntrada } from '../components/cambiosApartados';
 import { AvisoGuardiaHorario, ConsultaGuardiaHorarioEntrada, esMotivoDeGuardia, AvisoConflictoHorario, AvisoApartadaPendiente, esMotivoDeConflicto } from '../components/guardiaHorarioPanel';
 
 const plural = (n, uno, varios) => (n === 1 ? uno : varios);
@@ -1979,6 +1980,8 @@ export default function HorarioView({
   // tres operaciones de la entrega corta (D1). En App.jsx; aquí solo se piden.
   escritor = null, onVerLoDeAhora = null, onDescartarMiCambio = null,
   onRetirarAparato = null, onResolverIncidencias = null, onReabrirResolucion = null,
+  // 🛡 E1-R · R4 — Cambios apartados: lo que la pantalla puede pedir al servidor (lo arma App.jsx).
+  cambiosApartados = null,
 }) {
   const estado = horarioTop;
   const [horarioId, setHorarioId] = useState(null);
@@ -2232,6 +2235,7 @@ export default function HorarioView({
       </Card>
       <DiagnosticoHorariosEntrada crudo={horarioCrudo} asignaturas={asignaturas} cargaFallida={cargaFallida} hoy={hoy} accent={accent} />
       <ConsultaGuardiaHorarioEntrada guardia={guardia} onEvaluar={onEvaluarGuardia} accent={accent} onRetirar={onRetirarAparato} onResolver={onResolverIncidencias} onReabrir={onReabrirResolucion} />
+      <CambiosApartadosEntrada servicio={cambiosApartados} escritor={escritor} soloLectura={Boolean(soloLectura)} accent={accent} />
       </div>
     );
   }
@@ -2513,6 +2517,7 @@ export default function HorarioView({
       {/* 🔎 Horarios · Fase 4, entrega A (TP-4) — el diagnóstico de solo lectura, plegado. */}
       <DiagnosticoHorariosEntrada crudo={horarioCrudo} asignaturas={asignaturas} cargaFallida={cargaFallida} hoy={hoy} accent={accent} />
       <ConsultaGuardiaHorarioEntrada guardia={guardia} onEvaluar={onEvaluarGuardia} accent={accent} onRetirar={onRetirarAparato} onResolver={onResolverIncidencias} onReabrir={onReabrirResolucion} />
+      <CambiosApartadosEntrada servicio={cambiosApartados} escritor={escritor} soloLectura={Boolean(soloLectura)} accent={accent} />
     </div>
   );
 }

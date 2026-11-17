@@ -731,6 +731,12 @@ else
   fallo "Falla la integración de la operación protegida (R3)"; grep '✗' /tmp/jc_horario_r3.log
 fi
 
+if node --import ./scripts/resolver-vite.mjs scripts/test-cambios-apartados.mjs >/tmp/jc_horario_r4.log 2>&1; then
+  ok "Horarios, E1-R · R4: Cambios apartados (inspeccionar, recuperar sin pisar, nada se elimina solo) — $(grep -c '✓' /tmp/jc_horario_r4.log) comprobaciones"
+else
+  fallo "Falla Cambios apartados (R4)"; grep '✗' /tmp/jc_horario_r4.log
+fi
+
 if node scripts/smoke.mjs test-inicio.jsx >/tmp/jc_inicio.log 2>&1; then
   ok "Desplegable de Inicio (BI F1) — $(grep -c '✓' /tmp/jc_inicio.log) comprobaciones"
 else
@@ -2229,8 +2235,13 @@ if [ -n "${HV_PGRST_URL:-}" ]; then
   else
     fallo "Falla R3 contra PostgREST local"; grep '✗' /tmp/jc_r3pg.log
   fi
+  if node --import ./scripts/resolver-vite.mjs scripts/test-cambios-apartados-postgrest.mjs >/tmp/jc_r4pg.log 2>&1; then
+    ok "Horarios · Cambios apartados (R4) contra PostgREST local — $(grep -c '✓' /tmp/jc_r4pg.log) comprobaciones"
+  else
+    fallo "Falla R4 contra PostgREST local"; grep '✗' /tmp/jc_r4pg.log
+  fi
 else
-  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia, escritor de horarioTop, operación protegida, su cliente y R3 contra PostgREST local: omitidas (sin HV_PGRST_URL)"
+  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia, escritor de horarioTop, operación protegida, su cliente, R3 y R4 contra PostgREST local: omitidas (sin HV_PGRST_URL)"
 fi
 
 # Entrega 3 · F3 — la iconografía del armario y la categoría de ropa interior.

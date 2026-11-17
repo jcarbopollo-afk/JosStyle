@@ -63,6 +63,9 @@ import { crearHabito as crearHabitoF24, semanaDe as semanaDeF24 } from '../src/l
 import RachasView, { ResumenRachaHoy, TarjetaRacha, Celebracion } from '../src/views/RachasView.jsx';
 import HorarioView, { PanelAvanzado, FichaActividad, HoyView } from '../src/views/HorarioView.jsx';
 import { DiagnosticoHorarios, DiagnosticoHorariosEntrada, AvisoSoloLecturaHorario } from '../src/components/diagnosticoHorarioPanel.jsx';
+// 🛡 E1-R · R4 — Cambios apartados.
+import { CambiosApartados, CambiosApartadosEntrada, DetalleCopia } from '../src/components/cambiosApartados.jsx';
+import { describirCopia as describirCopiaR4, prepararRecuperacion as prepararRecuperacionR4 } from '../src/lib/cambiosApartados.js';
 // 🛡 Horarios A-bis — los avisos de la guardia y su pantalla de consulta.
 import { AvisoGuardiaHorario, ConsultaGuardiaHorario, ConsultaGuardiaHorarioEntrada } from '../src/components/guardiaHorarioPanel.jsx';
 import { diagnosticoHorarios } from '../src/lib/diagnosticoHorario.js';
@@ -1402,6 +1405,35 @@ const CASOS = [
       ['AvisoSoloLecturaHorario · versión ilegible', AvisoSoloLecturaHorario, () => ({ motivo: 'version_ilegible', accent, onRecargar: noop })],
       /* 🛡 E1-R · R3 — sin el protocolo del servidor, la frase exacta del escritor (nunca «versión más nueva»). */
       ['AvisoSoloLecturaHorario · sin el protocolo del servidor', AvisoSoloLecturaHorario, () => ({ motivo: 'horario_protocolo', accent, onRecargar: noop, detalle: 'Tu cuenta todavía no tiene la protección de los cambios del horario. Para no guardar nada a ciegas, Horarios no guarda cambios.' })],
+      /* 🛡 E1-R · R4 — Cambios apartados: la entrada, la pantalla mientras lee, y el detalle de una copia en cada
+         estado (leyendo, error, pendiente, ya recuperada, no recuperable, confirmar y con su resultado). */
+      ...(() => {
+        const servicioR4 = { aparato: 'A', listar: () => new Promise(() => {}), espacio: () => new Promise(() => {}), copia: () => new Promise(() => {}), actual: () => new Promise(() => {}), marcarVista: noop, eliminar: noop, recuperar: noop };
+        const opR4 = { formato: 1, opId: 'c1', tipo: 'editar_horario', manual: true, aparato: 'A', creadaEn: '2026-11-17T10:00:00Z',
+          horario: { base: 'r1', baseExiste: true, valor: { bloques: [{ id: 'b1', aula: 'Z' }], testigo: { revision: 'r2' } }, cambios: [{ camino: ['bloques'], reemplazar: [{ id: 'b1', igual: { id: 'b1', aula: 'A' }, nuevo: { id: 'b1', aula: 'Z' } }] }] } };
+        const filaR4 = { id: 'c1', tipo: 'conflicto', aparato: 'A', creada_en: '2026-11-17T10:00:00Z', vista: false, tamano: 2400, meta: { tipoOperacion: 'editar_horario', motivo: { motivo: 'revision' }, claves: [], conHorario: true }, contenido: opR4 };
+        const actual = (aula) => ({ horarioTop: { existe: true, valor: { bloques: [{ id: 'b1', aula }], testigo: { revision: 'r9' } } }, estudios: { existe: false }, papelera: { existe: false } });
+        const copiaR4 = describirCopiaR4(filaR4, { aparato: 'A' });
+        const det = (aula) => ({ estado: 'listo', fila: filaR4, prep: prepararRecuperacionR4({ fila: filaR4, actual: actual(aula) }) });
+        const base = { copia: copiaR4, accent, onRecuperar: noop, onEliminar: noop, onConfirmar: noop, onCancelar: noop, onReintentar: noop, puedeRecuperar: null, enConflictoAbierto: false };
+        return [
+          ['CambiosApartadosEntrada (cerrada)', CambiosApartadosEntrada, () => ({ servicio: servicioR4, escritor: null, accent })],
+          ['CambiosApartados · leyendo', CambiosApartados, () => ({ servicio: servicioR4, escritor: { estado: 'en_orden', enCola: 0, cuentas: { copias: 0 }, apartadasSinGuardar: 1 }, accent })],
+          ['DetalleCopia · leyendo la copia', DetalleCopia, () => ({ ...base, detalle: { estado: 'cargando' } })],
+          ['DetalleCopia · sin conexión', DetalleCopia, () => ({ ...base, detalle: { estado: 'error', motivo: 'sinConexion' } })],
+          ['DetalleCopia · sesión caducada', DetalleCopia, () => ({ ...base, detalle: { estado: 'error', motivo: 'sesion' } })],
+          ['DetalleCopia · pendiente (se puede recuperar)', DetalleCopia, () => ({ ...base, detalle: det('A') })],
+          ['DetalleCopia · pendiente, pero ahora no se puede', DetalleCopia, () => ({ ...base, detalle: det('A'), puedeRecuperar: 'Primero elige qué hacer con el aviso de tu horario.' })],
+          ['DetalleCopia · ya está en tu cuenta', DetalleCopia, () => ({ ...base, detalle: det('Z') })],
+          ['DetalleCopia · no se puede recuperar (cambió después)', DetalleCopia, () => ({ ...base, detalle: det('OTRA') })],
+          ['DetalleCopia · sin comprobar lo de ahora', DetalleCopia, () => ({ ...base, detalle: { estado: 'listo', fila: filaR4, prep: null, motivoActual: 'sinConexion' } })],
+          ['DetalleCopia · confirmar la recuperación', DetalleCopia, () => ({ ...base, detalle: det('A'), accion: { tipo: 'recuperar', fase: 'confirmar' } })],
+          ['DetalleCopia · recuperando', DetalleCopia, () => ({ ...base, detalle: det('A'), accion: { tipo: 'recuperar', fase: 'trabajando' } })],
+          ['DetalleCopia · confirmar la eliminación', DetalleCopia, () => ({ ...base, detalle: det('A'), accion: { tipo: 'eliminar', fase: 'confirmar' } })],
+          ['DetalleCopia · recuperada, con su resultado', DetalleCopia, () => ({ ...base, detalle: det('Z'), accion: { tipo: 'recuperar', fase: 'listo', resultado: { ok: true, texto: 'Recuperado. La copia sigue aquí por si la quieres conservar: elimínala cuando quieras.' } } })],
+          ['DetalleCopia · de un conflicto abierto (no se elimina desde aquí)', DetalleCopia, () => ({ ...base, detalle: det('A'), enConflictoAbierto: true })],
+        ];
+      })(),
       ['DiagnosticoHorariosEntrada (cerrado, datos de prueba)', DiagnosticoHorariosEntrada, () => ({ crudo: conChoque, asignaturas: [], hoy: HOY, accent })],
       /* 🛡 Horarios A-bis — la guardia: sus tres avisos de solo lectura y la consulta (datos de prueba). */
       ['AvisoGuardiaHorario · comprobando', AvisoGuardiaHorario, () => ({ motivo: 'guardia_comprobando', accent })],

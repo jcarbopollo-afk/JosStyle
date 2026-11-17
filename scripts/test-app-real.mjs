@@ -188,7 +188,11 @@ const { crearDobleProtegido } = await import((await import('node:url')).pathToFi
 const protegido = crearDobleProtegido(almacen);
 const intentosProtegidos = [];
 const PERDER_RESPUESTA = { aplicar: 0 };
-const LLAMADAS_PROTEGIDAS = { estado: 0 };
+/* 🛡 R4 — la tabla `copias_apartadas` (la lee la pantalla de Cambios apartados) y cómo puede fallar su lectura:
+   `FALLO_COPIAS.modo` = 'sin_red' (se corta, cada vez), 'sesion' (401), 'sin_funciones' (404, sin la tabla) o 'error'
+   (500). `LLAMADAS_PROTEGIDAS.copiaEliminar` cuenta las eliminaciones: ninguna sin que él la pida. */
+const FALLO_COPIAS = { modo: null };
+const LLAMADAS_PROTEGIDAS = { estado: 0, copiaEliminar: 0 };
 const SIN_FUNCIONES = { activo: false };
 
 /* 🐛 ⚠️ La ruta del navegador estaba **escrita a mano** (`/opt/pw-browsers/
@@ -252,6 +256,16 @@ const manejadorSupa = async (route) => {
     });
   }
   /* 🛡 E1-R · R3 — las funciones protegidas del servidor (R1). */
+  if (url.includes('/rest/v1/copias_apartadas')) {
+    const json = (status, cuerpo) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(cuerpo) });
+    if (FALLO_COPIAS.modo === 'sin_red') return route.abort('internetdisconnected');
+    if (FALLO_COPIAS.modo === 'sesion') return json(401, { code: 'PGRST301', message: 'JWT expired' });
+    if (FALLO_COPIAS.modo === 'sin_funciones') return json(404, { code: 'PGRST205', message: "Could not find the table 'public.copias_apartadas' in the schema cache" });
+    if (FALLO_COPIAS.modo === 'error') return json(500, { message: 'fallo de prueba' });
+    if (route.request().method() !== 'GET') return json(403, { code: 'P0001', message: 'protegido_solo_por_funciones' });
+    const idFiltro = (new URL(url).searchParams.get('id') || '').replace(/^eq\./, '');
+    return json(200, idFiltro ? protegido.leerCopia(idFiltro) : protegido.listarCopias());
+  }
   if (url.includes('/rest/v1/rpc/protegido_')) {
     const fn = (url.match(/rpc\/(protegido_[a-z_]+)/) || [])[1] || '';
     let args = {};
@@ -282,7 +296,7 @@ const manejadorSupa = async (route) => {
       if (FALLAR_LECTURA.has('horarioTop') || FALLAR_LECTURA.has('*')) return json(500, { message: 'fallo de prueba al cargar' });
       return json(200, fn === 'protegido_estado' ? protegido.estado(args.op_id) : protegido.leer(args.claves));
     }
-    if (fn === 'protegido_copia_eliminar') return json(200, protegido.copiaEliminar(args.copia_id));
+    if (fn === 'protegido_copia_eliminar') { LLAMADAS_PROTEGIDAS.copiaEliminar += 1; return json(200, protegido.copiaEliminar(args.copia_id)); }
     if (fn === 'protegido_copia_vista') return json(200, protegido.copiaVista(args.copia_id));
     if (fn === 'protegido_espacio') return json(200, protegido.espacio());
     return json(404, { code: 'PGRST202', message: `Could not find the function public.${fn}` });
@@ -19221,5 +19235,167 @@ await ctx2_r3.close();
 
 ok(errores.length === erroresAntes_r3, `R3 — sin un error de JavaScript en toda la sección${errores.length > erroresAntes_r3 ? `: ${errores.slice(erroresAntes_r3).join(' | ').slice(0, 300)}` : ''}`);
 almacen.horarioTop = horarioDeAntes_r3; almacen.estudios = estudiosDeAntes_r3; almacen.papelera = papeleraDeAntes_r3;
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   🛡 HORARIOS · E1-R · R4 — CAMBIOS APARTADOS (docs/19 §18.18)
+
+   Con dos aparatos y el doble de R1: A y B marcan clases distintas, la de A se aparta; desde Horario → Cambios
+   apartados se consulta, se inspecciona, se recupera como operación nueva (sin pisar lo de B) y se elimina SOLO a
+   petición. Y: la cuenta que cambia entre la vista previa y la confirmación, una copia que no se puede recuperar, los
+   errores de lectura (sin red, sesión caducada, sin las tablas, error) y la entrada de Ajustes → Datos.
+   =========================================================================== */
+console.log('\n── Horarios E1-R · R4 · Cambios apartados (consultar, inspeccionar, recuperar sin pisar, eliminar, errores) ──');
+const erroresAntes_r4 = errores.length;
+const horarioDeAntes_r4 = almacen.horarioTop; const estudiosDeAntes_r4 = almacen.estudios; const papeleraDeAntes_r4 = almacen.papelera;
+for (const k of Object.keys(almacen).filter((x) => esFilaGuardia(x) || esFilaVersiones(x))) delete almacen[k];
+protegido.S.copias.clear();
+const ASIG_R4 = [['len', 'Lengua R4'], ['art', 'Arte R4'], ['dib', 'Dibujo R4'], ['geo', 'Geografía R4']];
+almacen.estudios = { programas: [{ id: 'r4p', nombre: 'Letras R4', tipo: 'formal' }], asignaturas: ASIG_R4.map(([k, nombre]) => ({ id: `r4${k}`, nombre, programaIds: ['r4p'] })), examenes: [], horas: [], temas: [], entregas: [], eventos: [], actividades: [] };
+almacen.papelera = { elementos: [], retencionDias: 30 };
+almacen.horarioTop = {
+  ...baseGe2([horarioAbis('hr4', 'Prueba R4')], ASIG_R4.map(([k], i) => ({ id: `br4${k}`, horarioId: 'hr4', columnaId: 'c_hr4', filaId: 'f_hr4', actividadId: `ar4${k}`, inicio: `00:${String(i).padStart(2, '0')}`, fin: `00:${String(i + 1).padStart(2, '0')}` }))),
+  actividades: ASIG_R4.map(([k, nombre]) => ({ id: `ar4${k}`, nombre, asignaturaId: `r4${k}` })),
+};
+const ops0_r4 = intentosProtegidos.length;
+const opsR4 = () => intentosProtegidos.slice(ops0_r4);
+const elim0_r4 = LLAMADAS_PROTEGIDAS.copiaEliminar;
+const copiasR4 = () => [...protegido.S.copias.values()];
+const completadas_r4 = () => [...(almacen.horarioTop?.completadas || [])];
+const marcar_r4 = async (p, nombre) => { await pulsar_r3(p, 'Ver lo pasado', { tope: 2500 }); return pulsar_r3(p, `Marcar como hecha ${nombre}`); };
+const abrirApartados_r4 = async (p) => {
+  const t = await ver_r3(p);
+  if (/Consulta, recupera o elimina lo que se apartó/.test(t) && /Tus cambios apartados|No tienes cambios apartados|Leyendo tus cambios apartados|no se pueden leer|sesión ha caducado|todavía no tiene lo que hace falta|No se han podido leer/.test(t)) {
+    await pulsar_r3(p, 'Cambios apartados'); await p.waitForTimeout(500);
+  }
+  await pulsar_r3(p, 'Cambios apartados');
+  return esperarEn_r3(p, /Tus cambios apartados|No tienes cambios apartados|no se pueden leer|sesión ha caducado|todavía no tiene lo que hace falta|No se han podido leer/, 10000);
+};
+
+ok(await cargar_r3(page), 'R4 — el primer aparato (A) abre Horarios y puede editar');
+const ctx2_r4 = await browser.newContext();
+await ctx2_r4.clock.setFixedTime(AHORA_ABIS);
+const p2_r4 = await ctx2_r4.newPage();
+p2_r4.on('pageerror', (e) => errores.push(`[aparato 2] ${e.message}`));
+await p2_r4.route(`${SUPA}/**`, manejadorSupa);
+await p2_r4.addInitScript(sesionDePrueba);
+ok(await cargar_r3(p2_r4), 'R4 — el segundo (B) también');
+
+/* 1 · A y B marcan clases distintas; la de A (sobre lo viejo) se aparta. */
+const c0_r4 = completadas_r4();
+ok(await marcar_r4(p2_r4, 'Arte R4'), 'R4 — B marca Arte como hecha');
+ok(await esperarQue_abis(() => completadas_r4().length === c0_r4.length + 1, 10000), 'R4 — llega');
+const deB_r4 = completadas_r4().find((x) => !c0_r4.includes(x));
+ok(await marcar_r4(page, 'Lengua R4'), 'R4 — A, sin haberlo visto, marca Lengua');
+ok(/Otro aparato ha cambiado tu horario/.test(await esperarEn_r3(page, /Otro aparato ha cambiado tu horario/, 12000)), 'R4 — conflicto: se aparta');
+ok(copiasR4().length === 1 && completadas_r4().length === c0_r4.length + 1, 'R4 — una copia en el servidor, y lo de A no se escribió');
+ok(await pulsar_r3(page, 'Ver lo que hay ahora') && await esperarQue_abis(() => editable_r3(page), 10000), 'R4 — A elige «Ver lo que hay ahora»');
+ok(LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r4 && copiasR4().length === 1, '🚨 R4 — la copia sigue: nada la ha eliminado');
+
+/* 2 · Consultar e inspeccionar. */
+{
+  const t = await abrirApartados_r4(page);
+  ok(/Un cambio de tu horario/.test(t) && /Nueva/i.test(t) && /Este aparato/.test(t), 'R4 · consultar — la lista: «Un cambio de tu horario», nueva, de este aparato');
+  ok(/Tus cambios apartados ocupan .* de datos guardados \(1 copia\)/.test(t), 'R4 · consultar — el espacio, como datos guardados');
+  ok(/no el espacio en disco/.test(t) && !/liberad|has liberado/i.test(t), '🚨 R4 · consultar — dice que NO es espacio en disco, y nada de «liberado»');
+  ok(/Tu horario había cambiado en otro aparato/.test(t), 'R4 · consultar — y por qué se apartó');
+}
+ok(await pulsar_r3(page, 'Un cambio de tu horario'), 'R4 · inspeccionar — se abre la copia');
+{
+  const t = await esperarEn_r3(page, /Si la recuperas ahora/, 10000);
+  const diag_r4 = /Qué contiene/i.test(t) ? '' : ` [diagnóstico: ${await page.evaluate(() => { const e = document.querySelector('[data-estado-copia]'); return `estado=${e ? e.getAttribute('data-estado-copia') : '-'}`; })} · ${t.slice(t.indexOf('Un cambio de tu horario'), t.indexOf('Un cambio de tu horario') + 300).replace(/\s+/g, ' ')}]`;
+  ok(/Qué contiene/i.test(t) && /Horario: .*1 clase marcada como hecha/.test(t), `R4 · inspeccionar — qué contiene, con palabras: «1 clase marcada como hecha»${diag_r4}`);
+  ok(/Pendiente/.test(t) && /Horario: 1 clase marcada como hecha\./.test(t), 'R4 · inspeccionar — si la recuperas ahora: «Pendiente», y qué cambiará');
+  ok(await esperarQue_abis(() => copiasR4()[0]?.vista === true, 5000), 'R4 · inspeccionar — al abrirla queda vista');
+  ok(LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r4 && completadas_r4().length === c0_r4.length + 1, 'R4 · inspeccionar — no cambia nada');
+}
+
+/* 3 · La cuenta cambia entre la vista previa y la confirmación: no se recupera lo que no revisó. */
+ok(await pulsar_r3(page, 'Recuperar…'), 'R4 · recuperar — «Recuperar…» pide confirmar');
+ok(/Se guarda como un cambio nuevo sobre lo que hay ahora en tu cuenta/.test(await esperarEn_r3(page, /Se guarda como un cambio nuevo/)), 'R4 · recuperar — y explica qué hará');
+await cargar_r3(p2_r4);
+ok(await marcar_r4(p2_r4, 'Geografía R4'), 'R4 · recuperar — mientras, B marca Geografía');
+ok(await esperarQue_abis(() => completadas_r4().length === c0_r4.length + 2, 10000), 'R4 · recuperar — llega');
+const antesCambio_r4 = JSON.stringify(almacen.horarioTop);
+const ops3_r4 = opsR4().length;
+ok(await pulsar_r3(page, 'Recuperar ahora'), 'R4 · recuperar — A confirma lo que revisó');
+ok(/ha cambiado desde que lo revisaste/.test(await esperarEn_r3(page, /ha cambiado desde que lo revisaste/, 10000)), '🚨 R4 · recuperar — la cuenta cambió: no se recupera, y lo dice');
+ok(JSON.stringify(almacen.horarioTop) === antesCambio_r4 && opsR4().length === ops3_r4, 'R4 · recuperar — sin escribir nada');
+
+/* 4 · Recuperar: una operación nueva y protegida; lo de B se queda; la copia NO se borra. */
+await esperarEn_r3(page, /Recuperar…/, 8000);
+ok(await pulsar_r3(page, 'Recuperar…') && await pulsar_r3(page, 'Recuperar ahora'), 'R4 · recuperar — se vuelve a revisar y se confirma');
+ok(await esperarQue_abis(() => completadas_r4().length === c0_r4.length + 3, 15000), 'R4 · recuperar — llega a la cuenta');
+{
+  const op = opsR4().filter((i) => i.op?.tipo === 'recuperar_copia').at(-1);
+  ok(!!op && op.llegada && op.op.manual === true && typeof op.op.horario.base === 'string', '🚨 R4 · recuperar — como UNA operación protegida nueva (recuperar_copia, con su condición)');
+  ok(completadas_r4().includes(deB_r4) && completadas_r4().length === c0_r4.length + 3, '🚨 R4 · recuperar — lo de B (Arte y Geografía) se queda, y lo de A (Lengua) entra');
+  ok(copiasR4().length === 1 && LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r4, '🚨 R4 · recuperar — la copia NO se borra sola');
+  const t = await esperarEn_r3(page, /Ya está en tu cuenta/, 10000);
+  ok(/Recuperado\. La copia sigue aquí/.test(t) && /Ya está en tu cuenta/.test(t), 'R4 · recuperar — «Recuperado», y la copia dice «Ya está en tu cuenta»');
+}
+
+/* 5 · Eliminar: SOLO a petición, con confirmación; el espacio lógico baja. */
+ok(await pulsar_r3(page, 'Eliminar…'), 'R4 · eliminar — «Eliminar…»');
+ok(/Se elimina de verdad y no se puede recuperar/.test(await esperarEn_r3(page, /Se elimina de verdad/)) && LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r4, 'R4 · eliminar — pide confirmar, y todavía no ha eliminado nada');
+ok(await pulsar_r3(page, 'Cancelar'), 'R4 · eliminar — «Cancelar»');
+ok(copiasR4().length === 1 && LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r4, '🚨 R4 · eliminar — cancelar no elimina');
+ok(await pulsar_r3(page, 'Eliminar…') && await pulsar_r3(page, 'Eliminar la copia'), 'R4 · eliminar — se confirma');
+ok(await esperarQue_abis(() => copiasR4().length === 0, 10000) && LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r4 + 1, '🚨 R4 · eliminar — una eliminación, la pedida');
+{
+  const t = await esperarEn_r3(page, /No tienes cambios apartados/, 10000);
+  ok(/Esta copia ya no ocupa espacio en tus datos/.test(t) && /No tienes cambios apartados/.test(t), 'R4 · eliminar — lo dice, y la lista queda vacía');
+  ok(/no ocupan nada en tus datos guardados/.test(t) && !/liberad|has liberado/i.test(t), 'R4 · eliminar — el espacio lógico a cero, sin hablar de disco liberado');
+}
+
+/* 6 · Una copia que no se puede recuperar sin pisar: se ve y se elimina, pero no se recupera. */
+{
+  const h = almacen.horarioTop;
+  const bloque = (h.bloques || []).find((b) => b.id === 'br4dib');
+  const opId = crypto.randomUUID();
+  protegido.aplicar({
+    formato: 1, opId, tipo: 'editar_horario', manual: true, aparato: 'otro-aparato', versionApp: '3.163.0', creadaEn: new Date(AHORA_ABIS).toISOString(),
+    horario: { base: 'revision-vieja', baseExiste: true, valor: { ...h, testigo: { ...(h.testigo || {}), revision: crypto.randomUUID() } }, cambios: [{ camino: ['bloques'], reemplazar: [{ id: 'br4dib', igual: { ...bloque, fin: '23:59' }, nuevo: { ...bloque, fin: '00:30' } }] }] },
+  });
+  ok(copiasR4().length === 1, 'R4 · no recuperable — otro aparato tiene un cambio apartado sobre una clase que cambió después');
+  const t = await abrirApartados_r4(page);
+  ok(/Otro aparato/.test(t), 'R4 · no recuperable — se lista, de otro aparato');
+  ok(await pulsar_r3(page, 'Un cambio de tu horario'), 'R4 · no recuperable — se inspecciona');
+  const d = await esperarEn_r3(page, /No se puede recuperar/, 10000);
+  ok(/No se puede recuperar/.test(d) && /cambió después/.test(d), '🚨 R4 · no recuperable — «No se puede recuperar», y por qué');
+  const botones = await page.evaluate(() => [...document.querySelectorAll('button')].map((b) => b.innerText.trim()));
+  ok(!botones.includes('Recuperar…') && botones.includes('Eliminar…'), 'R4 · no recuperable — sin «Recuperar…», con «Eliminar…»');
+}
+
+/* 7 · Los errores al leer: sin red, sesión caducada, sin las tablas y un error; con «Reintentar» donde sirve. */
+const erroresPaso7_r4 = errores.length;
+for (const [modo, re, conReintentar] of [
+  ['sin_red', /Sin conexión: no se pueden leer tus cambios apartados/, true],
+  ['sesion', /Tu sesión ha caducado/, true],
+  ['sin_funciones', /todavía no tiene lo que hace falta/, false],
+  ['error', /No se han podido leer tus cambios apartados/, true],
+]) {
+  FALLO_COPIAS.modo = modo;
+  const t = await abrirApartados_r4(page);
+  const botones = await page.evaluate(() => [...document.querySelectorAll('button')].map((b) => b.innerText.trim()));
+  ok(re.test(t) && botones.includes('Reintentar') === conReintentar, `R4 · errores — ${modo}: lo dice${conReintentar ? ', con «Reintentar»' : ', sin reintentar (no serviría)'}`);
+}
+FALLO_COPIAS.modo = null;
+/* Lo provocado a propósito lo retira su sección (como la F37 y la F41): el aviso del navegador de que la lectura de la
+   tabla contestó 401, 404 o 500, y nada más; una excepción de JavaScript llega por `pageerror` y sigue contando. */
+for (let i = errores.length - 1; i >= erroresPaso7_r4; i -= 1) if (/Failed to load resource: the server responded with a status of (401|404|500)/.test(errores[i])) errores.splice(i, 1);
+ok(await pulsar_r3(page, 'Reintentar') && /Un cambio de tu horario/.test(await esperarEn_r3(page, /Un cambio de tu horario/, 10000)), 'R4 · errores — al volver, «Reintentar» lee la lista');
+ok(copiasR4().length === 1 && LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r4 + 1, '🚨 R4 · errores — ningún fallo elimina nada');
+
+/* 8 · También en Ajustes → Datos. */
+ok(await pulsar('Ajustes') && await pulsar('Datos'), 'R4 · Ajustes — se abre Ajustes → Datos');
+ok(/Cambios apartados/.test(await esperarEn_r3(page, /Cambios apartados/, 8000)), 'R4 · Ajustes — con la entrada de Cambios apartados');
+ok(/Un cambio de tu horario/.test(await abrirApartados_r4(page)), 'R4 · Ajustes — que lista la misma copia');
+await ctx2_r4.close();
+
+ok(LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r4 + 1, '🚨 R4 — en toda la sección, una sola eliminación: la que se pidió');
+ok(errores.length === erroresAntes_r4, `R4 — sin un error de JavaScript en toda la sección${errores.length > erroresAntes_r4 ? `: ${errores.slice(erroresAntes_r4).join(' | ').slice(0, 300)}` : ''}`);
+protegido.S.copias.clear();
+almacen.horarioTop = horarioDeAntes_r4; almacen.estudios = estudiosDeAntes_r4; almacen.papelera = papeleraDeAntes_r4;
 
 await salir(browser);

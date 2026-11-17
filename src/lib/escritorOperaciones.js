@@ -36,7 +36,7 @@
  */
 import { revisionDelSello, mismoContenido, TEXTOS_CONFLICTO, MOTIVO_CONFLICTO_HORARIO } from './escritorHorario';
 import {
-  crearOperacion, validarOperacion, prepararCambios, leerProtocolo, horaDelServidor, nuevoOpId, CLAVES_POR_ELEMENTOS,
+  crearOperacion, validarOperacion, prepararCambios, leerProtocolo, horaDelServidor, nuevoOpId, CLAVES_POR_ELEMENTOS, cambiosDelHorario,
 } from './operacionesProtegidas';
 
 /** El motivo de solo lectura cuando el servidor no tiene el protocolo que habla este cliente. */
@@ -72,6 +72,7 @@ const RESULTADO_CONFLICTO = Object.freeze({ ok: false, conflicto: true, error: {
 export function crearEscritorDeOperaciones({
   transporte, usuario, guardia = null, inicial = { valor: null, existe: false }, aparato = null, versionApp = null,
   cola = null, alAdoptar = () => {}, alAplicar = () => {}, ahora = () => new Date(), crypto = globalThis.crypto,
+  normalizarHorario = (v) => v,
 } = {}) {
   if (!transporte || !usuario) throw new Error('crearEscritorDeOperaciones necesita transporte y usuario');
   const s = {
@@ -95,6 +96,10 @@ export function crearEscritorDeOperaciones({
   const ultimoHorario = () => {
     for (let i = s.entradas.length - 1; i >= 0; i -= 1) if (s.entradas[i].horario !== undefined && !s.entradas[i].descartada) return s.entradas[i].horario;
     return null;
+  };
+
+  const deltaDelHorario = (base, valor) => {
+    try { return cambiosDelHorario(base === null ? null : normalizarHorario(base), normalizarHorario(valor)); } catch { return null; }
   };
 
   /* El testigo nuevo: el de la guardia de la A-bis o, sin guardia (pruebas), uno mínimo con el mismo contrato. */
@@ -157,7 +162,10 @@ export function crearEscritorDeOperaciones({
     if (!sello.legible) return { bloqueo: 'sello_ilegible' };
     const preparado = prepararTestigo(e.horario, base);
     if (!preparado || !preparado.conTestigo) return { pendiente: 'arranque' };
-    const horario = { base: sello.revision, baseExiste: base.existe, valor: preparado.valor };
+    /* R4 — con su cambio por elementos respecto a lo que vio (la base): lo que deja recuperar su copia sin pisar. Las
+       dos partes por la MISMA puerta de carga (`normalizarHorario`, la de la pantalla): si no, lo guardado por una
+       versión anterior difiere en cada elemento y la copia «tocaría» todo. */
+    const horario = { base: sello.revision, baseExiste: base.existe, valor: preparado.valor, cambios: deltaDelHorario(base.existe ? base.valor : null, preparado.valor) };
     let claves = [];
     if (e.claves && e.claves.length) {
       const nombres = e.claves.map((c) => c.clave);
@@ -378,14 +386,14 @@ export function crearEscritorDeOperaciones({
     s.seq += 1;
     const promesa = new Promise((r) => {
       const ultima = s.entradas[s.entradas.length - 1];
-      const unible = ultima && !ultima.op && !ultima.salida && !ultima.apartar && !ultima.descartada && (!pedido.claves || !ultima.claves);
+      const unible = ultima && !ultima.op && !ultima.salida && !ultima.apartar && !ultima.descartada && !pedido.base && !ultima.baseVista && (!pedido.claves || !ultima.claves);
       if (unible) {
         ultima.horario = pedido.horario;
         if (pedido.claves) { ultima.claves = pedido.claves; ultima.tipo = pedido.tipo; ultima.asunto = pedido.asunto || null; ultima.contexto = pedido.contexto || null; } else if (pedido.manual && !ultima.manual) ultima.tipo = pedido.tipo;
         ultima.manual = ultima.manual || pedido.manual;
         ultima.esperas.push(r);
       } else {
-        s.entradas.push({ seq: s.seq, tipo: pedido.tipo, manual: pedido.manual, horario: pedido.horario, claves: pedido.claves || null, asunto: pedido.asunto || null, contexto: pedido.contexto || null, op: null, salida: false, preparado: null, apartar: false, grupo: null, baseVista: null, reserva: null, esperas: [r], descartada: false });
+        s.entradas.push({ seq: s.seq, tipo: pedido.tipo, manual: pedido.manual, horario: pedido.horario, claves: pedido.claves || null, asunto: pedido.asunto || null, contexto: pedido.contexto || null, op: null, salida: false, preparado: null, apartar: false, grupo: null, baseVista: pedido.base || null, reserva: null, esperas: [r], descartada: false });
       }
     });
     if (s.estado === 'en_orden') poner('guardando');
@@ -416,13 +424,18 @@ export function crearEscritorDeOperaciones({
    * R3 — `asunto` (`{ asignaturaId, nombre, accion }`) es de qué va, para el bloqueo selectivo de Estudios (H-12): sale en
    * `vista().asuntos` mientras la operación vive o su conflicto sigue abierto. `contexto` lo recibe `alAplicar` cuando
    * se aplica (lo que la pantalla necesita para el paso de Deshacer). Ninguno de los dos viaja al servidor.
+   * R4 — `base` (`{ valor, existe }`, opcional): el horario sobre el que se CALCULÓ la operación, cuando no es el que
+   * conoce el escritor (recuperar una copia se calcula sobre una lectura fresca de la cuenta). La revisión de esa base
+   * es la condición: si la cuenta cambió desde esa lectura, el servidor no la aplica. Una entrada con base propia no se
+   * une a ninguna otra.
    */
-  function guardarOperacion({ tipo, manual = true, horario, claves = [], asunto = null, contexto = null } = {}) {
+  function guardarOperacion({ tipo, manual = true, horario, claves = [], asunto = null, contexto = null, base = null } = {}) {
     if (horario === undefined || !esObjeto(horario)) return Promise.resolve({ ok: false, error: { code: 'operacion_sin_horario', message: 'Una operación protegida lleva siempre el horario.' } });
     if (!Array.isArray(claves) || claves.some((c) => !c || !CLAVES_POR_ELEMENTOS.includes(c.clave))) return Promise.resolve({ ok: false, error: { code: 'clave_no_permitida', message: 'Esa clave no se puede guardar en una operación protegida.' } });
     const no = rechazoInmediato(!manual);
     if (no) return Promise.resolve(no);
-    return encolar({ tipo: tipo || 'editar_horario', manual: !!manual, horario, claves: claves.length ? claves.map((c) => ({ clave: c.clave, antes: c.antes, despues: c.despues, normalizar: typeof c.normalizar === 'function' ? c.normalizar : (v) => v })) : null, asunto: esObjeto(asunto) ? { ...asunto } : null, contexto });
+    const baseOk = esObjeto(base) && typeof base.existe === 'boolean' ? { valor: base.existe ? base.valor : null, existe: base.existe } : null;
+    return encolar({ tipo: tipo || 'editar_horario', manual: !!manual, horario, claves: claves.length ? claves.map((c) => ({ clave: c.clave, antes: c.antes, despues: c.despues, normalizar: typeof c.normalizar === 'function' ? c.normalizar : (v) => v })) : null, asunto: esObjeto(asunto) ? { ...asunto } : null, contexto, base: baseOk });
   }
 
   /** Al recuperar la conexión, con «Guardar ahora» o al volver a la app: lo pendiente sale otra vez (la MISMA

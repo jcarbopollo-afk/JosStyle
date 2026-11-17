@@ -117,8 +117,24 @@ export function crearDobleProtegido(almacen) {
     c.vista = true;
     return { estado: 'vista', id };
   };
-  const espacio = () => ({ estado: 'espacio', copias: S.copias.size, bytes: [...S.copias.values()].reduce((t, c) => t + tamano(c.op), 0) });
+  /* La forma de R1 (`protegido_espacio`): la medida LÓGICA de lo guardado. `pg_column_size` puede comprimir; aquí se
+     cuenta el texto (el doble no comprime), que es lo que hace falta para ver que baja al eliminar una copia. */
+  const bytesDe = (k) => (existe(k) ? tamano(almacen[k]) : 0);
+  const espacio = () => ({
+    medida: 'logica',
+    horarioTop: bytesDe('horarioTop'), estudios: bytesDe('estudios'), papelera: bytesDe('papelera'), versiones: 0, guardia: 0,
+    copias: { cuantas: S.copias.size, bytes: [...S.copias.values()].reduce((t, c) => t + tamano(c.op) + tamano(c.meta), 0) },
+    copiasPorTipo: [...S.copias.values()].reduce((o, c) => ({ ...o, [c.tipo]: (o[c.tipo] || 0) + 1 }), {}),
+    operaciones: { cuantas: S.registro.size, bytes: 0 },
+  });
+  /* R4 — la tabla `copias_apartadas` tal como la lee la aplicación (solo las propias, más nuevas primero). */
+  const fila = (id, c, conContenido) => ({
+    id, tipo: c.tipo, op_id: c.op.opId, aparato: c.op.aparato || null, version_app: c.op.versionApp || null,
+    creada_en: c.creadaEn, vista: c.vista, meta: copia(c.meta), tamano: tamano(c.op), ...(conContenido ? { contenido: copia(c.op) } : {}),
+  });
+  const listarCopias = () => [...S.copias.entries()].map(([id, c]) => fila(id, c, false)).sort((a, b) => (a.creada_en < b.creada_en ? 1 : a.creada_en > b.creada_en ? -1 : 0));
+  const leerCopia = (id) => (S.copias.has(id) ? [fila(id, S.copias.get(id), true)] : []);
   const protocolo = () => ({ ...S.protocolo, ahora: new Date().toISOString() });
 
-  return { S, aplicar, estado, leer, copiaEliminar, copiaVista, espacio, protocolo };
+  return { S, aplicar, estado, leer, copiaEliminar, copiaVista, espacio, protocolo, listarCopias, leerCopia };
 }

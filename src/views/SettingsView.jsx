@@ -62,6 +62,7 @@ import GestionTemas from '../components/GestionTemas';
 import { desenfoque } from '../lib/profundidad';
 import { Plegable } from '../components/layoutMotion';
 import { GiroDeCarga } from '../components/accesibilidadMotion';
+import { CambiosApartadosEntrada } from '../components/cambiosApartados';
 import { SelectorDeArchivos } from '../components/selectorArchivos';
 import { eventoDeArchivos } from '../lib/seleccionArchivos';
 
@@ -1920,6 +1921,8 @@ export default function SettingsView({
   onIniciarCrearPin, onIniciarCambioPin, onIniciarDesactivarPin,
   modulosBorrables, onBorrarDatosModulo,
   onExportCSV, onExportXLSX, onUndo, canUndo,
+  // 🛡 E1-R · R4 — Cambios apartados (también en Horario): el servicio, lo que enseña el escritor y si Horarios está en solo lectura.
+  cambiosApartados = null, escritorHorario = null, horarioSoloLectura = false,
   onSignOut,
   // Props de PersonalizationView (Fase 19/20), reenviadas tal cual a la categoría "Pantalla principal"
   areas, modulos, personalizacion, onMove, onToggleOculto, onToggleDashboard, onAplicarPerfil, onSetIcono, onTogglePinExtra,
@@ -2867,6 +2870,9 @@ export default function SettingsView({
               <Undo2 size={14} /> Deshacer último cambio
             </button>
           </Card>
+        )}
+        {actual.id === 'datos' && (
+          <CambiosApartadosEntrada servicio={cambiosApartados} escritor={escritorHorario} soloLectura={!!horarioSoloLectura} accent={accent} />
         )}
 
         {/* Entrega 2 · ME Fase 3 — la papelera es una vista propia porque tiene bastante

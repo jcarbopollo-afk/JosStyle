@@ -454,6 +454,27 @@ async function llamarProtegido(funcion, args) {
   return { ok: true, data: r.data };
 }
 
+/* 🛡 R4 — leer las copias apartadas. La tabla `copias_apartadas` (R1) deja leer SOLO las propias (RLS
+   `auth.uid() = user_id`) y no deja escribirla más que por sus funciones (la guardia `solo_por_funciones`). La lista va
+   sin el contenido (puede pesar); el contenido se pide al inspeccionar una. Mismas respuestas que `llamarProtegido`:
+   sin la tabla (PGRST205, 42P01, o un 404 de la ruta) es `sinFunciones`. */
+const COLUMNAS_LISTA_COPIAS = 'id,tipo,op_id,aparato,version_app,creada_en,vista,meta,tamano';
+async function leerTablaProtegida(q) {
+  const r = await conTope(q);
+  if (sinEstado(r)) return { ok: false, sinRespuesta: true, error: r.error || null };
+  if (r.error) {
+    const e = r.error;
+    if (e.code === 'PGRST205' || e.code === '42P01' || (r.status === 404 && !esErrorDeBaseDeDatos(e))) return { ok: false, sinFunciones: true, error: e, status: r.status };
+    if (r.status === 401 || e.code === 'PGRST301' || /jwt/i.test(String(e.message || ''))) return { ok: false, sesion: true, error: e, status: r.status };
+    if (esErrorDeBaseDeDatos(e) || (r.status >= 400 && r.status < 500 && r.status !== 408)) return { ok: false, error: e, status: r.status, definitivo: true };
+    /* Una LECTURA que contesta 5xx sí tuvo respuesta: es un error del servidor, no falta de conexión (al escribir no se
+       sabe si llegó; al leer da igual, y decir «sin conexión» sería falso). */
+    if (r.status >= 500) return { ok: false, error: e, status: r.status };
+    return { ok: false, sinRespuesta: true, error: e, status: r.status };
+  }
+  return { ok: true, data: r.data };
+}
+
 /** Lo que recibe `crearEscritorDeOperaciones` para hablar con el servidor de R1. */
 export const transporteProtegido = Object.freeze({
   protocolo: () => llamarProtegido('protegido_protocolo', {}),
@@ -463,6 +484,18 @@ export const transporteProtegido = Object.freeze({
   copiaEliminar: (copiaId) => llamarProtegido('protegido_copia_eliminar', { copia_id: copiaId }),
   copiaVista: (copiaId) => llamarProtegido('protegido_copia_vista', { copia_id: copiaId }),
   espacio: () => llamarProtegido('protegido_espacio', {}),
+  /* R4 — Cambios apartados (solo lectura). */
+  copias: async () => {
+    const r = await leerTablaProtegida(supabase.from('copias_apartadas').select(COLUMNAS_LISTA_COPIAS).order('creada_en', { ascending: false }));
+    if (r.ok && !Array.isArray(r.data)) return { ok: false, sinRespuesta: true, error: { code: 'respuesta_incompleta' } };
+    return r;
+  },
+  copia: async (copiaId) => {
+    const r = await leerTablaProtegida(supabase.from('copias_apartadas').select(`${COLUMNAS_LISTA_COPIAS},contenido`).eq('id', copiaId).limit(1));
+    if (!r.ok) return r;
+    if (!Array.isArray(r.data)) return { ok: false, sinRespuesta: true, error: { code: 'respuesta_incompleta' } };
+    return { ok: true, data: r.data[0] || null };
+  },
 });
 
 

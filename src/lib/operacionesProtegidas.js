@@ -73,11 +73,57 @@ export const nuevoOpId = (crypto = globalThis.crypto) => nuevoUuid(crypto);
  */
 export function crearOperacion({ opId, tipo, manual, aparato = null, versionApp = null, creadaEn, horario = null, claves = [] } = {}) {
   const op = { formato: FORMATO_OPERACION, opId, tipo, manual, aparato, versionApp, creadaEn };
-  if (horario) op.horario = { base: horario.base === undefined ? null : horario.base, baseExiste: horario.baseExiste, valor: copiar(horario.valor) };
+  if (horario) {
+    op.horario = { base: horario.base === undefined ? null : horario.base, baseExiste: horario.baseExiste, valor: copiar(horario.valor) };
+    /* R4 — el cambio del horario POR ELEMENTOS respecto a su base (`cambiosDelHorario`). El servidor no lo usa (aplica
+       `valor` con la revisión como condición) y lo guarda dentro de la copia apartada: es lo que deja recuperarla
+       después sin pisar lo que cambió otro aparato. Sin él (`null`), la copia solo se puede ver y eliminar. */
+    if (Array.isArray(horario.cambios)) op.horario.cambios = copiar(horario.cambios);
+  }
   const conCambios = (claves || []).filter((c) => c && Array.isArray(c.cambios) && c.cambios.length);
   if (conCambios.length) op.claves = conCambios.map((c) => ({ clave: c.clave, cambios: copiar(c.cambios), ...(c.inicial !== undefined ? { inicial: copiar(c.inicial) } : {}) }));
   return congelar(op);
 }
+
+/**
+ * R4 — el cambio de un horario respecto a su base, POR ELEMENTOS y con la condición de lo que había (`igual`), en la
+ * forma de `calcularCambios`. Sin las marcas que pone el escritor (`version` y `testigo`: cambian en cada guardado y
+ * no son del cambio), ni el orden de una lista (no lleva condición y pisaría el de otro aparato). `null` si no se
+ * puede decir por elementos (un campo que desaparece).
+ */
+export const CAMPOS_DE_MARCA_HORARIO = Object.freeze(['testigo', 'version']);
+export function cambiosDelHorario(base, valor) {
+  const sinMarcas = (v) => {
+    if (!esObjeto(v)) return {};
+    const o = { ...v };
+    for (const k of CAMPOS_DE_MARCA_HORARIO) delete o[k];
+    return o;
+  };
+  if (!esObjeto(valor)) return null;
+  const r = calcularCambios(sinMarcas(base), sinMarcas(valor));
+  if (!r.ok) return null;
+  const conjuntos = [];
+  const cambios = r.cambios.map((cb) => {
+    if (Array.isArray(cb.fijar)) {
+      /* Una lista de valores simples (las clases marcadas como hechas) es un CONJUNTO: se dice qué se añadió y qué se
+         quitó, no la lista entera; así recuperarla no pisa lo que marcó otro aparato. */
+      const resto = [];
+      for (const f of cb.fijar) {
+        const antes = f.igual === null ? [] : f.igual;
+        if (cb.camino.length === 0 && listaSimple(antes) && listaSimple(f.valor)) {
+          const a = new Set(antes.map(String)); const d = new Set(f.valor.map(String));
+          conjuntos.push({ camino: [f.campo], conjunto: { anadir: f.valor.filter((x) => !a.has(String(x))), quitar: antes.filter((x) => !d.has(String(x))) } });
+        } else resto.push(f);
+      }
+      return resto.length ? { ...cb, fijar: resto } : null;
+    }
+    if (!Array.isArray(cb.orden)) return cb;
+    const { orden, ...resto } = cb;
+    return resto;
+  }).filter((cb) => cb && ['quitar', 'reemplazar', 'anadir', 'fijar'].some((k) => tiene(cb, k)));
+  return [...cambios, ...conjuntos.filter((c) => c.conjunto.anadir.length || c.conjunto.quitar.length)];
+}
+const listaSimple = (v) => Array.isArray(v) && v.every((x) => typeof x === 'string' || typeof x === 'number');
 
 const caminoValido = (camino) => Array.isArray(camino) && camino.every((s) => typeof s === 'string' || (esObjeto(s) && typeof s.id === 'string'));
 const esTimestampValido = (t) => typeof t === 'string' && !Number.isNaN(Date.parse(t));

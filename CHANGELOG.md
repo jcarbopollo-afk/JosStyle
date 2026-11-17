@@ -1,5 +1,47 @@
 # CHANGELOG.md
 
+## Sin versión — Horarios E1-R · R4: Cambios apartados (2026-11-17, commit solo local)
+
+> Con la autorización expresa de Josué del 2026-11-17 (**R4**). Rama `claude/horarios-rediseno`, encima de R3 (`c4f159c`).
+> Probado en Node, en el renderizado, en Chromium con dos aparatos y contra R1 **solo en el laboratorio local**; nada en
+> Supabase alojado; sin push, PR, fusión ni despliegue. No empieza R5, E1-P, E1-S ni E1-L. Detalle: `docs/19` §18.18.
+
+### ✨ Qué entra
+- **La pantalla de Cambios apartados**, en Horario y en Ajustes → Datos (`src/components/cambiosApartados.jsx`,
+  `src/lib/cambiosApartados.js`): consultar las copias (solo las propias), inspeccionar cada una antes de decidir (qué
+  contiene y qué pasaría si se recuperara ahora), recuperar, eliminar y el espacio que ocupan.
+- **Recuperar es una operación NUEVA y protegida** (`recuperar_copia`) por el escritor de R2, calculada sobre lo que hay
+  ahora: lo que sigue como estaba se aplica, lo que ya está se salta y, si algo cambió después en otro aparato, **no se
+  recupera nada** (nunca se pisa un cambio posterior ni se recupera una parte suelta). Si la cuenta cambia entre la vista
+  previa y la confirmación, se vuelve a enseñar. Borrar una asignatura se repite sobre los datos de hoy (lo de después va a
+  Eliminados recientes). **Recuperarla no la borra.**
+- **Para poder recuperar sin pisar**, cada operación lleva ahora el cambio del horario por elementos respecto a lo que vio
+  (`op.horario.cambios`; el servidor lo ignora y lo guarda dentro de la copia), y las clases marcadas como hechas van como un
+  conjunto (lo añadido y lo quitado).
+- **Eliminar, solo a petición** y con confirmación. **El espacio, como tamaño lógico de los datos guardados**: la pantalla
+  dice que no es espacio en disco y que el tamaño físico no baja al momento (nunca «liberado»).
+- **Estados**: pendiente, ya en tu cuenta, no recuperable (con el motivo), sin comprobar y eliminada; y al leer, sin
+  conexión, sesión caducada, sin las tablas de R1 y error, con «Reintentar» donde sirve.
+- Pruebas: `test-cambios-apartados.mjs` (96), `test-cambios-apartados-postgrest.mjs` (32, nivel 3), la sección «R4» del
+  recorrido de Chromium (dos aparatos) y quince casos de renderizado.
+
+### 🐛 Corregido por el camino
+- **El cambio por elementos del horario se calculaba sin la puerta de carga**: con un horario guardado por una versión
+  anterior, la copia «tocaba» todas las clases y no se podía recuperar nada. Lo destapó el nivel 3; ahora las dos partes pasan
+  por `normalizarHorarioTop`.
+- **El servicio de la pantalla usaba `uidUser` antes de declararlo** (`App.jsx`, regla 4): la aplicación no se pintaba. No lo
+  vio ni la compilación ni Node; lo cazó el recorrido de Chromium al primer intento.
+- **Al abrir una copia se quedaba en «Leyendo la copia…»**: la marca de «la pantalla sigue montada» se apagaba en el desmontaje
+  que hace `StrictMode` y no se volvía a encender. Lo cazó el recorrido (en desarrollo), con un diagnóstico que dijo en qué
+  estado estaba el detalle.
+- **Un 500 del servidor al leer la lista decía «Sin conexión»**: una lectura que contesta 5xx sí tuvo respuesta; ahora es «No
+  se han podido leer» (`leerTablaProtegida`, en `supabase.js`).
+
+### ⚠️ Lo que no hace
+- Ni umbrales de aviso de espacio (H-14), ni mantenimiento físico (H-21), ni copias de versión antigua o rescate (R5), ni
+  nada pendiente en el aparato (C-84). No lee las copias antiguas de E1 en el historial de versiones (E1 nunca se publicó).
+  Nada en Supabase alojado; sin probar en Safari ni en el iPhone.
+
 ## Sin versión — Horarios E1-R · R3: la integración en Horarios (2026-11-16, commit solo local)
 
 > Con la autorización expresa de Josué del 2026-11-16 (**R3**). Rama `claude/horarios-rediseno`, encima de R1 (`d8692ad`) y R2

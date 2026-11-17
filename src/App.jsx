@@ -172,7 +172,7 @@ import { DEFAULT_HORARIO_TOP, normalizarHorarioTop, guardiaDeVersionHorario, par
 import { crearGuardiaDeHorario } from './lib/guardiaHorario';
 /* 🛡 Horarios E1 (TP-15 A y C) — el escritor protegido de `horarioTop` y, para la copia apartada de un conflicto
    (D2-bis), el escritor del historial de versiones. */
-import { mismoContenido } from './lib/escritorHorario';
+import { mismoContenido, MOTIVO_CONFLICTO_HORARIO } from './lib/escritorHorario';
 /* 🛡 E1-R · R3 — el escritor de la aplicación es el de operaciones protegidas (R2) contra las funciones del servidor (R1):
    el horario y, cuando un cambio toca también Estudios y la papelera, las tres claves en UNA operación (§18.17). */
 import { crearEscritorDeOperaciones } from './lib/escritorOperaciones';
@@ -181,6 +181,7 @@ import {
   prepararBorradoAsignatura, prepararDeshacerOperacion, pasoDeOperacion, bloqueosDeEstudios, cambioTocaBloqueadas,
   normalizarEstudiosCargados, normalizarPapeleraCargada,
 } from './lib/asignaturaProtegida';
+import { prepararRecuperacion, mismaRecuperacion, CLAVES_RECUPERACION } from './lib/cambiosApartados';
 import { AvisoAccion } from './components/quickAdd';
 import { VERSION as VERSION_APP } from './lib/version';
 import { DEFAULT_ESTILO_HOMBRE, normalizarEstiloHombre } from './lib/estiloDeHombre';
@@ -996,6 +997,8 @@ export default function App() {
            `estudios` y `papelera` que este aparato ya mandó (`cola`) y, al aplicarse, se lleva a los que quedan. */
         const w = crearEscritorDeOperaciones({
           transporte: transporteProtegido, usuario: uidUser, guardia: g,
+          /* R4 — la puerta de carga del horario: el cambio por elementos de cada operación se calcula con ella. */
+          normalizarHorario: normalizarHorarioTop,
           aparato: g.vista().aparato || null, versionApp: VERSION_APP,
           inicial: { valor: hor, existe: hor !== DEFAULT_HORARIO_TOP && !cargaFallida('horarioTop') },
           cola: { reservar: (claves) => reservarClavesParaOperacion(claves), aplicarAPendientes: llevarOperacionAPendientes },
@@ -1417,6 +1420,24 @@ export default function App() {
      carga no tiene texto, nadie las pide, y el primer Hoy cambia de ancho al llegar
      Manrope. Es un hook: va antes de los `return` (regla 4). */
   const fuentesListas = useFuentesListas();
+
+  /* 🛡 E1-R · R4 — el servicio de Cambios apartados: lo que la pantalla puede pedir al servidor. Estable por usuario (si
+     cambiara en cada pintado, la lista se volvería a leer sin parar); recuperar llama a la función de ESTE pintado por
+     su referencia. Eliminar es SIEMPRE una acción suya: nadie más llama a `copiaEliminar` desde aquí. Es un hook: va
+     antes de los `return` (regla 4). */
+  const recuperarCopiaRef = useRef(null);
+  /* ⚠️ `uidUser` se declara DESPUÉS de los `return` (con la sesión ya comprobada): aquí, la de la sesión. */
+  const idUsuarioCambiosApartados = session && session.user ? session.user.id : null;
+  const servicioCambiosApartados = useMemo(() => (idUsuarioCambiosApartados ? {
+    get aparato() { const g = guardiaHorarioRef.current; return g ? g.vista().aparato : null; },
+    listar: () => transporteProtegido.copias(),
+    espacio: () => transporteProtegido.espacio(),
+    copia: (id) => transporteProtegido.copia(id),
+    actual: () => transporteProtegido.leer(CLAVES_RECUPERACION),
+    marcarVista: (id) => transporteProtegido.copiaVista(id),
+    eliminar: (id) => transporteProtegido.copiaEliminar(id),
+    recuperar: (fila, vistaPrevia) => (recuperarCopiaRef.current ? recuperarCopiaRef.current(fila, vistaPrevia) : Promise.resolve({ ok: false, motivo: 'errorAccion' })),
+  } : null), [idUsuarioCambiosApartados]);
 
   if (session === undefined) return <LoadingScreen />;
   if (!session) return <Auth salida={salida} />;
@@ -2395,17 +2416,49 @@ export default function App() {
      Estudios y la papelera, cuando se guarda (H-12 B: hasta entonces lo que se guarde de Estudios parte de un valor
      sin él, y la cola se lo aplica al salir). Si choca, lo aparta el servidor entero. Su paso de Deshacer entra en la
      pila cuando se aplica, con los cambios que SE APLICARON (`alAplicar`). */
-  const guardarOperacionProtegida = ({ tipo, horario, estudiosDespues = null, papeleraDespues = null, asunto = null }) => {
+  const guardarOperacionProtegida = ({ tipo, horario, estudiosDespues = null, papeleraDespues = null, asunto = null, claves: clavesDadas = null, base = null }) => {
     const w = escritorHorarioRef.current;
     if (!w) return Promise.resolve({ ok: false, error: { code: 'sin_escritor', message: 'El horario todavía no se puede guardar.' } });
     if (horarioSoloLecturaRef.current) return Promise.resolve(NO_GUARDA_HORARIO());
-    const claves = [];
-    if (estudiosDespues) claves.push({ clave: 'estudios', antes: estudios, despues: estudiosDespues, normalizar: normalizarEstudiosCargados });
-    if (papeleraDespues) claves.push({ clave: 'papelera', antes: papelera, despues: papeleraDespues, normalizar: normalizarPapeleraCargada });
-    const paso = { ...fotoDelEstado(), tocaHorario: true, claves: ['horarioTop', ...claves.map((c) => c.clave)], operacion: { tipo, asunto, horarioAntes: horarioTop } };
-    setHorarioTop(horario);
-    return w.guardarOperacion({ tipo, manual: true, horario, claves, asunto, contexto: { paso } });
+    const claves = Array.isArray(clavesDadas) ? clavesDadas.map((c) => ({ ...c })) : [];
+    if (!clavesDadas && estudiosDespues) claves.push({ clave: 'estudios', antes: estudios, despues: estudiosDespues, normalizar: normalizarEstudiosCargados });
+    if (!clavesDadas && papeleraDespues) claves.push({ clave: 'papelera', antes: papelera, despues: papeleraDespues, normalizar: normalizarPapeleraCargada });
+    /* R4 — con `base` (recuperar una copia), lo de antes es lo que había en la cuenta al prepararla, no la pantalla. */
+    const horarioAntes = base ? (base.existe ? base.valor : null) : horarioTop;
+    const paso = { ...fotoDelEstado(), tocaHorario: true, claves: ['horarioTop', ...claves.map((c) => c.clave)], operacion: { tipo, asunto, horarioAntes } };
+    setHorarioTop(base ? normalizarHorarioTop(horario) : horario);
+    return w.guardarOperacion({ tipo, manual: true, horario, claves, asunto, contexto: { paso }, ...(base ? { base } : {}) });
   };
+
+  /* 🛡 E1-R · R4 — RECUPERAR UNA COPIA APARTADA como un cambio NUEVO y protegido. Se vuelve a leer la cuenta y se vuelve
+     a preparar: si no sale lo mismo que él revisó, no se recupera (se le enseña otra vez). Solo con el escritor en
+     reposo —nada suyo esperando, ningún conflicto abierto, Horarios editable y nada de Estudios retenido—, para que la
+     recuperación no se una a otro cambio ni se calcule sobre algo a medio guardar. La manda el escritor de R2 con la
+     revisión LEÍDA como condición: si otro aparato escribe entretanto, el servidor no la aplica. La copia NO se borra. */
+  const recuperarCopiaApartada = async (fila, vistaPrevia) => {
+    const libre = () => {
+      const w = escritorHorarioRef.current;
+      if (!w) return 'recuperarNoAhora';
+      if (horarioSoloLecturaRef.current || w.motivoBloqueo()) return w.motivoBloqueo() === MOTIVO_CONFLICTO_HORARIO ? 'recuperarConConflicto' : 'recuperarSoloLectura';
+      const v = w.vista();
+      if (v.conflicto) return 'recuperarConConflicto';
+      if (v.enCola || v.guardando || v.estado !== 'en_orden' || bloqueadasRef.current.size) return 'recuperarNoAhora';
+      return null;
+    };
+    const antes = libre();
+    if (antes) return { ok: false, motivo: antes };
+    const r = await transporteProtegido.leer(CLAVES_RECUPERACION);
+    if (!r || !r.ok || !r.data || r.data.estado !== 'leidas') {
+      return { ok: false, motivo: r && r.sesion ? 'sesion' : r && r.sinFunciones ? 'sinFunciones' : r && r.sinRespuesta ? 'sinConexion' : 'errorAccion' };
+    }
+    const actual = r.data.claves;
+    const prep = prepararRecuperacion({ fila, actual });
+    if (!mismaRecuperacion(prep, vistaPrevia)) return { ok: false, motivo: 'cambio', prep };
+    const despues = libre();
+    if (despues) return { ok: false, motivo: despues };
+    return guardarOperacionProtegida({ tipo: 'recuperar_copia', horario: prep.horario, claves: prep.claves, asunto: prep.asunto, base: actual.horarioTop });
+  };
+  recuperarCopiaRef.current = recuperarCopiaApartada;
 
   const snapshotAndSave = (patch, { automatico = false } = {}) => {
     if (parcheTocaHorario(patch) && horarioSoloLecturaRef.current) return Promise.resolve(NO_GUARDA_HORARIO());
@@ -3618,6 +3671,7 @@ export default function App() {
             onCrearHorario={(nuevo) => snapshotAndSave({ horarioTop: nuevo })}
             /* 🛡 E1 — el conflicto de edición (D2) y la entrega corta (D1). */
             escritor={escritorHorario}
+            cambiosApartados={servicioCambiosApartados}
             onVerLoDeAhora={() => { const w = escritorHorarioRef.current; if (w) w.verLoDeAhora(); }}
             onDescartarMiCambio={() => { const w = escritorHorarioRef.current; return w ? w.descartarMiCambio({ confirmado: true }) : Promise.resolve({ ok: false }); }}
             onRetirarAparato={(aparato, motivo) => { const g = guardiaHorarioRef.current; return g ? g.retirarAparato(aparato, motivo) : Promise.resolve({ ok: false, motivo: 'sin_guardia' }); }}
@@ -3922,6 +3976,7 @@ export default function App() {
             onBorrarDatosModulo={borrarDatosModuloProtegido}
             onExportCSV={exportarCSVProtegido} onExportXLSX={exportarXLSXProtegido}
             onUndo={undo} canUndo={history.length > 0}
+            cambiosApartados={servicioCambiosApartados} escritorHorario={escritorHorario} horarioSoloLectura={!!horarioSoloLectura}
             onSignOut={signOut}
             areas={AREAS_NAV}
             modulos={moreNavOrdenadoConIconos}
