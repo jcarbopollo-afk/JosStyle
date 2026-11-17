@@ -11,7 +11,7 @@
 // ---------------------------------------------------------------------------
 import { readFileSync } from 'node:fs';
 import { cambiosDeUnPaso, deshacerConCambios, huella, CLAVES_FUERA_DE_CAMBIOS, FORMATO_CAMBIOS_PASO } from '../src/lib/deshacerPorCambios.js';
-import { igualJson } from '../src/lib/operacionesProtegidas.js';
+import { igualJson, aplicarCambios } from '../src/lib/operacionesProtegidas.js';
 import { prepararEliminacion, prepararRestauracion } from '../src/lib/papelera.js';
 import { prepararEliminarRutina, prepararEliminarPlantilla, guardarRutinaCiclica, crearRutinaCiclica, configurarDia, activarRutina, devolverAHuecos } from '../src/lib/rutinasCiclicas.js';
 import { normalizarFitnessConSesiones } from '../src/lib/entrenamiento.js';
@@ -226,6 +226,37 @@ console.log('\n── C-89 · Orden, forma entera y datos ausentes ──');
   ok(deshacerConCambios({}, { formato: 99, cambios: [] }).motivo === 'no_invertible', 'otro formato → «no_invertible»');
   ok(deshacerConCambios([], cambiosDeUnPaso({ x: [] }, { x: [{ id: 'a' }] })).motivo === 'cambiado', 'una lista donde esperaba un objeto → «cambiado»');
   ok(CLAVES_FUERA_DE_CAMBIOS.join() === 'horarioTop', 'solo el horario queda fuera: va por su escritor protegido');
+}
+
+console.log('\n── C-89 · El conflicto lo detecta el propio helper, antes de aplicar nada ──');
+/* `aplicarCambios` también se niega a pisar (sus condiciones), así que quitar la comprobación de conflicto del helper
+   dejaba el resultado en `ok: false, motivo: 'cambiado'` y la mutación sobrevivía. Lo que la delata es QUIÉN lo
+   detectó: el helper responde con su diagnóstico (`{ campo }` / `{ id }`); si llegara a `aplicarCambios`, el fallo
+   sería el suyo (`{ motivo: 'campo_distinto' | 'elemento_existe', clave, camino, … }`). Se exige el del helper. */
+{
+  /* Un campo (`fijar`) que el paso cambió y se cambió después. */
+  const O0 = { lista: [], ultimaRevision: null };
+  const reg = cambiosDeUnPaso(O0, { ...O0, ultimaRevision: '2026-11-10' });
+  const r = deshacerConCambios({ ...O0, ultimaRevision: '2026-11-17' }, reg, { antes: O0 });
+  ok(!r.ok && r.motivo === 'cambiado' && igualJson(r.fallo, { campo: 'ultimaRevision' }),
+    '🚨 un campo cambiado después: el conflicto lo detecta el helper, no las condiciones de aplicarCambios', JSON.stringify(r));
+
+  /* Lo que el paso quitó vuelve… pero ya hay otro distinto con ese id (otro aparato, o se volvió a crear). */
+  const T0 = { tareas: [{ id: 'a', texto: 'A' }, { id: 'b', texto: 'B' }] };
+  const regQ = cambiosDeUnPaso(T0, { tareas: [T0.tareas[0]] });
+  const rQ = deshacerConCambios({ tareas: [T0.tareas[0], { id: 'b', texto: 'B nueva' }] }, regQ, { antes: T0 });
+  ok(!rQ.ok && rQ.motivo === 'cambiado' && igualJson(rQ.fallo, { id: 'b' }),
+    '🚨 lo quitado ya existe distinto: el conflicto lo detecta el helper, no aplicarCambios (no se pisa «B nueva»)', JSON.stringify(rQ));
+
+  /* La prueba distingue las dos capas: lo que diría `aplicarCambios` si la inversa le llegara sin filtrar. */
+  const abajo = aplicarCambios({ ...O0, ultimaRevision: '2026-11-17' },
+    [{ camino: [], fijar: [{ campo: 'ultimaRevision', igual: '2026-11-10', valor: null }] }], 'deshacer');
+  ok(abajo.fallo && abajo.fallo.motivo === 'campo_distinto' && !igualJson(abajo.fallo, { campo: 'ultimaRevision' }),
+    '…y aplicarCambios lo habría dicho de otra forma: las dos comprobaciones no se confunden');
+  /* Y los dos casos sin conflicto siguen deshaciéndose (la prueba no rechaza por rechazar). */
+  ok(deshacerConCambios({ ...O0, ultimaRevision: '2026-11-10' }, reg, { antes: O0 }).ok, '…sin cambio posterior, el campo sí se deshace');
+  const rQok = deshacerConCambios({ tareas: [T0.tareas[0]] }, regQ, { antes: T0 });
+  ok(rQok.ok && rQok.valor.tareas.map((t) => t.id).join() === 'a,b', '…y lo quitado vuelve a su sitio si nadie lo volvió a crear');
 }
 
 console.log('\n── Lo que hace App.jsx (leído del código) ──');
