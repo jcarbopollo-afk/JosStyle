@@ -92,7 +92,11 @@ ok(normalizarCumpleanos({ lista: [marta], otraCosa: 1 }).otraCosa === 1, 'lo que
 ok(/cumpleanos: 'los cumpleaños'/.test(leer('src/lib/estadosAsincronos.js')) && NOMBRES_DE_CLAVE.cumpleanos, 'la clave tiene nombre para el indicador de sincronización');
 ok(/loadData\(uidUser, 'cumpleanos', DEFAULT_CUMPLEANOS\)/.test(APP) && /setCumpleanos\(normalizarCumpleanos\(cumple\)\)/.test(APP), 'App.jsx la carga y la pasa por su puerta');
 ok(/guardados\.push\(saveData\(uidUser, 'cumpleanos', patch\.cumpleanos\)\)/.test(APP), 'y la guarda por `snapshotAndSave` (con Deshacer y con su `{ ok }`)');
-ok(/if \(last\.cumpleanos\) \{ setCumpleanos\(last\.cumpleanos\)/.test(APP), 'Deshacer la devuelve, y un paso viejo sin ella no la vacía');
+/* 🧯 F-1 (auditoría de E1-P) — la regla de Cumpleaños («un paso viejo sin ella no la vacía») pasó a valer para TODAS
+   las claves de la foto: Deshacer solo reescribe la que el paso lleva (antes, a las demás les ponía su valor de fábrica,
+   y así vaciaba Imagen personal). La comprobación mide lo mismo, ahora con la regla común. */
+ok(/\['cumpleanos', setCumpleanos\]/.test(APP) && /const enPaso = \(k\) => last\[k\] !== undefined && last\[k\] !== null;/.test(APP)
+  && /if \(!enPaso\(k\)\) continue;\s*set\(last\[k\]\); saveData\(uidUser, clave, last\[k\]\);/.test(APP), 'Deshacer la devuelve, y un paso viejo sin ella no la vacía');
 /* 🔓 Horarios E1-R · R3 — el paso de Deshacer sale de `fotoDelEstado()`, la misma foto para `snapshotAndSave` y para el
    paso de una operación protegida. */
 ok(/const fotoDelEstado = \(\) => \(\{[^}]*cumpleanos \}\);/.test(APP) && /const snapshot = fotoDelEstado\(\);/.test(APP), 'y entra en el paso de Deshacer');

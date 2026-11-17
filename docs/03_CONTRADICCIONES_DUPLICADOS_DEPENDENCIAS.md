@@ -1818,3 +1818,22 @@ instalarse. Con ella, aprobadas a la vez:
 - **H-25**: si la copia del rescate falla, **la escritura se rechaza** (`rescate_fallido`).
 ⚠️ Todo está **preparado y probado solo en el laboratorio local**; activarlo en un Supabase alojado (P1 y P4) es de E2 y lo
 autoriza Josué paso a paso. `estudios` (apartar, H-19) y `papelera` (fusionar, H-20) son de E1-S y E1-P.
+
+### C-89 — ⏸ PENDIENTE DE JOSUÉ (2026-11-17) · Deshacer reescribe claves que también se guardan fuera de los pasos
+
+La corrección F-1 · F-2 · F-3 (v3.164.1, autorizada tras la auditoría de E1-P) encontró la causa común: un paso de Deshacer
+guarda la foto de los módulos ANTES del cambio y `undo` los vuelve a escribir **todos**, no solo los que cambió ese paso. Eso
+solo es correcto para una clave si **todo** lo que la cambia pasa por un paso de Deshacer. Para `estiloHombre` se cumple (F-1:
+ahora va en la foto). Para `fitness` y `temasGuardados` no, y por eso se deshacen **por cambios** (`deshacerPorCambios.js`,
+F-2 y F-3). **Quedan tres claves con el mismo riesgo, fuera de lo autorizado**, y no se han tocado:
+- **`productividad`**: `guardarProductividadSinDeshacer` (`App.jsx`) guarda directamente las sesiones de Pomodoro, su
+  configuración, el pomodoro y la rutina en curso, y las ejecuciones de rutinas; y `completarPomodoro`, el contador. **Un
+  pomodoro o una rutina hecha después de un paso se pierde al deshacer ese paso, o cualquier otro posterior de cualquier
+  módulo** (Deshacer reescribe la clave entera con la foto).
+- **`objetivos`**: `marcarRevisionHecha` guarda directamente `ultimaRevision` (se pierde la fecha de la última revisión).
+- **`gamificacionRachas`**: `evaluarGamificacion` guarda directamente los logros conseguidos.
+**Propuesta (para decidir):** que Deshacer reescriba **solo las claves que cambió ese paso** (`paso.claves`, que existe
+desde R3), y que esas tres se deshagan también por cambios (añadirlas a `CLAVES_DESHACER_POR_CAMBIOS`, con su prueba). Un
+paso antiguo sin `claves` seguiría como hoy. Hasta que lo decida Josué, el comportamiento de esas claves no cambia.
+⚠️ Relacionado y tampoco tocado: Deshacer devuelve la papelera de la foto, así que una entrada **eliminada definitivamente**
+después del paso vuelve a aparecer (no se pierde nada; reaparece). Es de E1-P (H-20/H-28).

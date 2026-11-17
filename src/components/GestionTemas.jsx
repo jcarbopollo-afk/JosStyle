@@ -241,7 +241,8 @@ export default function GestionTemas({
                   </div>
                   {confirmandoEliminarId === t.id && (
                     <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: `1px solid ${COLORS.border}` }}>
-                      <p className="text-[11px]" style={{ color: COLORS.textMuted }}>¿Eliminar "{t.nombre}"?</p>
+                      {/* F-3 — va a Eliminados recientemente (antes se borraba para siempre): se dice. */}
+                      <p className="text-[11px]" style={{ color: COLORS.textMuted }}>¿Eliminar "{t.nombre}"? Irá a Eliminados recientemente.</p>
                       <div className="flex gap-3">
                         <button onClick={() => setConfirmandoEliminarId(null)} className="text-xs font-semibold" style={{ color: COLORS.textMuted }}>Cancelar</button>
                         <button onClick={() => { onEliminarTemaGuardado(t.id); setConfirmandoEliminarId(null); }} className="text-xs font-semibold" style={{ color: COLORS.negative }}>Eliminar</button>

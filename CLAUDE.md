@@ -14,7 +14,7 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.164.0** (Horarios E1, en commits **solo locales** de `claude/horarios-rediseno`:
+**Estado:** `package.json` **v3.164.1** (🧯 **corrección F-1 · F-2 · F-3**: Deshacer ya no deja Imagen personal de fábrica ni pierde lo borrado de Fitness, y las apariencias se borran de verdad —`src/lib/deshacerPorCambios.js`, CHANGELOG v3.164.1—; ⏸ C-89 en `docs/03`, pendiente de Josué. Y antes, Horarios E1, en commits **solo locales** de `claude/horarios-rediseno`:
 `docs/19` §18.14; y **E1-R · R1** —la operación protegida en el servidor, solo laboratorio local, H-18—, `docs/19` §18.15; y **R2** —el motor del
 cliente: `operacionesProtegidas.js`, `escritorOperaciones.js` y `transporteProtegido`—, §18.16; y **R3** —la integración: el horario se escribe por
 operaciones protegidas, borrar una asignatura con clases y su Deshacer son UNA operación, H-12 y H-13 (`asignaturaProtegida.js`)—, §18.17; y **R4** —Cambios apartados:

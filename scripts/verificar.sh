@@ -737,6 +737,15 @@ else
   fallo "Falla Cambios apartados (R4)"; grep '✗' /tmp/jc_horario_r4.log
 fi
 
+# 🧯 F-1 · F-2 · F-3 (auditoría de E1-P) — Deshacer no deja Imagen personal de fábrica, devuelve lo borrado de Fitness
+# sin pisar lo guardado después (por cambios, con condiciones), la papelera no suelta lo que no vuelve, y las
+# apariencias se borran de verdad (por la papelera, también desde Gestión de temas).
+if node --import ./scripts/resolver-vite.mjs scripts/test-deshacer-por-cambios.mjs >/tmp/jc_deshacer_f123.log 2>&1; then
+  ok "Deshacer por cambios (F-1, F-2, F-3): Imagen personal, Fitness y apariencias — $(grep -c '✓' /tmp/jc_deshacer_f123.log) comprobaciones"
+else
+  fallo "Falla Deshacer por cambios (F-1, F-2, F-3)"; grep '✗' /tmp/jc_deshacer_f123.log
+fi
+
 # 🛟 Horarios · E1-R · R5 — la red de rescate (H-22, H-25) y las escrituras de versiones antiguas (H-23) en el cliente:
 # describir, recuperar eligiendo elemento a elemento sin pisar lo posterior, el aviso, y el SQL preparado por su forma.
 if node --import ./scripts/resolver-vite.mjs scripts/test-rescate-versiones.mjs >/tmp/jc_horario_r5.log 2>&1; then

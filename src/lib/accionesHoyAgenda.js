@@ -283,6 +283,10 @@ export const AVISOS_ACCION = {
   deshacer_operacion_viva: { texto: 'No se ha deshecho: hay un cambio que todavía se está guardando o está retenido en Horarios.', deshacer: false, error: true, ir: 'horario' },
   deshacer_mixto: { texto: 'No se ha deshecho: ese cambio tocó tu horario y Estudios a la vez y no se puede deshacer sin riesgo. No se ha tocado nada.', deshacer: false, error: true },
   restablecer_bloqueado: { texto: 'No se pueden borrar los datos de Estudios mientras se guarda un cambio de una asignatura.', deshacer: false, error: true },
+  /* 🧯 F-2 y F-3 — Fitness y las apariencias se deshacen por cambios: si lo que cambió ese paso se ha modificado
+     después, deshacerlo lo pisaría, así que no se toca nada y se dice. Lo borrado sigue en Eliminados recientemente. */
+  deshacer_no_seguro: { texto: 'No se ha deshecho: lo que cambió ese paso se ha modificado después, y deshacerlo lo pisaría. No se ha tocado nada.', deshacer: false, error: true },
+  deshacer_fitness_solo_lectura: { texto: 'No se ha deshecho: Fitness está en solo lectura en este aparato. No se ha tocado nada.', deshacer: false, error: true },
 };
 
 export const avisoDe = (id) => AVISOS_ACCION[id] || null;

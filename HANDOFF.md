@@ -2,6 +2,16 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (2026-11-17 — 🧯 Corrección F-1 · F-2 · F-3, v3.164.1; commit SOLO local en `claude/horarios-rediseno`,
+> sin push, PR, fusión ni despliegue):** tres fallos que están **en producción**, encontrados en la auditoría de E1-P y
+> corregidos con la autorización de Josué: **F-1** cualquier Deshacer dejaba Imagen personal con los valores de fábrica (la
+> foto no llevaba `estiloHombre`); **F-2** deshacer un borrado de Fitness perdía el elemento (se restauraba la papelera y no
+> Fitness); **F-3** borrar una apariencia guardada no la borraba (y Gestión de temas la borraba para siempre). Fitness y las
+> apariencias se deshacen ahora **por cambios** (`src/lib/deshacerPorCambios.js`), sin pisar lo guardado después. Reproducido
+> antes en Chromium (22 de 53 en rojo) y verde después (53/53). ⏸ **C-89, pendiente de Josué**: `productividad`, `objetivos`
+> y `gamificacionRachas` tienen el mismo riesgo (Deshacer pisa los pomodoros, las rutinas hechas y los logros guardados
+> después). Siguiente: lo que decida Josué (C-89, E1-P).
+>
 > **📅 ACTUALIZACIÓN (2026-11-17 — Horarios E1-R · R5, v3.164.0; commit SOLO local en `claude/horarios-rediseno`, sin
 > push, PR, fusión ni despliegue, y sin nada ejecutado ni activado en Supabase alojado):** **R5 está hecha y con ella E1-R
 > completa en local.** Josué aprobó **H-22** (la red de rescate, antes de publicar), **H-23** (apartar las escrituras de

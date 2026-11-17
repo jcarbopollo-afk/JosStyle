@@ -193,6 +193,10 @@ import { DEFAULT_ESTILO_HOMBRE, normalizarEstiloHombre } from './lib/estiloDeHom
    invariante que se añadió en esta misma fase (`scripts/test-imports.mjs`),
    escrita justo después de cometer el mismo fallo con `eliminarRegistroPiel`. */
 import { DEFAULT_PAPELERA, purgarCaducados, prepararEliminacion, prepararRestauracion, conArrastrados } from './lib/papelera';
+/* 🧯 F-2 y F-3 (auditoría de E1-P) — Fitness y las apariencias se guardan también FUERA de los pasos de Deshacer, así
+   que un paso suyo apunta qué cambió (por elementos) y Deshacer aplica su inversa sobre lo de ahora, sin pisar lo de
+   después; y la papelera no suelta la entrada de algo que no vuelve a su módulo. */
+import { CLAVES_DESHACER_POR_CAMBIOS, cambiosDeUnPaso, deshacerConCambios, papeleraAlDeshacer } from './lib/deshacerPorCambios';
 import { normalizarBiblioteca } from './lib/biblioteca';
 import { convertirIdea } from './lib/ideas';
 // EH F15 — los registros de piel entran y salen de la papelera que YA existe.
@@ -1793,11 +1797,10 @@ export default function App() {
     return true;
   };
 
-  const eliminarTemaGuardado = (id) => {
-    const siguiente = temasGuardados.filter((t) => t.id !== id);
-    setTemasGuardados(siguiente);
-    saveData(uidUser, 'temasGuardados', siguiente);
-  };
+  /* 🧯 F-3 (auditoría de E1-P) — Gestión de temas borraba la apariencia PARA SIEMPRE, mientras «Apariencias guardadas»
+     (la misma lista) la manda a Eliminados recientemente. Dos borrados que se contradicen: ahora los dos van por la
+     papelera, de donde se recupera, y se puede deshacer. */
+  const eliminarTemaGuardado = (id) => eliminarConPapelera('temasGuardados', null, id);
 
   // El archivo ya viene validado (hex válidos, campos esperados) por quien llama — ver
   // GestionTemas.jsx. Un tema importado se añade a la lista, nunca se aplica solo: Josué decide
@@ -2411,7 +2414,10 @@ export default function App() {
   // las dos cosas a la vez y los dos sistemas de recuperación no se pisan.
   /* La foto de todos los módulos que guarda un paso de Deshacer (la de siempre, ahora con nombre: la usan también las
      operaciones protegidas de R3). */
-  const fotoDelEstado = () => ({ sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion, horarioTop, fitness, cumpleanos });
+  /* 🧯 F-1 (auditoría de E1-P) — `estiloHombre` NO estaba en la foto y `undo` escribía `last.estiloHombre ||
+     DEFAULT_ESTILO_HOMBRE`: CUALQUIER Deshacer dejaba Imagen personal con los valores de fábrica. Ahora va en la foto,
+     y `undo` solo la reescribe si ese paso la cambió (todas sus escrituras son pasos de Deshacer). */
+  const fotoDelEstado = () => ({ sueno, calistenia, futbol, economia, salud, nutricion, estudios, negocio, productividad, objetivos, calendario, diario, biblioteca, relacion, fe, bienestar, papelera, armario, rachas, gamificacion, horarioTop, fitness, estiloHombre, cumpleanos });
 
   /* 🛡 E1-R · R3 — un cambio que toca el horario Y Estudios o la papelera va en UNA operación protegida: el servidor lo
      guarda entero o no guarda nada. El horario se ve cambiado enseguida (como cualquier cambio del horario, D2); lo de
@@ -2481,7 +2487,13 @@ export default function App() {
        aparato ha podido cambiar después). */
     else snapshot.tocaHorario = !!patch.horarioTop;
     /* 🛡 R3 — qué claves cambió este paso: Deshacer no reescribe a la vez el horario y Estudios o la papelera a ciegas. */
-    snapshot.claves = Object.keys(patch).filter((k) => patch[k] !== undefined);
+    snapshot.claves = Object.keys(patch).filter((k) => patch[k] !== undefined && !(k === 'fitness' && fitnessSoloLecturaRef.current));
+    /* 🧯 F-2 y F-3 — Fitness y las apariencias también se guardan fuera de los pasos (entrenar, editar una plantilla,
+       guardar o renombrar una apariencia): el paso apunta QUÉ cambió, elemento a elemento, para deshacer solo eso. */
+    const cambiosDelPaso = {};
+    if (patch.fitness && !fitnessSoloLecturaRef.current) { const c = cambiosDeUnPaso(fitness, patch.fitness); if (c) cambiosDelPaso.fitness = c; }
+    if (patch.temasGuardados) { const c = cambiosDeUnPaso(temasGuardados, patch.temasGuardados); if (c) cambiosDelPaso.temasGuardados = c; }
+    if (Object.keys(cambiosDelPaso).length) snapshot.cambios = cambiosDelPaso;
     /* La pila de Deshacer (diez pasos), de la ref y no del estado del pintado: dos guardados seguidos no se pisan. */
     const pilaDeshacer = historyRef.current;
     const nextHist = [...pilaDeshacer, snapshot].slice(-10);
@@ -2522,6 +2534,9 @@ export default function App() {
        conoce. */
     if (patch.fitness && !fitnessSoloLecturaRef.current) { setFitness(patch.fitness); guardados.push(saveData(uidUser, 'fitness', patch.fitness)); }
     if (patch.cumpleanos) { setCumpleanos(patch.cumpleanos); guardados.push(saveData(uidUser, 'cumpleanos', patch.cumpleanos)); }
+    /* 🧯 F-3 — sin esta línea, borrar una apariencia guardada la mandaba a la papelera SIN quitarla de la lista
+       (`snapshotAndSave` solo escribe lo que conoce: el mismo fallo que FIT F4 con las plantillas). */
+    if (patch.temasGuardados) { setTemasGuardados(patch.temasGuardados); guardados.push(saveData(uidUser, 'temasGuardados', patch.temasGuardados)); }
     return resultadoDeGuardados(guardados);
   };
 
@@ -3159,35 +3174,60 @@ export default function App() {
       if (historyRef.current[historyRef.current.length - 1] !== ultimoPaso) { setAvisoApp('deshacer_cambiado'); return; }
     }
     const last = ultimoPaso;
+    /* 🧯 F-2 y F-3 (auditoría de E1-P) — Fitness y las apariencias NO se reescriben con la foto: también se guardan
+       fuera de los pasos (un entrenamiento registrado después se perdería). Si el paso las cambió y apuntó QUÉ
+       cambió, se deshace eso sobre lo de ahora, con condiciones; si algo se modificó después, no se deshace NADA y
+       se dice. Se calcula todo ANTES de escribir nada. Un paso antiguo sin cambios apuntados no las toca (y la
+       papelera, abajo, conserva sus entradas). */
+    const clavesDelPaso = Array.isArray(last.claves) ? last.claves : null;
+    const cambioEnPaso = (k) => !!clavesDelPaso && clavesDelPaso.includes(k);
+    const porCambios = {};
+    for (const k of CLAVES_DESHACER_POR_CAMBIOS) {
+      const registro = cambioEnPaso(k) && last.cambios ? last.cambios[k] : null;
+      if (!registro) continue;
+      if (k === 'fitness' && fitnessSoloLecturaRef.current) { setAvisoApp('deshacer_fitness_solo_lectura'); return; }
+      if (cargaFallida(k)) { setAvisoApp('deshacer_no_seguro'); return; }
+      const r = deshacerConCambios(k === 'fitness' ? fitness : temasGuardados, registro);
+      if (!r.ok) { setAvisoApp('deshacer_no_seguro'); return; }
+      porCambios[k] = r.valor;
+    }
+    /* 🧯 F-1 — Imagen personal solo se reescribe si ESTE paso la cambió (y la lleva): todas sus escrituras son pasos,
+       así que la foto es exactamente lo de antes. Un paso antiguo no la lleva y ya no la deja de fábrica. */
+    const ehVuelve = cambioEnPaso('estiloHombre') && last.estiloHombre !== undefined && last.estiloHombre !== null;
+    /* Las claves que la foto devuelve tal cual. 🧯 Solo las que el paso LLEVA: una que falte no se rellena con su valor
+       de fábrica (eso borraría lo que hay). */
+    const DE_LA_FOTO = [
+      ['sueno', setSueno], ['calistenia', setCalistenia], ['futbol', setFutbol], ['economia', setEconomia],
+      ['salud', setSalud], ['nutricion', setNutricion], ['estudios', setEstudios], ['negocio', setNegocio],
+      ['productividad', setProductividad], ['objetivos', setObjetivos], ['calendario', setCalendario],
+      ['diario', setDiario], ['biblioteca', setBiblioteca], ['relacion', setRelacion], ['fe', setFe],
+      ['bienestar', setBienestar], ['armario', setArmario], ['rachas', setRachas],
+      ['gamificacion', setGamificacion, 'gamificacionRachas'], ['cumpleanos', setCumpleanos],
+    ];
+    const enPaso = (k) => last[k] !== undefined && last[k] !== null;
+    const vuelven = new Set(DE_LA_FOTO.filter(([k]) => enPaso(k)).map(([k]) => k));
+    if (ehVuelve) vuelven.add('estiloHombre');
+    for (const k of Object.keys(porCambios)) vuelven.add(k);
+    /* 🧯 La papelera: la de la foto, pero sin soltar la entrada de algo que NO vuelve a su módulo con este Deshacer
+       (seguiría fuera y ya no estaría en la papelera), y con la retención de ahora (es un ajuste, no un paso). */
+    const claveDeEntrada = (e) => (MODULOS_PAPELERA[e.modulo] ? e.modulo : 'estiloHombre');
     const rest = historyRef.current.slice(0, -1);
-    setSueno(last.sueno); saveData(uidUser, 'sueno', last.sueno);
-    setCalistenia(last.calistenia); saveData(uidUser, 'calistenia', last.calistenia);
-    setFutbol(last.futbol); saveData(uidUser, 'futbol', last.futbol);
-    setEconomia(last.economia); saveData(uidUser, 'economia', last.economia);
-    setSalud(last.salud || DEFAULT_SALUD); saveData(uidUser, 'salud', last.salud || DEFAULT_SALUD);
-    setNutricion(last.nutricion || DEFAULT_NUTRICION); saveData(uidUser, 'nutricion', last.nutricion || DEFAULT_NUTRICION);
-    setEstudios(last.estudios || DEFAULT_ESTUDIOS); saveData(uidUser, 'estudios', last.estudios || DEFAULT_ESTUDIOS);
-    setNegocio(last.negocio || DEFAULT_NEGOCIO); saveData(uidUser, 'negocio', last.negocio || DEFAULT_NEGOCIO);
-    setProductividad(last.productividad || DEFAULT_PRODUCTIVIDAD); saveData(uidUser, 'productividad', last.productividad || DEFAULT_PRODUCTIVIDAD);
-    setObjetivos(last.objetivos || DEFAULT_OBJETIVOS); saveData(uidUser, 'objetivos', last.objetivos || DEFAULT_OBJETIVOS);
-    setCalendario(last.calendario || DEFAULT_CALENDARIO); saveData(uidUser, 'calendario', last.calendario || DEFAULT_CALENDARIO);
-    setDiario(last.diario || DEFAULT_DIARIO); saveData(uidUser, 'diario', last.diario || DEFAULT_DIARIO);
-    setBiblioteca(last.biblioteca || DEFAULT_BIBLIOTECA); saveData(uidUser, 'biblioteca', last.biblioteca || DEFAULT_BIBLIOTECA);
-    setRelacion(last.relacion || DEFAULT_RELACION); saveData(uidUser, 'relacion', last.relacion || DEFAULT_RELACION);
-    setFe(last.fe || DEFAULT_FE); saveData(uidUser, 'fe', last.fe || DEFAULT_FE);
-    setBienestar(last.bienestar || DEFAULT_BIENESTAR); saveData(uidUser, 'bienestar', last.bienestar || DEFAULT_BIENESTAR);
-    setPapelera(last.papelera || DEFAULT_PAPELERA); saveData(uidUser, 'papelera', last.papelera || DEFAULT_PAPELERA);
-    setArmario(last.armario || DEFAULT_ARMARIO); saveData(uidUser, 'armario', last.armario || DEFAULT_ARMARIO);
-    setRachas(last.rachas || ESTADO_INICIAL); saveData(uidUser, 'rachas', last.rachas || ESTADO_INICIAL);
-    setGamificacion(last.gamificacion || GAMIFICACION_INICIAL); saveData(uidUser, 'gamificacionRachas', last.gamificacion || GAMIFICACION_INICIAL);
+    for (const [k, set, clave = k] of DE_LA_FOTO) {
+      if (!enPaso(k)) continue;
+      set(last[k]); saveData(uidUser, clave, last[k]);
+    }
+    if (enPaso('papelera')) {
+      const pap = papeleraAlDeshacer(last.papelera, papelera, (e) => vuelven.has(claveDeEntrada(e)));
+      setPapelera(pap); saveData(uidUser, 'papelera', pap);
+    }
     /* 🔎 Horarios · Fase 4, entrega A — en solo lectura, deshacer no vuelve a escribir el horario. */
     /* Y un paso que no lleva el horario (uno guardado en solo lectura) no lo toca: antes lo
        restauraba como vacío. */
     /* 🛡 E1 — y por su escritor protegido, como un cambio tuyo. */
     if (tocaHorario) { setHorarioTop(last.horarioTop); guardarHorario(last.horarioTop); }
-    setEstiloHombre(last.estiloHombre || DEFAULT_ESTILO_HOMBRE); saveData(uidUser, 'estiloHombre', last.estiloHombre || DEFAULT_ESTILO_HOMBRE);
-    /* 🎂 Solo si el paso lo tenía: un paso de antes de Cumpleaños no puede vaciarlo. */
-    if (last.cumpleanos) { setCumpleanos(last.cumpleanos); saveData(uidUser, 'cumpleanos', last.cumpleanos); }
+    if (ehVuelve) { setEstiloHombre(last.estiloHombre); saveData(uidUser, 'estiloHombre', last.estiloHombre); }
+    if ('fitness' in porCambios) { setFitness(porCambios.fitness); saveData(uidUser, 'fitness', porCambios.fitness); }
+    if ('temasGuardados' in porCambios) { setTemasGuardados(porCambios.temasGuardados); saveData(uidUser, 'temasGuardados', porCambios.temasGuardados); }
     setHistory(rest); historyRef.current = rest; saveData(uidUser, 'historial', rest);
   };
 

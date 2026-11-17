@@ -1,5 +1,63 @@
 # CHANGELOG.md
 
+## v3.164.1 — 🧯 Corrección F-1 · F-2 · F-3: Deshacer no pierde Imagen personal ni Fitness, y las apariencias se borran de verdad (2026-11-17, commit solo local)
+
+> Con la autorización expresa de Josué del 2026-11-17 («corrección F-1, F-2 y F-3»), tras la auditoría de diseño de E1-P.
+> Rama `claude/horarios-rediseno`, encima de R5 (`21c7e6e`), en un commit independiente. Los tres fallos están **en
+> producción** (vienen de antes de esta rama). Sin push, PR, fusión ni despliegue; ni SQL, ni Supabase, ni datos reales. No
+> empieza E1-P, E1-S ni E1-L.
+
+### 🐛 Los tres fallos y su causa
+- **F-1 · Cualquier Deshacer dejaba Imagen personal con los valores de fábrica.** La foto de cada paso de Deshacer
+  (`fotoDelEstado()`, antes un objeto literal en `snapshotAndSave`) **no llevaba `estiloHombre`**, y `undo` escribía
+  `last.estiloHombre || DEFAULT_ESTILO_HOMBRE`, así que en CUALQUIER Deshacer —también uno de Economía o del Calendario— el
+  `undefined` se cambiaba por el valor de fábrica y se guardaba. La sección nueva del recorrido lo reproducía: tras deshacer
+  un movimiento de Economía, Imagen personal se quedaba con **0 perfumes**.
+- **F-2 · Deshacer un borrado de Fitness perdía el elemento.** `undo` restauraba la papelera de la foto (la entrada salía) y
+  **no restauraba `fitness`**, así que el entrenamiento, la plantilla, la rutina o el objetivo no volvía a ningún sitio. Y no
+  bastaba con añadir `fitness` a la foto: Fitness también se guarda **fuera** de los pasos (entrenar, editar una plantilla,
+  activar una rutina, con `guardarFitness`), y reescribir la foto borraría el entrenamiento registrado después del paso.
+- **F-3 · Borrar una apariencia guardada no la borraba.** «Apariencias guardadas» llamaba a `eliminarConPapelera
+  ('temasGuardados', …)`, pero `snapshotAndSave` no sabía guardar `temasGuardados`: la entrada iba a la papelera y la
+  apariencia se quedaba en la lista (es el fallo de FIT F4 con las plantillas, en otra clave). Y Gestión de temas, sobre la
+  MISMA lista, la borraba para siempre: dos borrados que se contradecían.
+
+### ✨ La corrección
+- **`src/lib/deshacerPorCambios.js` (nuevo).** Para las claves que también se guardan fuera de los pasos (`fitness` y
+  `temasGuardados`, `CLAVES_DESHACER_POR_CAMBIOS`), el paso apunta **qué cambió, elemento a elemento** (`calcularCambios` de
+  R2, con la posición de lo quitado) y Deshacer aplica su **inversa sobre lo de ahora, con condiciones**: lo quitado vuelve a
+  su sitio si no existe, lo añadido se quita si sigue igual, lo cambiado vuelve si sigue como lo dejó el paso. **Si algo se
+  modificó después, no se deshace nada** y se dice («deshacer_no_seguro»): nunca se pisa lo posterior. Lo guardado después
+  en otros elementos (un entrenamiento nuevo) se queda. Y `papeleraAlDeshacer`: la papelera de la foto, pero **sin soltar la
+  entrada de algo que no vuelve a su módulo** con ese Deshacer, y con la retención de ahora (es un ajuste, no un paso).
+- **`App.jsx`**: la foto lleva `estiloHombre` y `undo` solo la reescribe si **ese paso** la cambió; **ninguna clave que falte
+  en un paso se rellena con su valor de fábrica** (la regla que ya tenía Cumpleaños, ahora para todas); Fitness y las
+  apariencias se deshacen por cambios, calculando todo **antes** de escribir nada (en solo lectura de Fitness, se dice y no se
+  toca); `snapshotAndSave` guarda `temasGuardados`, y el borrado de Gestión de temas va por la papelera.
+- **`GestionTemas.jsx`**: su confirmación dice «Irá a Eliminados recientemente». **`accionesHoyAgenda.js`**: dos avisos nuevos.
+
+### ✅ Pruebas
+- **Reproducción antes del arreglo**: la sección «🧯 F-1 · F-2 · F-3» del recorrido de Chromium salió **22 de 53 en rojo**
+  con el código de antes; con el arreglo, **53/53**. Con el dedo: dos perfumes y «el que uso ahora»; un Deshacer de Economía
+  no toca Imagen personal; deshacer el borrado de un perfume lo devuelve con todo; deshacer el borrado de un entrenamiento y
+  de una plantilla de la rutina activa los devuelve exactos (su día vuelve a ser de entrenamiento); una apariencia se borra,
+  va a la papelera, se recupera en su sitio y Deshacer la devuelve; Gestión de temas también va a la papelera.
+- `scripts/test-deshacer-por-cambios.mjs` (54): los cinco borrados de Fitness (entrenamiento, objetivo, plantilla de la rutina
+  activa, la rutina activa, una predeterminada) vuelven exactos tras pasar por JSON; lo guardado después se conserva; lo
+  modificado después no se pisa; deshacer una restauración; las apariencias (lista en la raíz); la papelera; y lo que hace
+  `App.jsx`. **Con mutaciones se pone roja** (sin la posición, sin condiciones, la papelera que suelta todo, la foto sin
+  `estiloHombre`, `snapshotAndSave` sin las apariencias).
+
+### 🔁 Pruebas anteriores que se dan la vuelta
+- `test-cumpleanos.mjs` buscaba la línea `if (last.cumpleanos)`: la regla («un paso viejo sin ella no la vacía») pasa a valer
+  para todas las claves, y la comprobación mide lo mismo con la regla común.
+
+### ⏸ Lo que se encontró y NO se toca (C-89, pendiente de Josué)
+- **`productividad`, `objetivos` y `gamificacionRachas` también se guardan fuera de los pasos** (las sesiones y la
+  configuración de Pomodoro, las ejecuciones de rutinas, la revisión de objetivos, los logros), y **cualquier Deshacer** las
+  reescribe desde la foto: un pomodoro registrado después de un paso se pierde al deshacer ese paso (u otro posterior de
+  cualquier módulo). Es la misma causa que F-2, fuera de lo autorizado: está en `docs/03` como C-89, con su propuesta.
+
 ## v3.164.0 — Horarios E1-R · R5: la red de rescate y las escrituras de versiones antiguas (2026-11-17, commit solo local)
 
 > Con la autorización expresa de Josué del 2026-11-17 (**R5**), que aprueba **H-22**, **H-23** y **H-25** (C-88 en

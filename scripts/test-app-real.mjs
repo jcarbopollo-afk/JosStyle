@@ -19529,4 +19529,185 @@ ok(errores.length === erroresAntes_r5, `R5 — sin un error de JavaScript en tod
 protegido.S.copias.clear(); protegido.S.reglas.rescate = false; protegido.S.reglas.versionesAntiguas = false;
 almacen.horarioTop = horarioDeAntes_r5; almacen.estudios = estudiosDeAntes_r5; almacen.papelera = papeleraDeAntes_r5;
 
+/* ===========================================================================
+   🧯 F-1 · F-2 · F-3 — DESHACER CONSERVA IMAGEN PERSONAL Y FITNESS, Y LAS APARIENCIAS VAN A LA PAPELERA
+   (corrección autorizada por Josué tras la auditoría de E1-P, 2026-11-17)
+
+   Los tres fallos, con el dedo y contra lo guardado:
+   · F-1: el paso de Deshacer no guardaba `estiloHombre` y `undo` escribía el de fábrica: CUALQUIER Deshacer dejaba
+     Imagen personal vacía. Aquí: un Deshacer de otro módulo no la toca, y deshacer el borrado de un perfume lo devuelve
+     con todo lo demás (y con «el que uso ahora», que el borrado había limpiado).
+   · F-2: `undo` restauraba la papelera y no Fitness: deshacer un borrado de Fitness sacaba la entrada de la papelera y
+     dejaba el elemento fuera. Aquí: un entrenamiento y una plantilla de la rutina activa vuelven, con sus días.
+   · F-3: borrar una apariencia guardada la mandaba a la papelera SIN quitarla (`snapshotAndSave` no sabía guardar
+     `temasGuardados`), y Gestión de temas la borraba para siempre. Aquí: los dos caminos la quitan, va a la papelera,
+     se recupera y Deshacer la devuelve.
+   El escenario es suyo: se siembra y se deja como estaba (E3 F6).
+   =========================================================================== */
+console.log('\n── 🧯 F-1 · F-2 · F-3 — Deshacer conserva Imagen personal y Fitness; las apariencias van a la papelera ──');
+const erroresAntes_f123 = errores.length;
+const deAntes_f123 = Object.fromEntries(['estiloHombre', 'fitness', 'papelera', 'historial', 'economia', 'temasGuardados', 'ajustes'].map((k) => [k, almacen[k]]));
+const HOY_F123 = new Date().toLocaleDateString('sv-SE');
+const HACE3_F123 = (() => { const d = new Date(); d.setDate(d.getDate() - 3); return d.toLocaleDateString('sv-SE'); })();
+const json_f123 = (v) => JSON.stringify(v === undefined ? null : v);
+const perfumesDe_f123 = () => ((almacen.estiloHombre?.modulos || []).find((m) => m.id === 'perfumes')?.config?.perfumes) || {};
+const entradas_f123 = (pred) => ((almacen.papelera || {}).elementos || []).filter(pred);
+const deshacer_f123 = async () => (await pulsar('Ajustes')) && (await pulsar('Datos')) && (await pulsar('Deshacer último cambio'));
+/* Pulsa el botón de texto `texto` que está en la misma tarjeta que `nombre` (y no en la de `otro`). */
+const pulsarEnTarjeta_f123 = (texto, nombre, otro) => page.evaluate(([t, n, o]) => {
+  const b = [...document.querySelectorAll('button')].filter((x) => x.innerText.trim() === t).find((x) => {
+    let el = x;
+    for (let i = 0; i < 8 && el; i += 1) { el = el.parentElement; if (el && el.innerText.includes(n)) return !el.innerText.includes(o); }
+    return false;
+  });
+  if (!b) return false;
+  b.click();
+  return true;
+}, [texto, nombre, otro]);
+await page.setViewportSize({ width: 390, height: 844 });
+
+almacen.historial = [];
+almacen.papelera = { elementos: [], retencionDias: 30 };
+almacen.estiloHombre = JSON.parse(JSON.stringify(ESTILO_GUARDADO));
+almacen.economia = { saldoInicial: 0, hucha: 0, movimientos: [{ id: 'f123-mv', fecha: HACE3_F123, tipo: 'gasto', concepto: 'Gasto F123', cantidad: 9 }], objetivoHucha: null, aportaciones: [] };
+almacen.temasGuardados = [
+  { id: 'f123-ta', nombre: 'Mi tema F3', oficial: false, favorito: false, tema: 'oscuro', accent: '#6C99C9', temaPersonalizado: {}, fondo: {}, creadoEn: `${HACE3_F123}T10:00:00.000Z` },
+  { id: 'f123-tb', nombre: 'Otro tema F3', oficial: false, favorito: false, tema: 'claro', accent: '#C9896C', temaPersonalizado: {}, fondo: {}, creadoEn: `${HACE3_F123}T11:00:00.000Z` },
+];
+almacen.fitness = {
+  sesiones: [{ id: 'f123-s1', nombre: 'Entreno F2', fecha: HACE3_F123, estado: 'completada', inicio: `${HACE3_F123}T10:00:00.000Z`, fin: `${HACE3_F123}T11:00:00.000Z`, notas: 'una nota F2', origen: { tipo: 'plan', id: null, ejercicios: [] }, ejercicios: [] }],
+  planActivo: { planId: 'f123-ru', origen: 'rutina', desde: HOY_F123, inicioCiclo: HOY_F123 },
+  planesAnteriores: [], objetivos: [], clasificaciones: [], ejercicios: [], cuarentena: [],
+  rutinas: [{ id: 'f123-ru', nombre: 'Ciclo F123', descripcion: '', origen: 'propia', basePredeterminada: null,
+    dias: [{ id: 'f123-d1', tipo: 'entreno', plantillaId: 'f123-pl' }, { id: 'f123-d2', tipo: 'descanso', plantillaId: null }], meta: {}, creadoEn: HOY_F123, editadoEn: HOY_F123 }],
+  predeterminadasRetiradas: { rutinas: [], plantillas: [] },
+  plantillas: [{ id: 'f123-pl', nombre: 'Mi Push F123', descripcion: '', entorno: 'gym', frecuencia: null, duracion: null, thumbnail: '',
+    ejercicios: [{ id: 'f123-l1', exerciseId: 'press-banca-barra', orden: 0, series: 3, repeticiones: 8, peso: null, descanso: 90, notas: '', config: {}, modo: 'reps' }],
+    meta: {}, creadoEn: HOY_F123, editadoEn: HOY_F123 }],
+};
+await recargar_fit45();
+
+/* ── F-1 · Imagen personal: dos perfumes de verdad, con el dedo ── */
+ok(await pulsar('Bienestar') && await pulsar('Imagen personal') && await tocarTarjetaEH('Fragancia'), 'F-1 — se abre Fragancia (Perfumes)');
+if (/¿Quieres utilizar este apartado\?/.test(await ver())) await pulsar('Sí, configurarlo');
+ok(await pulsar('Mi colección'), 'F-1 — Mi colección');
+for (const [n, marca] of [['Perfume F1', 'Marca uno'], ['Perfume F2', 'Marca dos']]) {
+  await page.fill('input[aria-label="Nombre del perfume"]', n);
+  await page.fill('input[aria-label="Marca"]', marca);
+  await pulsar('Añadir perfume');
+  await esperarTexto(new RegExp(n));
+}
+ok(await pulsarEnTarjeta_f123('Es el que uso ahora', 'Perfume F2', 'Perfume F1'), 'F-1 — «Perfume F2» es el que usa ahora');
+await page.waitForTimeout(900);
+const eh1_f123 = json_f123(almacen.estiloHombre);
+ok((perfumesDe_f123().perfumes || []).length === 2 && !!perfumesDe_f123().actual, `F-1 — en la cuenta: dos perfumes y «el que uso ahora» (${(perfumesDe_f123().perfumes || []).length})`);
+
+/* Un Deshacer de OTRO módulo no puede tocar Imagen personal (el fallo de verdad: cualquier Deshacer la vaciaba). */
+ok(await pulsar('Gestión') && await pulsar('Economía') && /Gasto F123/.test(await esperarTexto(/Gasto F123/) || ''), 'F-1 — en Economía está el movimiento');
+ok(await pulsar('Eliminar movimiento'), 'F-1 — se borra el movimiento');
+await page.waitForTimeout(800);
+ok(!((almacen.economia || {}).movimientos || []).some((m) => m.id === 'f123-mv'), 'F-1 — el movimiento sale de la cuenta');
+ok(await deshacer_f123(), 'F-1 — Ajustes → Datos → «Deshacer último cambio»');
+await page.waitForTimeout(1200);
+ok(((almacen.economia || {}).movimientos || []).some((m) => m.id === 'f123-mv'), 'F-1 — Deshacer devuelve el movimiento (Deshacer normal sigue funcionando)');
+ok(json_f123(almacen.estiloHombre) === eh1_f123, `🚨 F-1 — …y Imagen personal sigue EXACTAMENTE igual: sus apartados, perfumes y «el que uso ahora» (${(perfumesDe_f123().perfumes || []).length} perfumes)`);
+
+/* Deshacer el borrado de un perfume: vuelve él, vuelve «el que uso ahora» y la entrada sale de la papelera. */
+await recargar_fit45();
+ok(await pulsar('Bienestar') && await pulsar('Imagen personal') && await tocarTarjetaEH('Fragancia') && await pulsar('Mi colección'), 'F-1 — de vuelta en Mi colección (tras recargar)');
+await esperarTexto(/Perfume F2/);
+ok(await pulsarEnTarjeta_f123('Eliminar', 'Perfume F2', 'Perfume F1'), 'F-1 — se borra «Perfume F2»');
+await page.waitForTimeout(900);
+ok(!(perfumesDe_f123().perfumes || []).some((p) => p.nombre === 'Perfume F2') && entradas_f123((e) => e.modulo === 'perfumes').length === 1,
+  'F-1 — sale de la cuenta y va a Eliminados recientemente');
+ok(await deshacer_f123(), 'F-1 — y se deshace');
+await page.waitForTimeout(1200);
+ok(json_f123(almacen.estiloHombre) === eh1_f123, '🚨 F-1 — Deshacer devuelve el perfume y TODO Imagen personal queda como estaba (también «el que uso ahora»)');
+ok(entradas_f123((e) => e.modulo === 'perfumes').length === 0, 'F-1 — …y su entrada sale de la papelera (no queda duplicado)');
+
+/* ── F-2 · Fitness: un entrenamiento del historial ── */
+await recargar_fit45();
+const fit0_f123 = JSON.parse(json_f123(almacen.fitness));
+const sesion0_f123 = json_f123((fit0_f123.sesiones || []).find((s) => s.id === 'f123-s1'));
+ok(sesion0_f123 !== 'null', 'F-2 — el entrenamiento está en la cuenta');
+ok(await aFitness_fit39() && await pulsar('Abrir Historial') && await pulsar('Entreno F2'), 'F-2 — se abre «Entreno F2» desde el historial');
+ok(await pulsar('Eliminar entrenamiento') && await pulsar('Eliminar este entrenamiento del historial'), 'F-2 — se elimina');
+await page.waitForTimeout(900);
+ok(!((almacen.fitness || {}).sesiones || []).some((s) => s.id === 'f123-s1') && entradas_f123((e) => e.modulo === 'fitness' && e.coleccion === 'sesiones').length === 1,
+  'F-2 — sale de Fitness y va a la papelera');
+ok(await deshacer_f123(), 'F-2 — y se deshace');
+await page.waitForTimeout(1200);
+ok(json_f123(((almacen.fitness || {}).sesiones || []).find((s) => s.id === 'f123-s1')) === sesion0_f123,
+  '🚨 F-2 — Deshacer DEVUELVE el entrenamiento, exactamente como estaba');
+ok(entradas_f123((e) => e.modulo === 'fitness').length === 0, 'F-2 — …y su entrada sale de la papelera');
+
+/* Una plantilla de la rutina activa: al borrarla sus días pasan a descanso; al deshacer vuelven. */
+await recargar_fit45();
+const fit1_f123 = JSON.parse(json_f123(almacen.fitness));
+ok(await aFitness_fit39() && await pulsar('Ver Mi Push F123') && await pulsar('Acciones de Mi Push F123') && await pulsar('Eliminar'), 'F-2 — se pide eliminar «Mi Push F123»');
+ok(/pasará a ser de descanso|pasarán a ser de descanso/.test(await esperarTexto(/de descanso/) || '') && await pulsar('Confirmar eliminar Mi Push F123'), 'F-2 — avisa de que su día pasa a descanso, y se confirma');
+await page.waitForTimeout(900);
+const rut_f123 = () => ((almacen.fitness || {}).rutinas || []).find((r) => r.id === 'f123-ru');
+ok(!((almacen.fitness || {}).plantillas || []).some((p) => p.id === 'f123-pl') && rut_f123() && rut_f123().dias.every((d) => d.tipo === 'descanso'),
+  'F-2 — la plantilla sale y el día de la rutina activa pasa a descanso');
+ok(await deshacer_f123(), 'F-2 — y se deshace');
+await page.waitForTimeout(1200);
+ok(json_f123(((almacen.fitness || {}).plantillas || []).find((p) => p.id === 'f123-pl')) === json_f123((fit1_f123.plantillas || []).find((p) => p.id === 'f123-pl')),
+  '🚨 F-2 — Deshacer devuelve la plantilla, exactamente como estaba');
+ok(json_f123(rut_f123()) === json_f123((fit1_f123.rutinas || []).find((r) => r.id === 'f123-ru')) && json_f123((almacen.fitness || {}).planActivo) === json_f123(fit1_f123.planActivo),
+  '🚨 F-2 — …y la rutina activa recupera su día de entrenamiento (la relación vuelve)');
+ok(entradas_f123((e) => e.modulo === 'fitness').length === 0, 'F-2 — …y no queda entrada en la papelera');
+ok(json_f123((almacen.fitness || {}).sesiones) === json_f123(fit1_f123.sesiones), 'F-2 — …sin tocar los entrenamientos');
+
+/* ── F-3 · Apariencias guardadas ── */
+await recargar_fit45();
+const temas_f123 = () => (Array.isArray(almacen.temasGuardados) ? almacen.temasGuardados : []);
+ok(await pulsar('Ajustes') && await pulsar('Apariencia') && await pulsar('Apariencias guardadas'), 'F-3 — Ajustes → Apariencia → Apariencias guardadas');
+ok(/Mi tema F3/.test(await esperarTexto(/Mi tema F3/) || ''), 'F-3 — se ven las dos apariencias');
+ok(await pulsar('Eliminar Mi tema F3'), 'F-3 — se borra «Mi tema F3»');
+await page.waitForTimeout(900);
+ok(!temas_f123().some((t) => t.id === 'f123-ta'), '🚨 F-3 — «Mi tema F3» SALE DE LA CUENTA (antes se quedaba)');
+ok(!/Mi tema F3/.test(await ver()), 'F-3 — …y de la pantalla');
+ok(entradas_f123((e) => e.modulo === 'temasGuardados' && e.idOriginal === 'f123-ta').length === 1, 'F-3 — …y está en Eliminados recientemente');
+await recargar_fit45();
+ok(await pulsar('Ajustes') && await pulsar('Eliminados recientemente') && /Mi tema F3/.test(await esperarTexto(/Mi tema F3/) || ''), 'F-3 — se ve en Eliminados recientemente');
+const recup_f123 = await page.evaluate(() => {
+  const fila = [...document.querySelectorAll('li, div')].reverse().find((el) => /Mi tema F3/.test(el.innerText || '') && el.querySelector('button[aria-label="Recuperar"]'));
+  const b = fila && fila.querySelector('button[aria-label="Recuperar"]');
+  if (!b) return false;
+  b.click();
+  return true;
+});
+await page.waitForTimeout(900);
+ok(recup_f123 && temas_f123()[0]?.id === 'f123-ta' && temas_f123().length === 2, '🚨 F-3 — se recupera, en su sitio (la primera)');
+ok(entradas_f123((e) => e.modulo === 'temasGuardados').length === 0, 'F-3 — …y sale de la papelera');
+/* Borrar y deshacer. */
+await recargar_fit45();
+ok(await pulsar('Ajustes') && await pulsar('Apariencia') && await pulsar('Apariencias guardadas') && await pulsar('Eliminar Mi tema F3'), 'F-3 — se vuelve a borrar');
+await page.waitForTimeout(900);
+ok(!temas_f123().some((t) => t.id === 'f123-ta'), 'F-3 — …y sale');
+await recargar_fit45();
+ok(await deshacer_f123(), 'F-3 — y se deshace (tras recargar: el paso sigue en la cuenta)');
+await page.waitForTimeout(1200);
+ok(temas_f123()[0]?.id === 'f123-ta' && temas_f123().length === 2 && entradas_f123((e) => e.modulo === 'temasGuardados').length === 0,
+  '🚨 F-3 — Deshacer la devuelve a su sitio y la saca de la papelera');
+/* El otro camino: Gestión de temas (modo avanzado) ya no borra para siempre. */
+await recargar_fit45();
+ok(await pulsar('Ajustes') && await pulsar('Apariencia') && await pulsar('Colores'), 'F-3 — Apariencia → Colores');
+if (!(await page.evaluate(() => [...document.querySelectorAll('button[aria-label^="Eliminar Otro tema F3"]')].length))) {
+  await page.evaluate(() => { const s = [...document.querySelectorAll('[role="switch"]')].find((x) => (x.getAttribute('aria-label') || '').includes('Modo avanzado de color')); if (s) s.click(); });
+  await page.waitForTimeout(700);
+}
+ok(await pulsar('Eliminar Otro tema F3'), 'F-3 — Gestión de temas: se pide eliminar «Otro tema F3»');
+const conf_f123 = await esperarTexto(/¿Eliminar "Otro tema F3"\?/);
+ok(/Eliminados recientemente/.test(conf_f123 || ''), 'F-3 — la confirmación dice que va a Eliminados recientemente');
+ok(await page.evaluate(() => { const p = [...document.querySelectorAll('p')].find((x) => /¿Eliminar "Otro tema F3"\?/.test(x.innerText)); const b = p && [...p.parentElement.querySelectorAll('button')].find((x) => x.innerText.trim() === 'Eliminar'); if (!b) return false; b.click(); return true; }), 'F-3 — y se confirma');
+await page.waitForTimeout(900);
+ok(!temas_f123().some((t) => t.id === 'f123-tb') && entradas_f123((e) => e.modulo === 'temasGuardados' && e.idOriginal === 'f123-tb').length === 1,
+  '🚨 F-3 — Gestión de temas también la manda a la papelera (no hay un segundo borrado para siempre)');
+
+const nuevos_f123 = errores.slice(erroresAntes_f123);
+ok(nuevos_f123.length === 0, `F-1 · F-2 · F-3 — ni un error en la consola${nuevos_f123.length ? `: ${nuevos_f123.slice(0, 3).join(' | ').slice(0, 300)}` : ''}`);
+for (const [k, v] of Object.entries(deAntes_f123)) { if (v === undefined) delete almacen[k]; else almacen[k] = v; }
+
 await salir(browser);
