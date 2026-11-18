@@ -19513,9 +19513,20 @@ ok(await esperarQue_abis(() => !!bloqueR5('br5bio'), 15000) && !!bloqueR5('br5la
 ok(copiasR5().length === 2 && LLAMADAS_PROTEGIDAS.copiaEliminar === elim0_r5, '🚨 R5 · versión antigua — las dos copias siguen');
 ok(await cargar_r3(page) && !(await page.evaluate(() => !!document.querySelector('[data-aviso-version-antigua]'))), 'R5 · aviso — vista la copia, al volver ya no se avisa');
 
-/* 3 · Una copia de Estudios (rescate): se ve qué contiene y se puede eliminar, pero no se recupera desde aquí. */
-protegido.escrituraAntigua('estudios', { ...almacen.estudios, asignaturas: almacen.estudios.asignaturas.filter((a) => a.id !== 'r5lat') });
-ok(copiasR5().length === 3, 'R5 · Estudios — una versión antigua pisa Estudios: queda rescatado');
+/* 3 · Estudios. D1 (b), decisión de Josué del 2026-11-18: la red de rescate es SOLO del horario, así que una versión
+   antigua guarda Estudios como hoy, sin copia (riesgo aceptado hasta E1-S). */
+const estudiosDeAntes3_r5 = JSON.parse(JSON.stringify(almacen.estudios));
+const estudiosPisados_r5 = { ...almacen.estudios, asignaturas: almacen.estudios.asignaturas.filter((a) => a.id !== 'r5lat') };
+const e3_r5 = protegido.escrituraAntigua('estudios', estudiosPisados_r5);
+ok(e3_r5.aplicada && !e3_r5.copiaId && copiasR5().length === 2, 'R5 · Estudios — una versión antigua pisa Estudios: se aplica como hoy y SIN copia (D1 b)');
+/* …y la pantalla sigue sabiendo enseñar una copia de Estudios (las habrá cuando E1-S proteja Estudios): se pone una en
+   el doble, como la dejaría la red, para comprobar que se ve, se puede eliminar y no se recupera desde aquí. */
+protegido.S.copias.set(globalThis.crypto.randomUUID(), {
+  op: { formato: 1, clave: 'estudios', antes: estudiosDeAntes3_r5, despues: estudiosPisados_r5 },
+  tipo: 'rescate', vista: false, aparato: null, creadaEn: new Date().toISOString(),
+  meta: { clave: 'estudios', accion: 'escritura', huella: 'r5-estudios-sembrada', creadaEn: new Date().toISOString() },
+});
+ok(copiasR5().length === 3, 'R5 · Estudios — (una copia de Estudios puesta en el doble, para la pantalla)');
 {
   await abrirApartados_r4(page);
   ok(await pulsar_r3(page, 'Estudios: lo que había antes'), 'R5 · Estudios — se abre');

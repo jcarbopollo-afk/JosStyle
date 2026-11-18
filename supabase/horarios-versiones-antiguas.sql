@@ -2,9 +2,12 @@
 -- 🗂 HORARIOS · E1-R · R5 — APARTAR LAS ESCRITURAS DE VERSIONES ANTIGUAS (P4, decisión H-23 de Josué; docs/19 §18.19)
 --
 -- ⛔ NO EJECUTAR EN SUPABASE (ni de producción ni independiente). Se construye y se prueba SOLO en un Postgres +
---    PostgREST LOCALES y desechables (127.0.0.1), con `scripts/test-rescate-postgrest.mjs`. Activarla en un entorno
---    alojado es el paso P4 de E2 (después de publicar y de que los aparatos se actualicen) y lo autoriza Josué. Para
---    quitarla: `horarios-versiones-antiguas-deshacer.sql`.
+--    PostgREST LOCALES y desechables (127.0.0.1), con `scripts/test-rescate-postgrest.mjs` y
+--    `scripts/test-instalacion-horarios-postgrest.mjs`. En un entorno alojado se instala SOLO dentro de
+--    `horarios-instalacion.sql` (R1 + rescate + esta regla, en una transacción y ANTES de publicar: D3, secuencia B,
+--    decisión de Josué del 2026-11-18), con su autorización. Para quitarla: `horarios-versiones-antiguas-deshacer.sql`,
+--    y SIEMPRE antes de volver a una versión anterior de la aplicación (con esta regla activa, lo que guarde esa versión
+--    en el horario se apartaría sin aplicarse).
 -- ⚠️ Necesita `horarios-protegido.sql` (R1) instalado antes: guarda en su tabla `copias_apartadas`.
 --
 -- Qué hace (H-23, que sustituye a la regla de rechazar de E1, TP-15 B): una escritura de `horarioTop` desde la
@@ -25,7 +28,7 @@
 --   · Lo que escriben las funciones protegidas pasa (llevan su condición); lo que hace el propietario de la tabla
 --     (el borrado en cascada de una cuenta, el editor SQL) también.
 --   · Solo `horarioTop` (`claves_versiones_antiguas`). `estudios` (apartar) y `papelera` (fusionar) son de E1-S y
---     E1-P; hasta entonces, la red de rescate (P1) sigue guardando lo que pisen.
+--     E1-P; hasta entonces se guardan como hoy, sin copia (D1 b: la red de rescate es también solo de `horarioTop`).
 --   · Sustituye a la regla de E1 (`horarios-regla-revision.sql`, rechazar): si estaba instalada, se quita aquí.
 -- ═══════════════════════════════════════════════════════════════════════════
 

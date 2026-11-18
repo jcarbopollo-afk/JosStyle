@@ -5,10 +5,11 @@
 // un Postgres + PostgREST LOCALES, instalados por esta prueba y quitados al terminar. La «versión antigua» guarda como
 // la v3.162 (`saveData`: un upsert sin condición, con el mismo cliente de Supabase); la nueva, con el escritor de R2:
 //   A · antes de P1, como hoy: lo pisado no queda en ningún sitio
-//   B · P1: cada escritura a ciegas que cambia o borra horarioTop, estudios o papelera deja su copia; nada más; H-25
+//   B · P1: cada escritura a ciegas que cambia o borra horarioTop deja su copia (D1 b: Estudios y la papelera, como
+//       hoy, sin copia); nada más; H-25
 //   C · P2–P3: la nueva y una antigua a la vez; lo pisado se recupera eligiendo, y nada se pierde
 //   D · P4: las escrituras antiguas de horarioTop se apartan (no se aplican, no se rechazan); reintentos; sin horario;
-//       borrar; Estudios sigue en la red; si no se puede apartar, se rechaza; recuperar lo elegido; el aviso
+//       borrar; Estudios se aplica como hoy; si no se puede apartar, se rechaza; recuperar lo elegido; el aviso
 //   E · concurrencia: escrituras antiguas y nuevas a la vez
 //   F · la secuencia P1 → P4 entera, con una versión antigua escribiendo en cada momento: nada se pierde
 //   G · la vuelta atrás: quitar las reglas no borra ninguna copia
@@ -203,11 +204,14 @@ try {
     ok(cuantas('rescate') === 3, 'ida, vuelta e ida otra vez: la pareja repetida no se guarda dos veces (3, no 4)');
     await antigua(S1, 'estudios', { asignaturas: [{ id: 'mat', nombre: 'Matemáticas' }], examenes: [] });
     await antigua(S1, 'papelera', { elementos: [{ id: 'p1' }], retencionDias: 30 });
-    const ce = copiasDe('rescate').filter((c) => c.contenido.clave === 'estudios');
-    ok(ce.length === 1 && ce[0].contenido.antes.asignaturas.length === 2 && copiasDe('rescate').some((c) => c.contenido.clave === 'papelera'), 'Estudios y Eliminados recientes también quedan rescatados');
-    const borrar = await S1.supabase.from('app_data').delete().eq('user_id', HV_U1).eq('key', 'estudios');
+    /* D1 (b), 2026-11-18: la red es SOLO de horarioTop. Estudios y la papelera se guardan como hoy, sin copia. */
+    ok(valor('estudios').asignaturas.length === 1 && valor('papelera').elementos.length === 1 && !copiasDe('rescate').some((c) => c.contenido.clave !== 'horarioTop'), 'Estudios y Eliminados recientes se guardan como hoy y SIN copia (D1 b: la red es solo del horario)');
+    const borrarE = await S1.supabase.from('app_data').delete().eq('user_id', HV_U1).eq('key', 'estudios');
+    ok(!borrarE.error && valor('estudios') === null && !copiasDe('rescate').some((c) => c.meta.accion === 'borrado'), 'borrar Estudios desde la aplicación: se borra como hoy, sin copia');
+    const horarioAntesDeBorrar = valor('horarioTop');
+    const borrar = await S1.supabase.from('app_data').delete().eq('user_id', HV_U1).eq('key', 'horarioTop');
     const cb = copiasDe('rescate').find((c) => c.meta.accion === 'borrado');
-    ok(!borrar.error && valor('estudios') === null && cb && cb.contenido.despues === null && cb.contenido.antes.asignaturas.length === 1, 'un borrado desde la aplicación: se borra, y lo que había queda rescatado');
+    ok(!borrar.error && valor('horarioTop') === null && cb && cb.contenido.despues === null && canon(cb.contenido.antes) === canon(horarioAntesDeBorrar), 'borrar el horario desde la aplicación (sin P4): se borra, y lo que había queda rescatado');
     const antes = cuantas();
     await antigua(S1, 'fitness', { a: 1 }); await antigua(S1, 'fitness', { a: 2 });
     await antigua(S1, 'horarioTop', HORARIO(), HV_U2);
@@ -287,7 +291,7 @@ try {
     const A = aparato(S1, 'A');
     ok((await A.w.guardar(conBloque(A.pantalla.horario, 'b2', { aula: 'NUEVA' }))).ok && aula(valor('horarioTop'), 'b2') === 'NUEVA', 'la versión nueva sigue guardando (por sus funciones)');
     const e = await antigua(S1, 'estudios', { asignaturas: [], examenes: [] });
-    ok(!e.error && valor('estudios').asignaturas.length === 0 && copiasDe('rescate').some((c) => c.contenido.clave === 'estudios'), 'Estudios no se aparta (es de E1-S): se aplica y queda rescatado');
+    ok(!e.error && valor('estudios').asignaturas.length === 0 && !copiasDe('rescate').some((c) => c.contenido.clave === 'estudios'), 'Estudios no se aparta (es de E1-S): se aplica como hoy, sin copia (D1 b)');
     psql("alter table copias_apartadas add constraint prueba_r5_falla check (tipo <> 'version_antigua') not valid");
     const antesF = JSON.stringify(valor('horarioTop'));
     const f = await antigua(S1, 'horarioTop', conTestigo(sinBloque(HORARIO(), 'b1')));
@@ -319,9 +323,8 @@ try {
     ok(aula(hf, 'b1') === 'N2' && aula(hf, 'b3') === 'A3', '🚨 el horario es el de la versión nueva (las antiguas no se aplicaron)');
     const apartadas = copiasDe('version_antigua').map((c) => aula(c.contenido.intentado, 'b3')).sort();
     ok(apartadas.join() === valoresH.map((v) => aula(v, 'b3')).sort().join(), 'y cada una de las seis está apartada, una vez');
-    const rescE = copiasDe('rescate').filter((c) => c.contenido.clave === 'estudios');
-    const vistos = new Set([canon(valor('estudios')), ...rescE.flatMap((c) => [canon(c.contenido.antes), canon(c.contenido.despues)])]);
-    ok([estudiosInicial, ...valoresE].every((v) => vistos.has(canon(v))), '🚨 Estudios: cada valor (el inicial y los seis) está en la cuenta o en una copia: nada se perdió');
+    /* D1 (b): Estudios se guarda como hoy (gana la última escritura) y sin copia: el riesgo aceptado hasta E1-S. */
+    ok([estudiosInicial, ...valoresE].some((v) => canon(v) === canon(valor('estudios'))) && !copiasDe('rescate').some((c) => c.contenido.clave === 'estudios'), 'Estudios: seis escrituras antiguas a la vez se aplican como hoy (gana una) y sin copia (D1 b, riesgo aceptado hasta E1-S)');
     A.w.cerrar();
     /* Solo con la red (sin P4): seis escrituras del horario a la vez. */
     psqlArchivo(SQL_ANTIGUAS_DESHACER);

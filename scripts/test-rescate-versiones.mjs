@@ -34,6 +34,7 @@ import { crearEscritorDeOperaciones } from '../src/lib/escritorOperaciones.js';
 import { normalizarEstudiosCargados, normalizarPapeleraCargada } from '../src/lib/asignaturaProtegida.js';
 import { normalizarHorarioTop } from '../src/lib/horario.js';
 import { crearDobleProtegido } from './dobleProtegido.mjs';
+import { instalacionHorarios } from './generar-instalacion-horarios.mjs';
 
 const RAIZ = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 let n = 0; let fallos = 0;
@@ -75,7 +76,8 @@ seccion('A · El SQL preparado: P1 (rescate) y P4 (versiones antiguas), sin ejec
   ok(/NO EJECUTAR EN SUPABASE/.test(resc) && /NO EJECUTAR EN SUPABASE/.test(vant) && /NO se ejecuta en Supabase/.test(rescD) && /NO se ejecuta en Supabase/.test(vantD), 'los cuatro archivos dicen que no se ejecutan en Supabase (los activa Josué, en E2)');
   const r = sinComentariosSql(resc); const v = sinComentariosSql(vant);
   ok(/after update or delete on public\.app_data/.test(r) && /execute function protegido_interno\.rescatar\(\)/.test(r), 'P1: la red de rescate va DESPUÉS de escribir (solo rescata lo que de verdad se escribió), en cambios y borrados');
-  ok(/array\['horarioTop', 'estudios', 'papelera'\]/.test(r), 'P1: protege horarioTop, estudios y papelera');
+  ok(/claves_rescate\(\) returns text\[\]\s*\nlanguage sql immutable set search_path = '' as \$\$ select array\['horarioTop'\]::text\[\]/.test(r) && !/array\['horarioTop', 'estudios'/.test(r),
+    'P1: protege SOLO horarioTop (D1 b, 2026-11-18): Estudios y la papelera se guardan como hoy hasta E1-S y E1-P');
   ok(/message = 'rescate_fallido'/.test(r) && /exception when others then/.test(r), 'H-25: si la copia falla, la escritura se rechaza (rescate_fallido)');
   ok(/'josstyle\.protegido', true\), ''\) = 'on' then return null/.test(r), 'lo que escriben las funciones protegidas no se rescata');
   ok(/new\.value is not distinct from old\.value then return null/.test(r) && /meta ->> 'huella' = v_huella/.test(r), 'un guardado que no cambia nada, o una pareja ya rescatada, no se repite');
@@ -91,6 +93,11 @@ seccion('A · El SQL preparado: P1 (rescate) y P4 (versiones antiguas), sin ejec
     ok(!/delete from|truncate|drop table/i.test(c) && /drop trigger if exists/.test(c), `la vuelta atrás de ${nombre} quita su disparador y NO borra ninguna copia`);
   }
   ok(/'rescate', exists/.test(prot) && /'versionesAntiguas', exists/.test(prot) && /'horario_regla_revision', 'horarios_versiones_antiguas'/.test(prot), 'el protocolo dice qué reglas están activas (rescate, versiones antiguas y la de horarioTop)');
+  /* 🛡 Bloque 1 (D3, 2026-11-18): la instalación de producción es UNA transacción generada con las tres piezas. */
+  const inst = leerArchivo('supabase/horarios-instalacion.sql');
+  ok(inst === instalacionHorarios(), 'horarios-instalacion.sql es exactamente lo que genera scripts/generar-instalacion-horarios.mjs con las piezas de hoy (si cambia una pieza, se regenera)');
+  ok(inst.split('\n').filter((l) => l === 'begin;').length === 1 && inst.split('\n').filter((l) => l === 'commit;').length === 1 && inst.indexOf(prot.replace(/\s+$/, '')) > inst.indexOf('\nbegin;\n') && inst.indexOf(vant.replace(/\s+$/, '')) < inst.lastIndexOf('\ncommit;\n'), 'R1, la red y P4, en orden, entre un solo BEGIN y un solo COMMIT');
+  ok(/PROHIBIDO EN PRODUCCIÓN/.test(leerArchivo('supabase/horarios-protegido-deshacer.sql')) && /PROHIBIDO INSTALARLA EN PRODUCCIÓN/.test(leerArchivo('supabase/horarios-regla-revision.sql')), 'los dos scripts prohibidos en producción lo dicen en su cabecera');
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -290,7 +297,7 @@ seccion('I · Reintentos y duplicados');
   const a = doble.escrituraAntigua('horarioTop', v); const b = doble.escrituraAntigua('horarioTop', v);
   ok(a.copiaId && !b.copiaId && doble.listarCopias().length === 1, 'la misma escritura dos veces: la segunda no cambia nada y no hace otra copia');
   const e = doble.escrituraAntigua('estudios', normalizarEstudiosCargados({ asignaturas: [] }));
-  ok(e.aplicada && e.copiaId && doble.leerCopia(e.copiaId)[0].contenido.clave === 'estudios', 'Estudios también queda rescatado');
+  ok(e.aplicada && !e.copiaId && doble.listarCopias().length === 1, 'Estudios se aplica como hoy y SIN copia (D1 b: la red es solo de horarioTop, como el SQL)');
   doble.S.reglas.versionesAntiguas = true;
   const w = conTestigo(conBloqueNuevo(HORARIO(), FISICA), 'rv2', 'viejo');
   const c1 = doble.escrituraAntigua('horarioTop', w); const c2 = doble.escrituraAntigua('horarioTop', w);

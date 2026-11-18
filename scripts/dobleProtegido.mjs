@@ -147,6 +147,7 @@ export function crearDobleProtegido(almacen) {
      guarda lo que había antes de una que sí se aplica (H-22). Mismas reglas que el SQL (no repite una idéntica ni
      aparta o rescata lo que no cambia). Devuelve `{ aplicada, copiaId }`. */
   const huellas = new Set();
+  const CLAVES_RESCATE = Object.freeze(['horarioTop']);
   const escrituraAntigua = (clave, valor, { aparato = null } = {}) => {
     const vigente = existe(clave) ? copia(almacen[clave]) : null;
     if (S.reglas.versionesAntiguas && clave === 'horarioTop') {
@@ -163,7 +164,8 @@ export function crearDobleProtegido(almacen) {
       return { aplicada: false, copiaId: id };
     }
     let copiaId = null;
-    if (S.reglas.rescate && ['horarioTop', 'estudios', 'papelera'].includes(clave) && vigente !== null && textoCanonico(vigente) !== textoCanonico(valor)) {
+    /* D1 (b), 2026-11-18: la red de rescate es SOLO de `horarioTop`, como `claves_rescate()` del SQL. */
+    if (S.reglas.rescate && CLAVES_RESCATE.includes(clave) && vigente !== null && textoCanonico(vigente) !== textoCanonico(valor)) {
       const h = `r|${clave}|${textoCanonico(vigente)}|${textoCanonico(valor)}`;
       if (!huellas.has(h)) {
         huellas.add(h);

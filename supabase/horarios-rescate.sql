@@ -2,17 +2,24 @@
 -- 🛟 HORARIOS · E1-R · R5 — LA RED DE RESCATE (P1, decisiones H-22 y H-25 de Josué; docs/19 §18.19)
 --
 -- ⛔ NO EJECUTAR EN SUPABASE (ni de producción ni independiente). Se construye y se prueba SOLO en un Postgres +
---    PostgREST LOCALES y desechables (127.0.0.1), con `scripts/test-rescate-postgrest.mjs`. Instalarla en un entorno
---    alojado es el paso P1 de E2 y lo autoriza Josué. Para quitarla: `horarios-rescate-deshacer.sql`.
+--    PostgREST LOCALES y desechables (127.0.0.1), con `scripts/test-rescate-postgrest.mjs` y
+--    `scripts/test-instalacion-horarios-postgrest.mjs`. En un entorno alojado se instala SOLO dentro de
+--    `horarios-instalacion.sql` (R1 + esta red + P4, en una transacción: bloque 1, 2026-11-18), con la autorización de
+--    Josué. Para quitarla: `horarios-rescate-deshacer.sql`.
 -- ⚠️ Necesita `horarios-protegido.sql` (R1) instalado antes: guarda las copias en su tabla `copias_apartadas`.
 --
 -- Qué hace: cada vez que una escritura de la aplicación que NO pasa por las funciones protegidas (una «escritura a
 -- ciegas»: el `upsert` de `saveData`, que es como guardan las versiones anteriores de JosStyle) cambia o borra
--- `horarioTop`, `estudios` o `papelera`, guarda en `copias_apartadas` (tipo `rescate`), EN LA MISMA TRANSACCIÓN, lo
--- que había antes (`antes`) y lo que se escribió encima (`despues`, `null` si se borró). Así lo que pisa una versión
--- antigua nunca se pierde: queda en «Cambios apartados» y se recupera elemento a elemento.
---   · H-22: se instala ANTES de publicar la versión nueva (P1), para que no haya un rato en que una pestaña antigua
---     pueda pisar algo sin red.
+-- `horarioTop`, guarda en `copias_apartadas` (tipo `rescate`), EN LA MISMA TRANSACCIÓN, lo que había antes (`antes`)
+-- y lo que se escribió encima (`despues`, `null` si se borró). Así lo que pisa una versión antigua nunca se pierde:
+-- queda en «Cambios apartados» y se recupera elemento a elemento.
+--   · D1 (b), decisión de Josué del 2026-11-18: SOLO `horarioTop`. `estudios` y `papelera` se siguen guardando como
+--     hoy (a ciegas, sin copia) hasta E1-S y E1-P: con ellas dentro, cada guardado normal de la versión nueva dejaba
+--     una copia, sin límite, que además no se puede recuperar desde la aplicación.
+--   · Con P4 activo (que decide ANTES de escribir y aparta lo antiguo de `horarioTop`), esta red no llega a actuar: es
+--     la red de la VUELTA ATRÁS (quitar P4 y volver a la versión anterior), cuando lo antiguo vuelve a aplicarse.
+--   · H-22 (que no haya un rato en que una pestaña antigua pueda pisar algo sin red) se cumple instalándola junto con
+--     P4 antes de publicar (D3, secuencia B).
 --   · H-25: si guardar la copia falla, LA ESCRITURA SE RECHAZA (`P0001`, `rescate_fallido`). Dejarla pasar sin copia
 --     sería justo el hueco que la red tiene que cerrar. La versión antigua lo ve como «no se pudo guardar» y lo
 --     conserva en su pantalla.
@@ -23,9 +30,8 @@
 --     misma escritura no ocupa el doble).
 --   · No borra nada nunca (H-10): las copias se quedan hasta que él las elimine. Cuánto crecen se mide en E2-0
 --     (H-14, H-16).
--- ⚠️ Mientras Estudios y la papelera no tengan sus propias operaciones protegidas (E1-S, E1-P), la versión nueva
---    también las guarda a ciegas, y cada guardado suyo haría una copia: por eso P1 solo se activa cuando E1-R, E1-P,
---    E1-S y E1-L están hechas y se publican juntas (docs/19 §18.19).
+-- ⚠️ Cuando E1-S y E1-P existan, cada una añadirá aquí su clave a la vez que su apartado: nunca antes (cada guardado
+--    a ciegas de la versión nueva dejaría una copia).
 -- ═══════════════════════════════════════════════════════════════════════════
 
 do $$
@@ -36,9 +42,9 @@ begin
 end;
 $$;
 
--- Las claves que protege la red (las mismas que puede tocar una operación protegida).
+-- Las claves que protege la red: solo el horario (D1 b). E1-S y E1-P añadirán las suyas con su apartado.
 create or replace function protegido_interno.claves_rescate() returns text[]
-language sql immutable set search_path = '' as $$ select array['horarioTop', 'estudios', 'papelera']::text[] $$;
+language sql immutable set search_path = '' as $$ select array['horarioTop']::text[] $$;
 
 create or replace function protegido_interno.rescatar() returns trigger
 language plpgsql set search_path = '' as $$

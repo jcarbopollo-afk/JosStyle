@@ -1,5 +1,41 @@
 # CHANGELOG.md
 
+## v3.164.3 — 🛡 Horarios · bloque 1: la instalación conjunta y la publicación segura (2026-11-18, solo laboratorio local)
+
+> Con la autorización expresa de Josué del 2026-11-18 («BLOQUE 1 DE HORARIOS, SOLO LABORATORIO LOCAL»), con sus decisiones
+> **D1 (b)**, **D2**, **D3 (secuencia B)** y **D5** (`docs/03` C-90; `docs/19` §18.20). Rama `claude/horarios-rediseno`. Nada
+> en ningún Supabase alojado, ni Vercel, ni publicación. No construye E1-P, E1-S ni E1-L, ni el bloque 2.
+
+### 🐛 Por qué
+- La red de rescate vigilaba también Estudios y la papelera: con la versión nueva guardándolas a ciegas, **cada guardado
+  normal dejaba una copia**, sin límite y sin poder recuperarla desde la aplicación. Por eso exigía E1-S, E1-P y E1-L.
+- El orden P1 → publicar → aparatos → P4 dejaba un rato en que **una versión antigua pisaba el horario** (con copia, pero
+  aplicado), y el siguiente cambio del aparato nuevo chocaba.
+- Los scripts no llevaban transacción: un fallo a mitad podía dejar **R1 instalado a medias** (lo demuestra la mutación M1).
+- La vuelta atrás de R1 (`horarios-protegido-deshacer.sql`) **borra todas las copias**.
+
+### ✨ Qué entra
+- **La red de rescate, solo `horarioTop`** (`supabase/horarios-rescate.sql`, D1 b). Estudios y la papelera, como hoy.
+- **`supabase/horarios-instalacion.sql`**, generado por **`scripts/generar-instalacion-horarios.mjs`**: R1 + la red + P4 sin un
+  cambio, en ese orden, **en una transacción**, con `lock_timeout` de 5 s y una **comprobación final** que lo deshace todo si
+  falta una pieza (`instalacion_incompleta`). Se puede repetir sin tocar copias, operaciones ni datos. La cabecera trae la
+  secuencia de publicación y la vuelta atrás.
+- **Prohibidos en producción, dicho en su cabecera**: `horarios-protegido-deshacer.sql` e instalar `horarios-regla-revision.sql`.
+- El doble de pruebas (`dobleProtegido.mjs`) rescata solo `horarioTop`, como el SQL.
+
+### ✅ Pruebas
+- **`test-instalacion-horarios-postgrest.mjs`** (nueva, nivel 3): 58, en una base de datos aparte con su propio PostgREST
+  (instalación, cuatro fallos a mitad sin dejar nada, reinstalar, antes y después de publicar, conflictos, la vuelta atrás en
+  los dos órdenes sin perder ni una copia, y volver a instalar). En `verificar.sh` junto a las de laboratorio
+  (`HV_POSTGREST_BIN`).
+- `test-rescate-versiones.mjs` 83, `test-rescate-postgrest.mjs` 54, Chromium «R5» y siguientes 131.
+- Mutaciones: ver `docs/19` §18.20.
+
+### 🔁 Pruebas anteriores que se dan la vuelta
+- La red «también rescata Estudios y la papelera» (`test-rescate-versiones`, `test-rescate-postgrest` B, D y E, el doble y el
+  paso 3 de la sección R5 de Chromium) pasa a «se guardan como hoy, sin copia». La pantalla de una copia de Estudios se sigue
+  comprobando con una copia sembrada en el doble.
+
 ## v3.164.2 — 🧯 Corrección C-89: Deshacer revierte SOLO lo que cambió su paso, sin pisar lo guardado después (2026-11-17, commit solo local)
 
 > Con la autorización expresa de Josué del 2026-11-17 («CORRECCIÓN C-89 (DESHACER SIN PÉRDIDA DE DATOS)»). Rama

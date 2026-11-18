@@ -1,7 +1,10 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 🛡 HORARIOS · E1-R · R1 — VUELTA ATRÁS de `horarios-protegido.sql`
 --
--- ⛔ NO EJECUTAR EN SUPABASE sin la autorización de Josué. Quita las funciones, la guardia y las tablas propias.
+-- ⛔ PROHIBIDO EN PRODUCCIÓN (decisión de Josué del 2026-11-18): BORRA TODAS LAS COPIAS APARTADAS Y EL REGISTRO DE
+--    OPERACIONES. La vuelta atrás de producción es otra: quitar P4, volver a la versión anterior y, si se decide, quitar
+--    la red de rescate (`horarios-instalacion.sql` lo explica). Este archivo es SOLO para el laboratorio local.
+-- Quita las funciones, la guardia y las tablas propias.
 -- ⚠️ BORRA las copias apartadas y el registro de operaciones: antes, si las hay, hay que guardarlas aparte
 --    (consulta de abajo). `app_data` no se toca.
 -- ⚠️ Si están instaladas la red de rescate o el apartado de versiones antiguas (R5), se van con el esquema

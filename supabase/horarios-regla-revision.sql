@@ -1,7 +1,9 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 🛡 HORARIOS · TP-15 B — LA REGLA DEL SERVIDOR SOBRE `horarioTop` (borrador para E2)
 --
--- ⛔ NO EJECUTAR EN SUPABASE. Es la pieza de la entrega E2 y su activación la autoriza Josué, aparte (D4).
+-- ⛔ PROHIBIDO INSTALARLA EN PRODUCCIÓN (decisión de Josué del 2026-11-18): la sustituyó el apartado de versiones
+--    antiguas (P4, H-23, C-88), que no puede convivir con ella. Se conserva solo como historia y para su prueba de E1.
+-- ⛔ NO EJECUTAR EN SUPABASE. Era la pieza de la entrega E2 (D4).
 --    En E1 solo se ha probado en un Postgres + PostgREST LOCALES y desechables (127.0.0.1), con
 --    `scripts/test-escritor-horario-postgrest.mjs`. Para quitarla: `horarios-regla-revision-deshacer.sql`.
 --

@@ -3375,6 +3375,11 @@ aparato que escribió (del testigo) y el navegador (la cabecera `user-agent`, re
 
 #### La activación (E2), y lo que tiene que estar antes
 
+> 🔁 **Sustituido por el §18.20 (2026-11-18, decisiones D1 b y D3 de Josué, `docs/03` C-90)**: la red es solo de
+> `horarioTop`, ya no hacen falta E1-P, E1-S ni E1-L, y R1 + la red + P4 se instalan juntos, en una transacción, **antes** de
+> publicar. Lo de abajo se conserva como registro.
+
+
 1. **Antes de P1**: E1-R, E1-P, E1-S y E1-L hechas y probadas, y publicadas juntas. ⚠️ Mientras Estudios y la papelera no
    tengan sus operaciones protegidas, la versión nueva también las guarda a ciegas y cada guardado suyo dejaría una copia de
    rescate: por eso P1 no se activa con R5 sola.
@@ -3418,9 +3423,86 @@ valor entero de la copia en vez de lo elegido (pisaría lo de después).
   elemento, y lo que cambió después no se puede elegir.
 - Ni umbrales de espacio (H-14), ni limpieza (H-16), ni mantenimiento físico (H-21); sin probar en Safari ni en el iPhone.
 
+### 18.20 Bloque 1: la instalación conjunta y la publicación segura (2026-11-18)
+
+> Construido con la **autorización expresa de Josué** del 2026-11-18 («BLOQUE 1 DE HORARIOS, SOLO LABORATORIO LOCAL»), con
+> sus decisiones **D1 (b)**, **D2**, **D3 (secuencia B)** y **D5** (`docs/03` C-90). **Solo en el laboratorio local**: nada
+> en ningún Supabase alojado, ni Vercel, ni publicación. **Manda sobre el §18.19 donde difieran** (en particular, sobre «La
+> activación (E2), y lo que tiene que estar antes»). D6 y D7 quedan definidas, sin construir.
+
+#### Qué cambia
+
+| | Antes (§18.19) | Ahora |
+|---|---|---|
+| Red de rescate | `horarioTop`, `estudios` y `papelera` | **Solo `horarioTop`** (D1 b). Estudios y la papelera, como hoy, sin copia, hasta E1-S y E1-P |
+| Requisitos para activar | E1-R + E1-P + E1-S + E1-L, publicadas juntas | **Ninguno más**: E1-L se descarta (D2, C-84); E1-S y E1-P se aplazan |
+| Orden | P1 → publicar → aparatos → P4 | **R1 + red + P4 en UNA transacción, antes de publicar** → publicar enseguida → recargar los aparatos (D3, secuencia B) |
+| Instalación | Tres archivos, cada uno por su lado, sin transacción | **`supabase/horarios-instalacion.sql`**, generado por `scripts/generar-instalacion-horarios.mjs` |
+| Vuelta atrás | «Ninguna borra copias» (falso para R1) | Quitar P4 → versión anterior en Vercel → (si se decide) quitar la red. **R1 se queda** |
+| Prohibidos en producción | — | `horarios-protegido-deshacer.sql` (borra las tablas con todas las copias) e instalar `horarios-regla-revision.sql` |
+
+#### La instalación (`supabase/horarios-instalacion.sql`)
+
+- **Se genera, no se edita**: es `begin;` + `set local lock_timeout = '5s'` + R1 + la red + P4 (los tres archivos **sin un
+  cambio**, en ese orden) + una **comprobación final** + `commit;`. Si cambia una pieza, se regenera; dos pruebas comparan el
+  archivo con lo que genera el script.
+- **Todo lo que contiene admite una transacción** (DDL de Postgres: esquemas, tablas, funciones, políticas, disparadores,
+  permisos y bloques `do`; ni `CONCURRENTLY`, ni `VACUUM`, ni otra orden de transacción a primer nivel), y la prueba lo
+  comprueba sobre las sentencias de primer nivel.
+- **La comprobación final**, dentro de la transacción, exige las siete funciones, las tres tablas, los dos disparadores
+  (red y P4), ninguno de la regla de E1, y la red y P4 solo para `horarioTop`; si falta algo, `instalacion_incompleta` y no
+  queda nada.
+- **`lock_timeout`**: si otra conexión tiene `app_data` bloqueada más de 5 s, se rinde y no instala nada (no deja la
+  aplicación esperando).
+- **Se puede repetir**: sobre una instalación que ya existe no toca ninguna copia, operación ni dato.
+
+#### La secuencia de publicación (D3, secuencia B)
+
+1. No tocar Horarios desde aquí hasta el paso 4.
+2. Ejecutar `horarios-instalacion.sql` entero. Hasta el paso 4, lo que guarde la versión antigua (la de producción) en el
+   horario **se aparta** (no se aplica, no se pierde, se avisa y se recupera eligiendo); Estudios y la papelera, como hoy.
+3. Comprobar el protocolo (`rescate`, `versionesAntiguas` y `horarioTop` a `true`).
+4. Publicar enseguida y recargar la aplicación en todos los aparatos.
+**No hay ningún momento en que una escritura antigua del horario se aplique**, y la versión nueva tiene sus funciones desde
+el paso 2 (sin ellas se bloquea con `sin_protocolo`; nunca guarda a ciegas).
+
+#### Pruebas
+
+| Suite | Qué demuestra | Resultado |
+|---|---|---|
+| `test-instalacion-horarios-postgrest.mjs` (nueva, nivel 3) | En una **base de datos aparte con su propio PostgREST** (el laboratorio de las demás pruebas no se toca, y no ejecuta `horarios-protegido-deshacer.sql` ni instala la regla de E1): A · el archivo generado (piezas exactas y en orden, un solo BEGIN/COMMIT, nada que no admita una transacción, nada que borre); B · la instalación completa y el protocolo; C · un fallo provocado tras R1, tras la red, en la comprobación final y por un bloqueo de `app_data`: **no queda nada** y los datos no cambian; D · reinstalar no toca copias, operaciones ni datos, y una reinstalación que falla deja **intacta** la de antes; E · antes de publicar: lo antiguo del horario se aparta (recibe «guardado»), Estudios y la papelera se aplican sin copia, borrar el horario se rechaza; F · la versión nueva guarda, una pestaña antigua no pisa nada, un conflicto entre dos aparatos se aparta, y lo apartado se recupera eligiendo sin pisar lo posterior; G · la vuelta atrás en el orden equivocado (la versión anterior con P4 puesto: su cambio se aparta sin que nadie lo note) y en el correcto, **sin perder ni una copia ni una operación**, y volver a instalar después | 58/58 |
+| `test-rescate-versiones.mjs` | La red solo de `horarioTop` (forma del SQL y el doble), el archivo generado y las cabeceras de los dos prohibidos | 83/83 |
+| `test-rescate-postgrest.mjs` | R5 con D1 (b): Estudios y la papelera, como hoy y sin copia; borrar el horario sin P4 deja copia | 54/54 |
+| `test-app-real.mjs`, sección «R5» y siguientes | Estudios sin copia (D1 b); la pantalla de una copia de Estudios sigue funcionando (copia sembrada en el doble) | 131/131 |
+
+**Mutaciones** (cada una, aplicada y deshecha; todas se ponen rojas en al menos una suite):
+
+| # | Mutación | La detecta |
+|---|---|---|
+| M1 | Sin `BEGIN/COMMIT` | Instalación (8 rojas: un fallo tras R1 o tras la red **deja R1 instalado a medias**) y `test-rescate-versiones` |
+| M2 | La red vuelve a vigilar Estudios y la papelera | La propia **comprobación final** rechaza la instalación (`instalacion_incompleta`), más `test-rescate-versiones` y `test-rescate-postgrest` (6) |
+| M3 | P4 aplica la escritura antigua en vez de apartarla | Las tres suites: «una cuenta sin horario: la versión antigua no lo crea». ⚠️ En un `upsert` sobre una fila que ya existe, la mutación queda tapada porque el disparador se ejecuta dos veces (inserción y actualización) y la segunda, por la huella, ya no aplica nada: por eso la detecta el caso de la primera fila |
+| M4 | Sin `lock_timeout` | Instalación: espera los 9 s del bloqueo en vez de rendirse a los 5 |
+| M5 | La comprobación final no rechaza nada | Instalación (5): con una pieza quitada se queda instalada a medias |
+| M6 | El archivo generado, editado a mano | Instalación y `test-rescate-versiones` (no es lo que genera el script) |
+| M7 | P4 antes que R1 | Instalación: no se instala nada («Falta R1») |
+| M8 | El doble rescata Estudios otra vez | `test-rescate-versiones` |
+
+#### Riesgos que siguen abiertos
+
+- **Sin probar en un Supabase alojado**: el editor SQL con `BEGIN/COMMIT` explícito, el `lock_timeout` con su tráfico real,
+  los tiempos y el crecimiento de las copias (H-14, H-16). Es E2-0, en un proyecto independiente.
+- **Estudios y la papelera siguen como hoy** (D1 b, riesgo aceptado): una pestaña antigua o desfasada puede pisarlos sin copia
+  (C7).
+- **Horarios depende del servidor para guardar**: sin las funciones, la versión nueva no guarda el horario (lo dice y lo
+  mantiene en memoria, C-84).
+- **Los minutos entre instalar y recargar**: lo que se guarde en el horario con la versión antigua queda apartado, no
+  aplicado.
+- **Las vistas previas de Vercel**: hay que confirmar a qué Supabase apuntan antes de abrir una (no se ha tocado Vercel).
+
 ---
 
 *Fase 2 de 8 terminada, con la revisión documental del 2026-11-08, las correcciones del 2026-11-09, el cierre documental
 previo a la Fase 4 (§18.12), la decisión del TP-15 (2026-11-10) y la sincronización con la entrega A y la A-bis implementadas
-(§18.13, 2026-11-15) y la entrega E1 (§18.14, 2026-11-16, commits locales) y E1-R · R1, R2, R3, R4 y R5 (§18.15 a §18.19, commits locales). Esta documentación no autoriza la entrega B
+(§18.13, 2026-11-15) y la entrega E1 (§18.14, 2026-11-16, commits locales) y E1-R · R1, R2, R3, R4 y R5 (§18.15 a §18.19, commits locales) y el bloque 1 (§18.20, solo laboratorio local). Esta documentación no autoriza la entrega B
 ni ninguna instalación, migración, SQL alojado, publicación, despliegue o cambio de datos.*

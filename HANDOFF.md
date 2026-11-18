@@ -2,6 +2,14 @@
 
 > **Propósito de este documento:** permitir que cualquier conversación nueva con Claude retome este proyecto exactamente donde se quedó, sin depender del historial del chat anterior. Contiene el 100% del contexto relevante, sin resumir ni omitir decisiones.
 
+> **📅 ACTUALIZACIÓN (2026-11-18 — 🛡 Horarios · bloque 1, v3.164.3; SOLO laboratorio local, sin publicar):** Josué decidió
+> **D1 (b)** (la red de rescate solo para `horarioTop`; Estudios y la papelera como hoy hasta E1-S/E1-P), **D2** (se mantiene
+> C-84 y se descarta E1-L), **D3** (R1 + red + P4 en UNA transacción, **antes** de publicar) y **D5** (sin plazo fijo antes
+> de migrar; criterio comprobable). Hecho: `supabase/horarios-instalacion.sql`, **generado** por
+> `scripts/generar-instalacion-horarios.mjs`, y su prueba de nivel 3 en una base aparte (58). ⛔ En producción, prohibidos
+> `horarios-protegido-deshacer.sql` (borra las copias) e instalar `horarios-regla-revision.sql`. **Siguiente, con su
+> autorización: E2-0** (la misma instalación en un Supabase independiente). Detalle en `docs/19` §18.20 y `docs/03` C-90.
+>
 > **📅 ACTUALIZACIÓN (2026-11-17 — 🧯 Corrección C-89, v3.164.2; commit SOLO local en `claude/horarios-rediseno`, sin
 > push, PR, fusión ni despliegue):** Deshacer **revierte solo lo que cambió su paso**. Antes reescribía cada clave del paso
 > entera con la foto de antes, y así borraba lo guardado después fuera de los pasos (pomodoros, rutinas hechas, la revisión de

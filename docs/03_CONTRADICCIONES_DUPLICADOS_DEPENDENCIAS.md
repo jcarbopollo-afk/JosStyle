@@ -1854,3 +1854,33 @@ los pasos era más largo que las tres: `papelera` (eliminar definitivamente, vac
 - **Un paso de una versión anterior** (sin `claves` o sin `cambios`) **no se deshace a ciegas**: aviso
   `deshacer_paso_antiguo` y no se escribe nada (antes, uno así podía dejar módulos a medias).
 Pruebas: `test-deshacer-por-cambios.mjs` (71) y la sección «🧯 C-89» del recorrido (roja antes del arreglo: 15 de 37).
+
+### C-90 — ✅ RESUELTA POR JOSUÉ (2026-11-18, D1 b y D3) · La red de rescate de Estudios y la papelera, y el orden de publicación, contra «P1 → publicar → P4» (`docs/19` §18.19)
+
+El §18.19 de `docs/19` (R5) dejó dos cosas que la revisión del 2026-11-18 encontró inseguras o imposibles:
+1. **La red de rescate vigilaba `horarioTop`, `estudios` y `papelera`.** Mientras Estudios y la papelera no tengan su propia
+   operación protegida (E1-S, E1-P), la versión nueva también las guarda a ciegas, así que **cada guardado normal suyo**
+   dejaba una copia, sin límite, y esas copias **no se pueden recuperar desde la aplicación** (`clave_sin_recuperacion`). Por
+   eso el §18.19 exigía E1-S, E1-P y E1-L antes de P1.
+2. **El orden P1 → publicar → aparatos → P4 deja un rato en que una versión antigua PISA el horario**: la red solo guarda una
+   copia de lo pisado (se aplica igual), el siguiente cambio del aparato nuevo choca, y el rato dura hasta P4 (días, si se
+   espera a que se actualicen los aparatos). Demostrado en `test-rescate-postgrest.mjs`, sección C.
+
+**Josué decide (2026-11-18, autorización del bloque 1):**
+- **D1 (b)**: la red de rescate es **solo de `horarioTop`**. Estudios y la papelera se guardan **como hoy**, sin copia, hasta
+  E1-S y E1-P. La atomicidad de R1 (borrar una asignatura con sus clases, su Deshacer, una clase con una asignatura nueva) no
+  depende de la red y no cambia. **Riesgo aceptado**: una pestaña antigua o desfasada puede pisar Estudios o la papelera, como
+  hoy (C7: tras un borrado protegido, la asignatura vuelve sin sus clases).
+- **D3 (secuencia B)**: **R1 + la red + P4 se instalan juntos, en una transacción, ANTES de publicar**
+  (`supabase/horarios-instalacion.sql`, generado). Ninguna escritura antigua de `horarioTop` se aplica nunca: hasta que se
+  recargan los aparatos, lo que guarde la versión antigua en el horario se **aparta** (no se pierde; se avisa y se recupera
+  eligiendo). H-22 (que no haya un rato sin red) se cumple así, con más garantías que instalando la red sola.
+- **Vuelta atrás**: quitar P4 → volver a la versión anterior en Vercel → (cuando se decida) quitar la red. **R1 se queda.**
+- ⛔ **Prohibidos en producción**: `horarios-protegido-deshacer.sql` (borra las tablas con todas las copias y el registro) e
+  instalar `horarios-regla-revision.sql` (la regla de E1, sustituida por P4 y que no puede convivir con él).
+- **D2**: se mantiene C-84 (en Horarios, nada pendiente en el aparato) y **se descarta E1-L**.
+- **D5**: no hay plazo fijo entre la entrega A y la B (TP-12): con P4 activo, una copia antigua ya no puede pisar el horario.
+  Antes de migrar se exige un criterio comprobable (P4 activo y comprobado, respaldo, migración como operación protegida y
+  condicionada, diagnóstico revisado y TP-5 si hace falta).
+Construido y probado **solo en el laboratorio local** (bloque 1, v3.164.3): `docs/19` §18.20. Activarlo en un Supabase
+alojado (E2-0 en uno independiente y después producción) necesita otra autorización expresa.

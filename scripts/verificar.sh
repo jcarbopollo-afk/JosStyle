@@ -2267,8 +2267,19 @@ if [ -n "${HV_PGRST_URL:-}" ]; then
   else
     fallo "Falla R5 contra PostgREST local"; grep '✗' /tmp/jc_r5pg.log
   fi
+  # 🛡 Bloque 1 (D1 b y D3, 2026-11-18) — la instalación conjunta (R1 + red + P4) en UNA transacción, en una base de
+  # datos aparte con su propio PostgREST: fallos a mitad, reinstalar, antes y después de publicar, y la vuelta atrás.
+  if node --import ./scripts/resolver-vite.mjs scripts/test-instalacion-horarios-postgrest.mjs >/tmp/jc_instpg.log 2>&1; then
+    if grep -q '⏭ omitida' /tmp/jc_instpg.log; then
+      printf '  \033[33m⏭\033[0m %s\n' "Horarios · instalación conjunta (bloque 1): omitida (sin HV_POSTGREST_BIN)"
+    else
+      ok "Horarios · la instalación conjunta y la publicación segura (bloque 1) contra Postgres local — $(grep -c '✓' /tmp/jc_instpg.log) comprobaciones"
+    fi
+  else
+    fallo "Falla la instalación conjunta (bloque 1) contra Postgres local"; grep '✗' /tmp/jc_instpg.log
+  fi
 else
-  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia, escritor de horarioTop, operación protegida, su cliente, R3, R4 y R5 contra PostgREST local: omitidas (sin HV_PGRST_URL)"
+  printf '  \033[33m⏭\033[0m %s\n' "Horarios · historial, guardia, escritor de horarioTop, operación protegida, su cliente, R3, R4, R5 y la instalación conjunta contra PostgREST local: omitidas (sin HV_PGRST_URL)"
 fi
 
 # Entrega 3 · F3 — la iconografía del armario y la categoría de ropa interior.

@@ -14,14 +14,18 @@ predicciones y logros. La IA **analiza y sugiere, nunca decide**.
 históricos: aparecen en `CHANGELOG.md` y dentro de `especificaciones/` porque son historia y
 transcripción literal, pero **no se usan en código nuevo, documentación nueva ni interfaz**.
 
-**Estado:** `package.json` **v3.164.2** (🧯 **corrección C-89**: Deshacer revierte SOLO lo que cambió su paso —cada paso apunta qué cambió en cada clave y se deshace su inversa sobre lo de ahora, salvo `horarioTop`—, así que ya no pisa lo guardado después fuera de los pasos ni resucita lo eliminado definitivamente; un conflicto no deshace nada y lo dice, y un paso antiguo no se deshace a ciegas —`src/lib/deshacerPorCambios.js`, CHANGELOG v3.164.2, C-89 resuelta en `docs/03`—. Y antes, la **corrección F-1 · F-2 · F-3** (v3.164.1): Imagen personal ya no vuelve a fábrica, Fitness devuelve lo borrado y las apariencias se borran de verdad. Y antes, Horarios E1, en commits **solo locales** de `claude/horarios-rediseno`:
+**Estado:** `package.json` **v3.164.3** (🛡 **bloque 1 de Horarios**, solo laboratorio: la instalación conjunta y la publicación segura —abajo—. Y antes, la 🧯 **corrección C-89**: Deshacer revierte SOLO lo que cambió su paso —cada paso apunta qué cambió en cada clave y se deshace su inversa sobre lo de ahora, salvo `horarioTop`—, así que ya no pisa lo guardado después fuera de los pasos ni resucita lo eliminado definitivamente; un conflicto no deshace nada y lo dice, y un paso antiguo no se deshace a ciegas —`src/lib/deshacerPorCambios.js`, CHANGELOG v3.164.2, C-89 resuelta en `docs/03`—. Y antes, la **corrección F-1 · F-2 · F-3** (v3.164.1): Imagen personal ya no vuelve a fábrica, Fitness devuelve lo borrado y las apariencias se borran de verdad. Y antes, Horarios E1, en commits **solo locales** de `claude/horarios-rediseno`:
 `docs/19` §18.14; y **E1-R · R1** —la operación protegida en el servidor, solo laboratorio local, H-18—, `docs/19` §18.15; y **R2** —el motor del
 cliente: `operacionesProtegidas.js`, `escritorOperaciones.js` y `transporteProtegido`—, §18.16; y **R3** —la integración: el horario se escribe por
 operaciones protegidas, borrar una asignatura con clases y su Deshacer son UNA operación, H-12 y H-13 (`asignaturaProtegida.js`)—, §18.17; y **R4** —Cambios apartados:
 consultar, recuperar como operación nueva sin pisar lo posterior y eliminar solo a petición (`cambiosApartados.js`)—, §18.18; y **R5** —la red de rescate (H-22, H-25) y
 las escrituras de versiones antiguas apartadas (H-23), SQL preparado y probado solo en el laboratorio, y su recuperación eligiendo elemento a elemento—, §18.19, con la que
-E1-R está completa en local). 🛟 **El SQL de R5 (`horarios-rescate.sql`, P1; `horarios-versiones-antiguas.sql`, P4) no se activa hasta E2**: P1 exige E1-P, E1-S y E1-L hechas y
-publicadas juntas (si no, cada guardado a ciegas de Estudios de la versión nueva dejaría un rescate). Vite + React 18 + Tailwind + Supabase + una función serverless en Vercel que hace de proxy a Anthropic.
+E1-R está completa en local). 🛟 **Bloque 1 (v3.164.3, 2026-11-18, solo laboratorio): la protección se instala con
+`supabase/horarios-instalacion.sql`** —GENERADO por `scripts/generar-instalacion-horarios.mjs`, nunca editado a mano—: R1 + la red
+de rescate (**solo `horarioTop`**, D1 b) + P4, en UNA transacción y **antes** de publicar (D3); E1-L se descarta (D2) y E1-S/E1-P
+se aplazan. ⛔ En producción, prohibidos `horarios-protegido-deshacer.sql` (borra todas las copias) e instalar
+`horarios-regla-revision.sql` (`docs/19` §18.20, `docs/03` C-90). Nada se activa en un Supabase alojado sin su autorización
+(E2-0). Vite + React 18 + Tailwind + Supabase + una función serverless en Vercel que hace de proxy a Anthropic.
 🛡 **`horarioTop` solo lo escribe su escritor protegido** —desde R3, el de operaciones (`src/lib/escritorOperaciones.js`) contra las
 funciones del servidor—: `saveData` lo rechaza, y volver a escribirlo por otro camino rompe la protección entre aparatos (DEP-35 en
 `docs/03`). Un cambio que toque el horario Y Estudios o la papelera va en UNA operación (`guardarOperacionProtegida` de `App.jsx`).
